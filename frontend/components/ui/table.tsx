@@ -19,7 +19,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
 }
 
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
-  return <th data-slot="table-head" className={cn("h-12 px-4 text-left align-middle text-xs font-bold uppercase tracking-[0.16em]", className)} {...props} />;
+  return <th data-slot="table-head" className={cn("h-12 px-4 text-left align-middle text-xs font-bold", className)} {...props} />;
 }
 
 function TableCell({ className, ...props }: React.ComponentProps<"td">) {

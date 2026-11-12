@@ -97,7 +97,7 @@ export function CompetitorCard() {
                 <div className="flex items-center justify-between gap-3 text-[13px]">
                   <span className={cn("truncate font-bold", r.isBrand ? "text-[#101334]" : "text-[#31406B]")}>
                     {r.name}
-                    {r.isBrand ? <span className="ml-2 rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[10px] font-black uppercase text-[#3B52F5]">{L("you", "anda")}</span> : null}
+                    {r.isBrand ? <span className="ml-2 rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[10px] font-black text-[#3B52F5]">{L("you", "anda")}</span> : null}
                   </span>
                   <span className="shrink-0 font-black tabular-nums text-[#101334]">
                     {r.share}% <span className="text-[11px] font-semibold text-[#5A6478]">· {r.articles >= (data?.share?.cap ?? 100) ? `${r.articles}+` : r.articles} {L("articles", "artikel")}</span>

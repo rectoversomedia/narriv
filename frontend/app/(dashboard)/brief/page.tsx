@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { useCodeLabels } from "@/components/intelligence/intelligence-panels";
 import { useUiStore } from "@/store/useUiStore";
 import type { ExecutiveBriefPayload } from "@/lib/intelligence-api";
@@ -47,7 +48,7 @@ function DateRangeSelector({ value, onChange }: { value: DateRange; onChange: (v
         aria-label={L("Date range", "Rentang waktu")}
         value={value}
         onChange={(e) => onChange(e.target.value as DateRange)}
-        className="h-10 cursor-pointer appearance-none rounded-[10px] border border-[#DDE3EF] bg-white pl-3 pr-8 text-[13px] font-bold text-[#101334] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/30"
+        className="h-10 cursor-pointer appearance-none rounded-full bg-white pl-4 pr-8 shadow-[0_1px_2px_rgba(16,19,52,0.08)] text-[13px] font-bold text-[#101334] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/30"
       >
         {options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
       </select>
@@ -80,12 +81,12 @@ function reputationLook(score: number) {
   return { color: "#C81E1E", bar: "#E5484D", word: ["At risk", "Berisiko"] as [string, string] };
 }
 
-function Tile({ label, value, sub, rgb, color, bar, barColor }: { label: string; value: string; sub: string; rgb: string; color: string; bar?: number; barColor?: string }) {
+function Tile({ label, value, sub, rgb: _rgb, color, bar, barColor }: { label: string; value: string; sub: string; rgb: string; color: string; bar?: number; barColor?: string }) {
   return (
-    <div className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${rgb},0.12), rgba(${rgb},0.02) 60%)` }}>
-      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color }}>{label}</p>
-      <p className="mt-2 text-[32px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
-      {typeof bar === "number" ? <div className="mt-3 h-2 rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full" style={{ width: `${Math.max(2, Math.min(100, bar))}%`, background: barColor }} /></div> : null}
+    <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+      <p className="text-[40px] font-black leading-none tracking-[-0.04em]" style={{ color: typeof bar === "number" ? color : "#101334" }}>{value}</p>
+      <p className="mt-2 text-[13px] font-bold text-[#101334]">{label}</p>
+      {typeof bar === "number" ? <div className="mt-3 h-2 w-full rounded-full bg-[#E8ECF6]"><div className="h-full rounded-full" style={{ width: `${Math.max(2, Math.min(100, bar))}%`, background: barColor }} /></div> : null}
       <p className="mt-2 text-[12px] font-bold" style={{ color: typeof bar === "number" ? color : "#5A6478" }}>{sub}</p>
     </div>
   );
@@ -117,17 +118,17 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
   const levelTone = (p: string) => (p === "critical" || p === "high" ? "bg-[#C81E1E] text-white" : p === "medium" ? "bg-[#F59E0B] text-white" : "bg-[#E5F6EE] text-[#047857]");
 
   return (
-    <div className="space-y-5">
-      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <Tile label={L("New mentions", "Percakapan baru")} value={newSignals === null ? "—" : String(newSignals)} sub={L("in this window", "di periode ini")} rgb="70,95,255" color="#3B52F5" />
-        <Tile label={L("Active alerts", "Peringatan aktif")} value={activeAlerts === null ? String(newAlerts) : String(activeAlerts)} sub={L(`${newAlerts} new in this window`, `${newAlerts} baru di periode ini`)} rgb={(activeAlerts ?? newAlerts) ? "245,158,11" : "100,116,139"} color={(activeAlerts ?? newAlerts) ? "#A04606" : "#5A6478"} />
-        <Tile label={L("Risk index", "Indeks risiko")} value={risk ? `${riskScore}/100` : "—"} sub={risk ? L(...risk.word) : L("not enough data", "data belum cukup")} rgb="229,72,77" color={risk?.color ?? "#5A6478"} bar={risk ? riskScore : undefined} barColor={risk?.bar} />
+    <div className="space-y-6">
+      <section className="grid grid-cols-2 gap-5 xl:grid-cols-4">
+        <Tile label={L("New Mentions", "Percakapan Baru")} value={newSignals === null ? "—" : String(newSignals)} sub={L("in this period", "di periode ini")} rgb="70,95,255" color="#3B52F5" />
+        <Tile label={L("Active Alerts", "Peringatan Aktif")} value={activeAlerts === null ? String(newAlerts) : String(activeAlerts)} sub={L(`${newAlerts} new in this window`, `${newAlerts} baru di periode ini`)} rgb={(activeAlerts ?? newAlerts) ? "245,158,11" : "100,116,139"} color={(activeAlerts ?? newAlerts) ? "#A04606" : "#5A6478"} />
+        <Tile label={L("Risk Index", "Indeks Risiko")} value={risk ? `${riskScore}/100` : "—"} sub={risk ? L(...risk.word) : L("not enough data", "data belum cukup")} rgb="229,72,77" color={risk?.color ?? "#5A6478"} bar={risk ? riskScore : undefined} barColor={risk?.bar} />
         <Tile label={L("Reputation", "Reputasi")} value={repLook ? `${repScore}/100` : "—"} sub={repLook ? L(...repLook.word) : L("not enough data", "data belum cukup")} rgb={repLook && repScore >= 70 ? "18,166,106" : "229,72,77"} color={repLook?.color ?? "#5A6478"} bar={repLook ? repScore : undefined} barColor={repLook?.bar} />
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-[16px] border border-[#E6EAF2] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
-          <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("What drives the risk", "Yang mendorong risiko")}</h2>
+        <section className={BOX}>
+          <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{L("What Drives the Risk", "Yang Mendorong Risiko")}</h2>
           <p className="mt-1 text-[11px] font-bold text-[#5A6478]">{L("Points added to the risk index", "Poin yang menambah indeks risiko")}</p>
           {drivers.length === 0 ? (
             <p className="mt-4 text-[13px] font-semibold text-[#047857]">{L("No risk component is elevated.", "Tidak ada komponen risiko yang meningkat.")}</p>
@@ -139,42 +140,41 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
                     <span>{L(...(DRIVER_LABELS[d.key] ?? [d.key.replace(/_/g, " "), d.key.replace(/_/g, " ")]))}</span>
                     <span className="text-[#C81E1E]">+{Math.round(d.contribution * 10) / 10}</span>
                   </div>
-                  <div className="mt-1.5 h-2.5 rounded-full bg-[#F4E5E5]"><div className="h-full rounded-full bg-[#E5484D]" style={{ width: `${(d.contribution / maxDriver) * 100}%` }} /></div>
+                  <div className="mt-1.5 h-2.5 rounded-full bg-[#E8ECF6]"><div className="h-full rounded-full bg-[#E5484D]" style={{ width: `${(d.contribution / maxDriver) * 100}%` }} /></div>
                   <p className="mt-1 line-clamp-1 text-[11px] font-semibold text-[#5A6478]" title={d.reason}>{d.reason}</p>
                 </div>
               ))}
             </div>
           )}
           {emerging.length ? (
-            <div className="mt-4 rounded-[12px] bg-[#FFF3DC] p-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#A04606]">{L("Gaining momentum", "Sedang naik")}</p>
-              {emerging.slice(0, 3).map((i) => <p key={i.title} className="mt-1 text-[13px] font-black text-[#101334]">{i.title}</p>)}
+            <div className="mt-6">
+              <p className="inline-flex rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-[11px] font-black text-[#A04606]">{L("Gaining Momentum", "Sedang Naik")}</p>
+              {emerging.slice(0, 3).map((i) => <p key={i.title} className="mt-2 text-[15px] font-black text-[#101334]">{i.title}</p>)}
             </div>
           ) : null}
         </section>
 
-        <section className="rounded-[16px] border border-[#E6EAF2] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
-          <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("Suggested next steps", "Langkah yang disarankan")}</h2>
-          <p className="mt-1 text-[11px] font-bold text-[#5A6478]">{L("One click starts the plan or case; nothing is sent without approval.", "Satu klik memulai rencana atau kasus; tidak ada yang dikirim tanpa persetujuan.")}</p>
+        <section className={BOX}>
+          <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{L("Suggested Next Steps", "Langkah yang Disarankan")}</h2>
           {actions.length === 0 ? (
             <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{L("No step suggested.", "Tidak ada langkah yang disarankan.")}</p>
           ) : (
-            <ol className="mt-4 space-y-2.5">
+            <ol className="mt-4 divide-y divide-[#E6EAF2]">
               {actions.slice(0, 5).map((a, i) => (
-                <li key={`${a.action}-${i}`} className="flex gap-3 rounded-[12px] bg-[#F4F6FC] p-3">
+                <li key={`${a.action}-${i}`} className="flex gap-3 py-3.5">
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#101334] text-[12px] font-black text-white">{i + 1}</span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[14px] font-black text-[#101334] first-letter:uppercase">{code.action(a.action)}</span>
-                      <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black", levelTone(a.priority))}>{code.level(a.priority)}</span>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#31406B]">{code.urgency(a.urgency)}</span>
+                      <span className="text-[14px] font-black text-[#101334] first-letter:">{code.action(a.action)}</span>
+                      <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-black", levelTone(a.priority))}>{code.level(a.priority)}</span>
+                      <span className="rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[11px] font-black text-[#31406B]">{code.urgency(a.urgency)}</span>
                     </div>
                     <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-snug text-[#3A4566]">{a.reason}</p>
                   </div>
                   {STEP_STRATEGY[a.action] ? (
-                    <button type="button" onClick={() => setPlan(STEP_STRATEGY[a.action])} className="h-8 shrink-0 self-center rounded-[8px] bg-[#465FFF] px-3 text-[12px] font-black text-white transition hover:bg-[#3B52F5]">{L("Plan", "Buat rencana")}</button>
+                    <button type="button" onClick={() => setPlan(STEP_STRATEGY[a.action])} className="h-9 shrink-0 self-center rounded-full bg-[#465FFF] px-4 text-[12.5px] font-bold text-white transition hover:bg-[#3B52F5]">{L("Create Action Plan", "Buat Rencana Aksi")}</button>
                   ) : a.action === "investigate" ? (
-                    <button type="button" onClick={() => setInvestigate(a.reason)} className="h-8 shrink-0 self-center rounded-[8px] bg-[#101334] px-3 text-[12px] font-black text-white transition hover:bg-[#1F2452]">{L("Open case", "Buka kasus")}</button>
+                    <button type="button" onClick={() => setInvestigate(a.reason)} className="h-9 shrink-0 self-center rounded-full bg-[#101334] px-4 text-[12.5px] font-bold text-white transition hover:bg-[#1F2452]">{L("Open Case", "Buka Kasus")}</button>
                   ) : null}
                 </li>
               ))}
@@ -184,11 +184,11 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
       </div>
 
       {watch.length ? (
-        <section className="rounded-[16px] bg-[#101334] p-5 text-white">
-          <h2 className="text-[11px] font-black uppercase tracking-[0.1em] text-[#A9B4FF]">{L("What to watch next", "Yang perlu dipantau berikutnya")}</h2>
-          <ul className="mt-3 grid gap-2 md:grid-cols-2">
+        <section className="rounded-[24px] bg-[#0B0F2E] px-6 py-7 text-white">
+          <h2 className="text-[20px] font-black tracking-[-0.02em]">{L("What to Watch Next", "Yang Perlu Dipantau Berikutnya")}</h2>
+          <ul className="mt-4 grid gap-x-10 gap-y-3 md:grid-cols-2">
             {watch.map((w, i) => (
-              <li key={i} className="rounded-[12px] bg-white/[0.07] p-3 text-[13px] font-bold leading-snug">
+              <li key={i} className="border-l-0 text-[14px] font-bold leading-snug text-white/85 before:mr-2 before:text-[#A5B4FF] before:content-['→']">
                 {w.label}
               </li>
             ))}
@@ -214,16 +214,16 @@ export default function DailyIntelligenceBriefPage() {
   });
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6 pb-10">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-[28px] font-black leading-tight tracking-[-0.03em] text-[#101334]">{t("title")}</h1>
-          <p className="mt-1 text-[13px] font-semibold text-[#5A6478]">{L("The period on one page, from your workspace's own records.", "Periode ini dalam satu halaman, dari data workspace Anda sendiri.")}</p>
+          <p className="mt-1 text-[13px] font-semibold text-[#5A6478]">{L("This period on one page.", "Periode ini dalam satu halaman.")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <DateRangeSelector value={dateRange} onChange={setDateRange} />
           {/* The browser's print dialog (Save as PDF); nothing is sent anywhere. */}
-          <button type="button" onClick={() => window.print()} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[13px] font-black text-[#31406B] transition hover:bg-[#F8FAFF]">
+          <button type="button" onClick={() => window.print()} className="h-10 rounded-full bg-[#101334] px-5 text-[13px] font-bold text-white transition hover:bg-[#2B2F9E]">
             {L("Print / Save as PDF", "Cetak / Simpan PDF")}
           </button>
         </div>
@@ -234,7 +234,7 @@ export default function DailyIntelligenceBriefPage() {
       ) : isError || !data ? (
         <p className="rounded-[14px] bg-[#FDECEC] p-4 text-[13px] font-bold text-[#C81E1E]">{L("The brief could not be loaded. Try again in a moment.", "Ringkasan gagal dimuat. Coba lagi sebentar lagi.")}</p>
       ) : !data.grounded ? (
-        <p className="rounded-[14px] bg-white p-5 text-[13px] font-semibold text-[#5A6478] shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+        <p className="py-8 text-[14px] font-semibold text-[#5A6478]">
           {L("There is not enough recent data in this workspace for a brief yet. It appears once sources and keywords have collected records.", "Data terbaru di workspace ini belum cukup untuk ringkasan. Ringkasan muncul setelah sumber dan kata kunci mengumpulkan data.")}
         </p>
       ) : (

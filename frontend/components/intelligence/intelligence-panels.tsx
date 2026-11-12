@@ -62,8 +62,8 @@ function Pill({ tone, children }: { tone: string; children: React.ReactNode }) {
 function InsufficientData({ label }: { label: string }) {
   const t = useTranslations("IntelPanels");
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5 text-sm text-slate-600">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{label}</div>
+    <div className="py-3 text-sm text-slate-600">
+      <div className="text-[11px] font-semibold text-[#5A6478]">{label}</div>
       <div className="mt-1.5 text-[15px] font-medium text-slate-700">{t("insufficientTitle")}</div>
       <p className="mt-1 text-[13px] text-[#5A6478]">{t("insufficientDesc")}</p>
     </div>
@@ -142,8 +142,8 @@ export function TodaysIntelligenceStrip({ windowHours = 24 }: { windowHours?: nu
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{t("riskScore")}</div>
+      <div className="py-1">
+        <div className="text-[11px] font-semibold text-[#5A6478]">{t("riskScore")}</div>
         <p className="mt-0.5 text-[11px] leading-snug text-[#5A6478]">{t("riskScoreDesc", { hours: windowHours })}</p>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-[28px] font-bold leading-none text-slate-900">{riskScore ?? "—"}</span>
@@ -157,8 +157,8 @@ export function TodaysIntelligenceStrip({ windowHours = 24 }: { windowHours?: nu
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{t("reputation")}</div>
+      <div className="py-1">
+        <div className="text-[11px] font-semibold text-[#5A6478]">{t("reputation")}</div>
         <p className="mt-0.5 text-[11px] leading-snug text-[#5A6478]">{t("reputationDesc")}</p>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-[28px] font-bold leading-none text-slate-900">{repScore ?? "—"}</span>
@@ -169,20 +169,20 @@ export function TodaysIntelligenceStrip({ windowHours = 24 }: { windowHours?: nu
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{t("whatChanged")}</div>
+      <div className="py-1">
+        <div className="text-[11px] font-semibold text-[#5A6478]">{t("whatChanged")}</div>
         <p className="mt-0.5 text-[11px] leading-snug text-[#5A6478]">{t("whatChangedDesc", { hours: windowHours })}</p>
         <p className="mt-2 text-[13px] leading-snug text-slate-700 line-clamp-3">
           {whatChanged || (grounded === false ? t("insufficientTitle") : t("noChanges"))}
         </p>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{t("topRec")}</div>
+      <div className="py-1">
+        <div className="text-[11px] font-semibold text-[#5A6478]">{t("topRec")}</div>
         <p className="mt-0.5 text-[11px] leading-snug text-[#5A6478]">{t("topRecDesc")}</p>
         {topRec ? (
           <>
-            <p className="mt-2 text-[13px] font-semibold leading-snug text-slate-900 first-letter:uppercase">{code.action(topRec.action)}</p>
+            <p className="mt-2 text-[13px] font-semibold leading-snug text-slate-900 first-letter:">{code.action(topRec.action)}</p>
             <p className="mt-1 text-[12px] leading-snug text-slate-600 line-clamp-2">{topRec.reason}</p>
             <div className="mt-2 flex items-center gap-1.5">
               <Pill tone="text-slate-700 bg-slate-50 border-slate-200">{t("priority", { value: code.level(topRec.priority) })}</Pill>
@@ -212,10 +212,10 @@ export function NarrativeLandscapePanel({ windowHours = 168 }: { windowHours?: n
   const band = narrative.data.riskBand;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <div className="py-1">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{t("narrativeIntel")}</div>
+          <div className="text-[11px] font-semibold text-[#5A6478]">{t("narrativeIntel")}</div>
           <div className="mt-0.5 text-[15px] font-semibold text-slate-900">{t("lastHours", { hours: narrative.data.windowHours })}</div>
         </div>
         <Pill tone={RISK_TONE[band] || ""}>{RISK_TONE[band] ? t(`risk.${band}`) : "—"}</Pill>
@@ -237,7 +237,7 @@ export function NarrativeLandscapePanel({ windowHours = 168 }: { windowHours?: n
       </div>
 
       <div className="mt-4">
-        <div className="text-[12px] font-semibold uppercase tracking-wide text-[#5A6478]">{t("emerging")}</div>
+        <div className="text-[12px] font-semibold text-[#5A6478]">{t("emerging")}</div>
         {items.length === 0 ? (
           <p className="mt-1.5 text-[13px] text-[#5A6478]">{t("noEmerging")}</p>
         ) : (
@@ -265,7 +265,7 @@ function RiskExplanation({ model, score }: { model: RiskModelExplanation; score:
   return (
     <div className="mt-4 border-t border-slate-100 pt-4">
       <div className="flex items-center justify-between">
-        <div className="text-[12px] font-semibold uppercase tracking-wide text-[#5A6478]">{t("whyScore", { score })}</div>
+        <div className="text-[12px] font-semibold text-[#5A6478]">{t("whyScore", { score })}</div>
       </div>
       {drivers.length === 0 ? (
         <p className="mt-1.5 text-[13px] text-[#5A6478]">{t("noComponent")}</p>
@@ -317,10 +317,10 @@ export function ReputationPanel({ windowHours = 24 }: { windowHours?: number }) 
   const band = r.reputationBand;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <div className="py-1">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{t("reputation")}</div>
+          <div className="text-[11px] font-semibold text-[#5A6478]">{t("reputation")}</div>
           <div className="mt-0.5 text-[15px] font-semibold text-slate-900">{t("lastHours", { hours: r.windowHours })}</div>
         </div>
         <Pill tone={REP_TONE[band] || ""}>{REP_TONE[band] ? t(`rep.${band}`) : "—"}</Pill>
@@ -356,8 +356,8 @@ export function EntityPanel({ windowHours = 168, limit = 5 }: { windowHours?: nu
   const data = ent.data;
   if (!data || data.entities.length === 0) return <InsufficientData label={t("entityIntel")} />;
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{t("entityIntel")}</div>
+    <div className="py-1">
+      <div className="text-[11px] font-semibold text-[#5A6478]">{t("entityIntel")}</div>
       <div className="mt-0.5 text-[15px] font-semibold text-slate-900">{t("lastHours", { hours: windowHours })}</div>
       <ul className="mt-3 space-y-1.5">
         {data.entities.slice(0, limit).map((e) => (
@@ -399,16 +399,16 @@ export function PredictiveSignalsPanel({ windowHours = 24 }: { windowHours?: num
   const signals = data?.signals || [];
   if (signals.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5 text-sm text-slate-600">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{t("predictive")}</div>
+      <div className="py-3 text-sm text-slate-600">
+        <div className="text-[11px] font-semibold text-[#5A6478]">{t("predictive")}</div>
         <p className="mt-1.5 text-[15px] font-medium text-slate-700">{t("noPredictiveTitle")}</p>
         <p className="mt-1 text-[13px] text-[#5A6478]">{t("noPredictiveDesc")}</p>
       </div>
     );
   }
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{t("predictive")}</div>
+    <div className="py-1">
+      <div className="text-[11px] font-semibold text-[#5A6478]">{t("predictive")}</div>
       <p className="mt-1 text-[12px] text-[#5A6478]">{t("heuristicForecast")}</p>
       <ul className="mt-3 space-y-2">
         {signals.slice(0, 4).map((s, idx) => (
@@ -435,16 +435,16 @@ export function RecommendedActionsPanel({ windowHours = 24, limit = 5 }: { windo
     return <InsufficientData label={t("recommended")} />;
   }
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <div className="py-1">
       <div className="flex items-center justify-between">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{t("recommended")}</div>
+        <div className="text-[11px] font-semibold text-[#5A6478]">{t("recommended")}</div>
         <span className="text-[11px] text-[#5A6478]">{t("humanApproval")}</span>
       </div>
       <ul className="mt-3 space-y-2.5">
         {list.slice(0, limit).map((r, idx) => (
           <li key={`${r.action}-${idx}`} className="rounded-md border border-slate-100 bg-slate-50/60 p-3">
             <div className="flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-slate-900 first-letter:uppercase">{code.action(r.action)}</span>
+              <span className="text-[13px] font-semibold text-slate-900 first-letter:">{code.action(r.action)}</span>
               <span className="flex items-center gap-1.5">
                 <Pill tone="text-slate-700 bg-slate-50 border-slate-200">{code.level(r.priority)}</Pill>
                 <Pill tone="text-slate-700 bg-slate-50 border-slate-200">{code.urgency(r.urgency)}</Pill>

@@ -5,7 +5,7 @@
 
 import express from "express";
 import { verifyToken, verifyTokenSSE } from "../../middlewares/auth.middleware.js";
-import { getUserWorkspaceIds, resolveWorkspaceIdForUser, DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
+import { getUserWorkspaceIds, resolveWorkspaceIdForUser, demoWorkspaceIdFor } from "../../lib/workspace-access.js";
 import {
     addSSEConnection,
     removeSSEConnection,
@@ -29,7 +29,7 @@ router.get("/stream", (req, res, next) => (process.env.VERCEL ? res.status(204).
     // On Vercel a held-open stream bills the function continuously; clients poll instead (see app-notifications).
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
-        const workspaceId = workspaceIds[0] || (req.user.isDemo ? DEMO_WORKSPACE_ID : req.user.id);
+        const workspaceId = workspaceIds[0] || (req.user.isDemo ? demoWorkspaceIdFor(req.user.id) : req.user.id);
 
         // Set SSE headers
         res.setHeader("Content-Type", "text/event-stream");

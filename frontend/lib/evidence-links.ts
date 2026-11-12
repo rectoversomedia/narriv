@@ -17,6 +17,10 @@ export interface MonitoringFilters {
   sentiment?: SentimentFilter;
   analysis?: AnalysisFilter;
   platform?: string;
+  /** A province code (indonesia-regions.js on the API), e.g. "jatim". */
+  region?: string;
+  /** CVE workspaces: "flagged", "unclassified" or a category id. */
+  cve?: string;
   /** Search text, e.g. a monitoring keyword; it fills Monitoring's search box. */
   q?: string;
 }
@@ -33,7 +37,7 @@ function query(params: Record<string, string | number | undefined>) {
 }
 
 export function monitoringHref(f: MonitoringFilters = {}) {
-  return `/signals${query({ hours: f.hours, narrative: f.narrative, relevance: f.relevance, sentiment: f.sentiment, analysis: f.analysis, platform: f.platform, q: f.q })}`;
+  return `/signals${query({ hours: f.hours, narrative: f.narrative, relevance: f.relevance, sentiment: f.sentiment, analysis: f.analysis, platform: f.platform, region: f.region, cve: f.cve, q: f.q })}`;
 }
 
 /** Issues & Narratives works in days; 24 h is its 1-day view. */
@@ -61,6 +65,10 @@ export function parseMonitoringFilters(search: string): MonitoringFilters {
   if (analysis === "analyzed" || analysis === "pending") out.analysis = analysis;
   const platform = p.get("platform");
   if (platform && PLATFORM.test(platform)) out.platform = platform;
+  const region = p.get("region");
+  if (region && PLATFORM.test(region)) out.region = region;
+  const cve = p.get("cve");
+  if (cve && PLATFORM.test(cve)) out.cve = cve;
   const q = p.get("q")?.trim();
   if (q) out.q = q.slice(0, 80);
   return out;

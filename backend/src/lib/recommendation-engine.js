@@ -76,7 +76,7 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
     if (emergingNarratives > 0) {
         out.push({
             action: "monitor",
-            reason: tr(`${emergingNarratives} emerging narrative cluster(s) detected. Continue monitoring for further momentum.`, `${emergingNarratives} klaster narasi baru terdeteksi. Lanjutkan pemantauan untuk melihat perkembangannya.`),
+            reason: tr(`${emergingNarratives} new narrative(s) detected. Keep watching.`, `${emergingNarratives} narasi baru terdeteksi. Terus pantau.`),
             priority: "medium",
             urgency: "this_week",
             expectedOutcome: tr("Continued observation produces an updated brief within 24h.", "Pemantauan lanjutan menghasilkan briefing terbaru dalam 24 jam."),

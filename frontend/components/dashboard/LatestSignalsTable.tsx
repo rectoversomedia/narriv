@@ -41,7 +41,7 @@ export function LatestSignalsTable({ signals }: LatestSignalsTableProps) {
           </div>
         ) : (
           <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 sticky top-0 text-xs uppercase text-[#5A6478]">
+            <thead className="bg-slate-50 sticky top-0 text-xs text-[#5A6478]">
               <tr>
                 <th scope="col" className="px-4 py-3 font-semibold">Title</th>
                 <th scope="col" className="px-4 py-3 font-semibold">Platform</th>
@@ -63,7 +63,7 @@ export function LatestSignalsTable({ signals }: LatestSignalsTableProps) {
                     {signal.platform}
                   </td>
                   <td className="px-4 py-3.5">
-                    <span className={`px-2 py-1 rounded-md text-[10px] uppercase font-bold border ${getSentimentColor(signal.sentiment)}`}>
+                    <span className={`px-2 py-1 rounded-md text-[10px] font-bold border ${getSentimentColor(signal.sentiment)}`}>
                       {signal.sentiment}
                     </span>
                   </td>

@@ -29,6 +29,10 @@
     {
       "path": "/api/cron/demo-refresh",
       "schedule": "0 20 * * *"
+    },
+    {
+      "path": "/health",
+      "schedule": "*/5 * * * *"
     }
   ],
   "functions": {
@@ -36,5 +40,6 @@
       "maxDuration": 300
     }
   },
-  "buildCommand": "npm install --ignore-scripts --include=dev && npm run build"
+  "buildCommand": "npm install --ignore-scripts --include=dev && npm run build",
+  "fluid": true
 }

@@ -9,6 +9,7 @@ import { PlatformIcon } from "@/components/ui/platform-icon";
 import { getAlerts, getSignals, type Alert, type Signal } from "@/lib/api-service";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { intlLocale } from "@/store/useUiStore";
 
 // Peluang: the good news worth acting on, from the workspace's own records — alerts marked as an opportunity and
@@ -37,10 +38,11 @@ const shortDate = (value?: string | null) => {
 
 function Tile({ label, value, helper, tone }: { label: string; value: string; helper: string; tone: string }) {
   return (
-    <div className={cn("rounded-2xl p-4", tone)}>
-      <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] opacity-80">{label}</p>
-      <p className="mt-1 text-[28px] font-black leading-tight tracking-[-0.02em]">{value}</p>
-      <p className="mt-0.5 text-[12px] font-semibold opacity-80">{helper}</p>
+    // The tone colours the number only; no tinted tile.
+    <div className={cn("flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]", tone.replace(/\bbg-\S+/g, ""))}>
+      <p className="text-[36px] font-black leading-none tracking-[-0.03em]">{value}</p>
+      <p className="mt-2 text-[13px] font-bold text-[#101334]">{label}</p>
+      <p className="mt-0.5 text-[12px] font-semibold text-[#5F6B94]">{helper}</p>
     </div>
   );
 }
@@ -50,7 +52,7 @@ function OpportunityCard({ alert }: { alert: Alert }) {
   const priority = PRIORITY[String(alert.severity || "").toLowerCase()] ?? PRIORITY.low;
   const status = STATUS[String(alert.status || "open").toLowerCase()] ?? STATUS.open;
   return (
-    <Link href={`/alerts/${alert.id}`} className="group flex flex-col rounded-2xl bg-white p-5 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_8px_24px_rgba(16,19,52,0.05)] transition hover:shadow-[0_12px_32px_rgba(16,19,52,0.1)]">
+    <Link href={`/alerts/${alert.id}`} className="group flex flex-col border-b border-[#E6EAF2] py-4">
       <div className="flex items-center justify-between gap-2">
         <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-bold", priority.tone)}>{L(priority.en, priority.id)}</span>
         <span className="text-[12px] font-semibold text-[#5F6B94]">{shortDate(alert.createdAt)}</span>
@@ -58,10 +60,10 @@ function OpportunityCard({ alert }: { alert: Alert }) {
       <h3 className="mt-3 text-[16px] font-bold leading-snug text-[#101334]">{alert.title}</h3>
       {alert.whatHappened ? <p className="mt-1.5 line-clamp-3 text-[13px] leading-relaxed text-[#5F6B94]">{alert.whatHappened}</p> : null}
       {alert.whatToDo ? (
-        <div className="mt-3 rounded-xl bg-[#E8F7F0] p-3">
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#047857]">{L("What to do", "Yang bisa dilakukan")}</p>
-          <p className="mt-1 line-clamp-3 text-[13px] font-medium text-[#101334]">{alert.whatToDo}</p>
-        </div>
+        <p className="mt-3 line-clamp-3 text-[14px] font-semibold text-[#101334]">
+          <span className="mr-1.5 rounded-full bg-[#047857] px-2.5 py-0.5 text-[11px] font-black text-white">{L("What to Do", "Yang Bisa Dilakukan")}</span>
+          {alert.whatToDo}
+        </p>
       ) : null}
       <div className="mt-auto flex items-center justify-between gap-2 pt-4 text-[12px]">
         <span className="font-semibold text-[#31406B]">{alert.assignedTo || alert.assignedTeam || L("No owner yet", "Belum ada penanggung jawab")} · <span className="text-[#5F6B94]">{L(...status)}</span></span>
@@ -111,13 +113,13 @@ export default function OpportunitiesPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Opportunities", "Peluang")}</h1>
-        <p className="mt-1 text-[14px] text-[#5F6B94]">{L("Good news worth using: praise, positive coverage and moments to step in.", "Kabar baik yang bisa dimanfaatkan: pujian, liputan positif, dan momen untuk ambil peran.")}</p>
+        <p className="mt-1 text-[14px] text-[#5F6B94]">{L("Good news worth using.", "Kabar baik yang bisa dimanfaatkan.")}</p>
       </div>
 
       {loading ? (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-[104px] rounded-2xl" />)}</div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
           <Tile label={L("Open opportunities", "Peluang terbuka")} value={String(open.length)} helper={L(`of ${alerts.length} recorded`, `dari ${alerts.length} tercatat`)} tone="bg-[#E8F7F0] text-[#065F46]" />
           <Tile label={L("Without an owner", "Belum ada pemilik")} value={String(unowned)} helper={unowned ? L("assign someone", "tunjuk penanggung jawab") : L("all assigned", "semua sudah ada pemilik")} tone={unowned ? "bg-[#FEF6E4] text-[#92400E]" : "bg-[#F1F3F8] text-[#31406B]"} />
           <Tile label={L("Positive mentions", "Percakapan positif")} value={String(positiveTotal)} helper={L(`last ${DAYS} days`, `${DAYS} hari terakhir`)} tone="bg-[#EEF1FF] text-[#2B3FD6]" />
@@ -125,7 +127,7 @@ export default function OpportunitiesPage() {
         </div>
       )}
 
-      <section>
+      <section className={BOX}>
         <div className="mb-3 flex items-end justify-between gap-3">
           <h2 className="text-[18px] font-bold text-[#101334]">{L("Flagged opportunities", "Peluang yang ditandai")}</h2>
           <Link href="/alerts" className="text-[13px] font-bold text-[#3B52F5] hover:underline">{L("All alerts", "Semua peringatan")}</Link>
@@ -143,7 +145,7 @@ export default function OpportunitiesPage() {
         )}
       </section>
 
-      <section className="rounded-2xl bg-white p-4 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_8px_24px_rgba(16,19,52,0.05)] sm:p-5">
+      <section className={BOX}>
         <div className="mb-2 flex items-end justify-between gap-3 px-1">
           <h2 className="text-[18px] font-bold text-[#101334]">{L("Latest good news", "Kabar baik terbaru")}</h2>
           <Link href="/signals" className="text-[13px] font-bold text-[#3B52F5] hover:underline">{L("All mentions", "Semua percakapan")}</Link>

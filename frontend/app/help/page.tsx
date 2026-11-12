@@ -16,20 +16,20 @@ const groups: Group[] = [
     id: "start",
     icon: Zap,
     color: "bg-blue-500",
-    title: ["Getting started", "Memulai"],
+    title: ["Getting Started", "Memulai"],
     faqs: [
       {
-        q: ["How do I get started with Narriv?", "Bagaimana cara mulai memakai Narriv?"],
+        q: ["How Do I Get Started With Narriv?", "Bagaimana Cara Mulai Menggunakan Narriv?"],
         a: [
-          "Create an account and complete onboarding, then add monitoring keywords in Settings → Monitoring Keywords. Scheduled monitoring runs every hour and collects news for up to 3 active keywords per workspace. Narratives, risk and recommendations are built from the signals it stores.",
+          "Create an account and complete onboarding, then add monitoring keywords in Settings → Monitoring Keywords. Scheduled monitoring runs every hour and collects news for up to 3 active keywords per workspace. Narratives, risk scores and recommendations are built from the mentions it stores.",
           "Buat akun dan selesaikan onboarding, lalu tambahkan kata kunci di Pengaturan → Kata Kunci Pemantauan. Pemantauan terjadwal berjalan setiap jam dan mengumpulkan berita untuk maksimal 3 kata kunci aktif per workspace. Narasi, risiko, dan rekomendasi disusun dari percakapan yang tersimpan.",
         ],
       },
       {
-        q: ["Can I ask Narriv questions about my data?", "Bisakah saya bertanya ke Narriv tentang data saya?"],
+        q: ["Can I Ask Narriv Questions About My Data?", "Apakah Saya Dapat Bertanya ke Narriv tentang Data Saya?"],
         a: [
-          "Yes. Ask Narriv answers using only your workspace's signals, alerts and narratives, and shows which records it used. If the data cannot support an answer, it says so.",
-          "Bisa. Tanya Narriv menjawab hanya dari percakapan, peringatan, dan narasi di workspace Anda, dan menunjukkan data mana yang dipakai. Kalau datanya belum cukup, Narriv akan bilang terus terang.",
+          "Yes. Ask Narriv answers using only your workspace's mentions, alerts and narratives, and cites the records it used. When the data is insufficient, it states so clearly.",
+          "Ya. Tanya Narriv menjawab hanya berdasarkan percakapan, peringatan, dan narasi di workspace Anda, serta mencantumkan data yang digunakan. Jika data belum memadai, Narriv akan menyampaikannya dengan jelas.",
         ],
       },
     ],
@@ -38,27 +38,27 @@ const groups: Group[] = [
     id: "signals",
     icon: BarChart3,
     color: "bg-green-500",
-    title: ["Mentions & data sources", "Percakapan & sumber data"],
+    title: ["Mentions & Data Sources", "Percakapan & Sumber Data"],
     faqs: [
       {
-        q: ["What data sources does Narriv support?", "Sumber data apa saja yang didukung Narriv?"],
+        q: ["Which Data Sources Does Narriv Support?", "Sumber Data Apa Saja yang Didukung Narriv?"],
         a: [
-          "Online news and YouTube are checked every hour for your first three active keywords. Instagram, TikTok, X and Facebook are switched on by the Narriv team for your plan. The Data Sources page shows each source's real status.",
-          "Berita online dan YouTube dicek setiap jam untuk tiga kata kunci aktif pertama Anda. Instagram, TikTok, X, dan Facebook diaktifkan oleh tim Narriv sesuai paket. Halaman Sumber Data menampilkan status sebenarnya dari tiap sumber.",
+          "Online news and YouTube are monitored every hour for your first three active keywords. Instagram, TikTok, X and Facebook are switched on by the Narriv team for your plan. The Data Sources page shows each source's real status.",
+          "Berita online dan YouTube dipantau setiap jam untuk tiga kata kunci aktif pertama Anda. Instagram, TikTok, X, dan Facebook diaktifkan oleh tim Narriv sesuai paket. Halaman Sumber Data menampilkan status sebenarnya dari tiap sumber.",
         ],
       },
       {
-        q: ["How does sentiment analysis work?", "Bagaimana analisis sentimen bekerja?"],
+        q: ["How Does Sentiment Analysis Work?", "Bagaimana Analisis Sentimen Bekerja?"],
         a: [
-          "Each new signal is analysed by an AI model that assigns a sentiment and a confidence score. Signals that have not been analysed yet are shown as \"Not analysed\" instead of getting a default sentiment. Review AI assessments together with the linked sources.",
+          "Each new mention is analysed by an AI model that assigns a sentiment and a confidence score. Mentions that have not been analysed yet are shown as \"Not analysed\" instead of getting a default sentiment. Review AI assessments together with the linked sources.",
           "Setiap percakapan baru dianalisis model AI yang memberi sentimen dan skor keyakinan. Percakapan yang belum dianalisis ditampilkan sebagai \"Belum dianalisis\", bukan diberi sentimen bawaan. Tinjau penilaian AI bersama tautan sumbernya.",
         ],
       },
       {
-        q: ["Can I pause monitoring?", "Bisakah pemantauan dijeda?"],
+        q: ["Can I Pause Monitoring?", "Apakah Pemantauan Dapat Dijeda?"],
         a: [
           "Yes. Owners and admins can pause scheduled collection in Settings → Danger Zone. Existing data stays, and you can resume at any time.",
-          "Bisa. Pemilik dan admin dapat menjeda pengambilan data terjadwal di Pengaturan → Zona Berbahaya. Data yang sudah ada tetap tersimpan, dan pemantauan bisa dilanjutkan kapan saja.",
+          "Ya. Pemilik dan admin dapat menjeda pengambilan data terjadwal di Pengaturan → Zona Berbahaya. Data yang sudah ada tetap tersimpan, dan pemantauan bisa dilanjutkan kapan saja.",
         ],
       },
     ],
@@ -67,27 +67,27 @@ const groups: Group[] = [
     id: "alerts",
     icon: Bell,
     color: "bg-red-500",
-    title: ["Alerts & escalation", "Peringatan & eskalasi"],
+    title: ["Alerts & Escalation", "Peringatan & Eskalasi"],
     faqs: [
       {
-        q: ["How do alerts work?", "Bagaimana peringatan bekerja?"],
+        q: ["How Do Alerts Work?", "Bagaimana Peringatan Bekerja?"],
         a: [
-          "Narriv raises alerts automatically when it detects a qualifying spike in negative coverage, with links to the signals involved. You can also create alerts manually, assign them to a member and team, and set a deadline.",
-          "Narriv membuat peringatan otomatis saat mendeteksi lonjakan pemberitaan negatif yang signifikan, lengkap dengan tautan ke percakapannya. Anda juga bisa membuat peringatan manual, menugaskannya ke anggota dan tim, serta memberi tenggat.",
+          "Narriv raises alerts automatically when it detects a qualifying spike in negative coverage, with links to the mentions involved. You can also create alerts manually, assign them to a member and team, and set a deadline.",
+          "Narriv membuat peringatan otomatis saat mendeteksi lonjakan pemberitaan negatif yang signifikan, lengkap dengan tautan ke percakapannya. Anda juga dapat membuat peringatan secara manual, menugaskannya ke anggota dan tim, serta menetapkan tenggat.",
         ],
       },
       {
-        q: ["What does the escalation matrix do?", "Apa fungsi matriks eskalasi?"],
+        q: ["What Does the Escalation Matrix Do?", "Apa Fungsi Matriks Eskalasi?"],
         a: [
           "It defines escalation levels (L1, L2, …), the role responsible at each level and its SLA. Unresolved alerts past their deadline move up a level in the daily check.",
           "Matriks eskalasi menentukan tingkat eskalasi (L1, L2, …), peran penanggung jawab di tiap tingkat, dan SLA-nya. Peringatan yang belum selesai dan melewati tenggat naik satu tingkat pada pemeriksaan harian.",
         ],
       },
       {
-        q: ["Where are notifications sent?", "Notifikasi dikirim ke mana?"],
+        q: ["Where Are Notifications Sent?", "Ke Mana Notifikasi Dikirim?"],
         a: [
           "Alerts always appear in Narriv. They also go to email when it is switched on in the notification settings, and to Slack, Microsoft Teams or a webhook connected on the Integrations page. WhatsApp is coming soon.",
-          "Peringatan selalu muncul di Narriv. Peringatan juga dikirim ke email bila dinyalakan di pengaturan notifikasi, serta ke Slack, Microsoft Teams, atau webhook yang disambungkan di halaman Integrasi. WhatsApp segera hadir.",
+          "Peringatan selalu muncul di Narriv. Peringatan juga dikirim ke email bila diaktifkan di pengaturan notifikasi, serta ke Slack, Microsoft Teams, atau webhook yang disambungkan di halaman Integrasi. WhatsApp segera hadir.",
         ],
       },
     ],
@@ -96,20 +96,20 @@ const groups: Group[] = [
     id: "reports",
     icon: FileText,
     color: "bg-amber-500",
-    title: ["Reports & exports", "Laporan & ekspor"],
+    title: ["Reports & Exports", "Laporan & Ekspor"],
     faqs: [
       {
-        q: ["How do scheduled reports work?", "Bagaimana laporan terjadwal bekerja?"],
+        q: ["How Do Scheduled Reports Work?", "Bagaimana Laporan Terjadwal Bekerja?"],
         a: [
           "Create a schedule on the Reports page (daily, weekly or monthly, with a time in WIB). Due schedules are generated by the daily job and appear in the report list.",
-          "Buat jadwal di halaman Laporan (harian, mingguan, atau bulanan, dengan jam WIB). Jadwal yang sudah waktunya dibuat oleh proses harian dan muncul di daftar laporan.",
+          "Buat jadwal di halaman Laporan (harian, mingguan, atau bulanan, dengan jam WIB). Laporan yang sudah jatuh tempo dibuat oleh proses harian dan muncul di daftar laporan.",
         ],
       },
       {
-        q: ["What export formats are available?", "Format ekspor apa saja yang tersedia?"],
+        q: ["Which Export Formats Are Available?", "Format Ekspor Apa Saja yang Tersedia?"],
         a: [
-          "Signals: CSV or Excel from the Signals page. Reports: CSV, Excel or PDF from the Reports page; PDF and JSON downloads use a secure link that expires after one hour. The Daily Brief can be printed or saved as PDF from your browser.",
-          "Percakapan: CSV atau Excel dari halaman Percakapan. Laporan: CSV, Excel, atau PDF dari halaman Laporan; unduhan PDF dan JSON memakai tautan aman yang berlaku satu jam. Brief Harian bisa dicetak atau disimpan sebagai PDF dari browser.",
+          "Mentions: CSV or Excel from the Mentions page. Reports: CSV, Excel or PDF from the Reports page; PDF and JSON downloads use a secure link that expires after one hour. The Daily Brief can be printed or saved as PDF from your browser.",
+          "Percakapan: CSV atau Excel dari halaman Percakapan. Laporan: CSV, Excel, atau PDF dari halaman Laporan; unduhan PDF dan JSON memakai tautan aman yang berlaku satu jam. Briefing Harian dapat dicetak atau disimpan sebagai PDF dari browser.",
         ],
       },
     ],
@@ -118,20 +118,20 @@ const groups: Group[] = [
     id: "team",
     icon: Users,
     color: "bg-teal-500",
-    title: ["Team & access", "Tim & akses"],
+    title: ["Team & Access", "Tim & Akses"],
     faqs: [
       {
-        q: ["How do I add team members?", "Bagaimana cara menambah anggota tim?"],
+        q: ["How Do I Add Team Members?", "Bagaimana Cara Menambah Anggota Tim?"],
         a: [
           "Go to Settings → User & Access Management and add a registered user by email. Roles are Owner, Admin and Analyst; only owners and admins can change members, settings and monitoring keywords.",
-          "Buka Pengaturan → Manajemen Pengguna & Akses lalu tambahkan pengguna terdaftar lewat email. Perannya Pemilik, Admin, dan Analis; hanya pemilik dan admin yang bisa mengubah anggota, pengaturan, dan kata kunci.",
+          "Buka Pengaturan → Manajemen Pengguna & Akses lalu tambahkan pengguna terdaftar lewat email. Tersedia peran Pemilik, Admin, dan Analis; hanya pemilik dan admin yang dapat mengubah anggota, pengaturan, dan kata kunci.",
         ],
       },
       {
-        q: ["Can I see who changed what?", "Bisakah saya melihat siapa mengubah apa?"],
+        q: ["Can I See Who Changed What?", "Apakah Perubahan Tercatat?"],
         a: [
           "Yes. The activity history records sign-ins, setting changes, alert assignments, exports and other actions per workspace.",
-          "Bisa. Riwayat Aktivitas mencatat login, perubahan pengaturan, penugasan peringatan, ekspor, dan aksi lain per workspace.",
+          "Ya. Riwayat Aktivitas mencatat login, perubahan pengaturan, penugasan peringatan, ekspor, dan aksi lain per workspace.",
         ],
       },
     ],
@@ -143,16 +143,16 @@ const groups: Group[] = [
     title: ["Workspace", "Workspace"],
     faqs: [
       {
-        q: ["Which language does Narriv write in?", "Narriv menulis dalam bahasa apa?"],
+        q: ["Which Language Does Narriv Write In?", "Narriv Menggunakan Bahasa Apa?"],
         a: [
           "The interface follows the language switch at the top. Content Narriv stores, such as alert titles, follows the workspace language in Settings → Workspace Information.",
           "Tampilan mengikuti pilihan bahasa di bagian atas. Konten yang disimpan Narriv, seperti judul peringatan, mengikuti bahasa workspace di Pengaturan → Informasi Workspace.",
         ],
       },
       {
-        q: ["How do I delete a workspace?", "Bagaimana cara menghapus workspace?"],
+        q: ["How Do I Delete a Workspace?", "Bagaimana Cara Menghapus Workspace?"],
         a: [
-          "The owner can delete an empty workspace in Settings → Danger Zone. A workspace that already holds signals, alerts or reports is deleted by the Narriv team, so no data is lost by accident.",
+          "The owner can delete an empty workspace in Settings → Danger Zone. A workspace that already holds mentions, alerts or reports is deleted by the Narriv team, so no data is lost by accident.",
           "Pemilik dapat menghapus workspace yang masih kosong di Pengaturan → Zona Berbahaya. Workspace yang sudah berisi percakapan, peringatan, atau laporan dihapus lewat tim Narriv, agar tidak ada data yang hilang tanpa sengaja.",
         ],
       },
@@ -180,15 +180,15 @@ export default function HelpCenterPage() {
         <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.35),transparent)]" />
         <SiteHeader />
         <div className="relative mx-auto max-w-4xl px-4 pt-8 text-center sm:px-6">
-          <h1 className="text-[34px] font-black leading-tight tracking-[-0.03em] sm:text-[46px]">{L("How can", "Ada yang bisa")}{" "}<span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", SERIF)}>{L("we help?", "kami bantu?")}</span></h1>
+          <h1 className="text-[34px] font-black leading-tight tracking-[-0.03em] sm:text-[46px]">{L("How Can", "Ada yang Bisa")}{" "}<span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", SERIF)}>{L("We Help?", "Kami Bantu?")}</span></h1>
           <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/75">
-            {L("Search the answers below or pick a topic.", "Cari jawaban di bawah atau pilih topik.")}
+            {L("Search the answers below or choose a topic.", "Cari jawaban di bawah atau pilih topik.")}
           </p>
           <div className="relative mx-auto mt-8 max-w-xl">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#465FFF]" size={20} aria-hidden="true" />
             <input
               type="text"
-              placeholder={L("Search for answers…", "Cari jawaban…")}
+              placeholder={L("Search Answers…", "Cari Jawaban…")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-14 w-full rounded-2xl bg-white pl-12 pr-4 text-[15px] font-medium text-[#101334] shadow-[0_12px_32px_rgba(8,10,40,0.35)] placeholder:text-[#8A93B5] focus:outline-none focus:ring-4 focus:ring-[#465FFF]/30"
@@ -205,7 +205,7 @@ export default function HelpCenterPage() {
               onClick={() => setActiveGroup(null)}
               className={`rounded-full px-4 py-2 text-sm font-bold transition ${!activeGroup ? "bg-[#465FFF] text-white shadow-[0_3px_8px_rgba(70,95,255,0.3)]" : "bg-white text-[#31406B] shadow-sm hover:text-[#101334]"}`}
             >
-              {L("All topics", "Semua topik")}
+              {L("All Topics", "Semua Topik")}
             </button>
             {groups.map((g) => {
               const active = activeGroup === g.id;
@@ -224,7 +224,7 @@ export default function HelpCenterPage() {
 
           <div className="mt-10 space-y-10">
             {visibleGroups.length === 0 ? (
-              <p className="text-sm text-[#5A6478]">{L("No answers match. Contact support below.", "Tidak ada jawaban yang cocok. Hubungi dukungan di bawah.")}</p>
+              <p className="text-sm text-[#5A6478]">{L("No matching answers. Please contact our support team below.", "Tidak ada jawaban yang sesuai. Silakan hubungi tim dukungan kami di bawah.")}</p>
             ) : (
               visibleGroups.map((g) => {
                 return (
@@ -263,8 +263,8 @@ export default function HelpCenterPage() {
 
         <section id="contact" className="mx-auto mt-16 max-w-4xl scroll-mt-24">
           <div className="rounded-[28px] bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] p-8 text-center text-white sm:p-10">
-            <h2 className="text-2xl font-bold">{L("Talk to us", "Hubungi kami")}</h2>
-            <p className="mt-2 text-white/75">{L("Questions about Narriv, a trial or a plan? Message us.", "Ada pertanyaan soal Narriv, uji coba, atau paket? Kirim pesan ke kami.")}</p>
+            <h2 className="text-2xl font-bold">{L("Contact Us", "Hubungi Kami")}</h2>
+            <p className="mt-2 text-white/75">{L("Questions about Narriv, a trial or a plan? Get in touch with our team.", "Ada pertanyaan seputar Narriv, uji coba, atau paket? Hubungi tim kami.")}</p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <a
                 href={SUPPORT_WHATSAPP_URL}

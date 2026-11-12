@@ -110,7 +110,7 @@ async function dispatchByEnabledChannels({
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 /** The alert email: severity, title, what happened, the next step and a button to the alert, in the workspace language. */
-function alertEmailHtml({ lang, brandName, alertId, title, severity, whatHappened, whatToDo }) {
+export function alertEmailHtml({ lang, brandName, alertId, title, severity, whatHappened, whatToDo }) {
     const id = lang !== "en";
     const sev = { critical: id ? "KRITIS" : "CRITICAL", high: id ? "TINGGI" : "HIGH" }[severity] || (id ? "PERINGATAN" : "ALERT");
     const appUrl = (process.env.FRONTEND_URL || process.env.APP_URL || "https://www.narriv.digital").replace(/\/$/, "");

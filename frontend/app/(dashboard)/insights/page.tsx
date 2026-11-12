@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { getTrend } from "@/lib/intelligence-api";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { NarrativeLandscapePanel, ReputationPanel, EntityPanel, PredictiveSignalsPanel } from "@/components/intelligence/intelligence-panels";
 
 // "Analisis": why today's numbers are what they are — the risk score's drivers, reputation, who is mentioned,
@@ -34,8 +35,8 @@ function TrendPanel({ windowHours }: { windowHours: number }) {
   const trend = q.data;
   const label = trend && !trend.note ? TREND_LABEL[String(trend.status).toUpperCase()] : undefined;
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{L("Conversation volume", "Volume percakapan")}</div>
+    <div className="py-1">
+      <div className="text-[11px] font-semibold text-[#5A6478]">{L("Conversation volume", "Volume percakapan")}</div>
       {label ? (
         <>
           <span className={cn("mt-3 inline-block rounded-full px-3 py-1 text-[14px] font-bold", label.tone)}>{L(label.en, label.id)}</span>
@@ -64,7 +65,7 @@ export default function InsightsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Analysis", "Analisis")}</h1>
-          <p className="mt-1 text-[14px] text-[#5F6B94]">{L("Why the risk score is what it is, and what may come next.", "Kenapa skor risiko segini, dan apa yang mungkin terjadi berikutnya.")}</p>
+          <p className="mt-1 text-[14px] text-[#5F6B94]">{L("What drives the risk score, and what comes next.", "Penyebab skor risiko dan prediksinya.")}</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex rounded-[10px] bg-white p-1 shadow-sm" role="group" aria-label={L("Period", "Periode")}>
@@ -93,14 +94,14 @@ export default function InsightsPage() {
 
       {/* The score breakdown is tall; the short panels stack beside it instead of leaving gaps under it. */}
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        <NarrativeLandscapePanel windowHours={win.hours} />
+        <div className={BOX}><NarrativeLandscapePanel windowHours={win.hours} /></div>
         <div className="flex flex-col gap-4">
-          <ReputationPanel windowHours={win.hours} />
-          <TrendPanel windowHours={win.hours} />
+          <div className={BOX}><ReputationPanel windowHours={win.hours} /></div>
+          <div className={BOX}><TrendPanel windowHours={win.hours} /></div>
         </div>
         <div className="flex flex-col gap-4 lg:col-span-2 xl:col-span-1">
-          <PredictiveSignalsPanel windowHours={win.hours} />
-          <EntityPanel windowHours={win.hours} limit={8} />
+          <div className={BOX}><PredictiveSignalsPanel windowHours={win.hours} /></div>
+          <div className={BOX}><EntityPanel windowHours={win.hours} limit={8} /></div>
         </div>
       </div>
     </div>

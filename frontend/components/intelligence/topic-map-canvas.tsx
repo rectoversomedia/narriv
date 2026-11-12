@@ -112,7 +112,7 @@ export function TopicMapCanvas({
 
       <div className="pointer-events-none absolute bottom-2 left-14 right-3 flex flex-wrap justify-between gap-x-4 gap-y-1 text-[11px] font-medium text-[#5A6478]">
         <span>{nodes.length > visible.length ? pickL(`Showing the ${visible.length} largest of ${nodes.length} narratives.`, `Menampilkan ${visible.length} narasi terbesar dari ${nodes.length}.`) : null}</span>
-        <span>{visible.length > 1 && edges.length === 0 ? pickL("No narratives share evidence in this period, so no connections are drawn.", "Belum ada narasi yang berbagi bukti pada periode ini, jadi tidak ada garis hubungan.") : null}</span>
+        <span>{visible.length > 1 && edges.length === 0 ? pickL("No links between narratives yet.", "Belum ada hubungan antar narasi.") : null}</span>
       </div>
     </div>
   );
@@ -146,7 +146,7 @@ function MapNodeButton({ node, placed, colors, selected, onSelect, signalLabel }
       >
         <span className="flex flex-col items-center text-center text-white" style={{ width: r * 1.45 }}>
           <span className="font-black tabular-nums leading-none [text-shadow:0_2px_6px_rgba(0,0,0,0.18)]" style={{ fontSize: numberSize }}>{node.signals}</span>
-          <span className="mt-0.5 font-bold uppercase tracking-[0.08em] text-white/85" style={{ fontSize: Math.max(8, titleSize - 2.5) }}>{signalLabel(node.signals).replace(/^\d+\s*/, "")}</span>
+          <span className="mt-0.5 font-bold text-white/85" style={{ fontSize: Math.max(8, titleSize - 2.5) }}>{signalLabel(node.signals).replace(/^\d+\s*/, "")}</span>
           {showTitle ? (
             <span
               className="mt-1.5 font-bold leading-[1.2] text-white"

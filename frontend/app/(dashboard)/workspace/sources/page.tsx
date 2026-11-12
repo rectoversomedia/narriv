@@ -17,6 +17,7 @@ import { usePlatformCollections } from "@/components/dashboard/platform-collecti
 import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { intlLocale } from "@/store/useUiStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
@@ -183,10 +184,10 @@ function formatCompact(value: number) {
   return value >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}K` : String(value);
 }
 
-function Tile({ label, value, sub, rgb, color }: { label: string; value: string; sub: string; rgb: string; color: string }) {
+function Tile({ label, value, sub, rgb: _rgb, color }: { label: string; value: string; sub: string; rgb: string; color: string }) {
   return (
-    <div className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${rgb},0.12), rgba(${rgb},0.02) 60%)` }}>
-      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color }}>{label}</p>
+    <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+      <p className="text-[11px] font-black" style={{ color }}>{label}</p>
       <p className="mt-2 truncate text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
       <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{sub}</p>
     </div>
@@ -208,7 +209,7 @@ function CollectionBanner({ problems, active, total }: { problems: number; activ
   return (
     <section className="flex flex-wrap items-center justify-between gap-4 rounded-[16px] p-5 text-white shadow-[0_12px_32px_rgba(16,19,52,0.16)]" style={{ background: total === 0 ? "linear-gradient(135deg,#334155,#64748B)" : ok ? "linear-gradient(135deg,#065F46,#12A66A)" : "linear-gradient(135deg,#7F1D1D,#C81E1E)" }}>
       <div className="min-w-0">
-        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/70">{pickL("Data collection", "Pengambilan data")}</p>
+        <p className="text-[11px] font-black text-white/70">{pickL("Data collection", "Pengambilan data")}</p>
         <p className="mt-1 text-[24px] font-black leading-tight">{headline}</p>
         <p className="mt-1 text-[13px] font-bold text-white/85">
           {ws
@@ -218,7 +219,7 @@ function CollectionBanner({ problems, active, total }: { problems: number; activ
         </p>
       </div>
       <div className="rounded-[12px] bg-white/[0.12] px-4 py-3 text-right">
-        <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/70">{pickL("Schedule", "Jadwal")}</p>
+        <p className="text-[10px] font-black text-white/70">{pickL("Schedule", "Jadwal")}</p>
         <p className="text-[15px] font-black">{pickL("Every hour", "Setiap jam")}</p>
       </div>
     </section>
@@ -232,7 +233,7 @@ function SocialAutoCard() {
   if (!s) return null;
   const names: Record<string, string> = { x: "X", tiktok: "TikTok", instagram: "Instagram", youtube: "YouTube", facebook: "Facebook", threads: "Threads" };
   return (
-    <div className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+    <div className="py-1">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("Social media, automatic", "Media sosial otomatis")}</h2>
         <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-black", s.crisis ? "bg-[#C81E1E] text-white" : s.enabled ? "bg-[#12A66A] text-white" : "bg-[#EEF1F6] text-[#5A6478]")}>
@@ -252,7 +253,7 @@ function SocialAutoCard() {
           {s.lastScheduledAt ? <p className="mt-1 text-[11px] font-bold text-[#8A93AD]">{pickL("last run", "terakhir")} {formatSourceTime(s.lastScheduledAt)}</p> : null}
         </>
       ) : (
-        <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{pickL("Scheduled X, TikTok and Instagram collection is set up by the Narriv team. Contact us to switch it on.", "Pengambilan terjadwal X, TikTok, dan Instagram diatur oleh tim Narriv. Hubungi kami untuk mengaktifkannya.")}</p>
+        <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{pickL("X, TikTok and Instagram are switched on by the Narriv team.", "X, TikTok, dan Instagram diaktifkan oleh tim Narriv.")}</p>
       )}
     </div>
   );
@@ -279,11 +280,11 @@ function SourceRow({ source, volume, maxVolume, onToggle, onDelete, onSync, sync
         <div className="mt-1 h-2 rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full bg-[#465FFF]" style={{ width: `${volume ? Math.max(4, (volume / maxVolume) * 100) : 0}%` }} /></div>
       </div>
       <div className="text-[11px] font-bold text-[#5A6478]">
-        <p className="text-[10px] font-black uppercase tracking-[0.06em] text-[#8A93AD]">{pickL("Last ok", "Terakhir ok")}</p>
+        <p className="text-[10px] font-black text-[#8A93AD]">{pickL("Last ok", "Terakhir ok")}</p>
         <p className="text-[13px] font-black text-[#101334]">{source.health}</p>
       </div>
       <div className="flex items-center gap-1.5">
-        <button type="button" onClick={onSync} disabled={syncing || !source.active} title={pickL("Collect now", "Ambil sekarang")} className="flex size-9 items-center justify-center rounded-[9px] bg-[#EEF1FF] text-[#3B52F5] transition hover:bg-[#E1E6FF] disabled:opacity-40"><RotateCw size={15} className={syncing ? "animate-spin" : ""} /></button>
+        <button type="button" onClick={onSync} disabled={syncing || !source.active} title={pickL("Collect Now", "Ambil Sekarang")} className="flex size-9 items-center justify-center rounded-[9px] bg-[#EEF1FF] text-[#3B52F5] transition hover:bg-[#E1E6FF] disabled:opacity-40"><RotateCw size={15} className={syncing ? "animate-spin" : ""} /></button>
         <button type="button" role="switch" aria-checked={source.active} onClick={onToggle} title={source.active ? pickL("Pause", "Jeda") : pickL("Resume", "Aktifkan")} className={cn("relative h-6 w-11 rounded-full transition", source.active ? "bg-[#12A66A]" : "bg-[#CBD2E1]")}>
           <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-all", source.active ? "left-[22px]" : "left-0.5")} />
         </button>
@@ -483,7 +484,7 @@ export default function SourcesPage() {
         <h1 className="text-[28px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{t("title")}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={handleFetchLatestSignals} disabled={isFetchingSignals} className="h-10 rounded-[10px] bg-white px-4 text-[13px] font-black text-[#101334] shadow-sm transition hover:bg-[#F8FAFF] disabled:opacity-60">
-            {isFetchingSignals ? pickL("Fetching…", "Mengambil…") : pickL("Fetch latest news", "Ambil berita terbaru")}
+            {isFetchingSignals ? pickL("Fetching…", "Mengambil…") : pickL("Fetch Latest News", "Ambil Berita Terbaru")}
           </button>
           <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="h-10 rounded-[10px] bg-[#465FFF] px-4 text-[13px] font-black text-white shadow-sm transition hover:bg-[#3B52F5] disabled:opacity-60">
             {bootstrapMutation.isPending ? toast("bootstrapInProgress") : pickL("Add source", "Tambah sumber")}
@@ -501,11 +502,11 @@ export default function SourcesPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="min-w-0 rounded-[16px] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+        <div className={cn("min-w-0 !p-0", BOX)}>
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5">
             <div>
               <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("Sources watched", "Sumber yang dipantau")}</h2>
-              <p className="text-[12px] font-bold text-[#5A6478]">{pickL("Busiest first. The bar is records in the last 7 days.", "Urut dari yang paling ramai. Batang = percakapan 7 hari terakhir.")}</p>
+              <p className="text-[12px] font-bold text-[#5A6478]">{pickL("Mentions in the last 7 days.", "Percakapan 7 hari terakhir.")}</p>
             </div>
             <div className="flex items-center gap-2">
               {liveConnectors.length > 6 ? (
@@ -521,7 +522,7 @@ export default function SourcesPage() {
                 disabled={syncAllMutation.isPending || sourcesQuery.isPending}
                 className="h-9 rounded-[9px] bg-[#101334] px-3.5 text-[12px] font-black text-white transition hover:bg-[#1F2452] disabled:opacity-50"
               >
-                {syncAllMutation.isPending ? toast("syncAllInProgress") : pickL("Collect all now", "Ambil semua sekarang")}
+                {syncAllMutation.isPending ? toast("syncAllInProgress") : pickL("Collect All Now", "Ambil Semua Sekarang")}
               </button>
             </div>
           </div>
@@ -550,7 +551,7 @@ export default function SourcesPage() {
 
         <aside className="flex flex-col gap-4">
           <SocialAutoCard />
-          <div className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+          <div className="py-1">
             <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("Records by platform", "Percakapan per platform")}</h2>
             <p className="text-[12px] font-bold text-[#5A6478]">{pickL("last 7 days", "7 hari terakhir")}</p>
             {weekTotal === 0 ? (
@@ -570,7 +571,7 @@ export default function SourcesPage() {
             )}
           </div>
 
-          <div className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+          <div className="py-1">
             <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("How collection works", "Aturan pengambilan")}</h2>
             <ul className="mt-3 divide-y divide-[#F0F2F8]">
               {rules.map((r) => (

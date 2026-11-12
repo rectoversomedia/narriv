@@ -112,13 +112,13 @@ export function PlatformCollectionPanel() {
               className="mt-4 flex flex-wrap items-end gap-2"
               onSubmit={(e) => { e.preventDefault(); start.mutate(); }}
             >
-              <label className="text-[10px] font-black uppercase tracking-[0.08em] text-[#5A6478]">
+              <label className="text-[10px] font-black text-[#5A6478]">
                 {t("platform")}
                 <select value={selectedPreset} onChange={(e) => setPreset(e.target.value)} className="mt-1 block h-9 rounded-lg border border-[#DDE3EF] bg-white px-2 text-[12px] font-semibold normal-case tracking-normal text-[#31406B]">
                   {presets.map((p) => <option key={p.key} value={p.key}>{platformLabel(t, p.platform)}</option>)}
                 </select>
               </label>
-              <label className="text-[10px] font-black uppercase tracking-[0.08em] text-[#5A6478]">
+              <label className="text-[10px] font-black text-[#5A6478]">
                 {t("keyword")}
                 <select value={selectedKeyword} onChange={(e) => setKeyword(e.target.value)} disabled={activeKeywords.length === 0} className="mt-1 block h-9 max-w-[220px] rounded-lg border border-[#DDE3EF] bg-white px-2 text-[12px] font-semibold normal-case tracking-normal text-[#31406B]">
                   {activeKeywords.length === 0 ? <option value="">{t("noKeyword")}</option> : null}

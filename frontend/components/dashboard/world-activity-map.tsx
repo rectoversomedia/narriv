@@ -268,7 +268,7 @@ export function WorldActivityMap({
       </div>
 
       {activity?.updated_at ? (
-        <div className="absolute right-4 top-4 rounded-full border border-slate-100 bg-white/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#5A6478] shadow-sm">
+        <div className="absolute right-4 top-4 rounded-full border border-slate-100 bg-white/90 px-3 py-1.5 text-[10px] font-black text-[#5A6478] shadow-sm">
           Live · {formatTime(activity.updated_at)}
         </div>
       ) : null}

@@ -5,6 +5,9 @@
  * GET   /admin/platform/me                  { isAdmin } for the signed-in user (anyone may ask)
  * GET   /admin/platform/workspaces          every workspace with its numbers           (platform admins only)
  * PATCH /admin/platform/workspaces/:id      change plan / trial / pause / social        (platform admins only)
+ * POST  /admin/platform/test-email          send a sample report and alert email        (platform admins only)
+ * POST  /admin/platform/backfill-regions    fill in the province of stored records      (platform admins only)
+ * POST  /admin/platform/seed-demo           (re)fill one demo scenario's workspace      (platform admins only)
  *
  * Access is by email (PLATFORM_ADMIN_EMAILS), checked against the users table on every request. Every change is
  * audit-logged on the workspace it touched.
@@ -16,12 +19,13 @@ import { validateRequest } from "../../middlewares/validate-request.js";
 import { baseSupabaseAdmin as db } from "../../lib/supabase.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
-import { DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
+import { DEMO_WORKSPACE_ID, DEMO_WORKSPACES, isDemoWorkspace } from "../../lib/workspace-access.js";
 import { isPlatformAdmin, requirePlatformAdmin } from "../../lib/platform-admin.js";
 import { PLAN_KEYS, planStatus } from "../../lib/workspace-plan.js";
 import { calculateCost } from "../../lib/model-pricing.js";
 import { PLATFORM_PRESET, runSpend, socialConfig, totalCapUsd } from "../ingestion/social-schedule.service.js";
 import { COLLECTION_JOB_NAME } from "../ingestion/apify-collection.service.js";
+import { resolveRecordRegion } from "../../lib/indonesia-regions.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -96,7 +100,7 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
                 id: w.id,
                 name: w.name,
                 createdAt: w.created_at,
-                isDemo: w.id === DEMO_WORKSPACE_ID,
+                isDemo: isDemoWorkspace(w.id),
                 isTest: TEST_EMAIL.test(ownerUser?.email || "") || TEST_NAME.test(w.name || ""),
                 owner: ownerUser ? { name: ownerUser.name, email: ownerUser.email } : null,
                 ...planStatus(settings, now),
@@ -153,7 +157,7 @@ const patchBody = z.object({
 router.patch("/workspaces/:id", requirePlatformAdmin, validateRequest({ params: z.object({ id: z.string().uuid() }), body: patchBody }), async (req, res) => {
     try {
         const { id } = req.params;
-        if (id === DEMO_WORKSPACE_ID) return res.status(400).json({ error: "The demo workspace cannot be changed here.", code: "DEMO_WORKSPACE" });
+        if (isDemoWorkspace(id)) return res.status(400).json({ error: "The demo workspace cannot be changed here.", code: "DEMO_WORKSPACE" });
         const { data: ws, error } = await db.from("workspaces").select("id, name, settings").eq("id", id).maybeSingle();
         if (error) throw error;
         if (!ws) return res.status(404).json({ error: "Workspace not found." });
@@ -208,6 +212,101 @@ router.patch("/workspaces/:id", requirePlatformAdmin, validateRequest({ params: 
     } catch (error) {
         logStructured("error", "admin_workspace_update_failed", { error: error?.message || error });
         res.status(500).json({ error: "Could not save the change." });
+    }
+});
+
+
+// Sends the two emails clients get, built by the production templates from the demo workspace's latest report and
+// high-risk alert, to one address: a check that delivery works end to end (provider key, sender domain, inbox).
+// Reads the demo workspace only; the one write is an audit line on the admin, not on the demo workspace.
+// Fills a demo scenario's workspace now instead of waiting for the nightly refresh (a new scenario starts empty).
+// Only demo workspaces are written; the content is the fictional dataset in modules/demo.
+router.post("/seed-demo", requirePlatformAdmin, validateRequest({ body: z.object({ scenario: z.enum(["brand", "gov", "cve"]) }) }), async (req, res) => {
+    try {
+        const { demoScenarios, seedScenarioWorkspace } = await import("../demo/demo-seed.js");
+        const def = (await demoScenarios()).find((d) => d.key === req.body.scenario);
+        if (!def) return res.status(404).json({ error: "Unknown demo scenario" });
+        const result = await seedScenarioWorkspace(def, { db });
+        await recordAuditLog({ userId: req.user.id, event: "platform_admin_seed_demo", metadata: result }).catch(() => {});
+        res.json(result);
+    } catch (err) {
+        logStructured("error", "admin_seed_demo_failed", { error: err?.message });
+        res.status(500).json({ error: `Demo seeding failed: ${err?.message || "unknown"}` });
+    }
+});
+
+// Records stored before region detection carry "ID", a city, or nothing. This reads each one's text and stores the
+// province it is about, one batch per call; the panel calls again with `offset` until `done`. The demo workspace is
+// never touched. Re-running is safe: a record already holding its detected province is left alone.
+const BACKFILL_BATCH = 300;
+router.post("/backfill-regions", requirePlatformAdmin, validateRequest({ body: z.object({ offset: z.number().int().min(0).max(10_000_000).default(0) }) }), async (req, res) => {
+    try {
+        const offset = req.body.offset ?? 0;
+        const { data: rows, error } = await db
+            .from("signals")
+            .select("id, workspace_id, title, content, region, metadata")
+            .not("workspace_id", "in", `(${Object.values(DEMO_WORKSPACES).join(",")})`)
+            .order("id", { ascending: true })
+            .range(offset, offset + BACKFILL_BATCH - 1);
+        if (error) throw error;
+
+        const changes = (rows || []).flatMap((row) => {
+            const place = resolveRecordRegion({ title: row.title, content: row.content, label: row.region });
+            const sameRegion = place.region === row.region;
+            const hasGeo = Boolean(row.metadata?.geo) || !place.geo;
+            return sameRegion && hasGeo ? [] : [{ id: row.id, region: place.region, metadata: { ...(row.metadata || {}), ...(place.geo ? { geo: place.geo } : {}) } }];
+        });
+        // Small parallel groups keep the database calm.
+        for (let i = 0; i < changes.length; i += 20) {
+            await Promise.all(changes.slice(i, i + 20).map((c) => db.from("signals").update({ region: c.region, metadata: c.metadata }).eq("id", c.id)));
+        }
+        const processed = (rows || []).length;
+        const done = processed < BACKFILL_BATCH;
+        if (done) await recordAuditLog({ userId: req.user.id, event: "platform_admin_backfill_regions", metadata: { records: offset + processed } }).catch(() => {});
+        res.json({ processed, updated: changes.length, nextOffset: offset + processed, done });
+    } catch (err) {
+        logStructured("error", "admin_backfill_regions_failed", { error: err?.message });
+        res.status(500).json({ error: "Region backfill failed" });
+    }
+});
+
+router.post("/test-email", requirePlatformAdmin, validateRequest({ body: z.object({ to: z.string().trim().email().max(254) }) }), async (req, res) => {
+    try {
+        const { sendEmail, isEmailConfigured } = await import("../../lib/email.js");
+        if (!isEmailConfigured()) return res.status(503).json({ error: "Email provider is not configured" });
+        const { collectReportData, buildReportPdf, reportFileName } = await import("../reports/report-files.js");
+        const { reportEmailHtml } = await import("../reports/report-delivery.js");
+        const { alertEmailHtml } = await import("../notifications/notification-dispatch.service.js");
+        const to = req.body.to;
+        const appUrl = (process.env.FRONTEND_URL || process.env.APP_URL || "https://www.narriv.digital").replace(/\/$/, "");
+        const result = { report: null, alert: null };
+
+        const { data: report } = await db.from("reports").select("*").eq("workspace_id", DEMO_WORKSPACE_ID).order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (report) {
+            const data = await collectReportData(report);
+            const pdf = await buildReportPdf(data, "id");
+            const sent = await sendEmail({ to, subject: `[Tes] ${data.brand || "Narriv"}: laporan mingguan`, html: reportEmailHtml(data, "id", appUrl), attachments: [{ filename: reportFileName(data, "pdf"), content: pdf }] });
+            result.report = sent?.id ? "sent" : "failed";
+        } else {
+            result.report = "no_report";
+        }
+
+        const { data: alert } = await db.from("alerts").select("id, title, severity, what_happened, what_to_do").eq("workspace_id", DEMO_WORKSPACE_ID).in("severity", ["critical", "high"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
+        const { data: ws } = await db.from("workspace_settings").select("brand_name").eq("workspace_id", DEMO_WORKSPACE_ID).maybeSingle();
+        const title = alert?.title || "Peringatan contoh";
+        const severity = alert?.severity || "critical";
+        const sentAlert = await sendEmail({
+            to,
+            subject: `[Tes] [Narriv] ${severity === "high" ? "TINGGI" : "KRITIS"}: ${title}`,
+            html: alertEmailHtml({ lang: "id", brandName: ws?.brand_name || "Narriv", alertId: alert?.id || "", title, severity, whatHappened: alert?.what_happened || null, whatToDo: alert?.what_to_do || null }),
+        });
+        result.alert = sentAlert?.id ? "sent" : "failed";
+
+        await recordAuditLog({ userId: req.user.id, event: "platform_admin_test_email", metadata: { to, ...result } }).catch(() => {});
+        return res.json(result);
+    } catch (error) {
+        logStructured("error", "platform_admin_test_email_failed", { error: error?.message || error });
+        return res.status(500).json({ error: "Could not send the test emails" });
     }
 });
 

@@ -1,10 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { ReactQueryProvider } from "@/components/providers/react-query-provider";
 import { IntlProvider } from "@/components/providers/intl-provider";
 import { ToastProvider } from "@/components/ui/toast";
+import { LaunchOverlay } from "@/components/launch/launch-overlay";
+import { LAUNCH_BOOT_SCRIPT } from "@/lib/launch";
 import { cn } from "@/lib/utils";
 
 const poppins = Poppins({
@@ -25,15 +27,18 @@ export const metadata: Metadata = {
   },
   description: "Narriv membantu tim memantau percakapan publik, memahami narasi, dan menentukan aksi yang tepat.",
   applicationName: "Narriv",
-  // New file names so browsers that cached the old round icon fetch the square "N." mark.
+  // The round Narriv orb (public/logo-bulat-narriv-2026.png, cropped square); new file names so browsers drop cached icons.
   icons: {
     icon: [
-      { url: "/brand/favicon-n-48.png", sizes: "48x48", type: "image/png" },
-      { url: "/brand/favicon-n-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/brand/favicon-orb-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/favicon-orb-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/brand/favicon-orb-192.png", sizes: "192x192", type: "image/png" },
     ],
-    shortcut: "/brand/favicon-n-48.png",
-    apple: "/brand/apple-icon-n-180.png",
+    shortcut: "/brand/favicon-orb-48.png",
+    apple: "/brand/apple-orb-round-180.png",
   },
+  // Opened from the home screen, iOS shows Narriv full screen without the browser bars.
+  appleWebApp: { capable: true, title: "Narriv", statusBarStyle: "default" },
   openGraph: {
     title: "Narriv | Narrative Intelligence",
     description: "Pantau percakapan publik, alert, laporan, dan rencana aksi dari satu command center.",
@@ -49,6 +54,11 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#F8FAFC",
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -61,6 +71,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Older iPhones read this tag, not the manifest, to open the home-screen shortcut without browser bars. */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        {/* Before first paint: a reload that is part of the sign-in launch starts behind the launch screen. */}
+        <script dangerouslySetInnerHTML={{ __html: LAUNCH_BOOT_SCRIPT }} />
         {process.env.NODE_ENV === "development" ? (
           <Script
             src="//unpkg.com/react-grab/dist/index.global.js"
@@ -73,6 +87,7 @@ export default function RootLayout({
         <IntlProvider>
           <ReactQueryProvider>
             <ToastProvider>{children}</ToastProvider>
+            <LaunchOverlay />
           </ReactQueryProvider>
         </IntlProvider>
       </body>

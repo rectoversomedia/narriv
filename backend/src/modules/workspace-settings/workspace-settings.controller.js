@@ -1,4 +1,5 @@
 import supabase from "../../lib/supabase.js";
+import { forgetWorkspaceProfile, profileFromSettings } from "../../lib/workspace-profile.js";
 import { badRequest, forbidden, internalError, notFound } from "../../lib/api-error.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { workspaceHasOwner, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
@@ -44,12 +45,17 @@ export async function getWorkspaceSettings(req, res) {
         // Also fetch onboarding_completed from workspaces table for redirect logic
         const { data: workspaceData } = await supabase
             .from("workspaces")
-            .select("onboarding_completed, settings")
+            .select("onboarding_completed, settings, logo_url")
             .eq("id", scopedWorkspaceId)
             .maybeSingle();
         const workspaceFlags = {
+            // The workspace's logo lives on the workspaces row (workspace_settings has no logo column).
+            ...(workspaceData?.logo_url ? { logo_url: workspaceData.logo_url } : {}),
             onboarding_completed: workspaceData?.onboarding_completed ?? false,
             monitoring_paused: workspaceData?.settings?.monitoringPaused === true,
+            // What the workspace monitors for, and whether account identities are hidden (workspace-profile.js).
+            use_case: profileFromSettings(workspaceData?.settings).useCase,
+            privacy_mode: profileFromSettings(workspaceData?.settings).privacyMode,
             // Plan and trial for the in-app trial banner; set by the Narriv team in the admin panel.
             plan_status: planStatus(workspaceData?.settings || {}),
             // WhatsApp alerts need Narriv's sender (FONNTE_TOKEN); until then the app says it is coming soon.
@@ -63,6 +69,39 @@ export async function getWorkspaceSettings(req, res) {
         return res.json({ ...settings, ...workspaceFlags });
     } catch (error) {
         logStructured("error", "Error fetching workspace settings:", { error: error?.message || error, stack: error?.stack });
+        return internalError(res);
+    }
+}
+
+/**
+ * Sets what the workspace monitors for (brand reputation or preventing violent extremism) and privacy mode.
+ * Choosing "cve" turns privacy mode on unless the same request sets it; it can be turned off afterwards.
+ */
+export async function setWorkspaceProfile(req, res) {
+    try {
+        const { workspaceId, useCase, privacyMode } = req.body;
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
+        const { data: workspace, error: readError } = await supabase.from("workspaces").select("settings").eq("id", scopedWorkspaceId).maybeSingle();
+        if (readError || !workspace) return notFound(res, "Workspace not found", "WORKSPACE_NOT_FOUND");
+
+        const current = workspace.settings || {};
+        const next = { ...current };
+        if (useCase !== undefined) next.useCase = useCase;
+        if (privacyMode !== undefined) next.privacyMode = privacyMode;
+        else if (useCase === "cve" && current.useCase !== "cve") next.privacyMode = true;
+
+        const { error } = await supabase.from("workspaces").update({ settings: next }).eq("id", scopedWorkspaceId);
+        if (error) {
+            logStructured("error", "Error updating workspace profile:", { error: error?.message || error });
+            return internalError(res);
+        }
+        forgetWorkspaceProfile(scopedWorkspaceId);
+        const profile = profileFromSettings(next);
+        await recordAuditLog({ userId: req.user.id, workspaceId: scopedWorkspaceId, event: "workspace_profile_updated", metadata: { use_case: profile.useCase, privacy_mode: profile.privacyMode } });
+        return res.json({ use_case: profile.useCase, privacy_mode: profile.privacyMode });
+    } catch (error) {
+        logStructured("error", "Error updating workspace profile:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }

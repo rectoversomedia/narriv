@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -11,6 +13,7 @@ import { getNarrativeById, getNarratives, getSources, triggerClustering, type Na
 import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { monitoringHref, parseIssueLink } from "@/lib/evidence-links";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
@@ -251,7 +254,7 @@ function buildDonutGradient(items: DonutDatum[]) {
 
 function Panel({ children, className, onClick }: { children: ReactNode; className?: string; onClick?: (e: React.MouseEvent) => void }) {
   return (
-    <Card className={cn("rounded-[14px] border-[#E6EAF2] bg-white text-[#101334] shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)} onClick={onClick}>
+    <Card className={cn("!border-0 text-[#101334]", BOX, className)} onClick={onClick}>
       {children}
     </Card>
   );
@@ -359,10 +362,10 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
         >
           <div className="flex size-[86px] flex-col items-center justify-center rounded-full bg-white shadow-[0_4px_14px_rgba(16,19,52,0.08)]">
             <span className="text-[26px] font-black leading-none tracking-[-0.04em]" style={{ color: readableTone(topTone.color) }}>{share}%</span>
-            <span className="mt-1 text-[10px] font-black uppercase tracking-[0.06em] text-[#5A6478]">{L("of talk", "porsi")}</span>
+            <span className="mt-1 text-[10px] font-black text-[#5A6478]">{L("of talk", "porsi")}</span>
           </div>
           <div className="min-w-0 self-center">
-            <p className="text-[11px] font-black uppercase tracking-[0.08em]" style={{ color: readableTone(topTone.color) }}>{L("Main issue", "Isu utama")}</p>
+            <p className="text-[11px] font-black" style={{ color: readableTone(topTone.color) }}>{L("Main issue", "Isu utama")}</p>
             <p className="mt-1 text-[18px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{name(top)}</p>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-black">
               <span className="rounded-full bg-white px-2.5 py-1 text-[#101334]">{formatSignals(top.signals)} {L("mentions", "percakapan")}</span>
@@ -378,7 +381,7 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
             const tone = toneStyles[tile.tone];
             const body = (
               <>
-                <p className="text-[10px] font-black uppercase tracking-[0.07em]" style={{ color: readableTone(tone.color) }}>{tile.label}</p>
+                <p className="text-[10px] font-black" style={{ color: readableTone(tone.color) }}>{tile.label}</p>
                 <p className="mt-1.5 text-[24px] font-black leading-none tracking-[-0.03em] text-[#101334]">{tile.value}</p>
                 {tile.topic ? <p className="mt-1.5 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{tile.topic}</p> : null}
               </>
@@ -398,7 +401,7 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
               ? L(`Next step: prepare a response for "${name(risk || top)}".`, `Langkah berikutnya: siapkan respons untuk "${name(risk || top)}".`)
               : L(`Next step: amplify "${name(top)}" while it is positive.`, `Langkah berikutnya: perkuat "${name(top)}" selagi positif.`)}
           </p>
-          <button type="button" onClick={() => onPlan((risk || top).id)} className="h-9 rounded-[10px] bg-white px-4 text-[12px] font-black text-[#101334] transition hover:bg-[#EEF1FF]">{L("Create plan", "Buat rencana")}</button>
+          <button type="button" onClick={() => onPlan((risk || top).id)} className="h-9 rounded-[10px] bg-white px-4 text-[12px] font-black text-[#101334] transition hover:bg-[#EEF1FF]">{L("Create Action Plan", "Buat Rencana Aksi")}</button>
           <button type="button" onClick={() => onReport((risk || top).id)} className="h-9 rounded-[10px] bg-white/10 px-4 text-[12px] font-black text-white transition hover:bg-white/20">{L("See the analysis", "Lihat analisis")}</button>
         </div>
       </CardContent>
@@ -751,8 +754,8 @@ export default function IntelligencePage() {
         {metrics.map((metric) => {
           const tone = toneStyles[metric.tone];
           return (
-            <div key={metric.label} className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${tone.rgb},0.11), rgba(${tone.rgb},0.02) 60%)` }}>
-              <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: readableTone(tone.color) }}>{metric.label}</p>
+            <div key={metric.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+              <p className="text-[11px] font-black" style={{ color: readableTone(tone.color) }}>{metric.label}</p>
               <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{metric.value}</p>
               <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{metric.helper}</p>
             </div>
@@ -762,8 +765,10 @@ export default function IntelligencePage() {
 
       {narrativesQuery.isPending ? <PanelSkeleton /> : null}
       {isLiveUnavailable ? <DashboardErrorState title={ti("error.title")} description={ti("error.desc")} onRetry={() => void narrativesQuery.refetch()} minHeight="min-h-[150px]" /> : null}
-      {!isLiveUnavailable && narrativesQuery.data && liveClusters.length === 0 ? <DashboardEmptyState title={ti("empty.title")} description={ti("empty.desc")} icon="search" minHeight="min-h-[180px]" /> : null}
+      {!isLiveUnavailable && narrativesQuery.data && liveClusters.length === 0 ? <DashboardEmptyState title={ti("empty.title")} description={ti("empty.desc")} icon="search" minHeight="min-h-[180px]" action={<Link href="/workspace/settings#keywords" className="inline-flex h-10 items-center rounded-full bg-[#101334] px-5 text-[13px] font-black text-white hover:bg-[#2B2F9E]">{pickL("Manage Keywords", "Atur Kata Kunci")}</Link>} /> : null}
 
+      {/* With no narratives yet, the map, clusters and lifecycle would all be empty: the message above stands alone. */}
+      {liveClusters.length > 0 ? (
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_408px]">
         <div className="flex min-w-0 flex-col gap-4">
           <Panel className="overflow-hidden">
@@ -895,7 +900,7 @@ export default function IntelligencePage() {
                     return (
                       <div key={phase.key} className="flex min-h-[132px] min-w-0 flex-col justify-between rounded-[12px] p-3" style={{ background: `rgba(${toneStyle.rgb}, ${phase.count > 0 ? 0.09 : 0.04})` }}>
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.06em]" style={{ color: readableTone(toneStyle.color) }}>{ti(`lifecycle.phases.${phase.key}.title`)}</p>
+                          <p className="text-[10px] font-black" style={{ color: readableTone(toneStyle.color) }}>{ti(`lifecycle.phases.${phase.key}.title`)}</p>
                           <p className="mt-2 text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{phase.count}</p>
                           <p className="mt-2 text-[10px] font-bold leading-snug text-[#647099]">{ti(`lifecycle.phases.${phase.key}.desc`)}</p>
                         </div>
@@ -974,17 +979,17 @@ export default function IntelligencePage() {
               {/* Size and spread in one line; the recommendation shows only when it says something new. */}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="rounded-[10px] bg-[#F5F7FC] px-3 py-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#647099]">{pickL("Records", "Percakapan")}</p>
+                  <p className="text-[10px] font-black text-[#647099]">{pickL("Records", "Percakapan")}</p>
                   <p className="text-[18px] font-black text-[#101334]">{selectedCluster.signals}</p>
                 </div>
                 <div className="rounded-[10px] bg-[#F5F7FC] px-3 py-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#647099]">{pickL("Spread", "Sebaran")}</p>
+                  <p className="text-[10px] font-black text-[#647099]">{pickL("Spread", "Sebaran")}</p>
                   <p className="text-[18px] font-black text-[#101334]">{text(selectedCluster.related[0]?.topic ?? { en: "-", id: "-" }, language)}</p>
                 </div>
               </div>
               {text(selectedCluster.aiRec, language) && text(selectedCluster.aiRec, language) !== text(selectedCluster.description, language) ? (
                 <div className="mt-3 rounded-[12px] bg-[#101334] p-3">
-                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#A9B4FF]">{pickL("Next step", "Langkah berikutnya")}</p>
+                  <p className="text-[10px] font-black text-[#A9B4FF]">{pickL("Next step", "Langkah berikutnya")}</p>
                   <p className="mt-1 line-clamp-3 text-[12px] font-bold leading-snug text-white">{text(selectedCluster.aiRec, language)}</p>
                 </div>
               ) : null}
@@ -1026,6 +1031,7 @@ export default function IntelligencePage() {
           </Panel>
         </aside>
       </section>
+      ) : null}
 
       <footer className="mt-1 flex flex-col gap-5 border-t border-[#E9EDF5] pt-5 xl:flex-row xl:items-center xl:justify-between">
         <div className="grid flex-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -1033,7 +1039,7 @@ export default function IntelligencePage() {
             return (
               <div key={item.title} className={cn("flex gap-3 xl:border-r xl:border-[#E9EDF5] xl:pr-5", index === footerItems.length - 1 && "xl:border-r-0")}> 
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#647099]">{item.title}</p>
+                  <p className="text-[10px] font-black text-[#647099]">{item.title}</p>
                   <p className="mt-1 text-[12px] font-black text-[#101334]">{item.value}</p>
                   {item.progress ? (
                     <div className="mt-2 flex items-center gap-2">
@@ -1162,10 +1168,10 @@ function NarrativeEvidence({ detail }: { detail: NarrativeDetailRecord }) {
       <section aria-label={pickL("Facts", "Fakta")}>
         <h3 className="text-sm font-black text-[#53608C]">{pickL("Facts", "Fakta")}</h3>
         <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#647099]">{pickL("Articles", "Berita")}</dt><dd className="mt-1 text-lg font-black text-[#101334]">{signals.length}</dd></div>
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3" title={momentum?.basis}><dt className="text-[10px] font-bold uppercase text-[#647099]">{pickL("Last 24h vs day before", "24 jam terakhir vs sebelumnya")}</dt><dd className="mt-1 text-lg font-black text-[#101334]">{momentum ? `${momentum.last24h} vs ${momentum.prior24h}` : "—"}</dd></div>
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#647099]">{pickL("First seen", "Pertama muncul")}</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.firstSeen)}</dd></div>
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#647099]">{pickL("Last seen", "Terakhir muncul")}</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.lastSeen)}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold text-[#647099]">{pickL("Articles", "Berita")}</dt><dd className="mt-1 text-lg font-black text-[#101334]">{signals.length}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3" title={momentum?.basis}><dt className="text-[10px] font-bold text-[#647099]">{pickL("Last 24h vs day before", "24 jam terakhir vs sebelumnya")}</dt><dd className="mt-1 text-lg font-black text-[#101334]">{momentum ? `${momentum.last24h} vs ${momentum.prior24h}` : "—"}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold text-[#647099]">{pickL("First seen", "Pertama muncul")}</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.firstSeen)}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold text-[#647099]">{pickL("Last seen", "Terakhir muncul")}</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.lastSeen)}</dd></div>
         </dl>
       </section>
 

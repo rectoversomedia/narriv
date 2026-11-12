@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getMockAlerts, getMockDashboardSummary, isDemoMode } from "../demo-mock-data";
-import { Alert, DashboardSummary, DateRangeOptions, PaginatedResponse, Signal, SignalAnalysis } from "./core";
+import { Alert, CveCategory, CveTag, DashboardSummary, DateRangeOptions, PaginatedResponse, Signal, SignalAnalysis } from "./core";
 
 // ---------------------------------------------------------------------------
 // Dashboard
@@ -61,6 +61,10 @@ export interface GetSignalsOptions {
   relevance?: "direct" | "other";
   /** "analyzed" or "pending" AI analysis. */
   analysis?: "analyzed" | "pending";
+  /** A province code, e.g. "jatim". */
+  region?: string;
+  /** "flagged", "unclassified" or a CVE category. */
+  cve?: string;
 }
 
 export interface SignalsMeta {
@@ -93,12 +97,16 @@ export async function getSignalsMeta(): Promise<SignalsMeta | null> {
 }
 
 /** A page of signals plus how brand relevance was determined for this workspace. */
-export type SignalListPage = PaginatedResponse<Signal> & { relevance?: { configured: boolean; brand: string | null; brandSource: string } | null };
+export type SignalListPage = PaginatedResponse<Signal> & {
+  relevance?: { configured: boolean; brand: string | null; brandSource: string } | null;
+  /** What the caller's workspace monitors for, and whether accounts are hidden. */
+  profile?: { useCase: "brand" | "cve"; privacyMode: boolean };
+};
 
 export async function getSignals(
   options: GetSignalsOptions = {}
 ): Promise<SignalListPage | null> {
-  const { page = 1, limit = 20, keyword, platform, startDate, endDate, sentiment, narrativeId, relevance, analysis } = options;
+  const { page = 1, limit = 20, keyword, platform, startDate, endDate, sentiment, narrativeId, relevance, analysis, region, cve } = options;
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (keyword) params.set("keyword", keyword);
   if (platform) params.set("platform", platform);
@@ -108,12 +116,53 @@ export async function getSignals(
   if (narrativeId) params.set("narrativeId", narrativeId);
   if (relevance) params.set("relevance", relevance);
   if (analysis) params.set("analysis", analysis);
+  if (region) params.set("region", region);
+  if (cve) params.set("cve", cve);
 
   try {
     return await apiClient<SignalListPage>(`/signals?${params.toString()}`);
   } catch {
     return null;
   }
+}
+
+/** Records per province over a period: how many, how many negative, and the cities named most. */
+export interface RegionBreakdown {
+  days: number;
+  total: number;
+  located: number;
+  unlocated: number;
+  provinces: Array<{ code: string; name: string; total: number; negative: number; cities: Array<{ name: string; total: number }> }>;
+}
+
+/** CVE narrative categories over a period: suggested, confirmed and dismissed per category, and where. */
+export interface CveSummary {
+  days: number;
+  enabled: boolean;
+  total: number;
+  classified: number;
+  unclassified: number;
+  flagged: number;
+  categories: Array<{ id: CveCategory; suggested: number; confirmed: number; dismissed: number }>;
+  provinces: Array<{ code: string; name: string; total: number }>;
+}
+
+export function getCveSummary(days: 1 | 7 | 30 | 90 = 30) {
+  return apiClient<CveSummary>(`/signals/cve-summary?days=${days}`);
+}
+
+/** A person's verdict on a suggested CVE category; `category` corrects it. */
+export function reviewCve(signalId: string, status: "confirmed" | "dismissed", category?: CveCategory) {
+  return apiClient<{ cve: CveTag }>(`/signals/${encodeURIComponent(signalId)}/cve-review`, { method: "POST", body: JSON.stringify({ status, ...(category ? { category } : {}) }) });
+}
+
+/** Suggests categories for up to 25 records that have none; call again while `remaining` is above zero. */
+export function classifyCveBatch() {
+  return apiClient<{ classified: number; failed: number; remaining: number }>("/signals/cve-classify", { method: "POST", body: JSON.stringify({}) });
+}
+
+export function getRegionBreakdown(days: 1 | 7 | 30 | 90 = 30) {
+  return apiClient<RegionBreakdown>(`/signals/regions?days=${days}`);
 }
 
 export async function getSignalById(

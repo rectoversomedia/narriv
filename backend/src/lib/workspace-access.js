@@ -3,6 +3,29 @@ import { selectedWorkspaceId } from "./request-context.js";
 
 export const DEMO_WORKSPACE_ID = "56bc14ee-5f16-4134-9828-a240f3c72240";
 
+/**
+ * The demo scenarios a visitor can pick, each a read-only workspace of fictional data (modules/demo). The brand
+ * scenario is the original demo workspace. A demo session's user id carries its scenario ("demo_cve_<uuid>");
+ * ids without one ("demo_<uuid>", older sessions) belong to the brand scenario.
+ */
+export const DEMO_WORKSPACES = {
+  brand: DEMO_WORKSPACE_ID,
+  gov: "6f1f0d2e-3b3a-4c55-9a51-7d0c1e2a9b01",
+  cve: "9c2a4e71-8d5b-4f0e-b6a3-2e1f7c9d4a02",
+};
+export const DEMO_SCENARIOS = Object.keys(DEMO_WORKSPACES);
+
+export function demoScenarioOf(userId) {
+  const m = /^demo_([a-z]+)_/.exec(String(userId || ""));
+  return m && DEMO_WORKSPACES[m[1]] ? m[1] : "brand";
+}
+
+/** The demo workspace a demo session is pinned to. */
+export const demoWorkspaceIdFor = (userId) => DEMO_WORKSPACES[demoScenarioOf(userId)];
+
+/** Any demo workspace: kept out of scheduled collection, outbound email and admin changes. */
+export const isDemoWorkspace = (id) => Object.values(DEMO_WORKSPACES).includes(id);
+
 /** Default workspace: onboarding-completed first, then owned, then newest. */
 export function pickDefaultMembership(memberships) {
   return [...memberships].sort((a, b) => {
@@ -24,7 +47,7 @@ export function pickDefaultMembership(memberships) {
  */
 export const getUserWorkspaceIds = async (userId) => {
   if (!userId) return [];
-  if (String(userId).startsWith("demo")) return [DEMO_WORKSPACE_ID];
+  if (String(userId).startsWith("demo")) return [demoWorkspaceIdFor(userId)];
   const { data: memberships, error } = await supabase
     .from("workspace_members")
     .select("workspace_id, role, created_at, workspaces(onboarding_completed)")
@@ -47,8 +70,8 @@ export const resolveWorkspaceIdForUser = async (userId, requestedWorkspaceIdArg)
   const requestedWorkspaceId = requestedWorkspaceIdArg || selectedWorkspaceId();
   const normalizedRequestedId = requestedWorkspaceId === "demo-workspace" ? DEMO_WORKSPACE_ID : requestedWorkspaceId;
   if (String(userId).startsWith("demo")) {
-    // Demo sessions are pinned to the demo workspace; never honor a requested id.
-    return DEMO_WORKSPACE_ID;
+    // Demo sessions are pinned to their scenario's demo workspace; never honor a requested id.
+    return demoWorkspaceIdFor(userId);
   }
   if (normalizedRequestedId) {
     const { data: membership, error } = await supabase
@@ -119,7 +142,7 @@ export const resolveWorkspaceIdForUser = async (userId, requestedWorkspaceIdArg)
 export const resolveScopedWorkspaceIds = async (userId, requestedWorkspaceId) => {
   const allowedWorkspaceIds = await getUserWorkspaceIds(userId);
   if (!requestedWorkspaceId) return allowedWorkspaceIds;
-  const targetId = requestedWorkspaceId === "demo-workspace" ? DEMO_WORKSPACE_ID : requestedWorkspaceId;
+  const targetId = requestedWorkspaceId === "demo-workspace" ? allowedWorkspaceIds[0] ?? DEMO_WORKSPACE_ID : requestedWorkspaceId;
   if (allowedWorkspaceIds.includes(targetId)) return [targetId];
   return [];
 };

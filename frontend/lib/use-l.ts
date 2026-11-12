@@ -3,7 +3,7 @@ import { useUiStore } from "@/store/useUiStore";
 /** Inline bilingual copy for small, component-local strings: `L("English", "Indonesia")` follows the UI language. */
 export function useL() {
   const language = useUiStore((state) => state.language);
-  return (en: string, id: string) => (language === "id" ? id : en);
+  return <T = string>(en: T, id: T): T => (language === "id" ? id : en);
 }
 
 /** Non-hook variant for helpers that run during render (reads the current language). */

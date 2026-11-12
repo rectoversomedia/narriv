@@ -9,6 +9,7 @@ import { getActivityLogs, type ActivityLogEntry } from "@/lib/api-service";
 import { intlLocale } from "@/store/useUiStore";
 import { pickL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 
 const emptyActivityRows: ActivityLogEntry[] = [];
 type ActivityTranslator = ReturnType<typeof useTranslations<"ActivityLog">>;
@@ -262,8 +263,8 @@ export default function ActivityPage() {
 
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {tiles.map((tile) => (
-          <div key={tile.label} className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${tile.rgb},0.12), rgba(${tile.rgb},0.02) 60%)` }}>
-            <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: tile.color }}>{tile.label}</p>
+          <div key={tile.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+            <p className="text-[11px] font-black" style={{ color: tile.color }}>{tile.label}</p>
             {/* Numbers stay big; a name or event wraps at a smaller size instead of being cut off. */}
             <p className={cn("mt-2 font-black tracking-[-0.03em] text-[#101334]", /^[\d.,\s—]+$/.test(tile.value) ? "truncate text-[26px] leading-none" : "line-clamp-2 text-[17px] leading-tight sm:text-[20px]")} title={tile.value}>{tile.value}</p>
             <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{tile.sub}</p>
@@ -271,7 +272,7 @@ export default function ActivityPage() {
         ))}
       </section>
 
-      <section className="rounded-[16px] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+      <section className={BOX}>
         <div className="flex flex-wrap items-end gap-3 border-b border-[#F0F2F8] p-4">
           <label className="grid min-w-[220px] flex-1 gap-1">
             <span className="text-[11px] font-black text-[#5A6478]">{t("filterEvent")}</span>
@@ -303,7 +304,7 @@ export default function ActivityPage() {
           <div className="p-5">
             {days.map((day) => (
               <div key={day.label} className="mb-5 last:mb-0">
-                <p className="mb-2 text-[11px] font-black uppercase tracking-[0.1em] text-[#8A93AD]">{day.label}</p>
+                <p className="mb-2 text-[11px] font-black text-[#8A93AD]">{day.label}</p>
                 <ol className="relative space-y-1 before:absolute before:bottom-3 before:left-[19px] before:top-3 before:w-0.5 before:bg-[#EEF1F7]">
                   {day.items.map((log) => {
                     const g = groupOf(log.event);

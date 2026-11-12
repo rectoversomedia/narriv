@@ -3,6 +3,7 @@ import { isDemoSession, useAuthStore } from "@/store/useAuthStore";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { timingOptions, toClientError } from "@/lib/http-timeout";
 import { useUiStore } from "@/store/useUiStore";
+import { reportDemoBlocked } from "@/lib/demo-blocked";
 export type { ClientError } from "@/lib/http-timeout";
 
 const BASE_URL =
@@ -97,7 +98,7 @@ export async function apiClient<T>(
   }
 
   if (!response.ok) {
-    let errorData: { error?: string; errorId?: string; message?: string } | null = null;
+    let errorData: { error?: string; errorId?: string; message?: string; code?: string } | null = null;
     try {
       errorData = await response.json();
     } catch {
@@ -110,6 +111,8 @@ export async function apiClient<T>(
       errorData?.error ||
       errorData?.message ||
       `Request failed (${response.status})`;
+
+    if (response.status === 403 && errorData?.code === "DEMO_READ_ONLY") reportDemoBlocked();
 
     const error = new Error(message) as Error & { status?: number; info?: unknown };
     error.status = response.status;

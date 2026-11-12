@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Smartphone } from "lucide-react";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/store/useUiStore";
@@ -56,7 +57,7 @@ export function SiteHeader() {
         <Link href="/welcome#faq" className="hidden text-[14px] font-semibold text-white/75 hover:text-white sm:block">FAQ</Link>
         <Link href="/help" className="hidden text-[14px] font-semibold text-white/75 hover:text-white md:block">{L("Help", "Bantuan")}</Link>
         <span className="hidden sm:block"><LanguageSwitch dark /></span>
-        <Link href="/login" className="flex h-9 items-center rounded-[10px] bg-white px-3.5 text-[14px] font-bold text-[#101334] hover:bg-white/90">{L("Sign in", "Masuk")}</Link>
+        <Link href="/login" className="flex h-9 items-center rounded-[10px] bg-white px-3.5 text-[14px] font-bold text-[#101334] hover:bg-white/90">{L("Sign In", "Masuk")}</Link>
       </nav>
     </header>
   );
@@ -65,17 +66,26 @@ export function SiteHeader() {
 export function SiteFooter() {
   const L = useL();
   return (
-    <footer className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 pb-10 text-[13px] font-semibold text-[#5F6B94] sm:flex-row sm:px-6">
-      <Image src="/brand/logo-h.webp" alt="Narriv" width={96} height={36} loading="eager" className="h-6 w-auto" />
-      <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2">
-        <Link href="/pricing" className="hover:text-[#101334]">{L("Pricing", "Harga")}</Link>
-        <Link href="/welcome#faq" className="hover:text-[#101334]">FAQ</Link>
-        <Link href="/help" className="hover:text-[#101334]">{L("Help", "Bantuan")}</Link>
-        <Link href="/privacy" className="hover:text-[#101334]">{L("Privacy", "Privasi")}</Link>
-        <Link href="/terms" className="hover:text-[#101334]">{L("Terms", "Ketentuan")}</Link>
-        <Link href="/help#contact" className="hover:text-[#101334]">{L("Contact", "Kontak")}</Link>
-      </nav>
-      <LanguageSwitch />
+    <footer className="mx-auto max-w-6xl px-4 pb-10 sm:px-6">
+      {/* Install Narriv on a phone: the page explains how for each device */}
+      <div className="flex justify-center pb-8">
+        <Link href="/pasang" className="inline-flex h-12 items-center gap-2.5 rounded-full bg-[#101334] px-6 text-[14px] font-bold text-white shadow-[0_12px_30px_rgba(16,19,52,0.25)] transition hover:bg-[#1A1F4A]">
+          <Smartphone size={18} aria-hidden="true" />
+          {L("Install the App on Your Phone", "Pasang Aplikasi di HP")}
+        </Link>
+      </div>
+      <div className="flex flex-col items-center justify-between gap-4 text-[13px] font-semibold text-[#5F6B94] sm:flex-row">
+        <Image src="/brand/logo-h.webp" alt="Narriv" width={96} height={36} loading="eager" className="h-6 w-auto" />
+        <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+          <Link href="/pricing" className="hover:text-[#101334]">{L("Pricing", "Harga")}</Link>
+          <Link href="/welcome#faq" className="hover:text-[#101334]">FAQ</Link>
+          <Link href="/help" className="hover:text-[#101334]">{L("Help", "Bantuan")}</Link>
+          <Link href="/privacy" className="hover:text-[#101334]">{L("Privacy", "Privasi")}</Link>
+          <Link href="/terms" className="hover:text-[#101334]">{L("Terms", "Ketentuan")}</Link>
+          <Link href="/help#contact" className="hover:text-[#101334]">{L("Contact", "Kontak")}</Link>
+        </nav>
+        <LanguageSwitch />
+      </div>
     </footer>
   );
 }

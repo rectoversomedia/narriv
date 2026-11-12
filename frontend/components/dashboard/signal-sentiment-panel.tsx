@@ -55,7 +55,7 @@ export function SignalSentimentPanel({ kpis, labels }: { kpis: Partial<Dashboard
           { label: labels.analyzedSignals, value: analyzed },
         ].map((m) => (
           <div key={m.label} className="rounded-[10px] bg-[#F8FAFC] p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A6478]">{m.label}</p>
+            <p className="text-[11px] font-semibold text-[#5A6478]">{m.label}</p>
             <p className="mt-1.5 text-[26px] font-bold leading-none tabular-nums text-[#101334]">{formatCount(m.value)}</p>
             {!isNumber(m.value) ? <p className="mt-1 text-[11px] font-medium text-[#5A6478]">{t("noData")}</p> : null}
           </div>
@@ -67,7 +67,7 @@ export function SignalSentimentPanel({ kpis, labels }: { kpis: Partial<Dashboard
 
       {/* Sentiment share */}
       <div className="border-t border-slate-100 pt-3 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A6478]">{t("sentimentShare")}</p>
+        <p className="text-[11px] font-semibold text-[#5A6478]">{t("sentimentShare")}</p>
         {barTotal > 0 ? (
           <div className="mt-2 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100" role="img" aria-label={shares.map((s) => `${s.name} ${s.value === null ? t("noData") : `${s.value.toFixed(1)}%`}`).join(", ")}>
             {shares.map((s) => (s.value ? <span key={s.key} className={s.bar} style={{ width: `${(s.value / barTotal) * 100}%` }} /> : null))}
@@ -78,7 +78,7 @@ export function SignalSentimentPanel({ kpis, labels }: { kpis: Partial<Dashboard
         <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {shares.map((s) => (
             <div key={s.key} className="rounded-[10px] border border-slate-100 p-3">
-              <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A6478]">
+              <dt className="flex items-center gap-1.5 text-[11px] font-semibold text-[#5A6478]">
                 <span className={`size-2 shrink-0 rounded-full ${s.dot}`} aria-hidden="true" />
                 {s.name}
               </dt>

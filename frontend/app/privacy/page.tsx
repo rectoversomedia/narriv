@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { LegalDraft } from "@/components/legal/legal-draft";
+import { LegalPage } from "@/components/legal/legal-page";
 
-export const metadata: Metadata = { title: "Kebijakan Privasi", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Kebijakan Privasi" };
 
 // Written against Indonesia's Personal Data Protection Law (UU No. 27 Tahun 2022) and what Narriv actually does
-// today. Still a draft: the owner and legal counsel review it before the draft note is removed.
+// today. Approved and in effect.
 
 const ID = (
   <>
-    <p>Kebijakan ini menjelaskan bagaimana <b>PT Primer Rectoverso Media</b> (&quot;kami&quot;), beralamat di [alamat terdaftar], memproses data pribadi di Narriv (narriv.digital). Kebijakan ini disusun dengan mengacu pada Undang-Undang Nomor 27 Tahun 2022 tentang Pelindungan Data Pribadi (&quot;UU PDP&quot;).</p>
+    <p>Kebijakan ini menjelaskan bagaimana <b>PT Primer Rectoverso Media</b> (&quot;kami&quot;), beralamat di Gedung Cibis Nine Lt. 11, Jl. TB Simatupang No. 2, Cilandak Timur, Pasar Minggu, Jakarta Selatan, DKI Jakarta 12560, memproses data pribadi di Narriv (narriv.digital). Kebijakan ini disusun dengan mengacu pada Undang-Undang Nomor 27 Tahun 2022 tentang Pelindungan Data Pribadi (&quot;UU PDP&quot;).</p>
 
     <h2>1. Peran kami</h2>
     <ul>
@@ -85,13 +85,13 @@ const ID = (
     <p>Bila kebijakan ini berubah secara penting, kami memberi tahu pemilik workspace lewat email atau di aplikasi sebelum perubahan berlaku.</p>
 
     <h2>13. Kontak</h2>
-    <p>PT Primer Rectoverso Media, [alamat terdaftar]. WhatsApp 0811-190-692, email hello@narriv.digital.</p>
+    <p>PT Primer Rectoverso Media, Gedung Cibis Nine Lt. 11, Jl. TB Simatupang No. 2, Cilandak Timur, Pasar Minggu, Jakarta Selatan, DKI Jakarta 12560. WhatsApp 0811-190-692, email hello@narriv.digital.</p>
   </>
 );
 
 const EN = (
   <>
-    <p>This policy explains how <b>PT Primer Rectoverso Media</b> (&quot;we&quot;), of [registered address], processes personal data in Narriv (narriv.digital). It follows Indonesia&apos;s Personal Data Protection Law, Law No. 27 of 2022 (the &quot;PDP Law&quot;). The Indonesian version prevails.</p>
+    <p>This policy explains how <b>PT Primer Rectoverso Media</b> (&quot;we&quot;), of Cibis Nine Building, 11th floor, Jl. TB Simatupang No. 2, Cilandak Timur, Pasar Minggu, South Jakarta, DKI Jakarta 12560, Indonesia, processes personal data in Narriv (narriv.digital). It follows Indonesia&apos;s Personal Data Protection Law, Law No. 27 of 2022 (the &quot;PDP Law&quot;). The Indonesian version prevails.</p>
 
     <h2>1. Our role</h2>
     <ul>
@@ -168,10 +168,10 @@ const EN = (
     <p>If this policy changes materially, we tell workspace owners by email or in the app before the change takes effect.</p>
 
     <h2>13. Contact</h2>
-    <p>PT Primer Rectoverso Media, [registered address]. WhatsApp +62 811-190-692, email hello@narriv.digital.</p>
+    <p>PT Primer Rectoverso Media, Cibis Nine Building, 11th floor, Jl. TB Simatupang No. 2, Cilandak Timur, Pasar Minggu, South Jakarta, DKI Jakarta 12560, Indonesia. WhatsApp +62 811-190-692, email hello@narriv.digital.</p>
   </>
 );
 
 export default function PrivacyPage() {
-  return <LegalDraft title={["Privacy Policy", "Kebijakan Privasi"]} updated={["Last updated: [effective date]", "Terakhir diperbarui: [tanggal berlaku]"]} id={ID} en={EN} />;
+  return <LegalPage title={["Privacy Policy", "Kebijakan Privasi"]} updated={["Last updated: 12 November 2026", "Terakhir diperbarui: 12 November 2026"]} id={ID} en={EN} />;
 }

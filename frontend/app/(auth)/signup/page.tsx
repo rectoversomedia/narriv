@@ -103,9 +103,13 @@ export default function SignupPage() {
         </p>
       }
     >
-      <div className="mb-9">
+      <div className="mb-6 flex justify-center lg:hidden">
+        <img src="/brand/logo-bulat.webp" alt="Narriv" width={88} height={84} fetchPriority="high" className="h-[88px] w-[88px] object-contain" />
+      </div>
+
+      <div className="mb-5 text-center lg:text-left">
         <h1 className="text-[34px] font-bold leading-tight tracking-[-0.04em] text-[#111536]">{t("title")}</h1>
-        <p className="mt-4 text-[19px] font-medium text-[#3E4975]">{t("subtitle")}</p>
+        <p className="mt-1.5 text-[16px] font-medium text-[#3E4975]">{t("subtitle")}</p>
       </div>
 
       <form
@@ -117,11 +121,14 @@ export default function SignupPage() {
         }}
         noValidate
       >
-        <FieldGroup className="gap-6">
-          <AuthInput label={t("fullName")} icon="user" autoComplete="name" placeholder={t("fullNamePlaceholder")} error={errors.name?.message} registration={register("name")} />
-          <AuthInput label={t("email")} icon="email" type="email" autoComplete="email" placeholder={t("emailPlaceholder")} error={errors.email?.message} registration={register("email")} />
-          <AuthInput label={t("company")} icon="company" autoComplete="organization" placeholder={t("companyPlaceholder")} error={errors.company?.message} registration={register("company")} />
-          <AuthInput label={t("role")} icon="role" autoComplete="organization-title" placeholder={t("rolePlaceholder")} registration={register("role")} />
+        <FieldGroup className="gap-4">
+          {/* Two fields per row from tablet width up, so the whole form fits one laptop screen. */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <AuthInput label={t("fullName")} icon="user" autoComplete="name" placeholder={t("fullNamePlaceholder")} error={errors.name?.message} registration={register("name")} />
+            <AuthInput label={t("email")} icon="email" type="email" autoComplete="email" placeholder={t("emailPlaceholder")} error={errors.email?.message} registration={register("email")} />
+            <AuthInput label={t("company")} icon="company" autoComplete="organization" placeholder={t("companyPlaceholder")} error={errors.company?.message} registration={register("company")} />
+            <AuthInput label={t("role")} icon="role" autoComplete="organization-title" placeholder={t("rolePlaceholder")} registration={register("role")} />
+          </div>
           <div>
             <PasswordInput label={t("password")} autoComplete="new-password" placeholder={t("passwordPlaceholder")} error={errors.password?.message} registration={register("password")} />
             <PasswordRequirements />
@@ -143,12 +150,12 @@ export default function SignupPage() {
         </FieldGroup>
       </form>
 
-      <div className="mt-7 grid gap-6">
+      <div className="mt-5 grid gap-4">
         <Divider label={t("divider")} />
         <SocialButtons />
       </div>
 
-      <div className="mt-10">
+      <div className="mt-5">
         <SecurityFooter />
       </div>
     </AuthShell>

@@ -1,16 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { APP_ORIGIN, onMarketingHost } from "@/lib/hosts";
 import { SUPPORT_EMAIL } from "@/lib/support";
 import { useTranslations } from "next-intl";
 import type { ChangeEvent, ClipboardEvent, InputHTMLAttributes, KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { useRef, useState } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
+import { NarrativeIntelligence } from "@/components/marketing/motion";
 import { Button } from "@/components/ui/button";
+import { DemoPicker } from "@/components/auth/demo-picker";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useUiStore } from "@/store/useUiStore";
 import { BriefcaseBusiness, Building2, Check, ChevronDown, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, User } from "lucide-react";
+import { launchDashboard } from "@/lib/launch";
 
 type AuthVisual = "dashboard" | "features" | "security" | "verification";
 
@@ -35,10 +39,10 @@ export function AuthShell({ visual, children, topAction, email }: AuthShellProps
   return (
     <main className="min-h-dvh bg-white font-sans text-[#111536] lg:grid lg:grid-cols-[minmax(520px,1fr)_minmax(560px,1fr)]">
       <BrandPanel visual={visual} email={email} />
-      <section className="relative flex min-h-dvh items-center justify-center px-6 py-10 sm:px-10 lg:px-14">
-        {topAction ? <div className="absolute right-6 top-6 sm:right-10 lg:right-14 lg:top-10">{topAction}</div> : null}
+      <section className="relative flex min-h-dvh items-center justify-center px-6 py-8 sm:px-10 lg:px-14">
+        {topAction ? <div className="absolute right-6 top-5 sm:right-10 lg:right-14 lg:top-6">{topAction}</div> : null}
         {/* Room for the language picker above the form at every width. */}
-        <div className="w-full max-w-[520px] pt-16">{children}</div>
+        <div className="w-full max-w-[460px] pt-12 lg:pt-10">{children}</div>
       </section>
     </main>
   );
@@ -49,17 +53,17 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
   const isVerification = visual === "verification";
 
   return (
-    <aside className="relative hidden min-h-dvh flex-col overflow-hidden bg-[#020733] px-16 py-16 text-white lg:flex">
+    <aside className="relative hidden h-dvh min-h-[560px] flex-col overflow-hidden bg-[#020733] px-14 py-10 text-white lg:sticky lg:top-0 lg:flex">
       {/* Subtle ambient glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(80,60,255,0.22),transparent_40%),radial-gradient(circle_at_80%_90%,rgba(60,40,200,0.18),transparent_35%),linear-gradient(180deg,#020733_0%,#040830_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-[25%] bg-[radial-gradient(ellipse_at_center_bottom,rgba(60,50,220,0.28),transparent_70%)]" />
 
       {/* Content: logo + tagline centered, footer pinned at bottom */}
-      <div className="relative z-10 flex h-full flex-col items-center py-10">
+      <div className="relative z-10 flex h-full flex-col items-center">
         {/* Logo + tagline — vertically + horizontally centered */}
         <div className="flex flex-1 flex-col items-center justify-center text-center">
           <NarrivLogo />
-          <div className="mt-8 space-y-0.5 text-center">
+          <div className="mt-[3.5dvh] space-y-0.5 text-center">
             {isVerification ? (
               <div>
                 <p className="text-[42px] font-bold leading-[1.15] tracking-[-0.04em] text-white">
@@ -73,16 +77,16 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
               </div>
             ) : (
               <>
-                <p className="text-[42px] font-bold leading-[1.1] tracking-[-0.04em] text-white">
+                <p className="text-[clamp(28px,4.6dvh,42px)] font-bold leading-[1.1] tracking-[-0.04em] text-white">
                   {t("brand.line1")}
                 </p>
-                <p className="text-[42px] font-bold leading-[1.1] tracking-[-0.04em] text-white">
+                <p className="text-[clamp(28px,4.6dvh,42px)] font-bold leading-[1.1] tracking-[-0.04em] text-white">
                   {t("brand.line2")}
                 </p>
-                <p className="bg-gradient-to-r from-[#8D4DFF] via-[#6B63FF] to-[#22B8FF] bg-clip-text text-[42px] font-bold leading-[1.1] tracking-[-0.04em] text-transparent">
+                <p className="bg-gradient-to-r from-[#8D4DFF] via-[#6B63FF] to-[#22B8FF] bg-clip-text text-[clamp(28px,4.6dvh,42px)] font-bold leading-[1.1] tracking-[-0.04em] text-transparent">
                   {t("brand.line3")}
                 </p>
-                <p className="mt-4 text-lg leading-relaxed text-white/60">
+                <p className="mx-auto mt-3 max-w-[460px] text-[clamp(14px,2dvh,18px)] leading-relaxed text-white/60">
                   {visual === "features"
                     ? t("brand.featuresDescription")
                     : t("brand.description")}
@@ -96,7 +100,7 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
         <div className="w-full space-y-4 text-center">
           <div className="h-px w-full bg-gradient-to-r from-transparent via-[rgba(100,80,255,0.35)] to-transparent" />
           <p className="text-sm font-medium tracking-wide text-white/35">
-            &copy; {new Date().getFullYear()} Narriv &mdash; Narrative Intelligence Platform
+            &copy; {new Date().getFullYear()} Narriv &mdash; <NarrativeIntelligence className="text-[1em] tracking-normal" /> Platform
           </p>
         </div>
       </div>
@@ -113,7 +117,7 @@ function NarrivLogo() {
       height={304}
       fetchPriority="high"
       decoding="async"
-      className="mx-auto h-[320px] w-[320px] object-contain"
+      className="mx-auto size-[min(300px,34dvh)] object-contain"
     />
   );
 }
@@ -187,15 +191,15 @@ export function AuthInput({ label, icon, error, registration, rightAddon, onValu
 
   return (
     <Field data-invalid={!!error}>
-      <FieldLabel className="mb-1 block text-[15px] font-semibold text-[#111536]">{label}</FieldLabel>
-      <span className={`flex h-[59px] items-center gap-4 rounded-[8px] border bg-white px-5 transition focus-within:border-[#465FFF] focus-within:shadow-[0_0_0_3px_rgba(61,45,255,0.08)] ${error ? "border-[#F04438]" : "border-[#D6DDEC]"}`}>
-        <Icon size={22} className="shrink-0 text-[#344054]" strokeWidth={1.8} />
+      <FieldLabel className="mb-0.5 block text-[14px] font-semibold text-[#111536]">{label}</FieldLabel>
+      <span className={`flex h-[50px] items-center gap-3.5 rounded-[10px] border bg-white px-4 transition focus-within:border-[#465FFF] focus-within:shadow-[0_0_0_3px_rgba(61,45,255,0.08)] ${error ? "border-[#F04438]" : "border-[#D6DDEC]"}`}>
+        <Icon size={19} className="shrink-0 text-[#344054]" strokeWidth={1.8} />
         <Input
           {...props}
           {...registration}
           aria-invalid={!!error || undefined}
           onChange={handleChange}
-          className={`h-auto min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0 text-[17px] font-medium text-[#27325F] shadow-none outline-none placeholder:text-[#5F6B94] focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0 ${className}`}
+          className={`h-auto min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0 text-[15.5px] font-medium text-[#27325F] shadow-none outline-none placeholder:text-[#5F6B94] focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0 ${className}`}
         />
         {rightAddon}
       </span>
@@ -237,7 +241,7 @@ export function PrimaryButton({ children, loading }: { children: ReactNode; load
       type="submit"
       disabled={loading}
       size="lg"
-      className="flex h-[58px] w-full items-center justify-center rounded-[8px] bg-[#465FFF] hover:bg-[#3B51E0] text-[18px] font-semibold text-white shadow-sm transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+      className="flex h-[50px] w-full items-center justify-center rounded-[10px] bg-[#465FFF] hover:bg-[#3B51E0] text-[16px] font-semibold text-white shadow-sm transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {children}
     </Button>
@@ -254,9 +258,9 @@ export function SecondaryLinkButton({ href, children }: { href: string; children
 
 export function Divider({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-4 py-2">
+    <div className="flex items-center gap-4 py-1">
       <div className="h-px flex-1 bg-[#D8DEEA]" />
-      <span className="text-[15px] font-medium text-[#3E4975]">{label}</span>
+      <span className="text-[13.5px] font-medium text-[#3E4975]">{label}</span>
       <div className="h-px flex-1 bg-[#D8DEEA]" />
     </div>
   );
@@ -267,7 +271,7 @@ export function SocialButtons() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-3 sm:grid-cols-2">
       <SocialButton icon={<GoogleLogo />} label={t("social.google")} href={`${apiUrl}/auth/google`} />
       <DemoButton />
     </div>
@@ -278,12 +282,21 @@ export function SocialButtons() {
  * Signs in to the read-only demo workspace through the frontend proxy (which sets the narriv_auth cookie) and opens
  * the dashboard. Throws with a readable message when it fails. Used by the login page and the landing page.
  */
-export async function startDemoLogin() {
+/** The demo cases a visitor can open (backend workspace-access.js DEMO_WORKSPACES). */
+export type DemoScenario = "brand" | "gov" | "cve";
+
+export async function startDemoLogin(scenario: DemoScenario = "brand") {
+  // On the website the demo opens on the app, where its session cookie belongs.
+  if (onMarketingHost()) {
+    window.location.href = `${APP_ORIGIN}/demo?case=${scenario}`;
+    return;
+  }
   // Call frontend proxy route — it calls the backend and sets the narriv_auth cookie
   // on narriv.digital so the middleware can read it.
   const response = await fetch("/api/auth/demo-login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scenario }),
   });
 
   if (!response.ok) {
@@ -320,65 +333,59 @@ export async function startDemoLogin() {
     }
   }));
 
-  // Redirect to dashboard
-  window.location.href = "/?demo=true";
+  // Redirect to dashboard behind the launch screen
+  launchDashboard(() => { window.location.href = "/?demo=true"; });
 }
 
 function DemoButton() {
   const t = useTranslations("AuthDesign");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleDemoLogin = async () => {
-    setIsLoading(true);
-    try {
-      await startDemoLogin();
-    } catch (error) {
-      console.error("Demo login error:", error);
-      alert(error instanceof Error ? error.message : "Demo login failed. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // The picker opens the chosen demo itself; this button only opens the picker.
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const isLoading = false;
+  const handleDemoLogin = () => setPickerOpen(true);
 
   return (
+    <>
     <button
       type="button"
       onClick={handleDemoLogin}
       disabled={isLoading}
-      className="relative flex h-[58px] w-full items-center justify-center gap-3 rounded-[8px] border border-[#D6DDEC] bg-[#10B981]/10 text-[18px] font-semibold text-[#047857] transition hover:border-[#10B981] hover:bg-[#10B981]/15 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="flex h-[48px] w-full items-center justify-center gap-2.5 rounded-[10px] border border-[#D6DDEC] bg-[#10B981]/10 text-[15px] font-semibold text-[#047857] transition hover:border-[#10B981] hover:bg-[#10B981]/15 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isLoading ? (
-        <span className="absolute left-9 flex h-6 w-6 items-center justify-center">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center">
           <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
         </span>
       ) : (
-        <span className="absolute left-9 flex h-6 w-6 items-center justify-center">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
           </svg>
         </span>
       )}
       {isLoading ? "Loading..." : (t("social.demo") || "Try Demo")}
     </button>
+    <DemoPicker open={pickerOpen} onClose={() => setPickerOpen(false)} />
+    </>
   );
 }
 
 function SocialButton({ icon, label, href }: { icon: ReactNode; label: string; href?: string }) {
   if (href) {
     return (
-      <a href={href} className="relative flex h-[58px] w-full items-center justify-center rounded-[8px] border border-[#D6DDEC] bg-white text-[18px] font-semibold text-[#111536] transition hover:border-[#AAB4D5] hover:bg-[#FBFCFF]">
-        <span className="absolute left-9 flex h-6 w-6 items-center justify-center">{icon}</span>
+      <a href={href} className="flex h-[48px] w-full items-center justify-center gap-2.5 rounded-[10px] border border-[#D6DDEC] bg-white text-[15px] font-semibold text-[#111536] transition hover:border-[#AAB4D5] hover:bg-[#FBFCFF]">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center">{icon}</span>
         {label}
       </a>
     );
   }
 
   return (
-    <button type="button" className="relative flex h-[58px] w-full items-center justify-center rounded-[8px] border border-[#D6DDEC] bg-white text-[18px] font-semibold text-[#111536] transition hover:border-[#AAB4D5] hover:bg-[#FBFCFF]">
-      <span className="absolute left-9 flex h-6 w-6 items-center justify-center">{icon}</span>
+    <button type="button" className="flex h-[48px] w-full items-center justify-center gap-2.5 rounded-[10px] border border-[#D6DDEC] bg-white text-[15px] font-semibold text-[#111536] transition hover:border-[#AAB4D5] hover:bg-[#FBFCFF]">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center">{icon}</span>
       {label}
     </button>
   );
@@ -401,7 +408,7 @@ export function SecurityFooter() {
   const t = useTranslations("AuthDesign");
 
   return (
-    <div className="flex items-center justify-center gap-3 text-[15px] font-medium text-[#3E4975]">
+    <div className="flex items-center justify-center gap-3 text-[12.5px] font-medium text-[#5F6B94]">
       {t("security.footer")}
     </div>
   );

@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Check, ChevronRight, Loader2, Pause, Play, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
+import { CalendarClock, Check, ChevronRight, Loader2, Mail, MapPin, Pause, Play, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { useToast } from "@/components/ui/toast";
-import { getAdminMe, getAdminWorkspaces, updateAdminWorkspace, type AdminWorkspace, type AdminWorkspacePatch, type BillingStatus, type WorkspacePlanKey } from "@/lib/api-service";
+import { backfillAdminRegions, getAdminMe, seedAdminDemo, getAdminWorkspaces, sendAdminTestEmail, updateAdminWorkspace, type AdminWorkspace, type AdminWorkspacePatch, type BillingStatus, type WorkspacePlanKey } from "@/lib/api-service";
 import { timeAgo } from "@/lib/intelligence-api";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
@@ -172,7 +172,7 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
       <div className="flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white shadow-[0_-20px_60px_rgba(8,10,40,0.3)] sm:max-h-none sm:max-w-[460px] sm:rounded-none" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] px-5 pb-5 pt-5 text-white">
           <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#A5B4FF]">{L("Client workspace", "Workspace klien")}</p>
+            <p className="text-[11px] font-black text-[#A5B4FF]">{L("Client workspace", "Workspace klien")}</p>
             <h2 id="ws-panel-title" className="mt-1 truncate text-[22px] font-black">{w.name}</h2>
             <p className="mt-0.5 truncate text-[13px] font-medium text-white/65">{w.owner?.email || L("No owner", "Tanpa pemilik")} · {L("since", "sejak")} {fmtDate(w.createdAt)}</p>
           </div>
@@ -331,6 +331,137 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
   );
 }
 
+/** Sends the two client emails (weekly report with PDF, critical alert) to one inbox, to check delivery works. */
+/**
+ * Fills a demo case's workspace now (brand, government, CVE); the nightly refresh keeps them current afterwards.
+ * Only the demo workspaces are written.
+ */
+function DemoSeedCard() {
+  const L = useL();
+  const toast = useToast();
+  const seed = useMutation({
+    mutationFn: (scenario: "brand" | "gov" | "cve") => seedAdminDemo(scenario),
+    onSuccess: (r) => toast.showToast({ title: L("Demo ready", "Demo siap"), description: L(`${r.scenario}: ${r.signals} mentions, ${r.alerts} alerts, ${r.reports} reports.`, `${r.scenario}: ${r.signals} percakapan, ${r.alerts} peringatan, ${r.reports} laporan.`), tone: "success" }),
+    onError: (e) => toast.error(e instanceof Error ? e.message : L("Seeding failed.", "Pengisian gagal."), L("Demo not filled", "Demo belum terisi")),
+  });
+  const cases: Array<["brand" | "gov" | "cve", string]> = [["brand", L("Brand", "Brand")], ["gov", L("Government", "Pemerintahan")], ["cve", "CVE"]];
+  return (
+    <section className="flex flex-col gap-3 rounded-[22px] bg-white p-4 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)] sm:flex-row sm:items-center sm:p-5">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#EEF1FF] text-[#465FFF]"><RefreshCw size={18} aria-hidden="true" /></span>
+        <div className="min-w-0">
+          <p className="text-[15px] font-black">{L("Fill demo cases", "Isi demo per kasus")}</p>
+          <p className="text-[12px] font-medium text-[#5F6B94]">{L("Resets a demo workspace with fresh fictional data. Refreshed nightly anyway.", "Mengisi ulang workspace demo dengan data fiktif terbaru. Tetap diperbarui otomatis tiap malam.")}</p>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {cases.map(([key, label]) => (
+          <button key={key} type="button" disabled={seed.isPending} onClick={() => seed.mutate(key)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#465FFF] px-4 text-[14px] font-bold text-white disabled:opacity-50">
+            {seed.isPending && seed.variables === key ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : null}
+            {label}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Fills in the province of records stored before region detection, batch by batch, showing the count as it goes.
+ * The demo workspace is skipped by the API; running it again only touches records whose province is still missing.
+ */
+function RegionBackfillCard() {
+  const L = useL();
+  const toast = useToast();
+  const [state, setState] = useState<{ running: boolean; processed: number; updated: number }>({ running: false, processed: 0, updated: 0 });
+  async function run() {
+    setState({ running: true, processed: 0, updated: 0 });
+    let offset = 0;
+    let processed = 0;
+    let updated = 0;
+    try {
+      for (;;) {
+        const r = await backfillAdminRegions(offset);
+        processed += r.processed;
+        updated += r.updated;
+        offset = r.nextOffset;
+        setState({ running: !r.done, processed, updated });
+        if (r.done) break;
+      }
+      toast.showToast({ title: L("Regions filled in", "Wilayah terisi"), description: L(`${updated} of ${processed} records now carry their province.`, `${updated} dari ${processed} percakapan kini punya provinsi.`), tone: "success" });
+    } catch (e) {
+      setState((s) => ({ ...s, running: false }));
+      toast.error(e instanceof Error ? e.message : L("The server stopped the run.", "Server menghentikan proses."), L("Region fill stopped", "Pengisian wilayah berhenti"));
+    }
+  }
+  return (
+    <section className="flex flex-col gap-3 rounded-[22px] bg-white p-4 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)] sm:flex-row sm:items-center sm:p-5">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#EEF1FF] text-[#465FFF]"><MapPin size={18} aria-hidden="true" /></span>
+        <div className="min-w-0">
+          <p className="text-[15px] font-black">{L("Fill in regions for older records", "Isi wilayah untuk data lama")}</p>
+          <p className="text-[12px] font-medium text-[#5F6B94]">
+            {state.processed > 0
+              ? L(`${state.processed} records read, ${state.updated} given a province${state.running ? "…" : "."}`, `${state.processed} percakapan dibaca, ${state.updated} diberi provinsi${state.running ? "…" : "."}`)
+              : L("Reads each stored mention and records the province it is about. New mentions get this automatically. The demo is not touched.", "Membaca setiap percakapan yang tersimpan dan mencatat provinsi yang dibicarakan. Percakapan baru otomatis terisi. Data demo tidak diubah.")}
+          </p>
+        </div>
+      </div>
+      <button type="button" onClick={run} disabled={state.running} className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#465FFF] px-4 text-[14px] font-bold text-white disabled:opacity-50">
+        {state.running ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : null}
+        {state.running ? L("Filling in…", "Mengisi…") : L("Fill in", "Isi sekarang")}
+      </button>
+    </section>
+  );
+}
+
+function TestEmailCard() {
+  const L = useL();
+  const toast = useToast();
+  const [to, setTo] = useState("");
+  const send = useMutation({
+    mutationFn: () => sendAdminTestEmail(to.trim()),
+    onSuccess: (r) => {
+      const ok = r.report === "sent" && r.alert === "sent";
+      toast.showToast({
+        title: ok ? L("Test emails sent", "Email tes terkirim") : L("Not everything was sent", "Tidak semua terkirim"),
+        description: L(`Report: ${r.report} · alert: ${r.alert}. Check ${to.trim()}, including spam.`, `Laporan: ${r.report} · peringatan: ${r.alert}. Cek ${to.trim()}, termasuk folder spam.`),
+        tone: ok ? "success" : "error",
+      });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : L("The email provider rejected the request.", "Penyedia email menolak permintaan."), L("Sending failed", "Gagal mengirim")),
+  });
+  const valid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to.trim());
+  return (
+    <section className="flex flex-col gap-3 rounded-[22px] bg-white p-4 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)] sm:flex-row sm:items-center sm:p-5">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#EEF1FF] text-[#465FFF]"><Mail size={18} aria-hidden="true" /></span>
+        <div className="min-w-0">
+          <p className="text-[15px] font-black">{L("Check email delivery", "Cek pengiriman email")}</p>
+          <p className="text-[12px] font-medium text-[#5F6B94]">{L("Sends a sample weekly report (PDF) and a critical alert, the way clients get them.", "Mengirim contoh laporan mingguan (PDF) dan peringatan kritis, persis seperti yang diterima klien.")}</p>
+        </div>
+      </div>
+      <form
+        className="flex gap-2"
+        onSubmit={(e) => { e.preventDefault(); if (valid && !send.isPending) send.mutate(); }}
+      >
+        <input
+          type="email"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          placeholder={L("name@company.com", "nama@perusahaan.com")}
+          aria-label={L("Send to", "Kirim ke")}
+          className="h-11 min-w-0 flex-1 rounded-xl bg-[#F5F7FF] px-3.5 text-[14px] font-semibold outline-none placeholder:text-[#8A93B5] focus:shadow-[0_0_0_2px_#8EA0FF] sm:w-[260px]"
+        />
+        <button type="submit" disabled={!valid || send.isPending} className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[#465FFF] px-4 text-[14px] font-bold text-white disabled:opacity-50">
+          {send.isPending ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : null}
+          {L("Send", "Kirim")}
+        </button>
+      </form>
+    </section>
+  );
+}
+
 export default function AdminPage() {
   const L = useL();
   const toast = useToast();
@@ -423,7 +554,7 @@ export default function AdminPage() {
         <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-24 h-[260px] w-[420px] rounded-full bg-[#6D7CFF] opacity-30 blur-[90px]" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-[#A5B4FF]"><ShieldCheck size={14} aria-hidden="true" /> {L("Narriv team", "Tim Narriv")}</p>
+            <p className="flex items-center gap-1.5 text-[11px] font-black text-[#A5B4FF]"><ShieldCheck size={14} aria-hidden="true" /> {L("Narriv team", "Tim Narriv")}</p>
             <h1 className="mt-1.5 text-[28px] font-black leading-tight tracking-[-0.02em] sm:text-[32px]">{L("Admin panel", "Admin panel")}</h1>
             <p className="mt-1 text-[14px] font-medium text-white/70">{L("Every client: plan, trial, usage and cost.", "Semua klien: paket, uji coba, pemakaian, dan biaya.")}</p>
           </div>
@@ -447,6 +578,10 @@ export default function AdminPage() {
         </div>
         {t ? <p className="relative mt-3 text-[12px] font-medium text-white/60">{L(`AI ${usd(t.aiCostMonth)} · social media ${usd(t.socialSpendMonth)} of ${usd(list.data?.socialCapUsd ?? 0)} · ${t.socialOn} client(s) with social on · rate Rp${RATE.toLocaleString("id-ID")}/USD`, `AI ${usd(t.aiCostMonth)} · media sosial ${usd(t.socialSpendMonth)} dari ${usd(list.data?.socialCapUsd ?? 0)} · ${t.socialOn} klien dengan media sosial aktif · kurs Rp${RATE.toLocaleString("id-ID")}/USD`)}</p> : null}
       </section>
+
+      <TestEmailCard />
+      <RegionBackfillCard />
+      <DemoSeedCard />
 
       {/* Filters and search */}
       <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
@@ -494,7 +629,7 @@ export default function AdminPage() {
           <div className="hidden overflow-hidden rounded-[22px] bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)] lg:block">
             <table className="w-full text-left">
               <thead>
-                <tr className="whitespace-nowrap bg-[#F5F7FF] text-[11px] font-black uppercase tracking-[0.08em] text-[#5F6B94]">
+                <tr className="whitespace-nowrap bg-[#F5F7FF] text-[11px] font-black text-[#5F6B94]">
                   <th className="px-5 py-3">{L("Client", "Klien")}</th>
                   <th className="px-3 py-3">{L("Plan", "Paket")}</th>
                   <th className="px-3 py-3">{L("Monitoring", "Pemantauan")}</th>
@@ -510,7 +645,7 @@ export default function AdminPage() {
                 {rows.map((w) => (
                   <tr key={w.id} className={cn("text-[14px] transition even:bg-[#FAFBFF]", w.isDemo ? "opacity-70" : "cursor-pointer hover:bg-[#F5F7FF]")} onClick={() => !w.isDemo && setOpenId(w.id)}>
                     <td className="max-w-[280px] px-5 py-3.5">
-                      <p className="flex items-center gap-2 truncate font-black text-[#101334]">{w.name}{w.isTest ? <span className="rounded-full bg-[#F1F3F8] px-2 py-0.5 text-[10px] font-black uppercase text-[#5F6B94]">{L("test", "tes")}</span> : null}</p>
+                      <p className="flex items-center gap-2 truncate font-black text-[#101334]">{w.name}{w.isTest ? <span className="rounded-full bg-[#F1F3F8] px-2 py-0.5 text-[10px] font-black text-[#5F6B94]">{L("test", "tes")}</span> : null}</p>
                       <p className="truncate text-[12px] font-medium text-[#5F6B94]">{w.owner?.email || "—"} · {fmtDate(w.createdAt)}</p>
                     </td>
                     <td className="px-3 py-3.5">

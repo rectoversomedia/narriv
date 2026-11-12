@@ -96,7 +96,7 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
         </div>
         {keyword.trim() && count ? (
           <div className="rounded-[12px] bg-[#101334] px-4 py-3 text-white">
-            <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#A9B4FF]">{L("Summary", "Ringkasan")}</p>
+            <p className="text-[10px] font-black text-[#A9B4FF]">{L("Summary", "Ringkasan")}</p>
             <p className="mt-0.5 text-[13px] font-bold">{L(`${count} sources will watch «${keyword.trim()}», checked every hour.`, `${count} sumber akan memantau «${keyword.trim()}», dicek setiap jam.`)}</p>
           </div>
         ) : null}

@@ -14,7 +14,7 @@ import { z } from "zod";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { baseSupabaseAdmin as db } from "../../lib/supabase.js";
-import { DEMO_WORKSPACE_ID, getUserWorkspaceIds } from "../../lib/workspace-access.js";
+import { demoWorkspaceIdFor, getUserWorkspaceIds } from "../../lib/workspace-access.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
 import { DEFAULT_TIMEZONE, normalizeTimezone } from "../../lib/timezone.js";
@@ -36,7 +36,8 @@ const createBody = z.object({
 router.get("/", async (req, res) => {
     try {
         if (isDemo(req)) {
-            return res.json({ data: [{ id: DEMO_WORKSPACE_ID, name: "Demo Workspace", role: null, isDemo: true }], currentWorkspaceId: DEMO_WORKSPACE_ID });
+            const demoId = demoWorkspaceIdFor(req.user.id);
+            return res.json({ data: [{ id: demoId, name: "Demo Workspace", role: null, isDemo: true }], currentWorkspaceId: demoId });
         }
         const { data: memberships, error } = await db
             .from("workspace_members")

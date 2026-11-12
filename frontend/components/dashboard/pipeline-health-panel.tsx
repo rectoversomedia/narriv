@@ -41,7 +41,7 @@ export function PipelineHealthPanel({ className }: { className?: string }) {
 function Stat({ label, value, hint, tone = "default" }: { label: string; value: string; hint?: string; tone?: "default" | "warn" | "bad" }) {
   return (
     <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3" title={hint}>
-      <dt className="text-[10px] font-bold uppercase tracking-wide text-[#647099]">{label}</dt>
+      <dt className="text-[10px] font-bold text-[#647099]">{label}</dt>
       <dd className={cn("mt-1 text-[15px] font-black", tone === "bad" ? "text-rose-600" : tone === "warn" ? "text-amber-700" : "text-[#101334]")}>{value}</dd>
     </div>
   );

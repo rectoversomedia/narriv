@@ -10,8 +10,12 @@ export function ReactQueryProvider({ children }: { children: ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000, // 1 minute
+            // Monitoring data changes hourly, so pages reuse what they loaded for two minutes and keep it for
+            // half an hour: going back to a page shows it at once and refreshes quietly in the background.
+            staleTime: 2 * 60 * 1000,
+            gcTime: 30 * 60 * 1000,
             refetchOnWindowFocus: false,
+            retry: 1,
           },
         },
       })

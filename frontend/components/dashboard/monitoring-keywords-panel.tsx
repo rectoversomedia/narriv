@@ -136,7 +136,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
               </button>
             </form>
           ) : (
-            <p className="rounded-[12px] bg-[#F4F6FC] px-4 py-3 text-[12px] font-bold text-[#5A6478]">{t("readOnly")}</p>
+            <p className="py-2 text-[12px] font-bold text-[#5A6478]">{t("readOnly")}</p>
           )}
 
           {keywords.length === 0 ? (
@@ -149,7 +149,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
               {keywords.map((k) => {
                 const run = k.lastRun && k.isActive && run_ok(k.lastRun.status) ? k.lastRun : null;
                 return (
-                  <li key={k.id} className={cn("flex flex-col rounded-[14px] p-4", k.isActive ? "bg-[#F7F8FC]" : "bg-[#F7F8FC] opacity-60")}>
+                  <li key={k.id} className={cn("flex flex-col border-b border-[#E6EAF2] py-4 sm:border-b-0", !k.isActive && "opacity-60")}>
                     {editing?.id === k.id ? (
                       <form
                         className="flex gap-2"
@@ -176,7 +176,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
                         {([[pickL("Found", "Ditemukan"), run.fetched ?? 0, "#101334"], [pickL("New", "Baru"), run.inserted ?? 0, "#047857"], [pickL("Duplicates", "Duplikat"), run.deduplicated ?? 0, "#8A93AD"]] as const).map(([label, n, color]) => (
                           <div key={label} className="rounded-[10px] bg-white px-2.5 py-2">
                             <p className="text-[18px] font-black leading-none" style={{ color }}>{n}</p>
-                            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.04em] text-[#8A93AD]">{label}</p>
+                            <p className="mt-1 text-[10px] font-black text-[#8A93AD]">{label}</p>
                           </div>
                         ))}
                         {(run.fetched ?? 0) === 0 ? <p className="col-span-3 mt-1 rounded-[8px] bg-[#FFF3DC] px-2.5 py-1.5 text-[11px] font-bold text-[#A04606]">{pickL("Nothing found: try a more common name or spelling.", "Tidak ada hasil: coba nama atau ejaan yang lebih umum.")}</p> : null}

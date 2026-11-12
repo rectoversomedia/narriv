@@ -13,6 +13,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { loginWithPassword } from "@/lib/api-service";
 import { useAuthStore, type AuthUser } from "@/store/useAuthStore";
 import { pickL } from "@/lib/use-l";
+import { launchDashboard } from "@/lib/launch";
 
 // Schema is defined outside the component to avoid recreating it on every render
 const loginSchema = z.object({
@@ -70,7 +71,8 @@ export function LoginForm() {
     setSession(token, user, refreshToken);
     document.cookie = `narriv_auth=${encodeURIComponent(token)}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
     const nextPath = new URLSearchParams(window.location.search).get("next");
-    router.push(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/");
+    const target = nextPath?.startsWith("/") && !nextPath.startsWith("//") && !nextPath.includes("\\") ? nextPath : "/";
+    launchDashboard(() => router.push(target));
   }, [setSession, router]);
 
   const onSubmit = useCallback(async (data: LoginFormValues) => {
@@ -104,13 +106,13 @@ export function LoginForm() {
 
   return (
     <AuthShell visual="dashboard" topAction={<LanguageSelector />}>
-      <div className="mb-12 text-center lg:hidden">
-        <p className="text-3xl font-bold tracking-[-0.04em] text-[#111536]">Narriv</p>
+      <div className="mb-5 flex justify-center lg:hidden">
+        <img src="/brand/logo-bulat.webp" alt="Narriv" width={192} height={182} fetchPriority="high" className="h-[160px] w-[160px] object-contain" />
       </div>
 
-      <div className="mb-12 text-center">
-        <h1 className="text-[34px] font-bold leading-tight tracking-[-0.04em] text-[#111536]">{t("title")}</h1>
-        <p className="mt-5 text-[19px] font-medium text-[#3E4975]">{t("subtitle")}</p>
+      <div className="mb-7 text-center">
+        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.04em] text-[#111536]">{t("title")}</h1>
+        <p className="mt-2 text-[16px] font-medium text-[#3E4975]">{t("subtitle")}</p>
       </div>
 
       {isRegistered && (
@@ -128,7 +130,7 @@ export function LoginForm() {
         }}
         noValidate
       >
-        <FieldGroup className="gap-7">
+        <FieldGroup className="gap-4">
           <AuthInput
             label={t("email")}
             icon="email"
@@ -148,12 +150,12 @@ export function LoginForm() {
 
           {displayError ? <p className="rounded-[8px] border border-transparent bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{displayError}</p> : null}
 
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center justify-between">
             <Field orientation="horizontal" className="w-auto items-center gap-3">
-              <input id="remember-me" type="checkbox" defaultChecked className="h-[19px] w-[19px] accent-[#465FFF]" />
-              <FieldLabel htmlFor="remember-me" className="text-[16px] font-semibold text-[#111536]">{t("rememberMe")}</FieldLabel>
+              <input id="remember-me" type="checkbox" defaultChecked className="h-[17px] w-[17px] accent-[#465FFF]" />
+              <FieldLabel htmlFor="remember-me" className="text-[14px] font-semibold text-[#111536]">{t("rememberMe")}</FieldLabel>
             </Field>
-            <Link href="/reset-password" className="text-[16px] font-semibold text-[#3B52F5] hover:underline">
+            <Link href="/reset-password" className="text-[14px] font-semibold text-[#3B52F5] hover:underline">
               {t("forgotPassword")}
             </Link>
           </div>
@@ -162,19 +164,19 @@ export function LoginForm() {
         </FieldGroup>
         </form>
 
-        <div className="mt-8 grid gap-6">
+        <div className="mt-5 grid gap-4">
           <Divider label={t("divider")} />
         <SocialButtons />
       </div>
 
-      <p className="mt-10 text-center text-[16px] font-medium text-[#3E4975]">
+      <p className="mt-5 text-center text-[14.5px] font-medium text-[#3E4975]">
         {t("noAccount")}{" "}
         <Link href="/signup" className="font-semibold text-[#3B52F5] hover:underline">
           {t("signUp")}
         </Link>
       </p>
 
-      <div className="mt-24">
+      <div className="mt-6">
         <SecurityFooter />
       </div>
     </AuthShell>

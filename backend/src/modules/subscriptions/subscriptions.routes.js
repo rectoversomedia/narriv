@@ -11,7 +11,7 @@ import { supabaseAdmin } from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { WorkspacePlan, PLAN_LIMITS } from "../../types/workspace.js";
 import { wrapAsync } from "../../lib/sentry.js";
-import { DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
+import { demoWorkspaceIdFor } from "../../lib/workspace-access.js";
 
 const router = express.Router();
 
@@ -128,7 +128,7 @@ router.get("/my-plan", async (req, res) => {
     if (req.user?.isDemo) {
       // The demo shows its real usage on the plan prospects usually start from.
       const planLimits = getPlanLimits(WorkspacePlan.INTELLIGENCE);
-      const usage = await getWorkspaceUsage(DEMO_WORKSPACE_ID);
+      const usage = await getWorkspaceUsage(demoWorkspaceIdFor(userId));
       return res.json({
         plan: {
           key: planLimits.plan,
@@ -451,10 +451,10 @@ router.get("/usage", async (req, res) => {
 
     if (req.user?.isDemo) {
       const planLimits = getPlanLimits(WorkspacePlan.INTELLIGENCE);
-      const usage = await getWorkspaceUsage(DEMO_WORKSPACE_ID);
+      const usage = await getWorkspaceUsage(demoWorkspaceIdFor(userId));
       const pct = (used, limit) => (limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0);
       return res.json({
-        workspaceId: DEMO_WORKSPACE_ID,
+        workspaceId: demoWorkspaceIdFor(userId),
         plan: planLimits.plan,
         usage: {
           members: { used: usage.membersUsed, limit: planLimits.maxMembers, percentage: pct(usage.membersUsed, planLimits.maxMembers) },

@@ -5,11 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronsLeft, ChevronsUpDown } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BrandMark } from "@/components/dashboard/brand-hero";
 import { ROLE_LABEL, WorkspaceSwitcher, useMyWorkspaces } from "@/components/layout/workspace-switcher";
-import { getMonitoringKeywords, getWorkspaceSettings } from "@/lib/api-service";
+import { getAlerts, getMonitoringKeywords, getWorkspaceSettings } from "@/lib/api-service";
 import { SECTION_TABS, navGroups, type SectionKey } from "@/lib/navigation";
+import { isPageHidden, useWorkspaceUseCase } from "@/lib/use-case";
+import { prefetchRoute } from "@/lib/prefetch-route";
 import { timeAgo } from "@/lib/intelligence-api";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
@@ -29,13 +31,19 @@ const fade = (hidden: boolean) => cn("whitespace-nowrap transition-opacity durat
  */
 export function Sidebar() {
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const t = useTranslations("DemoApp");
   const L = useL();
   const collapsed = useUiStore((state) => state.sidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const mobileItems = navGroups.flatMap((group) => group.items);
+  // Open alerts, shown beside Follow-up so what waits for a decision is visible from every page.
+  const openAlerts = useQuery({ queryKey: ["nav-open-alerts"], queryFn: () => getAlerts({ status: "unresolved", limit: 1 }), staleTime: 60 * 1000, refetchInterval: 2 * 60 * 1000 });
+  const openCount = openAlerts.data?.pagination?.total ?? 0;
+  const badgeFor = (key: string) => (key === "tasks" && openCount > 0 ? (openCount > 99 ? "99+" : String(openCount)) : null);
 
   const workspace = useQuery({ queryKey: ["workspace-settings"], queryFn: getWorkspaceSettings, staleTime: 30 * 1000 }).data;
+  const { useCase } = useWorkspaceUseCase();
   const keywords = useQuery({ queryKey: ["monitoring-keywords"], queryFn: getMonitoringKeywords, staleTime: 30 * 1000 }).data;
 
   const { isDemo, current } = useMyWorkspaces();
@@ -62,7 +70,7 @@ export function Sidebar() {
         {/* Same height and divider as the top bar, so the logo sits on the same line as the search box. */}
         <div className="relative flex h-[88px] shrink-0 items-center border-b border-white/10 px-4">
           <Link href="/" aria-label="Narriv" className="relative block h-10 w-full">
-            <Image src="/brand/mark.svg" alt="" width={40} height={40} priority unoptimized className={cn("absolute left-0 top-0 size-10 transition-opacity duration-200", collapsed ? "opacity-100" : "opacity-0")} />
+            <Image src="/brand/favicon-orb-96.png" alt="" width={40} height={40} priority className={cn("absolute left-0 top-0 size-10 transition-opacity duration-200", collapsed ? "opacity-100" : "opacity-0")} />
             <Image src="/brand/logo-p.webp" alt="Narriv" width={128} height={48} priority className={cn("absolute left-1 top-1 h-8 w-auto transition-opacity duration-200", collapsed ? "opacity-0" : "opacity-100")} />
           </Link>
         </div>
@@ -82,23 +90,28 @@ export function Sidebar() {
           </WorkspaceSwitcher>
 
           <nav aria-label={L("Main menu", "Menu utama")} className="mt-5 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
-            <p className={cn("mb-2 px-3 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white/35", fade(collapsed))}>{L("Menu", "Menu")}</p>
+            <p className={cn("mb-2 px-3 text-[10px] font-extrabold text-white/35", fade(collapsed))}>{L("Menu", "Menu")}</p>
             <div className="grid gap-1">
               {navGroups.flatMap((group) => group.items).map((item) => {
                 const Icon = item.icon;
                 const active = activeRoute(pathname, item.href, item.match);
-                const pages = SECTION_TABS[item.key as SectionKey] ?? [];
+                const pages = (SECTION_TABS[item.key as SectionKey] ?? []).filter((page) => !isPageHidden(page.href, useCase));
                 return (
                   <div key={item.href}>
                     <Link
                       href={item.href}
+                      onMouseEnter={() => prefetchRoute(queryClient, item.href)}
+                      onFocus={() => prefetchRoute(queryClient, item.href)}
                       title={collapsed ? t(`nav.${item.key}`) : undefined}
                       aria-label={t(`nav.${item.key}`)}
                       aria-current={active ? "true" : undefined}
-                      className={cn("flex h-10 items-center gap-3 rounded-[10px] px-[15px] text-[13px] font-semibold transition-colors", active ? "bg-[#465FFF] text-white shadow-[0_6px_18px_rgba(70,95,255,0.35)]" : "text-white/70 hover:bg-white/[0.06] hover:text-white")}
+                      className={cn("relative flex h-10 items-center gap-3 rounded-[10px] px-[15px] text-[13px] font-semibold transition-colors", active ? "bg-[#465FFF] text-white shadow-[0_6px_18px_rgba(70,95,255,0.35)]" : "text-white/70 hover:bg-white/[0.06] hover:text-white")}
                     >
                       <Icon size={18} strokeWidth={2} className="shrink-0" />
                       <span className={fade(collapsed)}>{t(`nav.${item.key}`)}</span>
+                      {badgeFor(item.key) ? (
+                        <span className={cn("ml-auto rounded-full bg-[#EF4444] px-2 py-0.5 text-[11px] font-black tabular-nums leading-none text-white", collapsed && "absolute ml-0 translate-x-3 -translate-y-3 px-1.5")}>{badgeFor(item.key)}</span>
+                      ) : null}
                     </Link>
                     {/* The open menu shows its pages, so the structure is visible without reading the tab bar. */}
                     {active && !collapsed && pages.length > 1 ? (
@@ -109,6 +122,8 @@ export function Sidebar() {
                             <Link
                               key={page.href}
                               href={page.href}
+                              onMouseEnter={() => prefetchRoute(queryClient, page.href)}
+                              onFocus={() => prefetchRoute(queryClient, page.href)}
                               aria-current={current ? "page" : undefined}
                               className={cn("relative flex h-8 items-center whitespace-nowrap rounded-[8px] px-2.5 text-[12.5px] font-semibold transition-colors", current ? "bg-white/[0.10] text-white" : "text-white/55 hover:bg-white/[0.05] hover:text-white")}
                             >
@@ -155,7 +170,7 @@ export function Sidebar() {
         </div>
       </aside>
 
-      <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 rounded-2xl border border-border bg-[#090D16]/90 p-1.5 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] lg:hidden">
+      <nav className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 grid grid-cols-5 rounded-2xl border border-border bg-[#090D16]/90 p-1.5 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] lg:hidden">
         {mobileItems.map((item) => {
           const Icon = item.icon;
           const active = activeRoute(pathname, item.href, item.match);
@@ -163,14 +178,28 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onTouchStart={() => prefetchRoute(queryClient, item.href)}
+              onMouseEnter={() => prefetchRoute(queryClient, item.href)}
               aria-current={active ? "page" : undefined}
               className={`flex h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 transition ${active ? "bg-[#465FFF] text-white" : "text-white/60 hover:text-white"}`}
             >
-              <Icon size={19} />
+              <span className="relative">
+                <Icon size={19} />
+                {badgeFor(item.key) ? <span className="absolute -right-3 -top-2 rounded-full bg-[#EF4444] px-1.5 py-0.5 text-[9px] font-black leading-none text-white">{badgeFor(item.key)}</span> : null}
+              </span>
               <span className="w-full truncate text-center text-[10px] font-bold leading-none">{t(`navShort.${item.key}`)}</span>
             </Link>
           );
         })}
+        {/* Ask Narriv: in the top bar on desktop, here on phones where the top bar has no room. */}
+        <Link
+          href="/ask"
+          aria-current={pathname?.startsWith("/ask") ? "page" : undefined}
+          className={`flex h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 transition ${pathname?.startsWith("/ask") ? "bg-[#465FFF] text-white" : "text-white/60 hover:text-white"}`}
+        >
+          <Image src="/brand/logo-bulat.webp" alt="" width={20} height={20} unoptimized className="size-5 rounded-full object-cover" />
+          <span className="w-full truncate text-center text-[10px] font-bold leading-none">Ask</span>
+        </Link>
       </nav>
     </>
   );

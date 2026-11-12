@@ -4,7 +4,7 @@ import { globalEvents } from "../app-notifications/app-notifications.events.js";
 import { logStructured } from "../../lib/logger.js";
 import { workspaceLanguage } from "../../lib/workspace-language.js";
 import { dispatchAlertToWebhooks } from "../integrations/webhook-dispatcher.service.js";
-import { DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
+import { isDemoWorkspace } from "../../lib/workspace-access.js";
 
 const SOURCE_STRENGTH = {
     news: 1,
@@ -86,7 +86,7 @@ export async function notifyAndRecord(alert) {
     // Critical and high alerts also go straight to the people: email (notification email, else the owners) and
     // WhatsApp when switched on. Sent once per alert (a webhook retry does not resend), never from the demo.
     let direct = alert.metadata?.notification?.direct || null;
-    if (!direct && ["critical", "high"].includes(String(alert.severity).toLowerCase()) && alert.workspace_id !== DEMO_WORKSPACE_ID) {
+    if (!direct && ["critical", "high"].includes(String(alert.severity).toLowerCase()) && !isDemoWorkspace(alert.workspace_id)) {
         try {
             const { notifyNewHighRiskAlert } = await import("../notifications/notification-dispatch.service.js");
             const r = await notifyNewHighRiskAlert({

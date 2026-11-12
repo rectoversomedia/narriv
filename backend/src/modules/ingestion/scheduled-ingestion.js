@@ -16,7 +16,7 @@ import { baseSupabaseAdmin } from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { ingestRssSignals } from "./rss-ingestion.service.js";
 import { ingestOfficialSources } from "./official-sources.service.js";
-import { DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
+import { isDemoWorkspace } from "../../lib/workspace-access.js";
 import { hourlyKeywordLimit, monitoringStopped } from "../../lib/workspace-plan.js";
 
 const JOB_NAME = "scheduled-rss-ingestion";
@@ -210,7 +210,7 @@ export async function runScheduledIngestion({
         if (pausedIds.size) keywordRows = keywordRows.filter((r) => !pausedIds.has(r.workspace_id));
         // The demo workspace watches a fictional bank: live news would only add unrelated articles (and alerts) to it.
         // Its data is refreshed by the nightly demo reseed instead.
-        if (!workspaceId) keywordRows = keywordRows.filter((r) => r.workspace_id !== DEMO_WORKSPACE_ID);
+        if (!workspaceId) keywordRows = keywordRows.filter((r) => !isDemoWorkspace(r.workspace_id));
         work = buildWorkList(keywordRows, {
             maxKeywordsPerWorkspace: maxKeywordsPerWorkspace ?? ((ws) => hourlyKeywordLimit(settingsById.get(ws))),
             maxWorkspaces,

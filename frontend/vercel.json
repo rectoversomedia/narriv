@@ -2,5 +2,8 @@
   "git": {
     "deploymentEnabled": false
   },
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "regions": [
+    "sin1"
+  ]
 }

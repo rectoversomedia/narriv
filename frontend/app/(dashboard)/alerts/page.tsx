@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { Slack, WhatsApp } from "@ridemountainpig/svgl-react";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { assigneeName, memberName } from "@/lib/member-name";
 import { teamOptions } from "@/lib/teams";
 import { ModalShell } from "@/components/ui/modal-shell";
@@ -99,7 +100,7 @@ function formatMinutes(totalMinutes: number) {
 
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>{children}</section>;
+  return <section className={cn(BOX, className)}>{children}</section>;
 }
 
 
@@ -144,8 +145,8 @@ function MetricCard({ metric }: { metric: Metric }) {
   const helperStyle = toneStyles[metric.helperTone];
 
   return (
-    <div className="min-h-[104px] rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${style.rgb}, 0.10), rgba(${style.rgb}, 0.02) 60%)` }}>
-      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: style.color }}>{metric.label}</p>
+    <div className="min-h-[120px] flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+      <p className="text-[11px] font-black" style={{ color: style.color }}>{metric.label}</p>
       <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-navy">{metric.value}</p>
       <p className={cn("mt-2 text-[11px] font-bold leading-tight", helperStyle.text)}>{metric.helper}</p>
     </div>
@@ -389,22 +390,22 @@ function CriticalIncident({
         <>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#C81E1E]">
-                {pickL("Critical incident", "Insiden kritis")}{totalCritical > 1 ? ` · ${pickL(`${totalCritical} open`, `${totalCritical} aktif`)}` : ""}
+              <p className="inline-flex rounded-full bg-[#C81E1E] px-2.5 py-0.5 text-[11px] font-black text-white">
+                {pickL("Critical Incident", "Insiden Kritis")}{totalCritical > 1 ? ` · ${pickL(`${totalCritical} open`, `${totalCritical} aktif`)}` : ""}
               </p>
-              <h2 className="mt-1 line-clamp-2 text-[20px] font-black leading-snug tracking-[-0.03em] text-[#070B28]">{alert.title}</h2>
+              <h2 className="mt-2 line-clamp-2 text-[26px] font-black leading-tight tracking-[-0.03em] text-[#070B28]">{alert.title}</h2>
               {alert.description ? <p className="mt-1 line-clamp-1 text-[12px] font-semibold text-[#31406B]" title={alert.description}>{alert.description}</p> : null}
             </div>
-            <Link href={`/alerts/${alert.id}`} className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-[#3B52F5] shadow-sm transition hover:bg-[#F8FAFF]">
-              {ta("v2.incident.viewDetails")} <ArrowRight size={13} />
+            <Link href={`/alerts/${alert.id}`} className="inline-flex h-9 items-center rounded-full bg-[#101334] px-4 text-[12.5px] font-bold text-white transition hover:bg-[#2B2F9E]">
+              {ta("v2.incident.viewDetails")}
             </Link>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <div className="mt-5 grid gap-x-10 gap-y-4 sm:grid-cols-3">
             {facts.map((f) => (
-              <div key={f.label} className={cn("min-w-0 rounded-[12px] px-3.5 py-3", f.bad ? "bg-[#C81E1E] text-white" : "bg-white")}>
-                <p className={cn("text-[10px] font-black uppercase tracking-[0.08em]", f.bad ? "text-white/80" : "text-[#647099]")}>{f.label}</p>
-                <p className={cn("mt-1 truncate text-[17px] font-black leading-tight", f.bad ? "text-white" : "text-[#101334]")} title={f.value}>{f.value}</p>
-                <p className={cn("mt-0.5 truncate text-[11px] font-bold", f.bad ? "text-white/80" : "text-[#5F6B94]")}>{f.sub}</p>
+              <div key={f.label} className="min-w-0">
+                <p className="text-[12px] font-bold text-[#647099]">{f.label}</p>
+                <p className={cn("mt-1 truncate text-[22px] font-black leading-tight", f.bad ? "text-[#C81E1E]" : "text-[#101334]")} title={f.value}>{f.value}</p>
+                <p className={cn("mt-0.5 truncate text-[12px] font-bold", f.bad ? "text-[#C81E1E]" : "text-[#5F6B94]")}>{f.sub}</p>
               </div>
             ))}
           </div>
@@ -414,15 +415,15 @@ function CriticalIncident({
               id="incident-owner"
               value={alert.assigneeId ?? ""}
               onChange={(e) => e.target.value && onAssign(alert.id, e.target.value)}
-              className={cn("h-10 w-full max-w-full rounded-[10px] px-3 text-[13px] font-black outline-none sm:w-auto", unassigned ? "bg-[#101334] text-white" : "bg-white text-[#101334]")}
+              className={cn("h-10 w-full max-w-full rounded-full px-4 text-[13px] font-bold outline-none sm:w-auto", unassigned ? "bg-[#C81E1E] text-white" : "bg-white text-[#101334] shadow-[0_1px_2px_rgba(16,19,52,0.08)]")}
             >
-              <option value="">{pickL("Assign an owner…", "Tunjuk penanggung jawab…")}</option>
+              <option value="">{pickL("Assign an Owner…", "Tunjuk Penanggung Jawab…")}</option>
               {members.map((m) => <option key={m.userId} value={m.userId}>{memberName(m)}</option>)}
             </select>
             {alert.status === "New" ? (
-              <button type="button" onClick={() => onStatusChange(alert.id, "acknowledged")} className="h-10 rounded-[10px] bg-white px-4 text-[13px] font-black text-[#101334] shadow-sm transition hover:bg-[#F8FAFF]">{pickL("Mark as being handled", "Tandai sedang ditangani")}</button>
+              <button type="button" onClick={() => onStatusChange(alert.id, "acknowledged")} className="h-10 rounded-full bg-white px-5 text-[13px] font-bold text-[#101334] shadow-[0_1px_2px_rgba(16,19,52,0.08)] transition hover:bg-[#F8FAFF]">{pickL("Mark as Being Handled", "Tandai Sedang Ditangani")}</button>
             ) : null}
-            <button type="button" onClick={() => onPlan(alert)} className="h-10 rounded-[10px] bg-[#465FFF] px-4 text-[13px] font-black text-white transition hover:bg-[#3B52F5]">{pickL("Create response plan", "Buat rencana respons")}</button>
+            <button type="button" onClick={() => onPlan(alert)} className="h-10 rounded-full bg-[#465FFF] px-5 text-[13px] font-bold text-white transition hover:bg-[#3B52F5]">{pickL("Create Action Plan", "Buat Rencana Aksi")}</button>
           </div>
         </>
       )}
@@ -459,13 +460,13 @@ function DeliveryStatus({ ta, integrations, isLoading }: { ta: ReturnType<typeof
               <ChannelIcon tone={channel.visual.tone}>{channel.visual.icon}</ChannelIcon>
               <div className="min-w-0">
                 <p className="truncate text-[12px] font-black text-[#101334]">{channel.name}</p>
-                <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[#647099]">{channel.platform}</p>
+                <p className="mt-0.5 text-[9px] font-bold text-[#647099]">{channel.platform}</p>
               </div>
               <div className="text-right"><p className="inline-flex items-center gap-1 text-[10px] font-black text-[#047857]">{ta("v2.delivery.active")}</p><p className="text-[9px] font-bold text-[#31406B]">{channel.lastSyncAt ? new Date(channel.lastSyncAt).toLocaleDateString(intlLocale(), { day: "2-digit", month: "short" }) : ta("v2.delivery.ready")}</p></div>
             </div>
           ))
         ) : (
-          <div className="rounded-[10px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] p-4">
+          <div className="py-4">
             <p className="text-[12px] font-black text-[#101334]">{ta("v2.delivery.noChannels")}</p>
             <p className="mt-1 text-[10px] font-bold text-[#647099]">{ta("v2.delivery.noChannelsDesc")}</p>
           </div>
@@ -622,10 +623,10 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
       <ul className="mt-4 space-y-2.5 md:hidden">
         {isLoading ? Array.from({ length: 3 }, (_, i) => <li key={i} className="h-24 animate-pulse rounded-[12px] bg-[#F1F4FB]" />)
           : isError ? <li className="rounded-[12px] bg-[#FDECEC] p-4 text-[13px] font-bold text-[#B42318]">{ta("table.errorTitle")}</li>
-          : rows.length === 0 ? <li className="rounded-[12px] bg-[#F7F8FC] p-4 text-[13px] font-bold text-[#5F6B94]">{ta("empty.noAlerts")}</li>
+          : rows.length === 0 ? <li className="py-4 text-[13px] font-bold text-[#5F6B94]">{ta("empty.noAlerts")}</li>
           : rows.map((alert) => (
             <li key={`m-${alert.id}`}>
-              <Link href={`/alerts/${alert.id}`} className={cn("block rounded-[12px] p-3.5", alert.tone === "red" ? "bg-[#FDECEC]" : alert.tone === "amber" ? "bg-[#FFF6E0]" : "bg-[#F7F8FC]")}>
+              <Link href={`/alerts/${alert.id}`} className="block border-b border-[#E6EAF2] py-3.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className={cn("rounded-[6px] px-2 py-0.5 text-[11px] font-black", alert.tone === "red" ? "bg-[#C81E1E] text-white" : alert.tone === "amber" ? "bg-[#F59E0B] text-white" : "bg-[#E5F6EE] text-[#047857]")}>{alert.tags[0]}</span>
                   <StatusBadge status={alert.status} />
@@ -643,7 +644,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
         <table className="w-full min-w-[720px] table-fixed border-collapse text-left">
           <colgroup><col className="w-10" /><col /><col className="w-[96px]" /><col className="w-[150px]" /><col className="w-[120px]" /><col className="w-[130px]" /><col className="w-10" /></colgroup>
           <thead>
-            <tr className="border-b border-[#E6EAF2] text-[10px] font-black uppercase tracking-[0.1em] text-[#5F6B94]">
+            <tr className="border-b border-[#E6EAF2] text-[10px] font-black text-[#5F6B94]">
               <th className="w-10 px-3 py-3">
                 <button
                   type="button"
@@ -718,13 +719,13 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 </td>
                 <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[11px] font-black", alert.tone === "red" ? "bg-[#C81E1E] text-white" : alert.tone === "amber" ? "bg-[#F59E0B] text-white" : "bg-[#10B981]/12 text-[#047857]")}>{alert.tags[0]}</span></td>
                 <td className="px-3 py-3 align-middle">{alert.sourceLabel === ta("table.unassigned") ? <span className="text-[12px] font-black text-[#C81E1E]">{alert.sourceLabel}</span> : <span className="line-clamp-2 text-[12px] font-black text-[#31406B]">{alert.sourceLabel}</span>}</td>
-                <td className="px-3 py-3 align-middle">{alert.overdue ? <span className="inline-block rounded-[6px] bg-[#C81E1E] px-2 py-1 text-[11px] font-black leading-tight text-white"><span className="block text-[10px] uppercase tracking-[0.06em] text-white/80">{pickL("Overdue", "Lewat tenggat")}</span>{alert.deadline}</span> : <span className="text-[12px] font-black text-[#31406B]">{alert.deadline}</span>}</td>
+                <td className="px-3 py-3 align-middle">{alert.overdue ? <span className="inline-block rounded-[6px] bg-[#C81E1E] px-2 py-1 text-[11px] font-black leading-tight text-white"><span className="block text-[10px] text-white/80">{pickL("Overdue", "Lewat tenggat")}</span>{alert.deadline}</span> : <span className="text-[12px] font-black text-[#31406B]">{alert.deadline}</span>}</td>
                 <td className="px-3 py-3 align-middle"><StatusBadge status={alert.status} /><p className="mt-1 text-[10px] font-bold text-[#5A6478]">{alert.ack}</p></td>
                 <td className="relative px-3 py-3 text-right align-middle">
                   <button type="button" aria-label={pickL(`Open actions for ${alert.title}`, `Buka aksi untuk ${alert.title}`)} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5]"><MoreVertical size={16} /></button>
                   {openMenuId === alert.id ? (
                     <div ref={menuRef} className="absolute right-3 top-full z-50 mt-1 w-48 rounded-[10px] border border-[#E6EAF2] bg-white py-1 shadow-[0_12px_36px_rgba(16,24,40,0.12)]">
-                      <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">{ta("table.changeStatus")}</p>
+                      <p className="px-3 py-1.5 text-[9px] font-black text-[#647099]">{ta("table.changeStatus")}</p>
                       <button type="button" onClick={() => { onStatusChange(alert.id, "open"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]">{ta("table.statusNew")}</button>
                       <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]">{ta("table.statusInvestigating")}</button>
                       <button type="button" onClick={() => { onStatusChange(alert.id, "resolved"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]">{ta("table.statusResolved")}</button>
@@ -1177,7 +1178,7 @@ export default function AlertsPage() {
         )}
       </section>
       {summaryQuery.isError || (!summaryQuery.isLoading && !summaryQuery.data) ? (
-        <div className="rounded-[12px] border border-dashed border-transparent bg-[#FBFAFF] px-5 py-4 flex items-center justify-between gap-4">
+        <div className="px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div>
               <p className="text-[13px] font-bold text-slate-900">{pickL("Alert metrics unavailable", "Metrik peringatan belum bisa dimuat")}</p>
@@ -1200,11 +1201,12 @@ export default function AlertsPage() {
       <CriticalIncident alert={highlightedCriticalAlert} totalCritical={totalCriticalAlerts} isLoading={criticalAlertsQuery.isLoading} ta={ta} members={members} onAssign={handleAssign} onStatusChange={handleStatusChange} onPlan={(a) => setPlanAlert({ id: String(a.id), title: a.title })} />
       <CreateActionPlanModal open={planAlert !== null} onOpenChange={(open) => { if (!open) setPlanAlert(null); }} initialAlertId={planAlert?.id} initialAlertTitle={planAlert?.title} initialStrategyType="crisis_response" />
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
+      {/* The list takes the full width below 1600px so alert titles stay on one or two lines; routing sits under it. */}
+      <section className="grid gap-4 min-[1600px]:grid-cols-[minmax(0,1fr)_336px]">
         <div className="min-w-0">
           <AlertsTable ta={ta} rows={rows} page={page} totalPages={totalPages} footerText={footerText} isLoading={alertsQuery.isLoading} isError={alertsQuery.isError || (!alertsQuery.isLoading && !alertsData)} onPageChange={setPage} onStatusChange={handleStatusChange} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} menuRef={menuRef} searchQuery={searchQuery} onSearchChange={(value) => { setSearchQuery(value); setPage(1); }} severityFilter={severityFilter} statusFilter={statusFilter} onOpenFilterModal={() => setIsFilterModalOpen(true)} selectedAlerts={selectedAlerts} onSelectionChange={setSelectedAlerts} onBulkStatusChange={handleBulkStatusChange} isBulkUpdating={isBulkUpdating} />
         </div>
-        <aside className="space-y-4">
+        <aside className="grid gap-4 md:grid-cols-2 min-[1600px]:grid-cols-1 min-[1600px]:content-start">
           <EscalationMatrix ta={ta} levels={escalationLevels} isLoading={escalationQuery.isLoading} />
           <DeliveryStatus ta={ta} integrations={integrationsQuery.data?.data ?? []} isLoading={integrationsQuery.isLoading} />
         </aside>
@@ -1290,7 +1292,7 @@ export default function AlertsPage() {
 
                     <div className="space-y-3 p-4">
                       {notificationRuleDraft.length === 0 ? (
-                        <div className="rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] p-8 text-center">
+                        <div className="p-8 text-center">
                           <p className="text-[13px] font-black text-[#101334]">{ta("v2.notificationRulesModal.noRules")}</p>
                           <p className="mt-1 text-[10px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.noRulesDesc")}</p>
                         </div>
@@ -1380,7 +1382,7 @@ export default function AlertsPage() {
               <button type="button" onClick={handleSaveEscalationMatrix} disabled={isSavingEscalation} className="flex h-9 items-center justify-center rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
                 {isSavingEscalation ? ta("v2.escalationMatrix.saving") : ta("v2.escalationMatrix.save")}
               </button></>}>
-<div className="mb-3 grid grid-cols-[78px_minmax(0,1fr)_120px_86px_36px] gap-2 px-2 text-[9px] font-black uppercase tracking-[0.16em] text-[#5F6B94] max-md:hidden">
+<div className="mb-3 grid grid-cols-[78px_minmax(0,1fr)_120px_86px_36px] gap-2 px-2 text-[9px] font-black text-[#5F6B94] max-md:hidden">
                 <span>{ta("v2.escalationMatrix.levelLabel")}</span>
                 <span>{ta("v2.escalationMatrix.ownerLabel")}</span>
                 <span>{ta("v2.escalationMatrix.timeLabel")}</span>
@@ -1455,7 +1457,7 @@ export default function AlertsPage() {
                   </div>
                 ))}
               </div>
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] p-3">
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 p-3">
                 <p className="text-[11px] font-bold text-[#5F6B94]">{ta("v2.escalationMatrix.limitHint")}</p>
                 <button type="button" onClick={addEscalationLevel} disabled={escalationDraft.length >= 5} className="inline-flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#3B52F5] transition hover:border-[#C9D4F6] disabled:cursor-not-allowed disabled:opacity-50">
                   {ta("v2.escalationMatrix.addLevel")}
@@ -1637,7 +1639,7 @@ export default function AlertsPage() {
                             ))}
                           </div>
                         ) : (
-                          <p className="rounded-[8px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] px-3 py-2.5 text-[11px] font-semibold text-[#647099]">
+                          <p className="px-3 py-2.5 text-[11px] font-semibold text-[#647099]">
                             No sources configured yet. Add sources in the Sources page.
                           </p>
                         )}

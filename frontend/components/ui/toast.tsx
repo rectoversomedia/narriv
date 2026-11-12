@@ -4,6 +4,7 @@ import { CheckCircle2, Info, X, XCircle } from "lucide-react";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { recentlyDemoBlocked } from "@/lib/demo-blocked";
 
 type ToastTone = "success" | "error" | "info";
 
@@ -63,6 +64,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const showToast = (input: string | ToastInput) => {
     const normalized = typeof input === "string" ? { description: input } : input;
+    // A change refused by the read-only demo already shows the demo notice; its failure toast would only confuse.
+    if (normalized.tone === "error" && recentlyDemoBlocked()) return;
     const id = createToastId();
     const duration = normalized.duration ?? 4000;
     const toast: ToastRecord = {

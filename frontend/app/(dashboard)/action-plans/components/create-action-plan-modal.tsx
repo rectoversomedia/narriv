@@ -116,14 +116,14 @@ export function CreateActionPlanModal({
         <>
           <button type="button" onClick={close} disabled={isSubmitting} className={secondaryButtonClass}>{t("cancel")}</button>
           <button type="button" onClick={() => void handleSubmit()} disabled={isSubmitting} className={primaryButtonClass}>
-            {isSubmitting ? L("Drafting…", "Menyusun…") : L("Create plan", "Buat rencana")}
+            {isSubmitting ? L("Drafting…", "Menyusun…") : L("Create Action Plan", "Buat Rencana Aksi")}
           </button>
         </>
       }
     >
       {basis ? (
         <div className="mb-5 rounded-[12px] border border-transparent bg-[#F5F7FF] px-4 py-3">
-          <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#3B52F5]">{L("Based on this", "Berdasarkan")} {basis.label}</p>
+          <p className="text-[11px] font-black text-[#3B52F5]">{L("Based on this", "Berdasarkan")} {basis.label}</p>
           <p className="mt-1 line-clamp-2 text-[14px] font-black leading-snug text-[#101334]" title={basis.title}>{basis.title}</p>
         </div>
       ) : null}

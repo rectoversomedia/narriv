@@ -12,6 +12,11 @@ import { recordAuditLog } from "../../lib/audit.js";
 import { wrapAsync } from "../../lib/sentry.js";
 import { buildXlsx, objectsToRows, rowsToCsv } from "../../lib/spreadsheet.js";
 import { classifyRecord, loadRelevanceContext } from "../../lib/brand-relevance.js";
+import { detectRegions, provinceByCode, provinceFromLabel, regionValuesFor } from "../../lib/indonesia-regions.js";
+import { getProfilesFor, getWorkspaceProfile } from "../../lib/workspace-profile.js";
+import { maskSignal } from "../../lib/privacy.js";
+import { CVE_CATEGORY_IDS, CVE_RISK_IDS } from "../../lib/cve-categories.js";
+import { checkBudgetAllowance } from "../../lib/cost-management.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -53,12 +58,29 @@ export function toSignalListItem(row, workspaceIds = []) {
         narratives,
         analysisStatus: analysis ? "analyzed" : "unanalyzed",
         analysisConfidence: Number.isFinite(rawConf) && rawConf >= 0 && rawConf <= 1 ? rawConf : null,
+        // The CVE narrative category and its review, in CVE workspaces (cve-categories.js).
+        cve: signal.metadata?.cve ?? null,
     };
 }
 
+/**
+ * Narrows a signals query to CVE categories: "flagged" is every risk category that a reviewer has not dismissed,
+ * "unclassified" is records without a category yet, otherwise one category id.
+ */
+function applyCveFilter(query, cve) {
+    const cat = 'metadata->cve->>category';
+    const review = 'metadata->cve->review->>status';
+    if (cve === "unclassified") return query.is(cat, null);
+    if (cve === "flagged") return query.in(cat, CVE_RISK_IDS).or(`${review}.is.null,${review}.neq.dismissed`);
+    return query.eq(cat, cve);
+}
+const CVE_FILTERS = ["flagged", "unclassified", ...CVE_CATEGORY_IDS];
+
 // Filters: keyword, platform, sentiment, startDate/endDate (collection time),
 // narrativeId (persisted membership in this workspace), relevance ("direct":
-// names the brand, "other": does not) and analysis ("analyzed" | "pending").
+// names the brand, "other": does not), analysis ("analyzed" | "pending"),
+// region (a province code from indonesia-regions.js) and cve (see applyCveFilter).
+// In privacy mode, social posts are served without their author, link or @handles (privacy.js).
 // Every row also carries its brand relevance, classified from its own text.
 router.get("/", async (req, res) => {
     try {
@@ -66,7 +88,7 @@ router.get("/", async (req, res) => {
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
 
-        const { keyword, platform, startDate, endDate, sentiment, narrativeId, relevance, analysis } = req.query;
+        const { keyword, platform, startDate, endDate, sentiment, narrativeId, relevance, analysis, region, cve } = req.query;
 
         const safePage = Math.max(1, page);
         const safeLimit = Math.min(100, Math.max(1, limit));
@@ -76,6 +98,8 @@ router.get("/", async (req, res) => {
         if (workspaceIds.length === 0) return emptyPage();
         if (relevance && !["direct", "other"].includes(relevance)) return res.status(400).json({ error: "relevance must be direct or other." });
         if (analysis && !["analyzed", "pending"].includes(analysis)) return res.status(400).json({ error: "analysis must be analyzed or pending." });
+        if (region && !provinceByCode(region)) return res.status(400).json({ error: "region must be a province code." });
+        if (cve && !CVE_FILTERS.includes(cve)) return res.status(400).json({ error: `cve must be one of: ${CVE_FILTERS.join(", ")}.` });
 
         // Build dynamic query using Supabase
         let query = supabase
@@ -96,6 +120,10 @@ router.get("/", async (req, res) => {
         if (sentiment) {
             query = query.ilike('sentiment', sentiment);
         }
+
+        // A province matches its own name and the city names older records stored as their region.
+        if (region) query = query.in('region', regionValuesFor(region));
+        if (cve) query = applyCveFilter(query, cve);
 
         // Analysis status: a stored sentiment exists only after AI analysis.
         if (analysis === "analyzed") query = query.not('sentiment', 'is', null);
@@ -148,12 +176,16 @@ router.get("/", async (req, res) => {
             .range(skip, skip + safeLimit - 1);
 
         if (signalsError) throw signalsError;
+        const profile = await getProfilesFor(workspaceIds);
 
         res.json({
-            data: (signalsData || []).map((row) => ({
-                ...toSignalListItem(row, workspaceIds),
-                relevance: ctx.configured ? classifyRecord(row, ctx).relevance : null,
-            })),
+            data: (signalsData || []).map((row) => {
+                const item = {
+                    ...toSignalListItem(row, workspaceIds),
+                    relevance: ctx.configured ? classifyRecord(row, ctx).relevance : null,
+                };
+                return profile.privacyMode ? maskSignal(item, requestLang()) : item;
+            }),
             pagination: {
                 page: safePage,
                 limit: safeLimit,
@@ -161,6 +193,7 @@ router.get("/", async (req, res) => {
                 totalPages: Math.ceil((count || 0) / safeLimit)
             },
             relevance: { configured: ctx.configured, brand: ctx.brandTerms[0] || null, brandSource: ctx.brandSource },
+            profile,
         });
     } catch (error) {
         logStructured("error", "Error fetching signals:", { error: error?.message || error, stack: error?.stack });
@@ -209,7 +242,7 @@ router.post("/", validateRequest({ body: createSignalBodySchema }), async (req, 
 router.get("/export", async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
-        const { keyword, platform, startDate, endDate, sentiment, format = "csv" } = req.query;
+        const { keyword, platform, startDate, endDate, sentiment, region, format = "csv" } = req.query;
 
         let query = supabase
             .from('signals')
@@ -227,6 +260,9 @@ router.get("/export", async (req, res) => {
         if (sentiment) {
             query = query.ilike('sentiment', sentiment);
         }
+        if (region && provinceByCode(region)) {
+            query = query.in('region', regionValuesFor(region));
+        }
         if (startDate) {
             const dateStart = new Date(startDate);
             if (!isNaN(dateStart.getTime())) {
@@ -240,17 +276,20 @@ router.get("/export", async (req, res) => {
             }
         }
 
-        const { data: signals, error } = await query;
+        const { data: rawSignals, error } = await query;
         if (error) {
             logStructured("error", "Error fetching signals for export:", { error: error.message });
             return res.status(500).json({ error: "Failed to export signals" });
         }
+        const { privacyMode } = await getProfilesFor(workspaceIds);
+        const signals = privacyMode ? (rawSignals || []).map((s) => maskSignal(s, requestLang())) : rawSignals;
 
         const rows = (signals || []).map((s) => ({
             ID: s.id,
             Title: s.title || "",
             Platform: s.platform || "",
             Sentiment: s.sentiment || "",
+            Region: provinceFromLabel(s.region)?.name || "",
             Severity: s.severity || "",
             "Source URL": s.source_url || "",
             Author: s.author || "",
@@ -439,6 +478,167 @@ router.get("/meta", async (req, res) => {
     }
 });
 
+// GET /regions?days=30 - where the workspace's records are about, per province: how many, how many negative,
+// and the cities named most. A record counts once, under the province stored as its region (older records stored
+// a city, which maps to its province). Records about no Indonesian place are reported as `unlocated`.
+router.get("/regions", async (req, res) => {
+    try {
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+        const days = [1, 7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
+        if (workspaceIds.length === 0) return res.json({ days, total: 0, located: 0, unlocated: 0, provinces: [] });
+        const since = new Date(Date.now() - days * 86400000).toISOString();
+        const { data, error } = await supabase
+            .from('signals')
+            .select('region, sentiment, metadata')
+            .in('workspace_id', workspaceIds)
+            .gte('captured_at', since)
+            .limit(10000);
+        if (error) throw error;
+
+        const byCode = new Map();
+        let located = 0;
+        for (const row of data || []) {
+            const province = provinceFromLabel(row.region);
+            if (!province) continue;
+            located++;
+            const entry = byCode.get(province.code) || { code: province.code, name: province.name, total: 0, negative: 0, cities: new Map() };
+            entry.total++;
+            if (String(row.sentiment || "").toUpperCase() === "NEGATIVE") entry.negative++;
+            const cities = Array.isArray(row.metadata?.geo?.cities) ? row.metadata.geo.cities : detectRegions({ title: row.region }, { lenient: true }).cities;
+            for (const city of cities) {
+                if (provinceFromLabel(city)?.code !== province.code) continue;
+                entry.cities.set(city, (entry.cities.get(city) || 0) + 1);
+            }
+            byCode.set(province.code, entry);
+        }
+        const provinces = [...byCode.values()]
+            .map((p) => ({ ...p, cities: [...p.cities.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, total]) => ({ name, total })) }))
+            .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+        const total = (data || []).length;
+        res.json({ days, total, located, unlocated: total - located, provinces });
+    } catch (error) {
+        logStructured("error", "Error fetching signal regions:", { error: error?.message || error });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /cve-summary?days=30 - CVE narrative categories in the caller's workspaces: per category how many were
+// suggested, confirmed and dismissed, how many records await a category, and the provinces with the most
+// unreviewed or confirmed risk records. Counts only; nothing about authors.
+router.get("/cve-summary", async (req, res) => {
+    try {
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+        const days = [1, 7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
+        const profile = await getProfilesFor(workspaceIds);
+        const empty = { days, enabled: profile.useCase === "cve", total: 0, classified: 0, unclassified: 0, flagged: 0, categories: [], provinces: [] };
+        if (workspaceIds.length === 0) return res.json(empty);
+        const since = new Date(Date.now() - days * 86400000).toISOString();
+        const { data, error } = await supabase.from('signals').select('region, metadata').in('workspace_id', workspaceIds).gte('captured_at', since).limit(10000);
+        if (error) throw error;
+
+        const cats = new Map(CVE_CATEGORY_IDS.map((id) => [id, { id, suggested: 0, confirmed: 0, dismissed: 0 }]));
+        const provinces = new Map();
+        let classified = 0;
+        let flagged = 0;
+        for (const row of data || []) {
+            const cve = row.metadata?.cve;
+            if (!cve?.category) continue;
+            classified++;
+            const entry = cats.get(cve.category);
+            if (!entry) continue;
+            const status = cve.review?.status;
+            if (status === "confirmed") entry.confirmed++;
+            else if (status === "dismissed") entry.dismissed++;
+            else entry.suggested++;
+            if (CVE_RISK_IDS.includes(cve.category) && status !== "dismissed") {
+                flagged++;
+                const p = provinceFromLabel(row.region);
+                if (p) provinces.set(p.code, { code: p.code, name: p.name, total: (provinces.get(p.code)?.total || 0) + 1 });
+            }
+        }
+        const total = (data || []).length;
+        res.json({
+            ...empty,
+            total,
+            classified,
+            unclassified: total - classified,
+            flagged,
+            categories: [...cats.values()],
+            provinces: [...provinces.values()].sort((a, b) => b.total - a.total).slice(0, 8),
+        });
+    } catch (error) {
+        logStructured("error", "Error fetching CVE summary:", { error: error?.message || error });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /cve-classify - suggests a CVE category for up to 25 recent records that have none, in the caller's CVE
+// workspace. For records collected before the workspace switched to CVE; new records are classified on arrival.
+router.post("/cve-classify", async (req, res) => {
+    try {
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.body?.workspaceId);
+        if (!scopedWorkspaceId) return res.status(403).json({ error: "Workspace access denied" });
+        if ((await getWorkspaceProfile(scopedWorkspaceId)).useCase !== "cve") return res.status(409).json({ error: "This workspace does not monitor for violent extremism.", code: "NOT_CVE_WORKSPACE" });
+        const budget = await checkBudgetAllowance(scopedWorkspaceId).catch(() => ({ allowed: true }));
+        if (budget?.allowed === false) return res.status(402).json({ error: "The AI budget for this workspace is used up.", code: "AI_BUDGET_EXCEEDED" });
+
+        const limit = Math.min(25, Math.max(1, Number(req.body?.limit) || 25));
+        const { data: rows, error } = await supabase.from('signals').select('id, title, content, metadata').eq('workspace_id', scopedWorkspaceId).is('metadata->cve->>category', null).order('captured_at', { ascending: false }).limit(limit);
+        if (error) throw error;
+        const { classifyCveNarrative } = await import("../ai/ai.service.js");
+        let classified = 0;
+        let failed = 0;
+        for (let i = 0; i < (rows || []).length; i += 5) {
+            await Promise.all(rows.slice(i, i + 5).map(async (row) => {
+                try {
+                    const cve = await classifyCveNarrative(row.title, cleanSignalContent(row.content), { workspaceId: scopedWorkspaceId, operation: "cve_classification" });
+                    const { error: upErr } = await supabase.from('signals').update({ metadata: { ...(row.metadata || {}), cve } }).eq('id', row.id);
+                    if (upErr) throw upErr;
+                    classified++;
+                } catch (err) {
+                    failed++;
+                    logStructured("warn", "cve_classify_one_failed", { error: err?.message, signalId: row.id });
+                }
+            }));
+        }
+        const { count } = await supabase.from('signals').select('id', { count: 'exact', head: true }).eq('workspace_id', scopedWorkspaceId).is('metadata->cve->>category', null);
+        res.json({ classified, failed, remaining: count ?? 0 });
+    } catch (error) {
+        logStructured("error", "Error classifying CVE batch:", { error: error?.message || error });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /:id/cve-review { status: "confirmed" | "dismissed", category? } - a person's verdict on the suggested
+// category; `category` corrects it. The reviewer and time are kept with the record, and the change is audit-logged.
+router.post("/:id/cve-review", async (req, res) => {
+    try {
+        const status = req.body?.status;
+        const category = req.body?.category;
+        if (!["confirmed", "dismissed"].includes(status)) return res.status(400).json({ error: "status must be confirmed or dismissed." });
+        if (category !== undefined && !CVE_CATEGORY_IDS.includes(category)) return res.status(400).json({ error: "Unknown CVE category." });
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+        const { data: signal } = await supabase.from('signals').select('id, workspace_id, metadata').eq('id', req.params.id).maybeSingle();
+        if (!signal || !workspaceIds.includes(signal.workspace_id)) return res.status(404).json({ error: "Signal not found" });
+        const role = await getWorkspaceRole(req.user.id, signal.workspace_id);
+        if (!["owner", "admin", "analyst"].includes(role)) return res.status(403).json({ error: "Only workspace members who analyse records can review them." });
+
+        const previous = signal.metadata?.cve || {};
+        const cve = {
+            ...previous,
+            ...(category ? { category, corrected_from: previous.category ?? null } : {}),
+            review: { status, by: req.user.id, at: new Date().toISOString() },
+        };
+        const { error } = await supabase.from('signals').update({ metadata: { ...(signal.metadata || {}), cve } }).eq('id', signal.id);
+        if (error) throw error;
+        await recordAuditLog({ userId: req.user.id, workspaceId: signal.workspace_id, event: "signal_cve_reviewed", metadata: { signal_id: signal.id, status, category: cve.category } }).catch(() => {});
+        res.json({ cve });
+    } catch (error) {
+        logStructured("error", "Error reviewing CVE category:", { error: error?.message || error });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 // GET signal by ID — returns { signal, analysis }
 router.get("/:id", async (req, res) => {
     try {
@@ -473,8 +673,11 @@ router.get("/:id", async (req, res) => {
             throw analysisError;
         }
 
+        const { privacyMode } = await getWorkspaceProfile(signal.workspace_id);
+        const served = { ...signal, content: cleanSignalContent(signal.content) };
+        if (privacyMode) delete served.raw_documents; // raw payloads carry the account
         return res.json({
-            signal: { ...signal, content: cleanSignalContent(signal.content) },
+            signal: privacyMode ? maskSignal(served, requestLang()) : served,
             analysis: latestAnalysis ?? { status: "processing" },
         });
 

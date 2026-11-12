@@ -6,7 +6,7 @@ import { sendEmail } from "../../lib/email.js";
 import { passwordResetCode, passwordResetConfirmation, emailVerificationCode } from "../../lib/email-templates.js";
 import { logStructured } from "../../lib/logger.js";
 import { invalidateUserSessions } from "../../middlewares/session.middleware.js";
-import { DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
+import { DEMO_SCENARIOS, demoScenarioOf, demoWorkspaceIdFor } from "../../lib/workspace-access.js";
 import { newTrialSettings } from "../../lib/workspace-plan.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -1144,8 +1144,9 @@ export const me = async (req, res) => {
                 name: req.user.name || "Demo User",
                 provider: "demo",
                 isDemo: true,
+                demoScenario: demoScenarioOf(user_id),
                 workspace: {
-                    id: DEMO_WORKSPACE_ID,
+                    id: demoWorkspaceIdFor(user_id),
                     name: "Demo Workspace",
                     slug: "demo-workspace",
                     role: "owner",
@@ -1606,6 +1607,30 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name,
     return res.redirect(`${FRONTEND_URL}/oauth/callback?code=${exchangeCode}`);
 }
 
+// A demo case whose workspace has no records yet, or holds an older version of its dataset, is filled on the
+// next visit, once per server instance; concurrent visits wait for the same run. Only demo workspaces are written.
+const demoSeedRuns = new Map();
+async function ensureDemoScenarioSeeded(scenario) {
+    if (!demoSeedRuns.has(scenario)) {
+        demoSeedRuns.set(scenario, (async () => {
+            const ws = demoWorkspaceIdFor(`demo_${scenario}_x`);
+            const { demoScenarios, seedScenarioWorkspace } = await import("../demo/demo-seed.js");
+            const def = (await demoScenarios()).find((d) => d.key === scenario);
+            if (!def) return;
+            const [{ count }, { data: workspace }] = await Promise.all([
+                baseSupabaseAdmin.from("signals").select("id", { count: "exact", head: true }).eq("workspace_id", ws),
+                baseSupabaseAdmin.from("workspaces").select("settings").eq("id", ws).maybeSingle(),
+            ]);
+            if (count && workspace?.settings?.demoVersion === (def.version ?? 1)) return;
+            await seedScenarioWorkspace(def);
+        })().catch((err) => {
+            demoSeedRuns.delete(scenario); // let the next visit try again
+            logStructured("error", "demo_scenario_seed_failed", { scenario, error: err?.message });
+        }));
+    }
+    await demoSeedRuns.get(scenario);
+}
+
 /**
  * Demo login endpoint - creates a temporary demo session
  * SECURITY: This requires server-side validation instead of client-side bypass
@@ -1622,8 +1647,11 @@ export const demo = async (req, res) => {
             });
         }
 
-        // Create demo user data (not stored in DB - temporary session)
-        const demoUserId = `demo_${crypto.randomUUID()}`;
+        // Create demo user data (not stored in DB - temporary session). The id carries the chosen scenario
+        // (workspace-access.js DEMO_WORKSPACES); an unknown or missing one is the brand demo.
+        const scenario = DEMO_SCENARIOS.includes(req.body?.scenario) ? req.body.scenario : "brand";
+        const demoUserId = `demo_${scenario}_${crypto.randomUUID()}`;
+        await ensureDemoScenarioSeeded(scenario);
         const demoUser = {
             id: demoUserId,
             email: "demo@narriv.ai",
@@ -1674,6 +1702,7 @@ export const demo = async (req, res) => {
 
         logStructured("info", "demo_login", {
             userId: demoUserId,
+            scenario,
             ip: req.ip,
         });
 
@@ -1686,7 +1715,8 @@ export const demo = async (req, res) => {
                 name: demoUser.name,
                 provider: "demo",
                 workspace: "Demo Workspace",
-                workspaceId: DEMO_WORKSPACE_ID,
+                workspaceId: demoWorkspaceIdFor(demoUserId),
+                demoScenario: scenario,
                 isDemo: true,
             },
         });

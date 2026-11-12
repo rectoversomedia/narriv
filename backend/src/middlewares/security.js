@@ -10,12 +10,15 @@ function splitOrigins(value = "") {
         .filter(Boolean);
 }
 
+const PRODUCT_ORIGINS = ["https://www.narriv.digital", "https://narriv.digital", "https://app.narriv.digital"];
+
 export function buildCorsOriginChecker(env = process.env) {
     const isProduction = env.NODE_ENV === "production";
     const envOrigins = splitOrigins(env.CORS_ORIGINS);
     const allowVercelPreviewOrigins = String(env.ALLOW_VERCEL_PREVIEW_ORIGINS || "").toLowerCase() === "true";
 
-    const allowlist = [...envOrigins];
+    // The website and the app always reach the API, whatever CORS_ORIGINS holds.
+    const allowlist = [...PRODUCT_ORIGINS, ...envOrigins];
     const patternAllowlist = [];
 
     if (!isProduction) {

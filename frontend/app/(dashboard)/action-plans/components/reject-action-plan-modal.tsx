@@ -63,7 +63,7 @@ export function RejectActionPlanModal({ open, onOpenChange, planTitle, onConfirm
       <div className="space-y-4">
         {planTitle ? (
           <div className="rounded-[12px] border border-[#EEF1F7] bg-[#FBFCFF] px-4 py-3">
-            <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{t("planTitleLabel")}</p>
+            <p className="text-[11px] font-black text-[#5A6478]">{t("planTitleLabel")}</p>
             <p className="mt-1 truncate text-[14px] font-black text-[#101334]" title={planTitle}>{planTitle}</p>
           </div>
         ) : null}

@@ -66,10 +66,10 @@ function Card({ title, sub, children, className }: { title: string; sub?: string
   );
 }
 
-function Tile({ label, value, sub, rgb, color }: { label: string; value: string; sub: string; rgb: string; color: string }) {
+function Tile({ label, value, sub, rgb: _rgb, color }: { label: string; value: string; sub: string; rgb: string; color: string }) {
   return (
-    <div className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${rgb},0.12), rgba(${rgb},0.02) 60%)` }}>
-      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color }}>{label}</p>
+    <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+      <p className="text-[11px] font-black" style={{ color }}>{label}</p>
       <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
       <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{sub}</p>
     </div>
@@ -106,7 +106,7 @@ function ReportBody({ data }: { data: ReportView }) {
   return (
     <div className="space-y-5">
       <section className="rounded-[18px] p-6 text-white shadow-[0_12px_32px_rgba(16,19,52,0.18)]" style={{ background: look.bg }}>
-        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/70">{L("Overall tone", "Nada keseluruhan")}</p>
+        <p className="text-[11px] font-black text-white/70">{L("Overall tone", "Nada keseluruhan")}</p>
         <p className="mt-1 text-[34px] font-black leading-none tracking-[-0.03em]">{look.word}</p>
         <p className="mt-3 max-w-3xl text-[15px] font-bold leading-snug text-white/90">{headline}</p>
       </section>
@@ -171,7 +171,7 @@ function ReportBody({ data }: { data: ReportView }) {
                   {a.whatToDo ? (
                     <div className="mt-auto pt-3">
                       <div className="rounded-[10px] bg-[#101334] px-3 py-2.5">
-                        <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#A9B4FF]">{L("Next step", "Langkah")}</p>
+                        <p className="text-[10px] font-black text-[#A9B4FF]">{L("Next step", "Langkah")}</p>
                         <p className="mt-0.5 line-clamp-2 text-[12px] font-bold leading-snug text-white">{a.whatToDo}</p>
                       </div>
                     </div>

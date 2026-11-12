@@ -57,6 +57,7 @@ import { securityHeaders, sensitiveDataHeaders, apiSecurityHeaders } from "./mid
 import { initializeRateLimiter } from "./middlewares/rate-limit.js";
 import { sanitizeInput, validateContentType } from "./middlewares/sanitize.js";
 import { flushAllAuditLogs } from "./lib/audit-enhanced.js";
+import { serverTiming } from "./lib/server-timing.js";
 import { workspaceContextMiddleware } from "./lib/request-context.js";
 import workspacesRoutes from "./modules/workspaces/workspaces.routes.js";
 
@@ -81,6 +82,9 @@ app.use((req, _res, next) => {
     }
     next();
 });
+
+// Server-Timing header on every response (handler and database time)
+app.use(serverTiming);
 
 // Security headers (apply early)
 app.use(securityHeaders);

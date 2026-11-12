@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { createPortal } from "react-dom";
 import { useUiStore } from "@/store/useUiStore";
 import { assigneeName, memberName } from "@/lib/member-name";
@@ -106,14 +107,13 @@ function formatDeadline(value: string | null, locale: string) {
 }
 
 /* ─── Metric Card ─── */
-const TONE_HEX: Record<string, string> = { blue: "#465FFF", purple: "#8B5CFF", green: "#10B981", red: "#EF4444", amber: "#F59E0B", slate: "#64748B", orange: "#F97316" };
 
 function MetricCard({
   label,
   value,
   helper,
   icon: _Icon,
-  tone,
+  tone: _tone,
 }: {
   label: string;
   value: number;
@@ -124,10 +124,10 @@ function MetricCard({
   const locale = useUiStore((state) => state.language);
 
   return (
-    <div className="overflow-hidden rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, ${TONE_HEX[tone] ?? "#465FFF"}1F, ${TONE_HEX[tone] ?? "#465FFF"}05 60%)` }}>
+    <div className="overflow-hidden flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
       <div className="flex items-center gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
+          <p className="text-[11px] font-black text-[#5A6478]">
             {label}
           </p>
           <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">
@@ -297,7 +297,7 @@ function CaseDetailSidebar({
               {/* Info grid */}
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-[10px] bg-[#F8FAFF] p-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">
+                  <p className="text-[9px] font-black text-[#647099]">
                     {t("table.assignee")}
                   </p>
                   <p className="mt-2 text-[13px] font-black text-[#101334]">
@@ -307,7 +307,7 @@ function CaseDetailSidebar({
                   </p>
                 </div>
                 <div className="rounded-[10px] bg-[#F8FAFF] p-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">
+                  <p className="text-[9px] font-black text-[#647099]">
                     {t("table.deadline")}
                   </p>
                   <p className="mt-2 text-[13px] font-black text-[#101334]">
@@ -318,7 +318,7 @@ function CaseDetailSidebar({
                   </p>
                 </div>
                 <div className="rounded-[10px] bg-[#F8FAFF] p-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">
+                  <p className="text-[9px] font-black text-[#647099]">
                     {tDetail("created")}
                   </p>
                   <p className="mt-2 text-[13px] font-black text-[#101334]">
@@ -326,7 +326,7 @@ function CaseDetailSidebar({
                   </p>
                 </div>
                 <div className="rounded-[10px] bg-[#F8FAFF] p-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">
+                  <p className="text-[9px] font-black text-[#647099]">
                     {tDetail("updated")}
                   </p>
                   <p className="mt-2 text-[13px] font-black text-[#101334]">
@@ -337,8 +337,8 @@ function CaseDetailSidebar({
 
               {/* Source info */}
               {record.sourceType && (
-                <div className="rounded-[10px] border border-[#E6EAF2] bg-white p-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">
+                <div className="py-1">
+                  <p className="text-[9px] font-black text-[#647099]">
                     {tDetail("source")}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
@@ -706,7 +706,7 @@ export default function CasesPage() {
       )}
 
       {/* ─── Filter Row ─── */}
-      <section className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
+      <section className={BOX}>
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#647099]" />
@@ -753,7 +753,7 @@ export default function CasesPage() {
       </section>
 
       {/* ─── Table ─── */}
-      <section className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm">
+      <section className={cn("overflow-hidden", BOX)}>
         {casesQuery.isError || casesQuery.data === null ? (
           <DashboardErrorState
             title={t("error.title")}
@@ -767,7 +767,7 @@ export default function CasesPage() {
         ) : data.length === 0 ? (
           <DashboardEmptyState
             title={t("empty.title")}
-            description={t("empty.desc")}
+            description={searchQuery || statusFilter || priorityFilter ? t("empty.desc") : t("empty.cta")}
             icon="inbox"
             action={
               <button
@@ -786,7 +786,7 @@ export default function CasesPage() {
               const deadlineInfo = formatDeadline(item.deadline, locale);
               const owner = assigneeName(item.assignedTo, members) || item.assignedTeam || t("table.unassigned");
               return (
-                <div key={item.id} className="rounded-[12px] border border-[#E6EAF2] bg-white p-3.5">
+                <div key={item.id} className="py-1">
                   <button type="button" onClick={() => setDetailCaseId(item.id)} className="block w-full text-left">
                     <p className="text-[13px] font-black leading-snug text-[#101334]">{item.title}</p>
                     {item.description && <p className="mt-0.5 line-clamp-2 text-[11px] font-bold text-[#5F6B94]">{item.description}</p>}
@@ -819,11 +819,11 @@ export default function CasesPage() {
                   </div>
                   <div className="mt-2.5 grid grid-cols-2 gap-2 text-[11px] font-bold">
                     <div>
-                      <p className="text-[9.5px] font-black uppercase tracking-[0.12em] text-[#647099]">{t("table.assignee")}</p>
+                      <p className="text-[9.5px] font-black text-[#647099]">{t("table.assignee")}</p>
                       <p className="mt-0.5 truncate text-[#31406B]">{owner}</p>
                     </div>
                     <div>
-                      <p className="text-[9.5px] font-black uppercase tracking-[0.12em] text-[#647099]">{t("table.deadline")}</p>
+                      <p className="text-[9.5px] font-black text-[#647099]">{t("table.deadline")}</p>
                       <p className={cn("mt-0.5", deadlineInfo?.isPast ? "text-[#C81E1E]" : "text-[#31406B]")}>{deadlineInfo ? deadlineInfo.formatted : t("table.noDeadline")}</p>
                     </div>
                   </div>
@@ -846,25 +846,25 @@ export default function CasesPage() {
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead className="border-b border-slate-100 bg-slate-50">
                 <tr>
-                  <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
+                  <th className="px-6 py-4 text-[11px] font-black text-[#5A6478]">
                     {t("table.case")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
+                  <th className="px-4 py-4 text-[11px] font-black text-[#5A6478]">
                     {t("table.status")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
+                  <th className="px-4 py-4 text-[11px] font-black text-[#5A6478]">
                     {t("table.priority")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
+                  <th className="px-4 py-4 text-[11px] font-black text-[#5A6478]">
                     {t("table.assignee")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
+                  <th className="px-4 py-4 text-[11px] font-black text-[#5A6478]">
                     {t("table.deadline")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
+                  <th className="px-4 py-4 text-[11px] font-black text-[#5A6478]">
                     {t("table.created")}
                   </th>
-                  <th className="px-4 py-4 text-right text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
+                  <th className="px-4 py-4 text-right text-[11px] font-black text-[#5A6478]">
                     {t("table.action")}
                   </th>
                 </tr>

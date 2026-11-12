@@ -202,6 +202,22 @@ export interface Signal {
   analysisConfidence?: number | null;
   /** Brand relevance from the record's own text; null when no brand is configured. */
   relevance?: "direct" | "indirect" | "competitor" | "unconfirmed" | null;
+  /** The province the record is about ("Jawa Timur"); older records may hold a city or "ID". */
+  region?: string | null;
+  metadata?: { geo?: { provinces?: string[]; cities?: string[] } | null } & Record<string, unknown>;
+  /** The CVE narrative category suggested for review, in CVE workspaces. */
+  cve?: CveTag | null;
+  /** True when privacy mode hid the account, link and handles of this record. */
+  privacyMasked?: boolean;
+}
+
+export type CveCategory = "incitement" | "propaganda" | "dehumanization" | "delegitimization" | "recruitment" | "misinformation" | "counter_narrative";
+export interface CveTag {
+  category: CveCategory | "none";
+  confidence: number;
+  reason: string | null;
+  corrected_from?: string | null;
+  review?: { status: "confirmed" | "dismissed"; by: string; at: string };
 }
 
 export interface SignalAnalysis {

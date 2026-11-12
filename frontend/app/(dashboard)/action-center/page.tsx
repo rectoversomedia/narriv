@@ -12,6 +12,7 @@ import { MONITORING_PERIODS, monitoringHref, type MonitoringPeriod } from "@/lib
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { CreateInvestigationModal } from "@/app/(dashboard)/signals/components/create-investigation-modal";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { intlLocale } from "@/store/useUiStore";
 
 const fmtDate = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString(intlLocale(), { day: "numeric", month: "short" }) : "");
@@ -25,7 +26,7 @@ function JourneyProgress({ steps }: { steps: Step[] }) {
       {steps.map((step, i) => (
         <li key={step.title} className="min-w-0">
           <div className={cn("h-2 rounded-full", step.done ? "bg-[#12A66A]" : "bg-[#E3E7F1]")} />
-          <p className={cn("mt-1.5 truncate text-[10px] font-black uppercase tracking-[0.06em]", step.done ? "text-[#047857]" : "text-[#8A93AD]")} title={step.title}>{i + 1}. {step.title}</p>
+          <p className={cn("mt-1.5 truncate text-[10px] font-black", step.done ? "text-[#047857]" : "text-[#8A93AD]")} title={step.title}>{i + 1}. {step.title}</p>
         </li>
       ))}
     </ol>
@@ -157,8 +158,8 @@ export default function ActionCenterPage() {
         return (
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {tiles.map((tile) => (
-              <div key={tile.label} className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${tile.rgb},0.11), rgba(${tile.rgb},0.02) 60%)` }}>
-                <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: tile.color }}>{tile.label}</p>
+              <div key={tile.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+                <p className="text-[11px] font-black" style={{ color: tile.color }}>{tile.label}</p>
                 <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{tile.value}</p>
                 <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{tile.sub}</p>
               </div>
@@ -197,52 +198,52 @@ export default function ActionCenterPage() {
         <ol className="space-y-4">
           {open.map(({ a, steps }, i) => {
             return (
-              <li key={`${a.action}-${i}`} className={cn("rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]", !steps[2].done && "bg-[#FFFAFA]")}>
+              <li key={`${a.action}-${i}`} className="border-b border-[#E6EAF2] py-7 first:pt-2 last:border-b-0">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-3">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#101334] text-[14px] font-black text-white">{i + 1}</span>
                     <div className="min-w-0">
-                      <h2 className="text-[17px] font-black leading-snug tracking-[-0.02em] text-[#101334]">{to.has(`a_${a.action}`) ? to(`a_${a.action}`) : a.action}</h2>
+                      <h2 className="text-[20px] font-black leading-snug tracking-[-0.02em] text-[#101334]">{to.has(`a_${a.action}`) ? to(`a_${a.action}`) : a.action}</h2>
                       {a.relatedNarrative?.title ? <p className="mt-0.5 text-[12px] font-bold text-[#5A6478]">{L("Issue", "Isu")}: {a.relatedNarrative.title}</p> : null}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-[10px] bg-[#EEF1FF] px-3 py-1 text-center"><b className="block text-[18px] font-black leading-none text-[#101334]">{a.evidenceCount}</b><span className="text-[10px] font-bold text-[#3B52F5]">{L("evidence", "bukti")}</span></span>
+                    <span className="px-1 text-center"><b className="block text-[26px] font-black leading-none text-[#101334]">{a.evidenceCount}</b><span className="text-[10px] font-bold text-[#3B52F5]">{L("evidence", "bukti")}</span></span>
                     {steps[4].done ? <span className="rounded-full bg-[#047857] px-3 py-1 text-[11px] font-black text-white">{L("Done", "Selesai")}</span>
-                      : steps[2].done ? <span className="rounded-full bg-[#F59E0B] px-3 py-1 text-[11px] font-black text-white">{L("In follow-up", "Ditindaklanjuti")}</span>
-                        : <span className="rounded-full bg-[#C81E1E] px-3 py-1 text-[11px] font-black text-white">{L("Needs a decision", "Perlu keputusan")}</span>}
+                      : steps[2].done ? <span className="rounded-full bg-[#F59E0B] px-3 py-1 text-[11px] font-black text-white">{L("In Follow-up", "Ditindaklanjuti")}</span>
+                        : <span className="rounded-full bg-[#C81E1E] px-3 py-1 text-[11px] font-black text-white">{L("Needs a Decision", "Perlu Keputusan")}</span>}
                   </div>
                 </div>
                 <div className="mt-4"><JourneyProgress steps={steps} /></div>
                 {/* Two short blocks: why it matters (one line) and what is being done (chips). */}
-                <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-                  <div className="rounded-[12px] bg-[#EEF1FF] p-3.5">
-                    <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#3B52F5]">{L("Why", "Kenapa")}</p>
-                    <p className="mt-1 line-clamp-2 text-[13px] font-bold leading-snug text-[#101334]">{to.has(`w_${a.action}`) ? to(`w_${a.action}`) : a.whyItMatters}</p>
+                <div className="mt-5 grid gap-x-10 gap-y-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+                  <div>
+                    <p className="text-[12px] font-bold text-[#3B52F5]">{L("Why", "Kenapa")}</p>
+                    <p className="mt-1 line-clamp-2 text-[15px] font-bold leading-snug text-[#101334]">{to.has(`w_${a.action}`) ? to(`w_${a.action}`) : a.whyItMatters}</p>
                     <Link href={monitoringHref({ hours, narrative: a.relatedNarrative?.id })} className="mt-2 inline-block text-[12px] font-black text-[#3B52F5] hover:underline">{L(`See ${a.evidenceCount} evidence`, `Lihat ${a.evidenceCount} bukti`)} →</Link>
                   </div>
-                  <div className={cn("rounded-[12px] p-3.5", steps[2].done ? "bg-[#F7F8FC]" : "bg-[#FDECEC]")}>
-                    <p className={cn("text-[10px] font-black uppercase tracking-[0.08em]", steps[2].done ? "text-[#5A6478]" : "text-[#C81E1E]")}>{steps[2].done ? L("Being done", "Yang sedang dikerjakan") : L("Decide now", "Putuskan sekarang")}</p>
+                  <div>
+                    <p className={cn("text-[12px] font-bold", steps[2].done ? "text-[#5A6478]" : "text-[#C81E1E]")}>{steps[2].done ? L("Being Done", "Yang Sedang Dikerjakan") : L("Decide Now", "Putuskan Sekarang")}</p>
                     {steps[2].done ? (
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {(a.followUp?.plans ?? []).map((pl) => (
-                          <Link key={pl.id} href="/action-plans" className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[12px] font-bold text-[#101334] hover:bg-[#EEF1FF]">
+                          <Link key={pl.id} href="/action-plans" className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#101334] shadow-[0_1px_2px_rgba(16,19,52,0.08)] hover:bg-[#EEF1FF]">
                             <span className={cn("size-2 shrink-0 rounded-full", pl.status === "done" || pl.status === "completed" ? "bg-[#12A66A]" : "bg-[#F59E0B]")} />
                             <span className="truncate">{pl.title || to("untitled")}</span>
                           </Link>
                         ))}
                         {(a.followUp?.cases ?? []).map((c) => (
-                          <Link key={c.id} href="/workspace/cases" className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[12px] font-bold text-[#101334] hover:bg-[#EEF1FF]">
+                          <Link key={c.id} href="/workspace/cases" className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#101334] shadow-[0_1px_2px_rgba(16,19,52,0.08)] hover:bg-[#EEF1FF]">
                             <span className={cn("size-2 shrink-0 rounded-full", c.status === "resolved" || c.status === "closed" ? "bg-[#12A66A]" : "bg-[#465FFF]")} />
                             <span className="truncate">{L("Case", "Kasus")}: {c.title || to("untitled")}</span>
                           </Link>
                         ))}
-                        {a.followUp?.stage === "in_progress" && !a.unchangedSinceFollowUp ? <span className="rounded-full bg-[#F59E0B] px-2.5 py-1 text-[11px] font-black text-white">{L("New data since", "Ada data baru")}</span> : null}
+                        {a.followUp?.stage === "in_progress" && !a.unchangedSinceFollowUp ? <span className="rounded-full bg-[#F59E0B] px-2.5 py-1 text-[11px] font-black text-white">{L("New Data Since", "Ada Data Baru")}</span> : null}
                       </div>
                     ) : (
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => setPlanFor(a)} className="h-9 rounded-[10px] bg-[#465FFF] px-4 text-[12px] font-black text-white hover:bg-[#3B52F5]">{t("createPlan")}</button>
-                        <button type="button" onClick={() => setCaseFor(a)} disabled={!a.signalIds?.length} className="h-9 rounded-[10px] bg-white px-4 text-[12px] font-black text-[#31406B] hover:bg-[#F8FAFF] disabled:opacity-50">{t("createCase")}</button>
+                        <button type="button" onClick={() => setPlanFor(a)} className="h-10 rounded-full bg-[#465FFF] px-5 text-[13px] font-bold text-white hover:bg-[#3B52F5]">{t("createPlan")}</button>
+                        <button type="button" onClick={() => setCaseFor(a)} disabled={!a.signalIds?.length} className="h-10 rounded-full bg-white px-5 text-[13px] font-bold text-[#101334] shadow-[0_1px_2px_rgba(16,19,52,0.08)] hover:bg-[#F8FAFF] disabled:opacity-50">{t("createCase")}</button>
                       </div>
                     )}
                   </div>
@@ -253,7 +254,7 @@ export default function ActionCenterPage() {
         </ol>
         ) : null}
         {finished.length > 0 ? (
-          <section className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+          <section className={BOX}>
             <h2 className="text-[14px] font-black text-[#101334]">{L("Done", "Selesai")} <span className="ml-1 rounded-full bg-[#047857] px-2 py-0.5 text-[11px] text-white">{finished.length}</span></h2>
             <ul className="mt-3 divide-y divide-[#F0F2F8]">
               {finished.map(({ a }, i) => {
@@ -269,7 +270,7 @@ export default function ActionCenterPage() {
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 pl-9 sm:pl-0">
-                      {reopened ? <span className="rounded-full bg-[#F59E0B] px-2.5 py-1 text-[11px] font-black text-white">{L("New data since", "Ada data baru")}</span> : null}
+                      {reopened ? <span className="rounded-full bg-[#F59E0B] px-2.5 py-1 text-[11px] font-black text-white">{L("New Data Since", "Ada Data Baru")}</span> : null}
                       <span className="text-[11px] font-bold text-[#5A6478]">{L(`${items} follow-ups`, `${items} tindak lanjut`)} · {L(`${a.evidenceCount} evidence`, `${a.evidenceCount} bukti`)}</span>
                       {reopened ? (
                         <Link href={monitoringHref({ hours, narrative: a.relatedNarrative?.id })} className="rounded-[8px] bg-[#101334] px-3 py-1.5 text-[12px] font-black text-white hover:bg-[#1F2452]">{L("Check new data", "Cek data baru")}</Link>

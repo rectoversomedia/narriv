@@ -37,6 +37,15 @@ function parseEmbeds(cols) {
   }).filter(Boolean);
 }
 
+// A column, or a JSON path into one as PostgREST writes it ("metadata->cve->>category").
+function valueAt(row, col) {
+  if (!col.includes('->')) return row[col];
+  const [head, ...rest] = col.split(/->>?/);
+  let v = row[head];
+  for (const key of rest) v = v == null ? undefined : v[key];
+  return col.includes('->>') && v != null && typeof v === 'object' ? JSON.stringify(v) : v;
+}
+
 function compare(op, actual, expected) {
   switch (op) {
     case 'eq': return actual === expected || (actual != null && expected != null && String(actual) === String(expected));
@@ -93,22 +102,22 @@ export function createMemoryDb(seed = {}) {
     const addFilter = (fn) => { state.filters.push(fn); return b; };
 
     for (const op of ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'is', 'in', 'ilike']) {
-      b[op] = (col, val) => addFilter((row) => compare(op, row[col], val));
+      b[op] = (col, val) => addFilter((row) => compare(op, valueAt(row, col), val));
     }
     // Array-column overlap (Postgres &&); fails like PostgREST on non-array columns.
     b.overlaps = (col, vals) => addFilter((row) => {
       if (!Array.isArray(row[col])) throw new Error(`memory-db: overlaps on non-array column ${col}`);
       return row[col].some((v) => vals.includes(v));
     });
-    b.not = (col, op, val) => addFilter((row) => !compare(op, row[col], val));
+    b.not = (col, op, val) => addFilter((row) => !compare(op, valueAt(row, col), val));
     b.match = (obj) => addFilter((row) => Object.entries(obj || {}).every(([c, v]) => compare('eq', row[c], v)));
     b.setHeader = () => b;
-    b.filter = (col, op, val) => addFilter((row) => compare(op, row[col], val));
+    b.filter = (col, op, val) => addFilter((row) => compare(op, valueAt(row, col), val));
     b.or = (expr) => addFilter((row) => parseOr(expr).some(([c, o, v]) => {
-      if (o !== 'not') return compare(o, row[c], v);
+      if (o !== 'not') return compare(o, valueAt(row, c), v);
       // "col.not.ilike.%x%": like PostgREST, a NULL column never matches a negation.
       const [op2, ...rest] = v.split('.');
-      return row[c] != null && !compare(op2, row[c], rest.join('.'));
+      return valueAt(row, c) != null && !compare(op2, valueAt(row, c), rest.join('.'));
     }));
     b.order = (col, { ascending = true } = {}) => { state.order.push([col, ascending]); return b; };
     b.limit = (n) => { state.limit = n; return b; };

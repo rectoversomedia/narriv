@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, Clock3, Settings2, Tags } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { useL } from "@/lib/use-l";
 import { intlLocale } from "@/store/useUiStore";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
@@ -27,7 +27,7 @@ import {
 } from "@/lib/api-service";
 import { getPipelineStatus, getRecommendations, timeAgo, type IntelligenceRecommendation } from "@/lib/intelligence-api";
 import { useCodeLabels } from "@/components/intelligence/intelligence-panels";
-import { BrandHero } from "@/components/dashboard/brand-hero";
+import { OverviewHero } from "@/components/dashboard/overview-hero";
 import { AI_ENGINES } from "@/components/ui/ai-engines";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-chart";
@@ -37,6 +37,8 @@ import { useToast } from "@/components/ui/toast";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { issueHref, monitoringHref, type MonitoringPeriod } from "@/lib/evidence-links";
 import { CompetitorCard } from "@/components/dashboard/competitor-card";
+import { CveCategoryCard, CveProvinceSection } from "@/components/dashboard/cve-overview";
+import { useWorkspaceUseCase } from "@/lib/use-case";
 
 // One screen, one period, five answers: how coverage leans, what to do, which issues are hot, where the
 // records come from, and how AI assistants talk about the brand. Short labels; every number opens its records.
@@ -65,18 +67,26 @@ function AlertFacts({ alert }: { alert: AlertRow }) {
   if (!overdueHours && !noOwner) return null;
   return (
     <span className="mt-1.5 flex flex-wrap gap-1.5">
-      {noOwner ? <span className="rounded-full bg-[#C81E1E] px-2 py-0.5 text-[10px] font-black text-white">{L("No owner", "Belum ada pemilik")}</span> : null}
-      {overdueHours ? <span className="rounded-full bg-[#C81E1E] px-2 py-0.5 text-[10px] font-black text-white">{L(`${overdueHours}h overdue`, `lewat ${overdueHours} jam`)}</span> : null}
+      {noOwner ? <span className="rounded-full bg-[#C81E1E] px-2 py-0.5 text-[11px] font-black text-white">{L("No Owner", "Belum Ada Pemilik")}</span> : null}
+      {overdueHours ? <span className="rounded-full bg-[#C81E1E] px-2 py-0.5 text-[11px] font-black text-white">{L(`${overdueHours}h Past Deadline`, `Lewat Tenggat ${overdueHours} Jam`)}</span> : null}
     </span>
   );
 }
 
+/**
+ * A section of the overview: no box, a strong title, and the one action that follows from it as a button.
+ * Sections are separated by space, so the data carries the page rather than frames around it.
+ */
 function Card({ title, link, children, className }: { title: string; link?: { href: string; label: string }; children: React.ReactNode; className?: string }) {
   return (
-    <section className={cn("rounded-[14px] border border-[#E6EAF2] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-[15px] font-black text-[#101334]">{title}</h2>
-        {link ? <Link href={link.href} className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{link.label} →</Link> : null}
+    <section className={cn("flex flex-col", BOX, className)}>
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{title}</h2>
+        {link ? (
+          <Link href={link.href} className="inline-flex h-9 shrink-0 items-center rounded-full bg-[#101334] px-4 text-[12.5px] font-bold text-white transition hover:bg-[#2B2F9E]">
+            {link.label}
+          </Link>
+        ) : null}
       </div>
       {children}
     </section>
@@ -84,7 +94,7 @@ function Card({ title, link, children, className }: { title: string; link?: { hr
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-[10px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] px-4 py-6 text-center text-[12px] font-semibold text-[#5A6478]">{children}</div>;
+  return <p className="py-8 text-center text-[13px] font-semibold text-[#5A6478]">{children}</p>;
 }
 
 
@@ -97,7 +107,7 @@ function Bar({ label, value, share, color, href, muted, right }: { label: React.
         <span className={cn("font-bold", muted ? "text-[#8A93AD]" : "text-[#101334]")}>{label}</span>
         {right ? <span className={cn("tabular-nums font-black", muted ? "text-[#8A93AD]" : "text-[#101334]")}>{right}</span> : null}
       </span>
-      <div className="relative mt-1 h-6 overflow-hidden rounded-[7px] bg-[#F1F4FA]">
+      <div className="relative mt-1 h-6 overflow-hidden rounded-[7px] bg-[#E8ECF6]">
         <div className="absolute inset-y-0 left-0 rounded-[7px] transition-[width] duration-500" style={{ width: `${Math.max(share, share > 0 ? 1.5 : 0)}%`, backgroundColor: color }} />
         <span
           className={cn("absolute inset-y-0 flex items-center whitespace-nowrap text-[11px] font-black tabular-nums", inside ? "text-white" : muted ? "text-[#8A93AD]" : "text-[#101334]")}
@@ -108,25 +118,12 @@ function Bar({ label, value, share, color, href, muted, right }: { label: React.
       </div>
     </>
   );
-  return href ? <Link href={href} className="-mx-1.5 block rounded-[8px] px-1.5 py-1 transition hover:bg-[#F8FAFF]">{body}</Link> : <div className="py-1">{body}</div>;
+  return href ? <Link href={href} className="-mx-2 block rounded-[10px] px-2 py-1.5 transition hover:bg-[#F7F8FC]">{body}</Link> : <div className="py-1">{body}</div>;
 }
 
 /** A small 7-point line for a keyword's daily records. */
-function Sparkline({ values }: { values: number[] }) {
-  const max = Math.max(1, ...values);
-  const w = 120, h = 32;
-  const pts = values.map((v, i) => `${(i / Math.max(1, values.length - 1)) * w},${h - 3 - (v / max) * (h - 6)}`).join(" ");
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-8 w-full" preserveAspectRatio="none" aria-hidden="true">
-      <polygon points={`0,${h} ${pts} ${w},${h}`} fill="#465FFF" fillOpacity="0.12" />
-      <polyline points={pts} fill="none" stroke="#465FFF" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-    </svg>
-  );
-}
-
-
 function Tag({ tone, children }: { tone: string; children: React.ReactNode }) {
-  return <span className={cn("rounded-[5px] px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide", tone)}>{children}</span>;
+  return <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-black", tone)}>{children}</span>;
 }
 
 const levelTone = (level: string) =>
@@ -175,7 +172,7 @@ function FirstRun() {
   if (active.length === 0) {
     return (
       <section className="rounded-[16px] bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] p-6 text-white">
-        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/60">{L("First step", "Langkah pertama")}</p>
+        <p className="text-[11px] font-black text-white/60">{L("First step", "Langkah pertama")}</p>
         <p className="mt-1 text-[24px] font-black leading-tight">{L("Tell Narriv what to watch", "Beri tahu Narriv apa yang dipantau")}</p>
         <p className="mt-1 text-[13px] font-bold text-white/80">{L("Add your brand or product name. News starts coming in within a minute.", "Tambahkan nama brand atau produk Anda. Berita mulai masuk dalam satu menit.")}</p>
         <Link href="/workspace/settings#keywords" className="mt-4 inline-flex h-11 items-center rounded-[10px] bg-white px-5 text-[14px] font-black text-[#101334] hover:bg-[#EEF1FF]">{L("Add a keyword", "Tambah kata kunci")} →</Link>
@@ -191,7 +188,7 @@ function FirstRun() {
         : { tone: "waiting", title: canEdit ? L("The first collection is running", "Pengambilan pertama sedang berjalan") : L(`First data arrives by ${nextHour}`, `Data pertama masuk sebelum pukul ${nextHour}`), sub: L(`Narriv watches ${names} and checks every hour.`, `Narriv memantau ${names} dan mengecek setiap jam.`) };
   return (
     <section className={cn("rounded-[16px] p-6 text-white", status.tone === "error" ? "bg-gradient-to-br from-[#7C2D12] to-[#E8590C]" : status.tone === "done" ? "bg-gradient-to-br from-[#065F46] to-[#12A66A]" : "bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E]")}>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/60">{L("Getting started", "Memulai")}</p>
+      <p className="text-[11px] font-black text-white/60">{L("Getting started", "Memulai")}</p>
       <div className="mt-1 flex items-center gap-3">
         {status.tone === "working" ? <span className="size-5 animate-spin rounded-full border-[3px] border-white/30 border-t-white" aria-hidden="true" /> : null}
         <p className="text-[24px] font-black leading-tight">{status.title}</p>
@@ -238,7 +235,10 @@ export default function DashboardPage() {
   const issuesQuery = useQuery({ queryKey: ["overview-issues", period], queryFn: () => getNarratives({ limit: 20, days: PERIOD_DAYS[period] }), staleTime: 60 * 1000 });
   const alertsQuery = useQuery({ queryKey: ["overview-active-alerts"], queryFn: () => getAlerts({ status: "unresolved", limit: 50 }), staleTime: 30 * 1000 });
   const recsQuery = useQuery({ queryKey: ["overview-recommendations", period], queryFn: () => getRecommendations(PERIOD_HOURS[period]), staleTime: 60 * 1000, retry: 1 });
-  const geoQuery = useQuery({ queryKey: ["overview-geo-summary"], queryFn: () => getVisibilitySummary(), staleTime: 5 * 60 * 1000 });
+  // What the workspace monitors for decides some panels: a CVE workspace sees provinces and narrative categories
+  // where a brand sees AI visibility and competitors; a government body has no competitors.
+  const { useCase } = useWorkspaceUseCase();
+  const geoQuery = useQuery({ queryKey: ["overview-geo-summary"], queryFn: () => getVisibilitySummary(), staleTime: 5 * 60 * 1000, enabled: useCase !== "cve" });
   const geoRun = useMutation({
     mutationFn: runGeoAllEngines,
     onSuccess: (res) => {
@@ -281,7 +281,7 @@ export default function DashboardPage() {
   const platformTotal = platforms.reduce((sum, p) => sum + p.count, 0);
   const missingSocial = SOCIAL_PLATFORMS.filter((key) => !platforms.some((p) => p.platform === key || (key === "twitter" && p.platform === "x")));
   const publishers = summary?.top_publishers ?? [];
-  const platformName = (key: string) => (key === "news" ? L("Online news", "Berita online") : PLATFORM_NAMES[key] ?? key);
+  const platformName = (key: string) => (key === "news" ? L("Online News", "Berita Online") : PLATFORM_NAMES[key] ?? key);
 
   // GEO: the latest score per assistant; legacy runs map onto the assistant they used
   const geoByKey = new Map((geoQuery.data?.engine_breakdown ?? []).filter((e) => e.engineKey).map((e) => [e.engineKey as string, e]));
@@ -294,11 +294,12 @@ export default function DashboardPage() {
   const liveError = !isDemoSession && summaryQuery.isError ? (summaryQuery.error as { status?: number } | null) : null;
   const neverCollected = !isDemoSession && pipelineQuery.isSuccess && !lastDataAt && total === 0;
   const periodWord = { "24h": L("24 hours", "24 jam"), "7d": L("7 days", "7 hari"), "30d": L("30 days", "30 hari") };
+  const periodButton = { "24h": L("24 Hours", "24 Jam"), "7d": L("7 Days", "7 Hari"), "30d": L("30 Days", "30 Hari") };
 
   const showHero = !neverCollected && Boolean(summary?.keyword_breakdown?.length || workspaceQuery.data?.brandName);
 
   return (
-    <div className="space-y-5 pb-6">
+    <div className="space-y-6 pb-10">
       {isDemoSession ? <DemoBanner /> : null}
 
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -306,76 +307,29 @@ export default function DashboardPage() {
           <h1 className="text-[28px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{L("Overview", "Ringkasan")}</h1>
           {lastDataAt && !showHero ? <p className="mt-1 text-[13px] font-medium text-[#5A6478]">{L("Last data", "Data terakhir")}: <b className="font-black text-[#101334]">{timeAgo(lastDataAt)}</b></p> : null}
         </div>
-        <div role="group" aria-label={L("Period", "Periode")} className="flex rounded-[10px] border border-[#DDE3EF] bg-white p-1">
+        <div role="group" aria-label={L("Period", "Periode")} className="flex rounded-full bg-white p-1 shadow-[0_1px_2px_rgba(16,19,52,0.08)]">
           {(["24h", "7d", "30d"] as DateRangeKey[]).map((key) => (
-            <button key={key} type="button" onClick={() => setPeriod(key)} aria-pressed={period === key} className={cn("rounded-[7px] px-3.5 py-1.5 text-[12px] font-black transition", period === key ? "bg-[#465FFF] text-white" : "text-[#5A6478] hover:text-[#101334]")}>
-              {periodWord[key]}
+            <button key={key} type="button" onClick={() => setPeriod(key)} aria-pressed={period === key} className={cn("rounded-full px-4 py-2 text-[12.5px] font-bold transition", period === key ? "bg-[#101334] text-white" : "text-[#5A6478] hover:text-[#101334]")}>
+              {periodButton[key]}
             </button>
           ))}
         </div>
       </header>
 
-      {/* What this workspace watches: the brand and every active keyword, each opening its records. */}
+      {/* The brand, a verdict with the numbers behind it, and every active keyword, each opening its records. */}
       {showHero ? (
-        <BrandHero
-          eyebrow={L("Monitoring focus", "Fokus pemantauan")}
+        <OverviewHero
           brandName={workspaceQuery.data?.brandName || L("Your brand", "Brand Anda")}
           logoUrl={workspaceQuery.data?.logoUrl}
-          pills={[
-            { icon: Tags, value: summary?.keyword_breakdown?.length ?? 0, label: L("keywords monitored", "kata kunci dipantau") },
-            { icon: CalendarDays, label: L(`Last ${periodWord[period]}`, `${periodWord[period]} terakhir`) },
-            ...(lastDataAt ? [{ icon: Clock3, label: L(`Latest data ${timeAgo(lastDataAt)}`, `Data terbaru ${timeAgo(lastDataAt)}`) }] : []),
-          ]}
-          action={<Link href="/workspace/settings#keywords" className="inline-flex items-center gap-1.5 rounded-[10px] bg-white/[0.12] px-3 py-2 text-[12px] font-black text-white transition hover:bg-white/20"><Settings2 size={14} aria-hidden="true" />{L("Manage keywords", "Atur kata kunci")}</Link>}
-        >
-          {summary?.keyword_breakdown?.length ? (
-            <div className={cn("grid gap-3 sm:grid-cols-2", summary.keyword_breakdown.length >= 3 ? "xl:grid-cols-3" : "")}>
-              {summary.keyword_breakdown.map((k) => {
-                const neutral = k.neutral ?? Math.max(0, k.count - k.negative - k.positive - (k.mixed ?? 0));
-                const parts = [
-                  { n: k.positive, color: "#10B981", label: L("positive", "positif") },
-                  { n: neutral, color: "#94A3B8", label: L("neutral", "netral") },
-                  { n: k.mixed ?? 0, color: "#F59E0B", label: L("mixed", "campuran") },
-                  { n: k.negative, color: "#EF4444", label: L("negative", "negatif") },
-                ];
-                const negShare = k.count > 0 ? Math.round((k.negative / k.count) * 100) : 0;
-                return (
-                  <Link key={k.keyword} href={monitoringHref({ hours, q: k.keyword })} className="group block rounded-[14px] bg-white p-4 text-[#101334] shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(16,19,52,0.25)]">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-[15px] font-black">{k.keyword}</p>
-                        <p className="mt-1 flex items-baseline gap-1.5">
-                          <span className="text-[26px] font-black tabular-nums leading-none">{fmt(k.count)}</span>
-                          <span className="text-[12px] font-bold text-[#5A6478]">{L("data", "data")}</span>
-                        </p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <span className={cn("inline-block rounded-full px-2.5 py-1 text-[12px] font-black", negShare >= 30 ? "bg-[#FDECEC] text-[#B42318]" : "bg-[#E8F7EF] text-[#047857]")}>{negShare}% {L("negative", "negatif")}</span>
-                        <p className={cn("mt-1.5 text-[11px] font-black", k.last24h > 0 ? "text-[#3B52F5]" : "text-[#8A93AD]")}>{k.last24h > 0 ? `+${fmt(k.last24h)} ${L("in 24h", "24 jam")}` : L("none in 24h", "0 dalam 24 jam")}</p>
-                      </div>
-                    </div>
-                    {k.daily?.some((v) => v > 0) ? (
-                      <div className="mt-3">
-                        <Sparkline values={k.daily} />
-                        <p className="mt-0.5 text-[10px] font-bold text-[#8A93AD]">{L("Data per day, last 7 days", "Data per hari, 7 hari terakhir")}</p>
-                      </div>
-                    ) : null}
-                    <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-[#EEF1F7]" role="img" aria-label={parts.map((p) => `${p.n} ${p.label}`).join(", ")}>
-                      {k.count > 0 ? parts.filter((p) => p.n > 0).map((p) => <span key={p.label} style={{ width: `${(p.n / k.count) * 100}%`, backgroundColor: p.color }} />) : null}
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold text-[#5A6478]">
-                      {parts.filter((p) => p.n > 0).map((p) => (
-                        <span key={p.label} className="flex items-center gap-1"><span className="size-2 rounded-full" style={{ backgroundColor: p.color }} />{fmt(p.n)} {p.label}</span>
-                      ))}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-center text-[13px] font-semibold text-white/70">{L("No active keywords yet.", "Belum ada kata kunci aktif.")}</p>
-          )}
-        </BrandHero>
+          keywords={summary?.keyword_breakdown ?? []}
+          total={total}
+          negativeShare={Math.round(pct(dist.negative, analysed))}
+          openAlerts={openAlertTotal}
+          criticalAlerts={((alertsQuery.data?.data ?? []) as AlertRow[]).filter((a) => a.severity === "critical").length}
+          hours={hours}
+          periodLabel={periodWord[period]}
+          lastDataLabel={lastDataAt ? timeAgo(lastDataAt) : null}
+        />
       ) : null}
 
       {liveError ? (
@@ -388,14 +342,15 @@ export default function DashboardPage() {
       {neverCollected ? (
         <FirstRun />      ) : (
         <>
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-            <Card className="flex flex-col" title={L("Overall sentiment", "Sentimen keseluruhan")} link={{ href: monitoringHref({ hours }), label: L("All data", "Semua data") }}>
+          {useCase === "cve" ? <CveProvinceSection days={PERIOD_DAYS[period] as 1 | 7 | 30} hours={hours} /> : null}
+          <div className="grid gap-5 xl:grid-cols-2">
+            <Card className="flex flex-col" title={L("Overall Sentiment", "Sentimen Keseluruhan")} link={{ href: monitoringHref({ hours }), label: L("See All Data", "Lihat Semua Data") }}>
               {summaryQuery.isLoading ? (
                 <div className="space-y-3">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
               ) : total === 0 ? (
                 <Empty>
                   {L(`No new data in ${periodWord[period]}.`, `Belum ada data baru dalam ${periodWord[period]}.`)}
-                  {period !== "30d" ? <> <button type="button" onClick={() => setPeriod("30d")} className="font-black text-[#3B52F5] hover:underline">{L("Show 30 days", "Lihat 30 hari")}</button></> : null}
+                  {period !== "30d" ? <> <button type="button" onClick={() => setPeriod("30d")} className="font-black text-[#3B52F5] hover:underline">{L("Show 30 Days", "Lihat 30 Hari")}</button></> : null}
                 </Empty>
               ) : (
                 <>
@@ -403,26 +358,27 @@ export default function DashboardPage() {
                   {(() => {
                     const net = analysed > 0 ? Math.round(((dist.positive - dist.negative) / analysed) * 100) : 0;
                     const verdict = analysed === 0
-                      ? { text: L("Being analysed", "Sedang dianalisis"), cls: "border-transparent bg-[#EEF1FF] text-[#3B52F5]" }
+                      ? { text: L("Being Analysed", "Sedang Dianalisis"), cls: "text-[#3B52F5]" }
                       : net <= -15
-                      ? { text: L("Negative", "Negatif"), cls: "border-transparent bg-[#FFF5F4] text-[#B42318]" }
+                      ? { text: L("Negative", "Negatif"), cls: "text-[#B42318]" }
+                      : net <= -5
+                      ? { text: L("Leaning Negative", "Cenderung Negatif"), cls: "text-[#C2410C]" }
                       : net >= 15
-                        ? { text: L("Positive", "Positif"), cls: "border-transparent bg-[#F1FBF6] text-[#047857]" }
-                        : { text: L("Balanced", "Seimbang"), cls: "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B]" };
+                        ? { text: L("Positive", "Positif"), cls: "text-[#047857]" }
+                        : net >= 5
+                          ? { text: L("Leaning Positive", "Cenderung Positif"), cls: "text-[#047857]" }
+                          : { text: L("Balanced", "Seimbang"), cls: "text-[#31406B]" };
                     return (
-                      <div className={cn("mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border px-4 py-3", verdict.cls)}>
-                        <div>
-                          <p className="text-[11px] font-black uppercase tracking-[0.08em] opacity-80">{L("All keywords combined", "Semua kata kunci digabung")}</p>
-                          <p className="mt-0.5 text-[22px] font-black leading-tight">{verdict.text}</p>
-                        </div>
-                        <div className="flex items-center gap-5 text-right">
+                      <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+                        <p className={cn("text-[34px] font-black leading-none tracking-[-0.03em]", verdict.cls)}>{verdict.text}</p>
+                        <div className="flex items-end gap-6 text-right">
                           <div>
-                            <p className="text-[11px] font-bold opacity-80">{L("Positive − negative", "Positif − negatif")}</p>
-                            <p className="text-[20px] font-black tabular-nums leading-tight">{net > 0 ? `+${net}` : net} <span className="text-[12px] font-bold opacity-70">{L("pts", "poin")}</span></p>
+                            <p className={cn("text-[26px] font-black leading-none tabular-nums", verdict.cls)}>{net > 0 ? `+${net}` : net}</p>
+                            <p className="mt-1 text-[11px] font-bold text-[#5A6478]">{L("Net Points", "Poin Bersih")}</p>
                           </div>
                           <div>
-                            <p className="text-[11px] font-bold opacity-80">{L("Data", "Data")}</p>
-                            <p className="text-[20px] font-black tabular-nums leading-tight">{fmt(total)}</p>
+                            <p className="text-[26px] font-black leading-none tabular-nums text-[#101334]">{fmt(total)}</p>
+                            <p className="mt-1 text-[11px] font-bold text-[#5A6478]">{L("Mentions", "Percakapan")}</p>
                           </div>
                         </div>
                       </div>
@@ -440,13 +396,13 @@ export default function DashboardPage() {
                   </div>
                   {unanalysed > 0 ? (
                     <Link href={monitoringHref({ hours, analysis: "pending" })} className="mt-3 inline-block text-[12px] font-bold text-[#3B52F5] hover:underline">
-                      {L(`${fmt(unanalysed)} not analysed yet →`, `${fmt(unanalysed)} belum dianalisis →`)}
+                      {L(`${fmt(unanalysed)} Not Analysed Yet →`, `${fmt(unanalysed)} Belum Dianalisis →`)}
                     </Link>
                   ) : null}
                   {/* Day-by-day split for the last week; fills the card to the height of the to-do list beside it. */}
                   {summary?.sentiment_trend?.some((d) => d.total > 0) ? (
-                    <div className="mt-auto border-t border-[#EEF1F7] pt-4">
-                      <p className="mb-2 text-[12px] font-black text-[#101334]">{L("Last 7 days, per day", "7 hari terakhir, per hari")}</p>
+                    <div className="mt-auto pt-6">
+                      <p className="mb-2 text-[14px] font-black text-[#101334]">{L("Last 7 Days", "7 Hari Terakhir")}</p>
                       <SentimentTrendChart
                         days={summary.sentiment_trend}
                         locale={intlLocale()}
@@ -458,40 +414,40 @@ export default function DashboardPage() {
               )}
             </Card>
 
-            <Card title={L("Decide today", "Putuskan hari ini")} link={{ href: "/alerts", label: L(`${openAlertTotal} active alerts`, `${openAlertTotal} peringatan aktif`) }}>
+            <Card title={L("Decide Today", "Putuskan Hari Ini")} link={{ href: "/alerts", label: L(`${openAlertTotal} Active Alerts`, `${openAlertTotal} Peringatan Aktif`) }}>
               {alertsQuery.isLoading || recsQuery.isLoading ? (
                 <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
               ) : openAlerts.length === 0 && recommendations.length === 0 ? (
                 <Empty>{L("Nothing to handle right now.", "Tidak ada yang perlu ditangani saat ini.")}</Empty>
               ) : (
-                <ol className="space-y-2.5">
+                <ol className="divide-y divide-[#E6EAF2]">
                   {openAlerts.map((alert) => (
                     <li key={alert.id}>
-                      <Link href={`/alerts/${alert.id}`} className={cn("flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] p-3 transition hover:border-[#465FFF]/40 hover:bg-[#FBFCFF]", alert.severity === "critical" && "border-transparent bg-[#FFF6F6]", alert.severity === "high" && "border-transparent bg-[#FFFBF2]")}>
+                      <Link href={`/alerts/${alert.id}`} className="-mx-2 flex items-center justify-between gap-4 rounded-[12px] px-2 py-3.5 transition hover:bg-[#F7F8FC]">
                         <span className="min-w-0">
                           <span className="flex items-center gap-2">
                             <Tag tone={levelTone(alert.severity ?? "low")}>{tLevel(`level.${["critical", "high", "medium", "low"].includes(alert.severity ?? "") ? alert.severity : "low"}`)}</Tag>
                             <span className="text-[10px] font-bold text-[#5A6478]">{timeAgo(alertTime(alert))}</span>
                           </span>
-                          <span className="mt-1.5 block truncate text-[13px] font-black text-[#101334]">{alert.title}</span>
+                          <span className="mt-1.5 block truncate text-[15px] font-black text-[#101334]">{alert.title}</span>
                           <AlertFacts alert={alert} />
                         </span>
-                        <span className="shrink-0 rounded-[8px] bg-[#465FFF] px-3 py-1.5 text-[11px] font-black text-white">{L("Handle", "Tangani")}</span>
+                        <span className="inline-flex h-9 shrink-0 items-center rounded-full bg-[#465FFF] px-4 text-[12.5px] font-bold text-white">{L("Handle", "Tangani")}</span>
                       </Link>
                     </li>
                   ))}
                   {recommendations.map((rec: IntelligenceRecommendation, index) => (
                     <li key={`${rec.action}-${index}`}>
-                      <button type="button" onClick={() => setPlanOpen(true)} className="flex w-full items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] p-3 text-left transition hover:border-[#465FFF]/40 hover:bg-[#FBFCFF]">
+                      <button type="button" onClick={() => setPlanOpen(true)} className="-mx-2 flex w-[calc(100%+1rem)] items-center justify-between gap-4 rounded-[12px] px-2 py-3.5 text-left transition hover:bg-[#F7F8FC]">
                         <span className="min-w-0">
                           <span className="flex items-center gap-2">
                             <Tag tone={levelTone(rec.priority)}>{tLevel(`level.${rec.priority}`)}</Tag>
                             <span className="text-[10px] font-bold text-[#5A6478]">{codes.urgency(rec.urgency)}</span>
                           </span>
-                          <span className="mt-1.5 block text-[13px] font-black text-[#101334]">{codes.action(rec.action)}</span>
+                          <span className="mt-1.5 block text-[15px] font-black text-[#101334]">{codes.action(rec.action)}</span>
                           {rec.observedIssue && (index === 0 || firstSentence(rec.observedIssue) !== firstSentence(recommendations[index - 1]?.observedIssue ?? "")) ? <span className="mt-0.5 block truncate text-[12px] font-semibold text-[#53608C]">{firstSentence(rec.observedIssue)}</span> : null}
                         </span>
-                        <span className="shrink-0 rounded-[8px] border border-[#DDE3EF] px-3 py-1.5 text-[11px] font-black text-[#3B52F5]">{L("Plan", "Buat rencana")}</span>
+                        <span className="inline-flex h-9 shrink-0 items-center rounded-full bg-[#EEF1FF] px-4 text-[12.5px] font-bold text-[#3B52F5]">{L("Create Action Plan", "Buat Rencana Aksi")}</span>
                       </button>
                     </li>
                   ))}
@@ -501,30 +457,30 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid gap-5 xl:grid-cols-2">
-          <Card title={L("Top issues", "Isu teratas")} link={{ href: `/intelligence?days=${PERIOD_DAYS[period]}`, label: L("All issues", "Semua isu") }}>
+          <Card title={L("Top Issues", "Isu Teratas")} link={{ href: `/intelligence?days=${PERIOD_DAYS[period]}`, label: L("See All Issues", "Lihat Semua Isu") }}>
               {issuesQuery.isLoading ? (
                 <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
               ) : issues.length === 0 ? (
                 <Empty>{L(`No issues in ${periodWord[period]}.`, `Belum ada isu dalam ${periodWord[period]}.`)}</Empty>
               ) : (
-                <ol className="divide-y divide-[#F3F5FA]">
+                <ol className="divide-y divide-[#E6EAF2]">
                   {issues.map((issue: NarrativeRecord, index) => {
                     const tag = sentimentTag(issue.sentiment);
                     const velocity = issue.velocity === "new" ? L("new", "baru") : issue.velocity === "—" ? "" : issue.velocity;
                     return (
                       <li key={issue.id}>
-                        <Link href={issueHref(issue.id, hours)} className="-mx-2 flex items-center gap-3 rounded-[8px] px-2 py-2.5 transition hover:bg-[#F8FAFF]">
-                          <span className="w-5 text-[14px] font-black text-[#8A93AD]">{index + 1}</span>
+                        <Link href={issueHref(issue.id, hours)} className="-mx-2 flex items-center gap-4 rounded-[12px] px-2 py-3 transition hover:bg-[#F7F8FC]">
+                          <span className={cn("w-6 text-[20px] font-black tabular-nums", index === 0 ? "text-[#E5484D]" : "text-[#B8C0D6]")}>{index + 1}</span>
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[13px] font-black text-[#101334]">{issue.title}</span>
+                            <span className="block truncate text-[15px] font-black text-[#101334]">{issue.title}</span>
                             <span className="mt-0.5 flex items-center gap-2 text-[11px] font-bold">
                               <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black", tag.cls)}>{L(tag.en, tag.id)}</span>
                               {velocity ? <span className={velocity.startsWith("+") ? "text-[#B42318]" : "text-[#5A6478]"}>{velocity} {L("in 24h", "24 jam")}</span> : null}
                             </span>
                           </span>
                           <span className="shrink-0 text-right">
-                            <span className="block text-[16px] font-black tabular-nums leading-none text-[#101334]">{fmt(issue.signalCount)}</span>
-                            <span className="text-[10px] font-bold text-[#5A6478]">{L("data", "data")}</span>
+                            <span className="block text-[22px] font-black tabular-nums leading-none text-[#101334]">{fmt(issue.signalCount)}</span>
+                            <span className="text-[11px] font-bold text-[#5A6478]">{L("Mentions", "Percakapan")}</span>
                           </span>
                         </Link>
                       </li>
@@ -533,47 +489,51 @@ export default function DashboardPage() {
                 </ol>
               )}
             </Card>
-            <Card title={L("Visibility in AI answers", "Visibilitas di jawaban AI")} link={{ href: "/visibility", label: L("Details", "Detail") }}>
+            {useCase === "cve" ? <CveCategoryCard days={PERIOD_DAYS[period] as 1 | 7 | 30} hours={hours} /> : (
+            <Card title={L("Visibility in AI Answers", "Visibilitas di Jawaban AI")} link={{ href: "/visibility", label: L("See Details", "Lihat Detail") }}>
               {geoQuery.isLoading ? (
                 <div className="space-y-2">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
               ) : (
                 <>
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-bold text-[#5A6478]">{L("Average score", "Skor rata-rata")}</p>
-                      <p className="mt-1 text-[24px] font-black tabular-nums leading-none text-[#101334]">{geoAverage ?? "—"}<span className="text-[13px] font-bold text-[#5A6478]">/100</span></p>
+                      <p className="text-[40px] font-black tabular-nums leading-none tracking-[-0.03em] text-[#101334]">{geoAverage ?? "—"}<span className="text-[15px] font-bold text-[#5A6478]">/100</span></p>
+                      <p className="mt-1 text-[12px] font-bold text-[#5A6478]">{L("Average Score", "Skor Rata-rata")}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => geoRun.mutate()}
                       disabled={geoRun.isPending || !anyConnected || isDemoSession}
                       title={!anyConnected ? L("Connect an AI API key first", "Hubungkan API key AI dulu") : undefined}
-                      className="rounded-[8px] bg-[#465FFF] px-3.5 py-2 text-[12px] font-black text-white transition hover:bg-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-10 items-center rounded-full bg-[#465FFF] px-5 text-[13px] font-bold text-white transition hover:bg-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {geoRun.isPending ? L("Testing…", "Menguji…") : L("Test now", "Uji sekarang")}
+                      {geoRun.isPending ? L("Testing…", "Menguji…") : L("Test Now", "Uji Sekarang")}
                     </button>
                   </div>
                   <div className="space-y-2">
                     {GEO_ENGINES.map((engine, index) => {
                       const result = geoByKey.get(engine.key);
                       const status = engineStatus.get(engine.key);
-                      const value = result ? `${Math.round(result.visibilityScore)}/100` : status?.configured ? L("not tested", "belum diuji") : L("not connected", "belum terhubung");
-                      return <Bar key={engine.key} label={<span className="flex items-center gap-2"><span className="flex size-6 items-center justify-center rounded-[7px] bg-white shadow-[0_1px_3px_rgba(16,19,52,0.12)]"><engine.Logo className="size-4" /></span>{engine.name}</span>} value={value} share={result ? Math.min(100, Math.max(0, result.visibilityScore)) : 0} color={BAR_COLORS[index % BAR_COLORS.length]} href="/visibility" muted={!result} />;
+                      const value = result ? `${Math.round(result.visibilityScore)}/100` : status?.configured ? L("Not Tested", "Belum Diuji") : L("Not Connected", "Belum Terhubung");
+                      return <Bar key={engine.key} label={<span className="flex items-center gap-2"><engine.Logo className="size-4" />{engine.name}</span>} value={value} share={result ? Math.min(100, Math.max(0, result.visibilityScore)) : 0} color={BAR_COLORS[index % BAR_COLORS.length]} href="/visibility" muted={!result} />;
                     })}
                   </div>
                   <p className="mt-3 text-[11px] font-semibold text-[#5A6478]">
                     {geoLastChecked ? `${L("Last test", "Uji terakhir")}: ${timeAgo(geoLastChecked)}. ` : ""}
-                    {L("Score = how often each AI mentions the brand when asked about it.", "Skor = seberapa sering AI menyebut brand saat ditanya.")}
+                    {useCase === "gov"
+                      ? L("Score = how often AI mentions the office.", "Skor = seberapa sering AI menyebut instansi.")
+                      : L("Score = how often AI mentions the brand.", "Skor = seberapa sering AI menyebut brand.")}
                   </p>
                 </>
               )}
             </Card>
+            )}
           </div>
 
             {/* The demo brand is fictional, so news counts would all be zero there. */}
-            {!isDemoSession ? <CompetitorCard /> : null}
+            {!isDemoSession && useCase === "brand" ? <CompetitorCard /> : null}
 
-            <Card title={L("Sources", "Sumber data")} link={{ href: "/workspace/sources", label: L("Manage", "Kelola") }}>
+            <Card title={L("Sources", "Sumber Data")} link={{ href: "/workspace/sources", label: L("Manage Sources", "Kelola Sumber") }}>
             {summaryQuery.isLoading ? (
               <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
             ) : platformTotal === 0 ? (
@@ -581,20 +541,20 @@ export default function DashboardPage() {
             ) : (
               <div className="grid gap-6 lg:grid-cols-2">
                 <div>
-                <p className="mb-1 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("By platform", "Per platform")}</p>
+                <p className="mb-2 text-[14px] font-black text-[#101334]">{L("By Platform", "Per Platform")}</p>
                 <div className="space-y-1">
                   {platforms.map((p, index) => (
                     <Bar key={p.platform} label={<span className="inline-flex items-center gap-2"><PlatformIcon platform={p.platform} className="size-4" />{platformName(p.platform)}</span>} value={fmt(p.count)} right={`${pct(p.count, platformTotal).toFixed(0)}%`} share={pct(p.count, platformTotal)} color={BAR_COLORS[index % BAR_COLORS.length]} href={monitoringHref({ hours, platform: p.platform })} />
                   ))}
                   {missingSocial.map((key) => (
-                    <Bar key={key} label={<span className="inline-flex items-center gap-2 opacity-60"><PlatformIcon platform={key} className="size-4" />{PLATFORM_NAMES[key]}</span>} value={L("not connected", "belum terhubung")} share={0} color="#EEF1F7" href="/workspace/sources" muted />
+                    <Bar key={key} label={<span className="inline-flex items-center gap-2 opacity-60"><PlatformIcon platform={key} className="size-4" />{PLATFORM_NAMES[key]}</span>} value={L("Not Connected", "Belum Terhubung")} share={0} color="#EEF1F7" href="/workspace/sources" muted />
                   ))}
                 </div>
                 </div>
                 {publishers.length > 0 ? (
                   <div>
-                    <p className="mb-1 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("Top media", "Media teratas")}</p>
-                    <ul className="divide-y divide-[#F3F5FA]">
+                    <p className="mb-2 text-[14px] font-black text-[#101334]">{L("Top Media", "Media Teratas")}</p>
+                    <ul className="divide-y divide-[#E6EAF2]">
                       {publishers.slice(0, 8).map((pub) => (
                         <li key={pub.publisher} className="flex items-center justify-between gap-3 py-2 text-[12px]">
                           <span className="flex min-w-0 items-center gap-2">
@@ -602,7 +562,7 @@ export default function DashboardPage() {
                             <span className="min-w-0 truncate font-bold text-[#101334]">{pub.publisher}</span>
                           </span>
                           <span className="flex shrink-0 items-center gap-1.5 tabular-nums">
-                            {pub.negative > 0 ? <span className="rounded-full bg-[#FDECEC] px-2 py-0.5 text-[10px] font-black text-[#B42318]">{pub.negative} neg</span> : null}
+                            {pub.negative > 0 ? <span className="rounded-full bg-[#FDECEC] px-2 py-0.5 text-[10px] font-black text-[#B42318]">{pub.negative} Neg</span> : null}
                             <span className="w-6 text-right font-black text-[#101334]">{pub.count}</span>
                           </span>
                         </li>

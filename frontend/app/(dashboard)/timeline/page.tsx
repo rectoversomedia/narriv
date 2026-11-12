@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { getActivityLogs, getAlerts, type ActivityLogEntry, type Alert } from "@/lib/api-service";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { intlLocale } from "@/store/useUiStore";
 
 // Kronologi: how issues unfolded, day by day — alerts raised, cases opened, plans made, reports sent.
@@ -143,7 +144,7 @@ export default function TimelinePage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Timeline", "Kronologi")}</h1>
-          <p className="mt-1 text-[14px] text-[#5F6B94]">{L("How each issue unfolded: when it appeared, who picked it up, and what was done.", "Jalan cerita tiap isu: kapan muncul, siapa yang pegang, dan apa yang sudah dilakukan.")}</p>
+          <p className="mt-1 text-[14px] text-[#5F6B94]">{L("When each issue appeared and what was done.", "Kapan isu muncul dan apa yang sudah dilakukan.")}</p>
         </div>
         <div className="flex self-start rounded-[10px] bg-white p-1 shadow-sm sm:self-auto" role="group" aria-label={L("Period", "Periode")}>
           {RANGES.map((r) => (
@@ -160,22 +161,22 @@ export default function TimelinePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-5 lg:grid-cols-5">
         {(["alert", "opportunity", "case", "plan", "report"] as Kind[]).map((k) => (
-          <div key={k} className={cn("rounded-2xl p-4", KIND[k].chip)}>
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] opacity-80">{L(KIND[k].en, KIND[k].id)}</p>
-            <p className="mt-1 text-[28px] font-black leading-tight">{loading ? "…" : count(k)}</p>
+          <div key={k} className={cn("flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]", KIND[k].chip.replace(/\bbg-\S+/g, ""))}>
+            <p className="text-[36px] font-black leading-none tracking-[-0.03em]">{loading ? "…" : count(k)}</p>
+            <p className="mt-2 text-[13px] font-bold text-[#101334]">{L(KIND[k].en, KIND[k].id)}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-2xl bg-white p-3 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_8px_24px_rgba(16,19,52,0.05)] sm:p-4">
+      <div className={BOX}>
         {loading ? (
           <div className="space-y-2 p-2">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
         ) : byDay.length ? (
           byDay.map((group) => (
             <section key={group.day} className="mb-2 last:mb-0">
-              <h2 className="px-3 pb-1 pt-3 text-[12px] font-extrabold uppercase tracking-[0.08em] text-[#5F6B94]">{group.day}</h2>
+              <h2 className="px-3 pb-1 pt-3 text-[12px] font-extrabold text-[#5F6B94]">{group.day}</h2>
               <div className="divide-y divide-[#EEF1F6]">{group.items.map((e) => <Row key={e.id} entry={e} />)}</div>
             </section>
           ))

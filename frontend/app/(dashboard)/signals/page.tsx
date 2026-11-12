@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { intlLocale, useUiStore } from "@/store/useUiStore";
-import { MONITORING_PERIODS, issueHref, monitoringHref, parseMonitoringFilters, periodStart, type MonitoringFilters } from "@/lib/evidence-links";
+import { MONITORING_PERIODS, hoursToDays, issueHref, monitoringHref, parseMonitoringFilters, periodStart, type MonitoringFilters } from "@/lib/evidence-links";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRight, Check, Info, Loader2, Search, Sparkles, Trash2, X, ExternalLink } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, EyeOff, Loader2, MapPin, Search, Sparkles, Trash2, X, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { CreateInvestigationModal } from "./components/create-investigation-modal";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
@@ -19,7 +20,10 @@ import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { correctSignalSentiment, getWorkspaceSettings, type CorrectableSentiment } from "@/lib/api-service";
+import { correctSignalSentiment, getCveSummary, getRegionBreakdown, getWorkspaceSettings, reviewCve, type CorrectableSentiment, type CveTag, type RegionBreakdown } from "@/lib/api-service";
+import { RegionPanel } from "@/components/dashboard/region-panel";
+import { CvePanel } from "@/components/dashboard/cve-panel";
+import { CVE_CATEGORIES, cveCategory } from "@/lib/cve";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED" | "UNANALYZED";
@@ -47,7 +51,14 @@ type SignalRow = {
   narratives: Array<{ id: string; title: string }>;
   relevance: Signal["relevance"];
   platform: string | null;
+  /** The province (or, on older records, the city) the record is about; null when it names no place. */
+  place: string | null;
+  /** The CVE category suggested for review, in CVE workspaces. */
+  cve: CveTag | null;
 };
+
+/** Stored region values that mean "Indonesia in general" rather than a place in it. */
+const NATIONAL_REGIONS = new Set(["id", "nasional", "national", "indonesia"]);
 
 const signalApiLimit = 20;
 
@@ -135,6 +146,8 @@ function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): S
       narratives,
       relevance: signal.relevance ?? null,
       platform: signal.platform ?? null,
+      place: signal.region && !NATIONAL_REGIONS.has(signal.region.toLowerCase()) ? signal.region : null,
+      cve: signal.cve && signal.cve.category !== "none" ? signal.cve : null,
     };
   });
 }
@@ -152,20 +165,67 @@ function RelevanceBadge({ relevance }: { relevance: SignalRow["relevance"] }) {
   return <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", RELEVANCE_TONE[relevance])}>{t(`rel_${relevance}`)}</span>;
 }
 
+function PlaceChip({ place }: { place: string | null }) {
+  if (!place) return null;
+  return (
+    <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#F1F4FA] px-2 py-0.5 text-[10px] font-bold text-[#31406B]">
+      <MapPin size={10} aria-hidden="true" className="shrink-0 text-[#465FFF]" />
+      <span className="truncate">{place}</span>
+    </span>
+  );
+}
+
+/**
+ * The suggested CVE category of a record, with the reviewer's verdict: "Correct" confirms it, "Not this" dismisses
+ * it. A confirmed or dismissed tag says so instead of offering the buttons again.
+ */
+function CveChip({ id, cve }: { id: string; cve: CveTag | null }) {
+  const queryClient = useQueryClient();
+  const isDemo = isDemoUser(useAuthStore((s) => s.user));
+  const [tag, setTag] = useState(cve);
+  const review = useMutation({
+    mutationFn: (status: "confirmed" | "dismissed") => reviewCve(id, status),
+    onSuccess: (r) => {
+      setTag(r.cve);
+      void queryClient.invalidateQueries({ queryKey: ["cve-summary"] });
+    },
+  });
+  const cat = cveCategory(tag?.category);
+  if (!tag || !cat) return null;
+  const status = tag.review?.status;
+  return (
+    <span className="inline-flex max-w-full flex-wrap items-center gap-1">
+      <span title={tag.reason ?? undefined} className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black", status === "dismissed" ? "bg-slate-100 text-slate-500 line-through" : cat.tone)}>
+        {pickL(cat.label[0], cat.label[1])}
+        {status === "confirmed" ? <Check size={10} aria-label={pickL("confirmed", "terkonfirmasi")} /> : null}
+      </span>
+      {!status && !isDemo ? (
+        <>
+          <button type="button" disabled={review.isPending} onClick={() => review.mutate("confirmed")} className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-[#047857] shadow-[inset_0_0_0_1px_#A7E3C9] hover:bg-[#E8F7F0]">{pickL("Correct", "Benar")}</button>
+          <button type="button" disabled={review.isPending} onClick={() => review.mutate("dismissed")} className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-[#5A6478] shadow-[inset_0_0_0_1px_#DDE3EF] hover:bg-slate-50">{pickL("Not this", "Bukan")}</button>
+        </>
+      ) : null}
+    </span>
+  );
+}
+
 const PLATFORM_OPTIONS = ["news", "x", "tiktok", "instagram", "youtube", "facebook", "threads", "web"] as const;
 
 /**
  * Filters that the API applies to stored records. The URL carries them, so a
  * link from Overview opens on the same evidence and the view can be shared.
  */
-function MonitoringFilterBar({ filters, onChange, narrativeTitle, relevanceAvailable, brand }: { filters: MonitoringFilters; onChange: (next: MonitoringFilters) => void; narrativeTitle: string | null; relevanceAvailable: boolean; brand: string | null }) {
+function MonitoringFilterBar({ filters, onChange, narrativeTitle, relevanceAvailable, brand, regions, cveMode = false }: { filters: MonitoringFilters; onChange: (next: MonitoringFilters) => void; narrativeTitle: string | null; relevanceAvailable: boolean; brand: string | null; regions?: RegionBreakdown["provinces"]; cveMode?: boolean }) {
   const t = useTranslations("Signals.filters");
   const select = "mt-1 block h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-2 text-[12px] font-semibold text-[#31406B] disabled:opacity-60";
-  const label = "min-w-0 text-[10px] font-black uppercase tracking-[0.08em] text-[#5A6478]";
-  const active = Boolean(filters.hours || filters.narrative || filters.relevance || filters.analysis || filters.platform);
+  const label = "min-w-0 text-[12px] font-bold text-[#5A6478]";
+  const active = Boolean(filters.hours || filters.narrative || filters.relevance || filters.analysis || filters.platform || filters.region || filters.cve);
+  // The chosen province stays listed even when the current period has no records for it.
+  const regionOptions = regions ?? [];
+  const selectedMissing = filters.region && !regionOptions.some((r) => r.code === filters.region);
   return (
-    <div className="rounded-[12px] border border-[#EDF1F7] bg-white p-3">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <div>
+      <div className={cn("grid grid-cols-2 gap-2 sm:grid-cols-3", cveMode ? "xl:grid-cols-6" : "xl:grid-cols-5")}>
         <label className={label}>
           {t("period")}
           <select className={select} value={filters.hours ?? ""} onChange={(e) => onChange({ ...filters, hours: e.target.value ? (Number(e.target.value) as MonitoringFilters["hours"]) : undefined })}>
@@ -188,6 +248,25 @@ function MonitoringFilterBar({ filters, onChange, narrativeTitle, relevanceAvail
             {PLATFORM_OPTIONS.map((p) => <option key={p} value={p}>{t(`platform_${p}`)}</option>)}
           </select>
         </label>
+        <label className={label}>
+          {pickL("Region", "Wilayah")}
+          <select className={select} value={filters.region ?? ""} onChange={(e) => onChange({ ...filters, region: e.target.value || undefined })}>
+            <option value="">{pickL("All Regions", "Semua Wilayah")}</option>
+            {selectedMissing ? <option value={filters.region}>{filters.region}</option> : null}
+            {regionOptions.map((r) => <option key={r.code} value={r.code}>{`${r.name} (${r.total})`}</option>)}
+          </select>
+        </label>
+        {cveMode ? (
+          <label className={label}>
+            {pickL("CVE Category", "Kategori CVE")}
+            <select className={select} value={filters.cve ?? ""} onChange={(e) => onChange({ ...filters, cve: e.target.value || undefined })}>
+              <option value="">{pickL("All", "Semua")}</option>
+              <option value="flagged">{pickL("Flagged, Not Dismissed", "Ditandai, Belum Ditolak")}</option>
+              {CVE_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{pickL(c.label[0], c.label[1])}</option>)}
+              <option value="unclassified">{pickL("No Category Yet", "Belum Berkategori")}</option>
+            </select>
+          </label>
+        ) : null}
         <label className={label}>
           {t("analysis")}
           <select className={select} value={filters.analysis ?? ""} onChange={(e) => onChange({ ...filters, analysis: (e.target.value || undefined) as MonitoringFilters["analysis"] })}>
@@ -213,12 +292,12 @@ function MonitoringFilterBar({ filters, onChange, narrativeTitle, relevanceAvail
   );
 }
 
-function Panel({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>{children}</section>;
+function Panel({ children, className, id }: { children: ReactNode; className?: string; id?: string }) {
+  return <section id={id} className={cn("scroll-mt-6 [&>h2]:text-[20px] [&_h3]:text-[20px]", BOX, className)}>{children}</section>;
 }
 
 
-function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
+function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; onPlan?: () => void; onShowNegative?: () => void }) {
   const uiLanguage = useUiStore((state) => state.language);
   const L = (en: string, id: string) => (uiLanguage === "id" ? id : en);
   const num = (n: number) => n.toLocaleString(uiLanguage === "id" ? "id-ID" : "en-US");
@@ -233,7 +312,7 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
   // Same rule as the Overview verdict: net (positive − negative) share of the day's records.
   const net = total > 0 ? ((positive - negative) / total) * 100 : 0;
   const verdict = total === 0
-    ? { word: L("No data", "Belum ada data"), color: "#5A6478", bg: "#F1F4FA" }
+    ? { word: L("No Data Yet", "Belum Ada Data"), color: "#5A6478", bg: "#F1F4FA" }
     : net <= -15 ? { word: L("Negative", "Negatif"), color: "#C81E1E", bg: "#FDECEC" }
       : net >= 15 ? { word: L("Positive", "Positif"), color: "#047857", bg: "#E5F6EE" }
         : { word: L("Balanced", "Seimbang"), color: "#31406B", bg: "#EEF1F8" };
@@ -244,67 +323,59 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
   const segments = [
     { key: "neg", label: L("Negative", "Negatif"), value: negative, color: "#E5484D" },
     { key: "pos", label: L("Positive", "Positif"), value: positive, color: "#12A66A" },
-    { key: "other", label: L("Neutral & other", "Netral & lainnya"), value: other, color: "#B8C0D4" },
+    { key: "other", label: L("Neutral & Other", "Netral & Lainnya"), value: other, color: "#B8C0D4" },
   ];
   const tiles = [
-    { key: "total", label: L("Mentions, 24 h", "Percakapan 24 jam"), value: num(total), sub: L("collected today", "masuk hari ini"), tone: "#465FFF", rgb: "70,95,255" },
-    { key: "neg", label: L("Negative", "Negatif"), value: num(negative), sub: `${pct(negative)}% ${L("of today", "dari hari ini")}`, tone: "#C81E1E", rgb: "229,72,77" },
-    { key: "crit", label: L("Critical alerts", "Peringatan kritis"), value: num(critical), sub: critical > 0 ? L("handle first", "tangani dulu") : L("none open", "tidak ada"), tone: critical > 0 ? "#A04606" : "#5A6478", rgb: critical > 0 ? "245,158,11" : "100,116,139" },
-    { key: "pos", label: L("Positive", "Positif"), value: num(positive), sub: `${pct(positive)}% ${L("of today", "dari hari ini")}`, tone: "#047857", rgb: "18,166,106" },
+    { key: "total", label: L("Mentions", "Percakapan"), value: num(total), tone: "#101334" },
+    { key: "neg", label: L("Negative", "Negatif"), value: num(negative), tone: "#C81E1E" },
+    { key: "crit", label: L("Critical Alerts", "Peringatan Kritis"), value: num(critical), tone: critical > 0 ? "#C2410C" : "#8A93AD" },
+    { key: "pos", label: L("Positive", "Positif"), value: num(positive), tone: "#047857" },
   ];
 
   return (
-    <Panel className="overflow-hidden">
-      <div className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-        <div className="min-w-0 p-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{L("Today at a glance", "Ringkasan hari ini")}</h2>
-            <span className="rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]">{L("Summarised by AI", "Diringkas AI")}</span>
+    <section className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+      <div className={cn("min-w-0", BOX)}>
+        <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{L("Last 24 Hours", "24 Jam Terakhir")}</h2>
+        <p className="mt-3 text-[40px] font-black leading-none tracking-[-0.03em]" style={{ color: verdict.color }}>{verdict.word}</p>
+        {total > 0 ? (
+          <div className="mt-4">
+            <div className="flex h-3 w-full overflow-hidden rounded-full bg-[#E8ECF6]">
+              {segments.map((seg) => seg.value > 0 ? <span key={seg.key} style={{ width: `${pct(seg.value)}%`, background: seg.color }} title={`${seg.label}: ${seg.value}`} /> : null)}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] font-bold text-[#3A4566]">
+              {segments.map((seg) => (
+                <span key={seg.key} className="inline-flex items-center gap-1.5">
+                  <span className="size-2.5 rounded-full" style={{ background: seg.color }} />
+                  {seg.label} <b className="font-black text-[#101334]">{pct(seg.value)}%</b>
+                </span>
+              ))}
+            </div>
           </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className="rounded-[10px] px-3 py-1.5 text-[20px] font-black leading-none tracking-[-0.03em]" style={{ color: verdict.color, background: verdict.bg }}>{verdict.word}</span>
-            <span className="text-[13px] font-bold text-[#3A4566]">{L(`overall tone of ${num(total)} mentions in 24 h`, `nada keseluruhan dari ${num(total)} percakapan 24 jam`)}</span>
+        ) : null}
+        {headline ? <p className="mt-4 line-clamp-2 text-[15px] font-bold leading-6 text-[#101334]" title={headline}>{headline}</p> : (
+          <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{L("No mentions in the last 24 hours yet.", "Belum ada percakapan dalam 24 jam terakhir.")}</p>
+        )}
+        {/* The one thing to do now, set apart so it cannot be missed, with the buttons that start it. */}
+        {advice ? (
+          <div className="mt-5 rounded-[20px] bg-gradient-to-r from-[#101334] to-[#2B2F9E] p-5 text-white shadow-[0_16px_40px_-18px_rgba(16,19,52,0.7)]">
+            <p className="inline-flex rounded-full bg-[#FBBF24] px-3 py-1 text-[12px] font-black text-[#101334]">{L("Next Step", "Langkah Berikutnya")}</p>
+            <p className="mt-3 text-balance text-[20px] font-black leading-snug tracking-[-0.01em] sm:text-[22px]" title={advice}>{advice}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {onPlan ? <button type="button" onClick={onPlan} className="h-11 rounded-full bg-white px-5 text-[14px] font-bold text-[#101334] transition hover:bg-[#EEF1FF]">{L("Create Action Plan", "Buat Rencana Aksi")}</button> : null}
+              {onShowNegative && negative > 0 ? <button type="button" onClick={onShowNegative} className="h-11 rounded-full bg-white/10 px-5 text-[14px] font-bold text-white transition hover:bg-white/20">{L(`See ${num(negative)} Negative`, `Lihat ${num(negative)} yang Negatif`)}</button> : null}
+            </div>
           </div>
-
-          {total > 0 ? (
-            <div className="mt-4">
-              <div className="flex h-3.5 w-full overflow-hidden rounded-full bg-[#EEF1F7]">
-                {segments.map((seg) => seg.value > 0 ? <span key={seg.key} style={{ width: `${pct(seg.value)}%`, background: seg.color }} title={`${seg.label}: ${seg.value}`} /> : null)}
-              </div>
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] font-bold text-[#3A4566]">
-                {segments.map((seg) => (
-                  <span key={seg.key} className="inline-flex items-center gap-1.5">
-                    <span className="size-2.5 rounded-full" style={{ background: seg.color }} />
-                    {seg.label} <b className="font-black text-[#101334]">{seg.value}</b> <span className="text-[#5A6478]">({pct(seg.value)}%)</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {headline ? <p className="mt-4 line-clamp-3 text-[14px] font-bold leading-6 text-[#101334]" title={headline}>{headline}</p> : (
-            <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{L("No mentions in the last 24 hours yet.", "Belum ada percakapan dalam 24 jam terakhir.")}</p>
-          )}
-          {advice ? (
-            <div className="mt-3 rounded-[12px] bg-[#101334] px-4 py-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#A9B4FF]">{L("Suggested next step", "Saran langkah")}</p>
-              <p className="mt-1 line-clamp-2 text-[13px] font-bold leading-snug text-white" title={advice}>{advice}</p>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 bg-[#F7F8FC] p-5">
-          {tiles.map((tile) => (
-            <div key={tile.key} className="flex min-w-0 flex-col justify-between rounded-[12px] bg-white p-4 shadow-[0_2px_10px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${tile.rgb}, 0.10), rgba(${tile.rgb}, 0.02) 60%)` }}>
-              <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: tile.tone }}>{tile.label}</p>
-              <p className="mt-2 text-[32px] font-black leading-none tracking-[-0.045em] text-[#101334]">{tile.value}</p>
-              <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{tile.sub}</p>
-            </div>
-          ))}
-        </div>
+        ) : null}
       </div>
-    </Panel>
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 lg:self-start">
+        {tiles.map((tile) => (
+          <div key={tile.key} className="flex min-w-0 flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+            <dd className="text-[38px] font-black leading-none tracking-[-0.04em] tabular-nums" style={{ color: tile.key === "total" ? "#101334" : tile.tone }}>{tile.value}</dd>
+            <dt className="mt-2 text-[13px] font-bold text-[#5A6478]">{tile.label}</dt>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }
 
@@ -354,7 +425,7 @@ function SentimentCorrector({ id, sentiment }: { id: string; sentiment: Sentimen
         <SentimentBadge sentiment={sentiment} />
       </PopoverTrigger>
       <PopoverContent align="start" sideOffset={6} className="w-[200px] gap-0 rounded-[12px] border border-slate-200 bg-white p-1.5 text-slate-900 shadow-[0_12px_32px_rgba(15,23,42,0.14)] ring-0">
-        <p className="px-2 pb-1.5 pt-1 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{pickL("Correct sentiment", "Sentimen yang benar")}</p>
+        <p className="px-2 pb-1.5 pt-1 text-[12px] font-black text-[#5A6478]">{pickL("Correct Sentiment", "Sentimen yang Benar")}</p>
         {choices.map(([key, en, idText]) => (
           <button
             key={key}
@@ -456,7 +527,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => (
-            <button key={tab.value} type="button" onClick={() => setActiveFilter(tab.value)} className={cn("h-9 rounded-full px-4 text-[12px] font-black transition", activeFilter === tab.value ? "bg-[#465FFF] text-white shadow-sm" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:bg-white")}>{tab.label}</button>
+            <button key={tab.value} type="button" onClick={() => setActiveFilter(tab.value)} className={cn("h-9 rounded-full px-4 text-[12px] font-black transition", activeFilter === tab.value ? "bg-[#465FFF] text-white shadow-sm" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:bg-[#F7F8FC]")}>{tab.label}</button>
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -470,7 +541,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
         </div>
       </div>
 
-      <Panel className="overflow-hidden p-0 xl:min-h-[610px] flex flex-col">
+      <Panel id="signals-table" className="overflow-hidden p-0 xl:min-h-[610px] flex flex-col">
         {/* Phones: one card per record with the same evidence fields. */}
         <ul className="divide-y divide-[#EDF1F7] md:hidden">
           {rows.map((row) => (
@@ -482,6 +553,8 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     <SentimentCorrector id={row.id} sentiment={row.sentiment} />
                     <RelevanceBadge relevance={row.relevance} />
+                    <PlaceChip place={row.place} />
+                    <CveChip id={row.id} cve={row.cve} />
                   </div>
                   <p className="mt-1 text-[11px] text-[#5A6478]">
                     {row.tags.join(" · ")}
@@ -516,7 +589,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
               <col className="w-[11%]" />
             </colgroup>
             <thead>
-              <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.06em] text-[#5F6B94]">
+              <tr className="border-b border-[#DDE3EF] text-[12px] font-black text-[#5F6B94]">
                 <th className="px-2.5 py-3">
                   <button
                     type="button"
@@ -561,6 +634,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     ) : (
                       <span title={row.title} className="line-clamp-2 break-words text-[13px] font-bold leading-snug text-navy">{row.title}</span>
                     )}
+                    {row.place || row.cve ? <div className="mt-1 flex flex-wrap items-center gap-1.5"><PlaceChip place={row.place} /><CveChip id={row.id} cve={row.cve} /></div> : null}
                   </td>
                   <td className="px-2.5 py-3 align-middle"><span className="line-clamp-2 break-words text-[12px] font-bold leading-snug text-[#31406B]" title={row.publisher}>{row.publisher}</span></td>
                   <td className="px-2.5 py-3 align-middle"><SentimentCorrector id={row.id} sentiment={row.sentiment} /></td>
@@ -618,10 +692,10 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
 
   return (
     <Panel className="p-4">
-      <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
+      <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h2>
       
       {!hasData && data !== undefined ? (
-        <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
+        <div className="mt-4 flex flex-col items-center justify-center gap-2 py-6 text-center">
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
           <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
@@ -630,9 +704,9 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
           {(data || []).map((item, keyIdx) => {
             const style = toneStyles[item.tone as Tone];
             return (
-              <div key={`${item.title}:${keyIdx}`} className={cn("grid grid-cols-1 gap-3 rounded-[12px] border p-3 sm:grid-cols-[minmax(0,1fr)_auto]", item.tone === "red" ? "border-transparent bg-[#FFF5F5]" : item.tone === "amber" ? "border-transparent bg-[#FFF9F0]" : "border-transparent bg-[#F1FCF6]")}>
-                <span className="min-w-0"><span className="line-clamp-2 block text-[12px] font-black leading-snug text-[#101334]" title={item.title}>{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#58648C]">{item.meta}</span></span>
-                <span className="text-left sm:text-right"><span className={cn("rounded-full px-2 py-0.5 text-[9px] font-black", style.soft, style.text)}>{codeLabel(item.badge)}</span><span className="mt-2 block text-[10px] font-bold text-[#31406B]">{item.time}</span></span>
+              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-1 gap-3 border-b border-[#E6EAF2] py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto]">
+                <span className="min-w-0"><span className="line-clamp-2 block text-[14px] font-black leading-snug text-[#101334]" title={item.title}>{item.title}</span><span className="mt-1 block text-[12px] font-semibold text-[#58648C]">{item.meta}</span></span>
+                <span className="text-left sm:text-right"><span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-black", style.soft, style.text)}>{codeLabel(item.badge)}</span><span className="mt-2 block text-[11px] font-bold text-[#5A6478]">{item.time}</span></span>
               </div>
             );
           })}
@@ -640,7 +714,7 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
       )}
 
       {hasData && (
-        <Link href="/action-plans" className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#FBFCFF] text-[11px] font-black text-[#3B52F5]">{t("action")} <ArrowRight size={13} /></Link>
+        <Link href="/action-plans" className="mt-4 inline-flex h-10 items-center rounded-full bg-[#101334] px-5 text-[13px] font-bold text-white hover:bg-[#2B2F9E]">{t("action")}</Link>
       )}
     </Panel>
   );
@@ -672,7 +746,7 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[16px] font-black text-[#101334]">{t("title")}</h3>
+          <h3 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
         </div>
         <span className="inline-flex h-7 shrink-0 whitespace-nowrap items-center rounded-full bg-[#F1F4FA] px-3 text-[10px] font-black text-[#53608C]">
           {t("timeframe")}
@@ -680,7 +754,7 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
       </div>
 
       {!hasData ? (
-        <div className="mt-5 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
+        <div className="mt-5 flex flex-col items-center justify-center gap-2 py-6 text-center">
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
           <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
@@ -770,13 +844,13 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[16px] font-black text-[#101334]">{t("title")}</h3>
+          <h3 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
         </div>
-        <Link href="/workspace/cases" className="text-[11px] font-black text-[#3B52F5]">{t("viewAll")}</Link>
+        <Link href="/workspace/cases" className="inline-flex h-9 shrink-0 items-center rounded-full bg-[#101334] px-4 text-[12.5px] font-bold text-white hover:bg-[#2B2F9E]">{t("viewAll")}</Link>
       </div>
 
       {!hasData ? (
-        <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
+        <div className="mt-4 flex flex-col items-center justify-center gap-2 py-6 text-center">
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
           <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
@@ -784,7 +858,7 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
         <div className="mt-4 space-y-3">
           {data.map((item, keyIdx) => {
             return (
-              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-1 gap-3 rounded-[11px] bg-[#F4F6FC] p-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-1 gap-3 border-b border-[#E6EAF2] py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <span className="min-w-0">
                   <span className="line-clamp-2 block text-[12px] font-black leading-snug text-[#101334]" title={item.title}>{item.title}</span>
                   <span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.meta}</span>
@@ -810,16 +884,16 @@ function RelatedNarrativeCard({ n }: { n: { id: string; title: string; signalCou
         : { bg: "#EEF1F8", chip: "bg-[#5A6478] text-white", word: pickL("Neutral", "Netral") };
   const rising = /^\+/.test(n.velocity) && n.velocity !== "+0%";
   return (
-    <Link href={issueHref(n.id)} className="flex flex-col justify-between rounded-[12px] p-4 transition hover:brightness-[0.98]" style={{ background: look.bg }}>
-      <p className="line-clamp-2 text-[13px] font-black leading-snug text-[#101334]">{n.title}</p>
+    <Link href={issueHref(n.id)} className="group flex flex-col justify-between rounded-[12px] py-2 transition">
+      <p className="line-clamp-2 text-[15px] font-black leading-snug text-[#101334] group-hover:text-[#3B52F5]">{n.title}</p>
       <div className="mt-3 flex items-end justify-between gap-2">
         <span>
-          <b className="block text-[26px] font-black leading-none tracking-[-0.04em] text-[#101334]">{n.signalCount}</b>
-          <span className="text-[11px] font-bold text-[#5A6478]">{pickL("mentions", "percakapan")}</span>
+          <b className="block text-[32px] font-black leading-none tracking-[-0.04em] text-[#101334]">{n.signalCount}</b>
+          <span className="text-[12px] font-bold text-[#5A6478]">{pickL("Mentions", "Percakapan")}</span>
         </span>
         <span className="flex flex-wrap justify-end gap-1.5 text-[11px] font-black">
           <span className={cn("rounded-full px-2.5 py-1", look.chip)}>{look.word}</span>
-          {n.velocity ? <span className={cn("rounded-full bg-white px-2.5 py-1", rising ? "text-[#B45309]" : "text-[#31406B]")}>{n.velocity} {pickL("24 h", "24 jam")}</span> : null}
+          {n.velocity ? <span className={cn("rounded-full bg-white px-2.5 py-1", rising ? "text-[#B45309]" : "text-[#31406B]")}>{n.velocity} {pickL("24 H", "24 Jam")}</span> : null}
         </span>
       </div>
     </Link>
@@ -832,10 +906,9 @@ function LiveRelatedNarratives() {
   const q = useQuery({ queryKey: ["signals-related-narratives"], queryFn: () => getNarratives({ limit: 3 }), staleTime: 60 * 1000 });
   const items = q.data?.data ?? [];
   return (
-    <div className="mt-6 rounded-[14px] border border-[#E6EAF2] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
+    <div className={cn("mt-6", BOX)}>
       <div className="mb-4 flex items-center gap-2">
-        <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("relatedNarratives")}</h3>
-        <span title={pickL("Narrative clusters built from your workspace's mentions", "Klaster narasi yang disusun dari percakapan workspace Anda")} className="cursor-help text-[#647099]"><Info size={13} /></span>
+        <h3 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{t("relatedNarratives")}</h3>
       </div>
       {q.isLoading ? (
         <p className="text-[12px] font-bold text-[#5A6478]">{pickL("Loading narratives…", "Memuat narasi…")}</p>
@@ -1018,7 +1091,7 @@ export default function SignalsPage() {
   };
 
   const signalsQuery = useQuery({
-    queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter, hours: filters.hours, narrative: filters.narrative, relevance: filters.relevance, analysis: filters.analysis, platform: filters.platform }],
+    queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter, hours: filters.hours, narrative: filters.narrative, relevance: filters.relevance, analysis: filters.analysis, platform: filters.platform, region: filters.region, cve: filters.cve }],
     queryFn: async () => {
       const res = await getSignals({
         page,
@@ -1031,12 +1104,23 @@ export default function SignalsPage() {
         relevance: filters.relevance,
         analysis: filters.analysis,
         platform: filters.platform,
+        region: filters.region,
+        cve: filters.cve,
       });
       if (res) return res;
       return { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } };
     },
     staleTime: 30 * 1000,
   });
+
+  // Provinces for the period in view (30 days when no period is chosen); feeds the region filter and panel.
+  const regionDays = filters.hours ? (hoursToDays(filters.hours) as 1 | 7 | 30 | 90) : 30;
+  const regionsQuery = useQuery({ queryKey: ["signal-regions", regionDays], queryFn: () => getRegionBreakdown(regionDays), staleTime: 60 * 1000 });
+  // What the workspace monitors for; the list reports it, settings are the fallback before the first page loads.
+  const settingsProfileQuery = useQuery({ queryKey: ["workspace-settings"], queryFn: getWorkspaceSettings, staleTime: 60 * 1000 });
+  const profile = signalsQuery.data?.profile ?? (settingsProfileQuery.data ? { useCase: settingsProfileQuery.data.useCase, privacyMode: settingsProfileQuery.data.privacyMode } : undefined);
+  const cveMode = profile?.useCase === "cve";
+  const cveQuery = useQuery({ queryKey: ["cve-summary", regionDays], queryFn: () => getCveSummary(regionDays), staleTime: 60 * 1000, enabled: cveMode });
 
   const handleQueryChange = (value: string) => {
     setQuery(value);
@@ -1144,7 +1228,7 @@ export default function SignalsPage() {
       : "";
 
   return (
-    <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
+    <div className="flex max-w-full flex-col gap-10 pb-10 text-[#101334]">
       {isDemoSession && (
         <DemoBanner />
       )}
@@ -1212,11 +1296,21 @@ export default function SignalsPage() {
       )}
 
       {/* The side panels sit beside the table only on wide screens; otherwise below it, so the table keeps a full row. */}
-      <div className="grid items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_336px]">
-        <div className="flex min-w-0 flex-col gap-4">
-          <SummaryPanel meta={meta} />
+      <div className="grid items-start gap-5 2xl:grid-cols-[minmax(0,1fr)_336px]">
+        <div className="flex min-w-0 flex-col gap-6">
+          <SummaryPanel
+            meta={meta}
+            onPlan={() => { setSelectedSignalForAction(null); setIsActionPlanModalOpen(true); }}
+            onShowNegative={() => { handleFilterChange("negative"); document.getElementById("signals-table")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+          />
           {!isAdvancedSearchActive ? (
-            <MonitoringFilterBar filters={filters} onChange={handleFiltersChange} narrativeTitle={narrativeTitle} relevanceAvailable={relevanceInfo?.configured !== false} brand={brandLabel} />
+            <MonitoringFilterBar filters={filters} onChange={handleFiltersChange} narrativeTitle={narrativeTitle} relevanceAvailable={relevanceInfo?.configured !== false} brand={brandLabel} regions={regionsQuery.data?.provinces} cveMode={cveMode} />
+          ) : null}
+          {profile?.privacyMode ? (
+            <p className="flex items-center gap-2 rounded-[10px] bg-[#F4F6FF] px-3 py-2 text-[12px] font-medium text-[#31406B]">
+              <EyeOff size={14} aria-hidden="true" className="shrink-0 text-[#465FFF]" />
+              {pickL("Privacy mode is on: account names, @handles and post links of social media posts are hidden. News outlets stay named.", "Mode privasi aktif: nama akun, @handle, dan tautan postingan media sosial disembunyikan. Nama media berita tetap tampil.")}
+            </p>
           ) : null}
           {!isAdvancedSearchActive && newsOnlyRows ? (
             <p className="rounded-[10px] bg-[#F4F6FF] px-3 py-2 text-[12px] font-medium text-[#31406B]">{t("filters.newsOnly")}</p>
@@ -1295,13 +1389,15 @@ export default function SignalsPage() {
             </>
           )}
         </div>
-        <div className="grid items-start gap-4 md:grid-cols-2 2xl:grid-cols-1">
+        <div className="grid items-start gap-5 md:grid-cols-2 2xl:grid-cols-1">
             {isMetaUnavailable ? <DashboardErrorState title={tSignals("metaErrorTitle")} description={tSignals("metaErrorDesc")} onRetry={() => void metaQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+            {cveMode ? <CvePanel data={cveQuery.data} loading={cveQuery.isPending} selected={filters.cve} onSelect={(cve) => handleFiltersChange({ ...filters, cve })} onSelectRegion={(code) => handleFiltersChange({ ...filters, region: code })} /> : null}
             <FollowUpPanel data={meta?.followUps} />
+            <RegionPanel data={regionsQuery.data} days={regionDays} loading={regionsQuery.isPending} selected={filters.region} onSelect={(code) => handleFiltersChange({ ...filters, region: code })} />
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)_minmax(0,1.18fr)]">
+      <div className="grid gap-5 xl:grid-cols-3">
         <SourceDonut data={meta?.sourceDistribution} totalSignals={meta?.totalSignals} />
         <TimelineChart data={meta?.timeline} labels={meta?.timelineLabels} />
         <InvestigationQueue data={meta?.investigationQueue} />

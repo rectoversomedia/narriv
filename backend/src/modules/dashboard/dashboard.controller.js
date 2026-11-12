@@ -1,6 +1,8 @@
 import { buildSentimentTrend, sentimentTrendStart } from "../../lib/sentiment-trend.js";
 import { rankClustersByEvidence } from "../../lib/dashboard-topics.js";
 import supabase from "../../lib/supabase.js";
+import { getProfilesFor } from "../../lib/workspace-profile.js";
+import { maskSignal } from "../../lib/privacy.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 import { cachedQuery, CACHE_KEYS, CACHE_TTL } from "../../lib/cache.js";
 import redis from "../../lib/redis.js";
@@ -153,6 +155,8 @@ export const getSummary = async (req, res) => {
 
             let { data: signals, error: signalsError } = await signalsQuery;
             if (signalsError) throw signalsError;
+            // Privacy mode: social posts lose their account before anything below reads them (privacy.js).
+            if ((await getProfilesFor(workspaceIds)).privacyMode) signals = (signals || []).map((s) => maskSignal(s));
 
             // No fallback to other periods: an empty period is reported as empty, so the header ("last 24 hours: N")
             // and every panel below it describe the same data.
@@ -181,7 +185,7 @@ export const getSummary = async (req, res) => {
                 platformsMap[platform] = (platformsMap[platform] || 0) + 1;
 
                 // Publisher (stored as author by news ingestion) with its sentiment split.
-                const publisher = String(signal.author || "").trim();
+                const publisher = signal.privacyMasked ? "" : String(signal.author || "").trim();
                 if (publisher) {
                     const row = publishersMap[publisher] || (publishersMap[publisher] = { publisher, platform, count: 0, negative: 0, positive: 0 });
                     row.count++;

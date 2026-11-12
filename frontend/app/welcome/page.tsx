@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
-import { ArrowRight, ArrowUpRight, BellRing, Building2, ChevronDown, Clock3, FileText, Layers, LineChart, Loader2, Megaphone, Radar, UserCheck, type LucideIcon } from "lucide-react";
-import { startDemoLogin } from "@/components/auth/auth-shell";
-import { GRID, INK, SERIF as serif, SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
+import { Fragment, useState, type CSSProperties, type ReactNode } from "react";
+import { ArrowRight, ArrowUpRight, BellRing, Building2, Check, ChevronDown, Clock3, FileText, LineChart, Megaphone, Minus, Radar, Sparkles, UserCheck, type LucideIcon } from "lucide-react";
+import { DemoPicker } from "@/components/auth/demo-picker";
+import { CountUp, NI_CLASS, NI_MARK, NI_TEXT, NarrativeField, NarrativeIntelligence, Reveal, Typewriter, useInView, type TypeSegment } from "@/components/marketing/motion";
+import { INK, SERIF as serif, SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
+import { UseCases } from "@/components/marketing/use-cases";
 import { AI_ENGINES } from "@/components/ui/ai-engines";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { useL } from "@/lib/use-l";
@@ -12,58 +14,58 @@ import { cn } from "@/lib/utils";
 
 // The public landing page, served at "/" to visitors who are not signed in (see proxy.ts).
 // Every number on it is either a product fact or labelled as sample data from the fictional demo bank.
-// Look: ink and warm paper, an editorial serif for accent lines (layout.tsx), hairline rules instead of boxes.
+// Look: ink and warm paper, every section centred, soft white cards on the paper, and quiet motion
+// (components/marketing/motion.tsx) that holds still for visitors who ask for reduced motion.
 
+/** The accent line of a headline on a dark section, with a slow sheen. */
+const ACCENT_DARK = "bg-gradient-to-r from-[#8EA0FF] via-[#D8B4FE] to-[#8EA0FF] bg-clip-text text-transparent mk-shine";
+/** The accent line of a headline on paper. */
+const ACCENT_LIGHT = "bg-gradient-to-r from-[#465FFF] via-[#9B4DDB] to-[#465FFF] bg-clip-text text-transparent mk-shine";
 
+/** Opens the demo picker; the visitor chooses the case (brand, government, CVE) before the app opens. */
 function DemoButton({ className, children }: { className?: string; children: ReactNode }) {
-  const L = useL();
-  const [loading, setLoading] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [open, setOpen] = useState(false);
   return (
-    <span className="inline-flex flex-col items-center gap-1.5 sm:items-start">
+    <span className="inline-flex w-full flex-col items-center gap-1.5 sm:w-auto">
       <button
         type="button"
-        disabled={loading}
-        onClick={async () => {
-          setLoading(true);
-          setFailed(false);
-          try {
-            await startDemoLogin();
-          } catch {
-            setFailed(true);
-            setLoading(false);
-          }
-        }}
-        className={cn("group inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-bold transition active:scale-[0.98] disabled:opacity-70", className)}
+        onClick={() => setOpen(true)}
+        className={cn("group inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-7 text-[15px] font-bold transition active:scale-[0.98] sm:w-auto", className)}
       >
-        {loading ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : null}
         {children}
       </button>
-      {failed ? <span role="alert" className="text-[12px] font-semibold text-[#FCA5A5]">{L("The demo could not open. Try again.", "Demo gagal dibuka. Coba lagi.")}</span> : null}
+      <DemoPicker open={open} onClose={() => setOpen(false)} />
     </span>
   );
 }
 
-/** A label beside the product picture that says what the part next to it does. */
-/** Brands shown under the hero; each wordmark has its own weight so the row does not read as a list. */
-const BRANDS = [
-  { name: "Tugasisten", className: "font-black tracking-[-0.04em]" },
-  { name: "JakselNews", className: "font-extrabold uppercase tracking-[0.02em] text-[20px] sm:text-[22px]" },
-  { name: "HaloDepok", className: "font-bold tracking-[-0.02em]" },
+/** What sets Narriv apart, shown under the hero. */
+const USPS: { icon: LucideIcon; title: [string, string]; body: [string, string] }[] = [
+  { icon: Clock3, title: ["Hourly Monitoring", "Pemantauan Tiap Jam"], body: ["News, YouTube and social media, scanned automatically.", "Berita, YouTube, dan media sosial dipindai otomatis."] },
+  { icon: BellRing, title: ["Instant Alerts", "Peringatan Instan"], body: ["Critical issues go straight to the right team by email.", "Isu kritis langsung dikirim ke email tim terkait."] },
+  { icon: FileText, title: ["Board-Ready Reports", "Laporan untuk Direksi"], body: ["A one-page PDF brief every Monday morning.", "Ringkasan PDF satu halaman setiap Senin pagi."] },
+  { icon: Sparkles, title: ["AI Visibility", "Visibilitas di AI"], body: ["How AI assistants describe and recommend your brand.", "Cara asisten AI menyebut dan merekomendasikan brand Anda."] },
 ];
 
-function Callout({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+/** A soft white card on the paper sections. */
+const CARD = "rounded-[26px] bg-white shadow-[0_1px_0_rgba(16,19,52,0.04),0_24px_50px_-24px_rgba(16,19,52,0.25)]";
+
+/** The logos of the AI assistants, overlapping, for the hero's AI chip. */
+function EngineStack({ size = "size-7" }: { size?: string }) {
   return (
-    <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-white/[0.07] px-3 py-1.5 text-[12px] font-bold text-white/85 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]">
-      <span className="flex size-5 items-center justify-center rounded-full bg-[#465FFF]"><Icon size={12} aria-hidden="true" /></span>
-      {children}
+    <span className="flex -space-x-2">
+      {AI_ENGINES.slice(0, 4).map(({ key, Logo }) => (
+        <span key={key} className={cn("flex items-center justify-center rounded-full bg-white p-1 shadow-[0_0_0_2px_#fff,0_2px_6px_rgba(16,19,52,0.15)]", size)}>
+          <Logo className="size-full" />
+        </span>
+      ))}
     </span>
   );
 }
 
 /**
  * The product, composed so it explains itself: a dashboard window (brand, risk, a spike with its cause, the sources
- * and the top issues), the alert it raised with an owner, and the AI score, with labels naming each part. Sample data.
+ * and the top issues), the alert it raised with an owner, and the AI visibility score. Sample data.
  */
 function ProductStage() {
   const L = useL();
@@ -80,114 +82,277 @@ function ProductStage() {
     { key: "x", n: 19 },
   ];
   return (
-    <div className="relative mx-auto w-full max-w-[600px]">
-    <div className="relative pb-16 pt-8">
-      <div aria-hidden="true" className="absolute -inset-10 rounded-[60px] bg-[radial-gradient(closest-side,rgba(109,124,255,0.45),transparent)] blur-2xl" />
+    <div className="relative mx-auto w-full max-w-[880px]">
+      {/* A slow turning halo behind the window, after the Narriv orb */}
+      <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[130%] max-w-[1000px] -translate-x-1/2 -translate-y-1/2">
+        <div className="mk-ring size-full rounded-full bg-[conic-gradient(from_0deg,transparent_0deg,rgba(109,124,255,0.35)_70deg,transparent_140deg,rgba(216,180,254,0.3)_220deg,transparent_300deg)] blur-3xl" />
+      </div>
 
-
-      {/* Window */}
-      <div className="relative overflow-hidden rounded-[22px] bg-[#0E1335]/80 p-1.5 shadow-[0_40px_120px_rgba(0,0,0,0.55),inset_0_0_0_1px_rgba(255,255,255,0.08)] backdrop-blur">
-        <div className="flex items-center gap-1.5 px-3 py-2.5">
-          <span className="size-2.5 rounded-full bg-white/15" />
-          <span className="size-2.5 rounded-full bg-white/15" />
-          <span className="size-2.5 rounded-full bg-white/15" />
-          <span className="ml-3 truncate text-[11px] font-semibold text-white/40">narriv.digital · {L("Today", "Hari ini")}</span>
-        </div>
-        <div className="rounded-[17px] bg-[#FBFAF7] p-4 text-[#101334] sm:p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#8A8F9E]">{L("Monitoring", "Pemantauan")}</p>
-              <p className="mt-0.5 text-[18px] font-black">Bank Arunika</p>
-              <p className="text-[11px] font-semibold text-[#8A8F9E]">{L("Sample data, fictional brand", "Data contoh, brand fiktif")}</p>
-            </div>
-            <span className="rounded-full bg-[#FDECEC] px-2.5 py-1 text-[11px] font-black text-[#B42318]">{L("Risk: high", "Risiko: tinggi")}</span>
-          </div>
-
-          <div className="mt-4 grid grid-cols-3 divide-x divide-[#ECEAE3]">
-            {[
-              { v: "217", l: L("mentions, 30 days", "percakapan, 30 hari") },
-              { v: "42%", l: L("negative", "negatif"), tone: "text-[#B42318]" },
-              { v: "6", l: L("open alerts", "peringatan aktif") },
-            ].map((s) => (
-              <div key={s.l} className="px-3 first:pl-0">
-                <p className={cn("text-[24px] font-black leading-none tabular-nums", s.tone)}>{s.v}</p>
-                <p className="mt-1 text-[11px] font-semibold text-[#6B7080]">{s.l}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* The spike, named */}
-          <div className="relative mt-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-[11px] font-bold text-[#6B7080]">{L("Mentions per day", "Percakapan per hari")}</p>
-              <span className="rounded-full bg-[#101334] px-2.5 py-1 text-[10px] font-black text-white">{L("3× in 24h · app outage", "3× dalam 24 jam · gangguan aplikasi")}</span>
-            </div>
-            <svg viewBox="0 0 300 82" className="mt-1 h-[72px] w-full overflow-visible" aria-hidden="true">
-              <defs>
-                <linearGradient id="sparkfill" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0" stopColor="#E5484D" stopOpacity="0.22" />
-                  <stop offset="1" stopColor="#E5484D" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <polygon points={`0,82 ${path} 300,82`} fill="url(#sparkfill)" />
-              <polyline points={path} fill="none" stroke="#E5484D" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-              <circle cx={x(days.length - 1)} cy={y(max)} r="5" fill="#E5484D" stroke="#FBFAF7" strokeWidth="2.5" />
-            </svg>
-          </div>
-
-          {/* Where it came from */}
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-[#ECEAE3] pt-3">
-            {sources.map((src) => (
-              <span key={src.key} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#31406B]">
-                <PlatformIcon platform={src.key} className="size-3.5" />
-                {src.n}
+      <div className="relative pt-8">
+        {/* Window */}
+        <div className="mk-pop relative overflow-hidden rounded-[22px] bg-[#0E1335]/80 p-1.5 shadow-[0_40px_120px_rgba(0,0,0,0.55),inset_0_0_0_1px_rgba(255,255,255,0.1)] backdrop-blur" style={{ "--mk-delay": "150ms" } as CSSProperties}>
+          <div className="flex items-center gap-1.5 px-3 py-2.5">
+            <span className="size-2.5 rounded-full bg-white/15" />
+            <span className="size-2.5 rounded-full bg-white/15" />
+            <span className="size-2.5 rounded-full bg-white/15" />
+            <span className="ml-3 truncate text-[11px] font-semibold text-white/40">narriv.digital</span>
+            <span className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] px-2 py-0.5 text-[10px] font-bold text-white/70">
+              <span className="relative flex size-1.5">
+                <span className="absolute inset-0 animate-ping rounded-full bg-[#4ADE80]" />
+                <span className="relative size-1.5 rounded-full bg-[#4ADE80]" />
               </span>
-            ))}
+              {L("Live", "Langsung")}
+            </span>
           </div>
+          <div className="rounded-[17px] bg-[#FBFAF7] p-4 text-[#101334] sm:p-5">
+            <div className="flex items-start justify-between gap-3 text-left">
+              <div>
+                <p className="text-[18px] font-black">Bank Arunika</p>
+                <p className="text-[11px] font-semibold text-[#8A8F9E]">{L("Sample Data · Fictional Brand", "Data Contoh · Brand Fiktif")}</p>
+              </div>
+              <span className="rounded-full bg-[#FDECEC] px-2.5 py-1 text-[11px] font-black text-[#B42318]">{L("High Risk", "Risiko Tinggi")}</span>
+            </div>
 
-          {/* Top issues */}
-          <ul className="mt-3 space-y-1.5">
-            {[
-              { t: L("Arunika Mobile outage at peak hours", "Gangguan Arunika Mobile di jam sibuk"), s: L("Negative", "Negatif"), tone: "bg-[#FDECEC] text-[#B42318]", n: 46 },
-              { t: L("SME programme praised", "Program UMKM dipuji"), s: L("Positive", "Positif"), tone: "bg-[#E8F7F0] text-[#047857]", n: 34 },
-            ].map((it) => (
-              <li key={it.t} className="flex items-center gap-2 rounded-lg bg-white px-2.5 py-2 shadow-[0_1px_2px_rgba(16,19,52,0.06)]">
-                <span className="min-w-0 flex-1 truncate text-[12px] font-bold">{it.t}</span>
-                <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black", it.tone)}>{it.s}</span>
-                <span className="w-6 shrink-0 text-right text-[12px] font-black tabular-nums">{it.n}</span>
-              </li>
-            ))}
-          </ul>
-          {/* Room for the floating alert, so it never covers the numbers. */}
-          <div className="h-28 sm:h-16" aria-hidden="true" />
+            <div className="lg:mt-2 lg:grid lg:grid-cols-[1.25fr_1fr] lg:gap-8">
+              <div>
+                <div className="mt-4 grid grid-cols-3 divide-x divide-[#ECEAE3] text-left">
+                  {[
+                    { v: 217, l: L("Mentions (30 Days)", "Percakapan (30 Hari)") },
+                    { v: 42, suffix: "%", l: L("Negative", "Negatif"), tone: "text-[#B42318]" },
+                    { v: 6, l: L("Open Alerts", "Peringatan Aktif") },
+                  ].map((s) => (
+                    <div key={s.l} className="px-3 first:pl-0">
+                      <CountUp to={s.v} suffix={s.suffix} className={cn("block text-[24px] font-black leading-none", s.tone)} />
+                      <p className="mt-1 text-[11px] font-semibold text-[#6B7080]">{s.l}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* The spike, named */}
+                <div className="relative mt-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-left">
+                    <p className="text-[11px] font-bold text-[#6B7080]">{L("Mentions per Day", "Percakapan per Hari")}</p>
+                    <span className="mk-fill-in rounded-full bg-[#101334] px-2.5 py-1 text-[10px] font-black text-white">{L("3× in 24 Hours · App Outage", "Naik 3× dalam 24 Jam · Gangguan Aplikasi")}</span>
+                  </div>
+                  <div className="relative mt-1">
+                    <div className="mk-wipe">
+                    <svg viewBox="0 0 300 82" preserveAspectRatio="none" className="h-[72px] w-full overflow-visible lg:h-[132px]" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="sparkfill" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0" stopColor="#E5484D" stopOpacity="0.22" />
+                          <stop offset="1" stopColor="#E5484D" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <polygon points={`0,82 ${path} 300,82`} fill="url(#sparkfill)" />
+                      <polyline points={path} fill="none" stroke="#E5484D" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+                    </svg>
+                    </div>
+                    {/* The latest point, drawn outside the stretched chart so it stays round */}
+                    <span aria-hidden="true" className="mk-fill-in absolute right-0 flex size-3 -translate-y-1/2 translate-x-1/2" style={{ top: `${(y(max) / 82) * 100}%` }}>
+                      <span className="absolute inset-0 animate-ping rounded-full bg-[#E5484D] opacity-50" />
+                      <span className="relative size-3 rounded-full border-[2.5px] border-[#FBFAF7] bg-[#E5484D]" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-left">
+                {/* Where it came from */}
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-[#ECEAE3] pt-3 lg:mt-4 lg:border-t-0 lg:pt-0">
+                  {sources.map((src) => (
+                    <span key={src.key} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#31406B]">
+                      <PlatformIcon platform={src.key} className="size-3.5" />
+                      {src.n}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Top issues */}
+                <ul className="mt-3 space-y-1.5">
+                  {[
+                    { t: L("Arunika Mobile Outage at Peak Hours", "Gangguan Arunika Mobile di Jam Sibuk"), s: L("Negative", "Negatif"), tone: "bg-[#FDECEC] text-[#B42318]", n: 46 },
+                    { t: L("SME Programme Praised", "Program UMKM Diapresiasi"), s: L("Positive", "Positif"), tone: "bg-[#E8F7F0] text-[#047857]", n: 34 },
+                    { t: L("Interbank Transfer Fees", "Biaya Transfer Antarbank"), s: L("Neutral", "Netral"), tone: "bg-[#F1F0EC] text-[#5B6070]", n: 21 },
+                  ].map((it, i) => (
+                    <li key={it.t} className="mk-pop flex items-center gap-2 rounded-lg bg-white px-2.5 py-2 shadow-[0_1px_2px_rgba(16,19,52,0.06)]" style={{ "--mk-delay": `${700 + i * 150}ms` } as CSSProperties}>
+                      <span className="min-w-0 flex-1 truncate text-[12px] font-bold">{it.t}</span>
+                      <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black", it.tone)}>{it.s}</span>
+                      <span className="w-6 shrink-0 text-right text-[12px] font-black tabular-nums">{it.n}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            {/* Room for the alert that overlaps the window's bottom edge. */}
+            <div className="h-12" aria-hidden="true" />
+          </div>
         </div>
-      </div>
 
-      {/* The alert it raised, floating */}
-      <div className="absolute bottom-0 left-0 w-[80%] max-w-[340px] rounded-[18px] bg-white p-4 text-[#101334] shadow-[0_24px_60px_rgba(5,8,30,0.45)] sm:-left-8">
-        <div className="flex items-center gap-2">
-          <span className="relative flex size-2.5">
-            <span className="absolute inset-0 animate-ping rounded-full bg-[#E5484D] opacity-60" />
-            <span className="relative size-2.5 rounded-full bg-[#E5484D]" />
-          </span>
-          <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[#B42318]">{L("Critical alert · sent to email", "Peringatan kritis · terkirim ke email")}</span>
+        {/* The alert it raised */}
+        <div className="mk-pop relative mx-auto -mt-12 w-[calc(100%-2rem)] max-w-[420px]" style={{ "--mk-delay": "1300ms" } as CSSProperties}>
+          <div className="mk-float-slow rounded-[18px] bg-white p-4 text-left text-[#101334] shadow-[0_24px_60px_rgba(5,8,30,0.45)]">
+            <div className="flex items-center gap-2">
+              <span className="relative flex size-2.5">
+                <span className="absolute inset-0 animate-ping rounded-full bg-[#E5484D] opacity-60" />
+                <span className="relative size-2.5 rounded-full bg-[#E5484D]" />
+              </span>
+              <span className="text-[11px] font-black text-[#B42318]">{L("Critical Alert · Sent by Email", "Peringatan Kritis · Terkirim via Email")}</span>
+            </div>
+            <p className="mt-1.5 text-[14px] font-black leading-snug">{L("Arunika Mobile Outage at Peak Hours", "Gangguan Arunika Mobile di Jam Sibuk")}</p>
+            <p className="mt-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-[#6B7080]"><UserCheck size={13} aria-hidden="true" /> {L("Owner: Digital Team · Due in 4 Hours", "Penanggung Jawab: Tim Digital · Tenggat 4 Jam")}</p>
+          </div>
         </div>
-        <p className="mt-1.5 text-[14px] font-black leading-snug">{L("Arunika Mobile outage at peak hours", "Gangguan Arunika Mobile di jam sibuk")}</p>
-        <p className="mt-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-[#6B7080]"><UserCheck size={13} aria-hidden="true" /> {L("Owner: Digital team · due in 4 hours", "PJ: Tim Digital · tenggat 4 jam lagi")}</p>
-      </div>
 
-      {/* AI score, floating */}
-      <div className="absolute -right-3 top-0 hidden rounded-[16px] bg-[#101334] px-4 py-3 text-white shadow-[0_20px_50px_rgba(5,8,30,0.5),inset_0_0_0_1px_rgba(255,255,255,0.08)] sm:block">
-        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#A5B4FF]">{L("Named by ChatGPT", "Disebut ChatGPT")}</p>
-        <p className="mt-0.5 text-[24px] font-black leading-none">62<span className="text-[13px] font-bold text-white/50">/100</span></p>
+        {/* AI visibility score, over the window's top corner */}
+        <div className="mk-pop absolute right-2 -top-3 sm:-right-8 sm:-top-2" style={{ "--mk-delay": "900ms" } as CSSProperties}>
+          <div className="mk-float flex items-center gap-3 rounded-[18px] bg-white py-2.5 pl-3 pr-4 text-left text-[#101334] shadow-[0_24px_60px_rgba(5,8,30,0.5)]">
+            <EngineStack />
+            <div>
+              <p className="text-[11px] font-black text-[#6B7080]">{L("AI Visibility", "Visibilitas AI")}</p>
+              <p className="mt-0.5 text-[22px] font-black leading-none sm:text-[26px]"><CountUp to={62} /><span className="text-[12px] font-bold text-[#8A8F9E]">/100</span></p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-      {/* What the picture shows, in three plain labels. */}
-      <div className="relative mt-5 flex flex-wrap justify-center gap-2">
-        <Callout icon={Clock3}>{L("Checked every hour", "Dicek tiap jam")}</Callout>
-        <Callout icon={Layers}>{L("All sources, one screen", "Semua sumber, satu layar")}</Callout>
-        <Callout icon={BellRing}>{L("Who acts, by when", "Siapa bertindak, kapan")}</Callout>
+  );
+}
+
+/** A sample of what Narriv asks the AI assistants, and the answer it reads back. */
+function AiConversation() {
+  const L = useL();
+  const [ref, inView] = useInView<HTMLDivElement>();
+  const [asked, setAsked] = useState(false);
+  const [answered, setAnswered] = useState(false);
+  return (
+    <div ref={ref} className={cn("mk-reveal flex flex-col gap-3 text-left", inView && "is-in")}>
+      <div className="ml-auto max-w-[85%] rounded-[20px] rounded-br-md bg-[#465FFF] px-4 py-3 text-[14px] font-semibold leading-relaxed text-white shadow-[0_12px_30px_rgba(70,95,255,0.35)]">
+        <Typewriter delay={500} speed={30} onDone={() => setAsked(true)} segments={[{ text: L("Which digital bank in Indonesia is most reliable for small businesses?", "Bank digital apa yang paling andal untuk usaha kecil di Indonesia?") }]} />
       </div>
+      <div className={cn("mk-after max-w-[92%]", asked && "is-in")}>
+      <div className="rounded-[20px] rounded-bl-md bg-white/[0.07] px-4 py-3 text-[14px] font-medium leading-relaxed text-white/80 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] backdrop-blur">
+        <span className="mb-2 flex items-center gap-2 text-[12px] font-bold text-white/50">
+          <EngineStack size="size-6" />
+          {L("AI assistant", "Asisten AI")}
+        </span>
+        {asked ? (
+          <Typewriter
+            delay={350}
+            speed={22}
+            onDone={() => setAnswered(true)}
+            segments={[
+              { text: L("Popular options include ", "Beberapa pilihan populer antara lain ") },
+              { text: "Bank Arunika", className: "font-bold", mark: "rounded bg-[#FDE68A] px-0.5 text-[#101334]" },
+              { text: L(", known for its SME programme, though some users report app outages at peak hours…", ", yang dikenal lewat program UMKM-nya, meski sebagian pengguna melaporkan gangguan aplikasi di jam sibuk…") },
+            ]}
+          />
+        ) : null}
+      </div>
+      </div>
+      <div className={cn("mk-after flex flex-wrap gap-2 pl-1", answered && "is-in")}>
+        <span className="rounded-full bg-[#4ADE80]/15 px-2.5 py-1 text-[11px] font-bold text-[#86EFAC]">{L("Mentioned", "Disebut")}</span>
+        <span className="rounded-full bg-[#A5B4FF]/15 px-2.5 py-1 text-[11px] font-bold text-[#C7D2FE]">{L("Ranked 2nd of 4", "Peringkat 2 dari 4")}</span>
+        <span className="rounded-full bg-[#F87171]/15 px-2.5 py-1 text-[11px] font-bold text-[#FCA5A5]">{L("Negative Note: Outages", "Catatan Negatif: Gangguan")}</span>
+      </div>
+    </div>
+  );
+}
+
+/** The scores per AI assistant, bars growing in when visible. Sample scores from the demo bank. */
+function AiScoreboard() {
+  const L = useL();
+  const [ref, inView] = useInView<HTMLDivElement>();
+  const geo = [62, 48, 55, 71, 34];
+  return (
+    <div ref={ref} className={cn("w-full rounded-[26px] bg-white/[0.04] p-5 text-left shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] backdrop-blur sm:p-7", inView && "is-in")}>
+      <div className="flex items-baseline justify-between gap-3 border-b border-white/10 pb-3 text-[12px] font-bold text-white/45">
+        <span>{L("AI assistant", "Asisten AI")}</span>
+        <span>{L("Visibility Score · Sample", "Skor Visibilitas · Contoh")}</span>
+      </div>
+      <ol>
+        {AI_ENGINES.map((engine, i) => {
+          const Logo = engine.Logo;
+          const score = geo[i] ?? 0;
+          return (
+            <li key={engine.key} className="grid grid-cols-[28px_1fr_auto] items-center gap-4 border-b border-white/10 py-4 last:border-b-0 last:pb-0">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-white p-1.5"><Logo className="size-full" /></span>
+              <div className="min-w-0">
+                <p className="text-[15px] font-bold text-white">{engine.name}</p>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className={cn("mk-bar h-full rounded-full", score >= 60 ? "bg-[#4ADE80]" : score >= 45 ? "bg-[#A5B4FF]" : "bg-[#F87171]")}
+                    style={{ width: `${score}%`, "--mk-delay": `${i * 120}ms` } as CSSProperties}
+                  />
+                </div>
+              </div>
+              <span className="w-12 text-right text-[24px] font-black leading-none text-white">{inView ? <CountUp to={score} /> : score}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+/** Ordinary monitoring against Narriv, row by row: the left side muted, Narriv's side lit. */
+function Comparison() {
+  const L = useL();
+  const rows: [string, string][] = [
+    [L("Counts mentions", "Menghitung jumlah sebutan"), L("Assesses risk and explains what is driving it", "Menilai risiko dan menjelaskan pemicunya")],
+    [L("Social media only", "Hanya media sosial"), L("News, YouTube, social media and AI answers", "Berita, YouTube, media sosial, dan jawaban AI")],
+    [L("Requires constant dashboard monitoring", "Menuntut pemantauan dashboard terus-menerus"), L("Proactive alerts the moment an issue emerges", "Peringatan proaktif begitu isu muncul")],
+    [L("Stops at charts", "Berhenti di grafik"), L("Alerts with a clear owner and response plan", "Peringatan dengan penanggung jawab dan rencana respons")],
+    [L("Manual exports and reporting", "Ekspor data dan laporan manual"), L("Board-ready briefing every Monday", "Ringkasan siap direksi setiap Senin")],
+  ];
+  return (
+    <Reveal className="relative mx-auto mt-12 max-w-4xl overflow-hidden rounded-[28px] shadow-[0_30px_80px_-30px_rgba(16,19,52,0.45)] lg:mt-16">
+      {/* The two halves: paper for ordinary monitoring, ink for Narriv. Rows sit across both so each pair lines up. */}
+      <div aria-hidden="true" className="absolute inset-y-0 left-0 w-1/2 bg-white" />
+      <div aria-hidden="true" className={cn("absolute inset-y-0 right-0 w-1/2 overflow-hidden", INK)}>
+        <div className="absolute -right-20 -top-20 size-72 rounded-full bg-[radial-gradient(closest-side,rgba(109,124,255,0.5),transparent)]" />
+        <div className="absolute -bottom-24 -left-10 size-72 rounded-full bg-[radial-gradient(closest-side,rgba(216,180,254,0.25),transparent)]" />
+      </div>
+      <div className="relative grid grid-cols-2 gap-x-6 gap-y-3 px-3 py-6 sm:gap-x-16 sm:px-8 sm:py-8">
+        <p className="pb-2 text-center text-[13px] font-bold text-[#8A8F9E] sm:text-[15px]">{L("Conventional Monitoring", "Monitoring Konvensional")}</p>
+        <p className="flex items-center justify-center gap-2 pb-2 text-[13px] font-black text-white sm:text-[15px]">
+          <img src="/brand/favicon-orb-48.png" alt="" width={22} height={22} className="size-[22px] rounded-full" />
+          Narriv
+        </p>
+        {rows.map(([plain, narriv], i) => (
+          <Fragment key={plain}>
+            <div className="flex items-center gap-2.5 rounded-2xl bg-[#F6F5F1] px-3 py-3 text-[13px] font-semibold leading-snug text-[#8A8F9E] sm:gap-3 sm:px-4 sm:py-4 sm:text-[15px]">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#E4E2DA] text-[#8A8F9E]"><Minus size={12} strokeWidth={3} aria-hidden="true" /></span>
+              {plain}
+            </div>
+            <div className="mk-reveal-row flex items-center gap-2.5 rounded-2xl bg-white/[0.07] px-3 py-3 text-[13px] font-bold leading-snug text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] sm:gap-3 sm:px-4 sm:py-4 sm:text-[15px]" style={{ "--mk-delay": `${300 + i * 120}ms` } as CSSProperties}>
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#4ADE80] to-[#22C55E] text-[#052e16]"><Check size={12} strokeWidth={3.5} aria-hidden="true" /></span>
+              {narriv}
+            </div>
+          </Fragment>
+        ))}
+      </div>
+    </Reveal>
+  );
+}
+
+/** A headline over a short lead, centred. */
+/** `accent` may be segments of its own, to set a phrase apart inside the accent line. */
+function SectionHead({ title, accent, lead, dark = false, stacked = false }: { title: string; accent: string | TypeSegment[]; lead?: string; dark?: boolean; stacked?: boolean }) {
+  const [typed, setTyped] = useState(false);
+  return (
+    <div className="mx-auto max-w-2xl text-center">
+      <h2 className={cn("text-balance text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[46px]", dark && "text-white")}>
+        <Typewriter
+          onDone={() => setTyped(true)}
+          segments={[
+            { text: `${title} ` },
+            ...(typeof accent === "string"
+              ? [{ text: accent, className: cn(dark ? ACCENT_DARK : ACCENT_LIGHT, serif), block: stacked }]
+              : accent.map((seg, i) => ({ ...seg, className: seg.className ?? cn(dark ? ACCENT_DARK : ACCENT_LIGHT, serif), breakBefore: stacked && i === 0 }))),
+          ]}
+        />
+      </h2>
+      {lead ? <p className={cn("mk-after mx-auto mt-4 max-w-xl text-balance text-[16px] font-medium leading-relaxed sm:text-[17px]", dark ? "text-white/60" : "text-[#5B6070]", typed && "is-in")}>{lead}</p> : null}
     </div>
   );
 }
@@ -195,273 +360,275 @@ function ProductStage() {
 export default function WelcomePage() {
   const L = useL();
 
-
-  // Sample scores from the demo bank, the same numbers its dashboard shows.
-  const geo = [62, 48, 55, 71, 34];
+  const steps = [
+    {
+      icon: Radar,
+      title: L("Monitor", "Pantau"),
+      text: L("Every hour, Narriv scans news, YouTube and social media, and scores the sentiment of each mention.", "Setiap jam, Narriv memindai berita, YouTube, dan media sosial, lalu menilai sentimen setiap percakapan."),
+      ui: (
+        <div className="flex items-start gap-3">
+          <PlatformIcon platform="news" className="mt-0.5 size-5 shrink-0" />
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-bold">{L("Customers Report Login Failures on Payday", "Nasabah Keluhkan Gagal Login saat Gajian")}</p>
+            <p className="mt-0.5 text-[11px] font-semibold text-[#8A8F9E]">{L("Online News · 12 min ago", "Berita Online · 12 menit lalu")}</p>
+          </div>
+          <span className="ml-auto shrink-0 rounded-full bg-[#FDECEC] px-2 py-0.5 text-[11px] font-black text-[#B42318]">{L("Negative", "Negatif")}</span>
+        </div>
+      ),
+    },
+    {
+      icon: BellRing,
+      title: L("Alert", "Peringatkan"),
+      text: L("Emerging issues become alerts with a risk level, an owner and a deadline, delivered by email.", "Isu yang berkembang menjadi peringatan lengkap dengan tingkat risiko, penanggung jawab, dan tenggat, lalu dikirim via email."),
+      ui: (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="rounded-md bg-[#B42318] px-1.5 py-0.5 text-[10px] font-black text-white">{L("Critical", "Kritis")}</span>
+          <p className="text-[13px] font-bold">{L("Login Complaints Rising Sharply", "Keluhan Login Naik Tajam")}</p>
+          <p className="flex items-center gap-1 text-[12px] font-semibold text-[#6B7080]"><UserCheck size={13} aria-hidden="true" /> {L("Digital Team · 4 Hours", "Tim Digital · 4 Jam")}</p>
+        </div>
+      ),
+    },
+    {
+      icon: FileText,
+      title: L("Report", "Laporkan"),
+      text: L("Every Monday, leadership receives a one-page briefing on what changed and what requires a decision.", "Setiap Senin, pimpinan menerima ringkasan satu halaman berisi perubahan utama dan keputusan yang diperlukan."),
+      ui: (
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#101334] text-white"><FileText size={18} aria-hidden="true" /></span>
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-bold">{L("Weekly Board Report.pdf", "Laporan Mingguan Direksi.pdf")}</p>
+            <p className="mt-0.5 text-[11px] font-semibold text-[#8A8F9E]">{L("Negative Share −1 pt · 3 Decisions Required", "Porsi Negatif −1 Poin · 3 Keputusan")}</p>
+          </div>
+        </div>
+      ),
+    },
+  ];
 
   const faqs = [
-    { q: L("How fast will I see results?", "Seberapa cepat hasilnya terlihat?"), a: L("The first news and YouTube results arrive about a minute after setup. From then on Narriv checks every hour.", "Hasil pertama dari berita dan YouTube masuk sekitar satu menit setelah pengaturan. Setelah itu Narriv mengecek setiap jam.") },
-    { q: L("Which sources does Narriv watch?", "Sumber apa saja yang dipantau?"), a: L("Indonesian online news and YouTube from day one. Instagram, TikTok, X and Facebook are switched on per plan.", "Berita online Indonesia dan YouTube langsung aktif. Instagram, TikTok, X, dan Facebook diaktifkan sesuai paket.") },
-    { q: L("How is this different from a social listening tool?", "Apa bedanya dengan tool social listening?"), a: L("Most tools stop at charts. Narriv turns a rising issue into an alert with an owner and a deadline, suggests a response plan, and writes the board report.", "Kebanyakan tool berhenti di grafik. Narriv mengubah isu yang naik jadi peringatan dengan penanggung jawab dan tenggat, menyarankan rencana respons, dan menyusun laporan untuk direksi.") },
-    { q: L("Can I trust the AI's reading?", "Bisakah analisis AI-nya dipercaya?"), a: L("Every mention links back to the original article or post, and your team can correct a sentiment in one click.", "Setiap percakapan tertaut ke artikel atau postingan aslinya, dan tim Anda bisa mengoreksi sentimen dalam satu klik.") },
-    { q: L("Is our data kept separate?", "Apakah data kami terpisah?"), a: L("Each client has its own workspace. Members only see the workspaces they were invited to, and every change is recorded in the activity history.", "Tiap klien punya workspace sendiri. Anggota hanya melihat workspace yang mengundangnya, dan setiap perubahan tercatat di riwayat aktivitas.") },
-    { q: L("Can we try it first?", "Bisa dicoba dulu?"), a: L("Yes. Open the live demo without signing up, or try 14 days with your own brand.", "Bisa. Buka demo langsung tanpa daftar, atau coba 14 hari dengan brand Anda sendiri.") },
+    { q: L("How Soon Will I See Results?", "Seberapa Cepat Hasilnya Terlihat?"), a: L("Initial results from news and YouTube arrive within about a minute of setup. Narriv then checks every hour.", "Hasil awal dari berita dan YouTube tersedia sekitar satu menit setelah pengaturan. Selanjutnya, Narriv memeriksa setiap jam.") },
+    { q: L("Which Sources Does Narriv Monitor?", "Sumber Apa Saja yang Dipantau?"), a: L("Indonesian online news and YouTube are active from day one. Instagram, TikTok, X and Facebook are enabled according to your plan.", "Berita online Indonesia dan YouTube aktif sejak hari pertama. Instagram, TikTok, X, dan Facebook diaktifkan sesuai paket.") },
+    { q: L("How Is Narriv Different From Social Listening?", "Apa Bedanya dengan Social Listening?"), a: L("Most tools stop at charts. Narriv turns a rising issue into an alert with an owner and a deadline, suggests a response plan, and prepares the board report.", "Kebanyakan tool berhenti di grafik. Narriv mengubah isu yang meningkat menjadi peringatan dengan penanggung jawab dan tenggat, menyarankan rencana respons, dan menyiapkan laporan untuk direksi.") },
+    { q: L("How Reliable Is the AI Analysis?", "Seberapa Akurat Analisis AI-nya?"), a: L("Every mention links to its original source, and your team can correct any sentiment in one click.", "Setiap percakapan tertaut ke sumber aslinya, dan tim Anda dapat mengoreksi sentimen dengan satu klik.") },
+    { q: L("Is Our Data Kept Separate?", "Apakah Data Kami Terpisah?"), a: L("Each client has its own workspace. Members see only the workspaces they are invited to, and every change is recorded in the activity log.", "Setiap klien memiliki workspace sendiri. Anggota hanya dapat mengakses workspace tempat mereka diundang, dan setiap perubahan tercatat di riwayat aktivitas.") },
+    { q: L("Can We Try It First?", "Apakah Bisa Dicoba Terlebih Dahulu?"), a: L("Yes. Explore the live demo without registering, or start a 14-day trial with your own brand.", "Bisa. Akses demo langsung tanpa registrasi, atau mulai uji coba 14 hari dengan brand Anda sendiri.") },
   ];
 
   return (
-    <div className="min-h-dvh bg-[#F6F5F1] text-[#101334]">
+    <div className="min-h-dvh overflow-x-clip bg-[#F6F5F1] text-[#101334]">
       {/* Hero */}
       <section className={cn("relative overflow-hidden text-white", INK)}>
-        <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
-        <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.35),transparent)]" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 right-[-10%] h-[420px] w-[620px] rounded-full bg-[radial-gradient(closest-side,rgba(245,139,214,0.14),transparent)]" />
+        <NarrativeField />
         <SiteHeader />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-10 pt-10 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:gap-12 lg:pb-16 lg:pt-16">
-          <div className="text-center lg:text-left">
-            <h1 className="text-balance text-[34px] font-black leading-[1.04] tracking-[-0.035em] sm:text-[56px]">
-              {L("Know your brand’s issues", "Tahu isu brand Anda")}
-              <span className={cn("block bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text pb-1 text-transparent", serif)}>
-                {L("before they go viral.", "sebelum jadi viral.")}
-              </span>
+        <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-12 px-4 pb-12 pt-10 text-center sm:px-6 lg:gap-14 lg:pb-16 lg:pt-16">
+          <div className="flex max-w-4xl flex-col items-center">
+            <h1 className="text-balance text-[36px] font-black leading-[1.04] tracking-[-0.035em] sm:text-[60px] lg:text-[68px]">
+              <Typewriter
+                speed={45}
+                delay={200}
+                segments={[
+                  { text: L("Detect Reputational Risk", "Deteksi Risiko Reputasi") },
+                  { text: L("Before It Escalates.", "Sebelum Menjadi Krisis."), className: cn("pb-1", ACCENT_DARK, serif), block: true },
+                ]}
+              />
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-[16px] font-medium leading-relaxed text-white/65 sm:text-[18px] lg:mx-0">
-              {L("Narriv reads the news, YouTube and social media every hour, rates the risk, and tells the right person to act.", "Narriv membaca berita, YouTube, dan media sosial setiap jam, menilai risikonya, lalu memberi tahu siapa yang harus bertindak.")}
+            <p className="mk-pop mx-auto mt-5 max-w-xl text-balance text-[16px] font-medium leading-relaxed text-white/65 sm:text-[18px]" style={{ "--mk-delay": "1500ms" } as CSSProperties}>
+              {L("Narriv is a ", "Narriv adalah platform ")}
+              <NarrativeIntelligence className="mx-0.5" />
+              {L(
+                " platform that goes beyond social listening. It monitors news, YouTube, social media and AI-generated answers every hour, assesses the risk, and assigns clear actions to the right people.",
+                " yang melampaui social listening. Narriv memantau berita, YouTube, media sosial, dan jawaban AI setiap jam, menilai tingkat risikonya, lalu menetapkan tindakan yang jelas bagi tim yang tepat.",
+              )}
             </p>
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-center lg:justify-start">
+            <div className="mk-pop mt-8 flex w-full max-w-[320px] flex-col items-center gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-start sm:justify-center" style={{ "--mk-delay": "1700ms" } as CSSProperties}>
               <DemoButton className="bg-white text-[#070A1F] shadow-[0_12px_40px_rgba(165,180,255,0.35)] hover:bg-[#EEF1FF]">
-                {L("See the live demo", "Lihat demo langsung")}
+                {L("Explore the Live Demo", "Lihat Demo Langsung")}
                 <ArrowRight size={17} aria-hidden="true" className="transition group-hover:translate-x-0.5" />
               </DemoButton>
-              <Link href="/signup" className="inline-flex h-12 items-center justify-center rounded-full px-6 text-[15px] font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] transition hover:bg-white/[0.06]">
-                {L("Start a 14-day trial", "Mulai uji coba 14 hari")}
+              <Link href="/signup" className="inline-flex h-12 w-full items-center justify-center rounded-full px-7 text-[15px] font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)] backdrop-blur transition hover:bg-white/[0.08] sm:w-auto">
+                {L("Start a 14-Day Trial", "Mulai Uji Coba 14 Hari")}
               </Link>
             </div>
-            <p className="mt-4 text-[13px] font-medium text-white/40">{L("No sign-up needed for the demo.", "Demo tanpa perlu daftar.")}</p>
+            <p className="mk-pop mt-4 text-[13px] font-medium text-white/45" style={{ "--mk-delay": "1850ms" } as CSSProperties}>{L("No registration required to access the demo.", "Demo dapat diakses tanpa registrasi.")}</p>
           </div>
           <ProductStage />
         </div>
 
-        {/* Brands that use Narriv, as wordmarks until their logo files are added. */}
-        <div className="relative mx-auto max-w-6xl px-4 pb-14 sm:px-6">
-          <div className="border-t border-white/10 pt-8 text-center">
-            <p className="text-[13px] font-semibold text-white/45">{L("Trusted by", "Dipercaya oleh")}</p>
-            <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-12 gap-y-5">
-              {BRANDS.map((b) => (
-                <li key={b.name} className={cn("text-[24px] leading-none text-white/80 sm:text-[28px]", b.className)}>
-                  {b.name}
-                </li>
-              ))}
-              <li className="text-[15px] font-semibold text-white/45">{L("and many more", "dan banyak lagi")}</li>
-            </ul>
-          </div>
+        {/* What sets Narriv apart */}
+        <div className="relative mx-auto max-w-6xl px-4 pb-16 sm:px-6">
+          <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {USPS.map(({ icon: Icon, title, body }, i) => (
+              <Reveal as="li" key={title[0]} delay={i * 90} className="flex flex-col items-center rounded-[22px] bg-white/[0.04] px-3 py-6 text-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] backdrop-blur transition hover:bg-white/[0.07] sm:px-6">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#465FFF] to-[#7B4FE0] text-white shadow-[0_10px_24px_rgba(70,95,255,0.4)]">
+                  <Icon size={19} aria-hidden="true" />
+                </span>
+                <p className="mt-4 text-[15px] font-black tracking-[-0.015em] text-white sm:text-[17px]">{L(title[0], title[1])}</p>
+                <p className="mt-1.5 max-w-[15rem] text-[13px] font-medium leading-5 text-white/55">{L(body[0], body[1])}</p>
+              </Reveal>
+            ))}
+          </ul>
         </div>
       </section>
 
-      {/* How it works: one flow, three moments, each with the real screen it produces */}
-      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
-        <div className="grid gap-12 lg:grid-cols-[0.9fr_1.4fr] lg:gap-20">
-          <div className="lg:sticky lg:top-10 lg:self-start">
-            <h2 className="text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[44px]">
-              {L("From a mention", "Dari satu percakapan")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", serif)}>{L("to a decision.", "sampai keputusan.")}</span>
-            </h2>
-            <p className="mt-4 max-w-sm text-[16px] font-medium leading-relaxed text-[#5B6070]">{L("No dashboards to babysit. Narriv watches, decides what matters, and hands it to the right person.", "Tidak perlu memelototi dashboard. Narriv memantau, memilah yang penting, lalu menyerahkannya ke orang yang tepat.")}</p>
-          </div>
+      {/* Why Narriv is not another monitoring tool */}
+      <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-6 lg:pt-28">
+        <SectionHead
+          stacked
+          title={L("More Than Social Listening.", "Lebih dari Sekadar Social Listening.")}
+          accent={[
+            { text: L("This Is ", "Inilah ") },
+            { text: NI_TEXT, className: NI_CLASS, mark: NI_MARK },
+            { text: "." },
+          ]}
+          lead={L(
+            "Conventional monitoring tools stop at charts and mention counts. Narriv goes further, to what protects your reputation: what it means, who should act, and by when.",
+            "Tool monitoring konvensional berhenti di grafik dan jumlah sebutan. Narriv melangkah lebih jauh, ke hal yang melindungi reputasi: apa maknanya, siapa yang harus bertindak, dan kapan.",
+          )}
+        />
+        <Comparison />
+      </section>
 
-          <ol className="relative space-y-12 before:absolute before:bottom-4 before:left-[19px] before:top-4 before:w-px before:bg-[#DDDAD0] sm:space-y-14">
-            {[
-              {
-                n: "01",
-                icon: Radar,
-                title: L("Watch", "Pantau"),
-                text: L("News, YouTube and social media are read every hour and scored for sentiment.", "Berita, YouTube, dan media sosial dibaca setiap jam dan dinilai sentimennya."),
-                ui: (
-                  <div className="flex items-start gap-3">
-                    <PlatformIcon platform="news" className="mt-0.5 size-5 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="truncate text-[13px] font-bold">{L("Customers report login failures at payday", "Nasabah keluhkan gagal login saat gajian")}</p>
-                      <p className="mt-0.5 text-[11px] font-semibold text-[#8A8F9E]">{L("Online news · 12 min ago", "Berita online · 12 menit lalu")}</p>
-                    </div>
-                    <span className="ml-auto shrink-0 rounded-full bg-[#FDECEC] px-2 py-0.5 text-[11px] font-black text-[#B42318]">{L("Negative", "Negatif")}</span>
-                  </div>
-                ),
-              },
-              {
-                n: "02",
-                icon: BellRing,
-                title: L("Alert", "Peringatkan"),
-                text: L("A rising issue becomes an alert with a severity, an owner and a deadline, sent to email.", "Isu yang naik jadi peringatan dengan tingkat keparahan, penanggung jawab, dan tenggat, lalu dikirim ke email."),
-                ui: (
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                    <span className="rounded-md bg-[#B42318] px-1.5 py-0.5 text-[10px] font-black uppercase text-white">{L("Critical", "Kritis")}</span>
-                    <p className="text-[13px] font-bold">{L("Login complaints up sharply", "Keluhan login naik tajam")}</p>
-                    <p className="flex items-center gap-1 text-[12px] font-semibold text-[#6B7080]"><UserCheck size={13} aria-hidden="true" /> {L("Digital team · 4h", "Tim Digital · 4 jam")}</p>
-                  </div>
-                ),
-              },
-              {
-                n: "03",
-                icon: FileText,
-                title: L("Report", "Laporkan"),
-                text: L("Every Monday the board gets a one-page brief by email: what changed and what to decide.", "Setiap Senin direksi menerima ringkasan satu halaman lewat email: apa yang berubah dan apa yang perlu diputuskan."),
-                ui: (
-                  <div className="flex items-center gap-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#101334] text-white"><FileText size={18} aria-hidden="true" /></span>
-                    <div className="min-w-0">
-                      <p className="truncate text-[13px] font-bold">{L("Weekly report for the board.pdf", "Laporan mingguan untuk direksi.pdf")}</p>
-                      <p className="mt-0.5 text-[11px] font-semibold text-[#8A8F9E]">{L("Negative share down 1 point · 3 decisions", "Porsi negatif turun 1 poin · 3 keputusan")}</p>
-                    </div>
-                  </div>
-                ),
-              },
-            ].map((step) => (
-              <li key={step.n} className="relative pl-16">
-                <span className="absolute left-0 top-0 flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-[#465FFF] to-[#7B4FE0] text-white shadow-[0_8px_20px_rgba(70,95,255,0.35)]"><step.icon size={18} aria-hidden="true" /></span>
-                <h3 className="text-[22px] font-black tracking-[-0.01em]">{step.title}</h3>
-                <p className="mt-1.5 max-w-lg text-[15px] font-medium leading-relaxed text-[#5B6070]">{step.text}</p>
-                <div className="mt-4 rounded-2xl bg-white px-4 py-3.5 shadow-[0_1px_0_rgba(16,19,52,0.04),0_18px_40px_-18px_rgba(16,19,52,0.25)]">{step.ui}</div>
-              </li>
-            ))}
-          </ol>
-        </div>
+      {/* How it works */}
+      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
+        <SectionHead
+          title={L("From Public Conversation", "Dari Percakapan Publik")}
+          accent={L("To Clear Decisions.", "Menjadi Keputusan yang Jelas.")}
+          lead={L("No need to monitor a dashboard all day. Narriv filters what matters and delivers it to the person responsible.", "Tidak perlu memantau dashboard sepanjang hari. Narriv menyaring hal yang penting dan meneruskannya kepada penanggung jawab yang tepat.")}
+        />
+        <ol className="mt-12 grid gap-5 lg:mt-16 lg:grid-cols-3">
+          {steps.map((step, i) => (
+            <Reveal as="li" key={step.title} delay={i * 120} className={cn(CARD, "group flex flex-col items-center p-6 text-center transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_1px_0_rgba(16,19,52,0.04),0_32px_60px_-24px_rgba(70,95,255,0.4)] sm:p-7")}>
+              <span className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#465FFF] to-[#7B4FE0] text-white shadow-[0_12px_28px_rgba(70,95,255,0.35)] transition duration-300 group-hover:scale-110"><step.icon size={24} aria-hidden="true" /></span>
+              <h3 className="mt-5 text-[22px] font-black tracking-[-0.01em]">{step.title}</h3>
+              <p className="mt-2 max-w-xs text-balance text-[15px] font-medium leading-relaxed text-[#5B6070]">{step.text}</p>
+              <div className="mt-auto w-full pt-6">
+                <div className="rounded-2xl bg-[#F6F5F1] px-4 py-3.5 text-left">{step.ui}</div>
+              </div>
+            </Reveal>
+          ))}
+        </ol>
       </section>
 
       {/* Sources */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-        <div className="border-y border-[#DDDAD0] py-10">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-sm">
-              <h2 className="text-[26px] font-black leading-tight tracking-[-0.02em]">{L("Where your brand is talked about.", "Tempat brand Anda dibicarakan.")}</h2>
-            </div>
-            <ul className="grid grid-cols-3 gap-x-8 gap-y-5 sm:grid-cols-6">
-              {[
-                { key: "news", name: L("News", "Berita"), live: true },
-                { key: "youtube", name: "YouTube", live: true },
-                { key: "instagram", name: "Instagram", live: false },
-                { key: "tiktok", name: "TikTok", live: false },
-                { key: "x", name: "X", live: false },
-                { key: "facebook", name: "Facebook", live: false },
-              ].map((src) => (
-                <li key={src.key} className="flex flex-col items-center gap-2 text-center">
-                  <PlatformIcon platform={src.key} className="size-8" />
-                  <span className="text-[13px] font-bold">{src.name}</span>
-                  <span className={cn("text-[10px] font-black uppercase tracking-[0.1em]", src.live ? "text-[#047857]" : "text-[#8A8F9E]")}>{src.live ? L("Live", "Aktif") : L("Per plan", "Per paket")}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:pb-28">
+        <Reveal className={cn(CARD, "px-5 py-10 text-center sm:px-10 sm:py-12")}>
+          <h2 className="text-balance text-[26px] font-black leading-tight tracking-[-0.02em] sm:text-[32px]"><Typewriter segments={[{ text: L("Every Channel Where Your Brand Is Discussed.", "Semua Kanal Tempat Brand Anda Dibicarakan.") }]} /></h2>
+          <ul className="mx-auto mt-9 grid max-w-3xl grid-cols-3 gap-x-4 gap-y-7 sm:grid-cols-6">
+            {[
+              { key: "news", name: L("News", "Berita"), live: true },
+              { key: "youtube", name: "YouTube", live: true },
+              { key: "instagram", name: "Instagram", live: false },
+              { key: "tiktok", name: "TikTok", live: false },
+              { key: "x", name: "X", live: false },
+              { key: "facebook", name: "Facebook", live: false },
+            ].map((src) => (
+              <li key={src.key} className="group flex flex-col items-center gap-2">
+                <span className="flex size-14 items-center justify-center rounded-2xl bg-[#F6F5F1] transition duration-300 group-hover:-translate-y-1 group-hover:bg-white group-hover:shadow-[0_12px_28px_rgba(16,19,52,0.15)]"><PlatformIcon platform={src.key} className="size-7" /></span>
+                <span className="text-[13px] font-bold">{src.name}</span>
+                <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", src.live ? "bg-[#E8F7F0] text-[#047857]" : "bg-[#F1F0EC] text-[#6B7080]")}>{src.live ? L("Active", "Aktif") : L("By Plan", "Sesuai Paket")}</span>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
       </section>
 
       {/* AI visibility */}
       <section className={cn("relative overflow-hidden text-white", INK)}>
-        <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
-        <div aria-hidden="true" className="pointer-events-none absolute left-[-10%] top-1/2 h-[460px] w-[640px] -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.3),transparent)]" />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:py-28">
-          <div className="text-center lg:text-left">
-            <h2 className="text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[46px]">
-              {L("Does ChatGPT", "Apakah ChatGPT")} <span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", serif)}>{L("mention your brand?", "menyebut brand Anda?")}</span>
-            </h2>
-            <p className="mx-auto mt-4 max-w-md text-[16px] font-medium leading-relaxed text-white/60 lg:mx-0">
-              {L("Customers now ask AI assistants which bank, app or product to choose. Narriv asks them the same questions and scores how often your brand comes up.", "Pelanggan kini bertanya ke asisten AI soal bank, aplikasi, atau produk mana yang bagus. Narriv mengajukan pertanyaan yang sama dan menilai seberapa sering brand Anda disebut.")}
-            </p>
-          </div>
-          <div>
-            <div className="flex items-baseline justify-between border-b border-white/10 pb-3 text-[12px] font-bold text-white/45">
-              <span>{L("Assistant", "Asisten")}</span>
-              <span>{L("Score · sample: Bank Arunika", "Skor · contoh: Bank Arunika")}</span>
-            </div>
-            <ol>
-              {AI_ENGINES.map((engine, i) => {
-                const Logo = engine.Logo;
-                const score = geo[i] ?? 0;
-                return (
-                  <li key={engine.key} className="grid grid-cols-[28px_1fr_auto] items-center gap-4 border-b border-white/10 py-4">
-                    <span className="flex size-7 items-center justify-center rounded-lg bg-white p-1.5"><Logo className="size-full" /></span>
-                    <div className="min-w-0">
-                      <p className="text-[15px] font-bold">{engine.name}</p>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-                        <div className={cn("h-full rounded-full", score >= 60 ? "bg-[#4ADE80]" : score >= 45 ? "bg-[#A5B4FF]" : "bg-[#F87171]")} style={{ width: `${score}%` }} />
-                      </div>
-                    </div>
-                    <span className="w-12 text-right text-[24px] font-black leading-none tabular-nums">{score}</span>
-                  </li>
-                );
-              })}
-            </ol>
+        <NarrativeField density={0.8} />
+        <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
+          <SectionHead
+            dark
+            title={L("How does AI", "Bagaimana AI")}
+            accent={L("Talk About Your Brand?", "Membicarakan Brand Anda?")}
+            lead={L(
+              "Customers increasingly consult AI assistants before choosing a product. Narriv asks ChatGPT, Gemini, Claude, Perplexity and DeepSeek the same questions, and measures how often and how well your brand is mentioned.",
+              "Konsumen kini bertanya ke asisten AI sebelum memilih produk. Narriv mengajukan pertanyaan yang sama ke ChatGPT, Gemini, Claude, Perplexity, dan DeepSeek, lalu mengukur seberapa sering dan seberapa baik brand Anda disebut.",
+            )}
+          />
+          <div className="mx-auto mt-12 grid max-w-5xl items-center gap-6 lg:mt-16 lg:grid-cols-2 lg:gap-10">
+            <AiConversation />
+            <AiScoreboard />
           </div>
         </div>
       </section>
 
-      {/* Who it is for: ruled columns, not cards */}
+      {/* Sample scenarios by sector */}
+      <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-6 lg:pt-28">
+        <SectionHead
+          title={L("Built for Every Organisation", "Dirancang untuk Setiap Organisasi")}
+          accent={L("Whose Reputation Matters.", "yang Menjaga Reputasinya.")}
+          lead={L(
+            "Brands, government, extremism prevention, banks, state-owned companies, public figures and agencies. The issue changes; the need to know first and act fast does not.",
+            "Brand, pemerintah, pencegahan ekstremisme, perbankan, BUMN, tokoh publik, hingga agensi. Isunya berbeda, tetapi kebutuhannya sama: tahu lebih dulu dan bertindak lebih cepat.",
+          )}
+        />
+        <UseCases />
+      </section>
+
+      {/* Who it is for */}
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[44px]">
-            {L("One picture for everyone", "Satu gambaran untuk semua")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", serif)}>{L("who answers for the brand.", "yang menjaga brand.")}</span>
-          </h2>
-        </div>
-        <div className="mt-12 grid border-t border-[#DDDAD0] md:grid-cols-3 md:divide-x md:divide-[#DDDAD0]">
+        <SectionHead title={L("One Complete Picture for Everyone", "Satu Gambaran Utuh bagi Semua")} accent={L("Who Protects the Brand.", "yang Menjaga Reputasi Brand.")} />
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
           {[
-            { n: "01", icon: LineChart, title: L("Board & executives", "Direksi"), text: L("One page every Monday: how risky the week was, what changed, and who is handling it.", "Satu halaman tiap Senin: seberapa berisiko minggu ini, apa yang berubah, dan siapa yang menangani.") },
-            { n: "02", icon: Megaphone, title: L("Corporate comms & PR", "Corcomm & PR"), text: L("See an issue while it is small, with an owner, a deadline and a response plan to start from.", "Lihat isu saat masih kecil, lengkap dengan penanggung jawab, tenggat, dan rencana respons sebagai titik awal.") },
-            { n: "03", icon: Building2, title: L("PR agencies", "Agensi PR"), text: L("Every client in one account, each in its own workspace, compared with their competitors.", "Semua klien dalam satu akun, masing-masing di workspace sendiri, dan dibandingkan dengan kompetitornya.") },
-          ].map((a) => (
-            <div key={a.n} className="border-b border-[#DDDAD0] px-4 py-8 text-center md:border-b-0 md:px-8">
-              <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#465FFF] to-[#7B4FE0] text-white shadow-[0_10px_24px_rgba(70,95,255,0.3)]"><a.icon size={22} aria-hidden="true" /></span>
+            { icon: LineChart, title: L("Board & Executives", "Direksi & Manajemen"), text: L("A one-page brief every Monday: the week’s risk level, key changes, and who is handling them.", "Ringkasan satu halaman setiap Senin: tingkat risiko minggu ini, perubahan utama, dan siapa yang menangani.") },
+            { icon: Megaphone, title: L("Corporate Communications & PR", "Corporate Communication & PR"), text: L("Catch issues while they are small, with an owner, a deadline and a draft response plan.", "Tangkap isu sejak masih kecil, lengkap dengan penanggung jawab, tenggat, dan draf rencana respons.") },
+            { icon: Building2, title: L("PR Agencies", "Agensi PR"), text: L("Manage every client from one account, each in a separate workspace, with competitor comparisons.", "Kelola semua klien dari satu akun, masing-masing di workspace terpisah, lengkap dengan perbandingan kompetitor.") },
+          ].map((a, i) => (
+            <Reveal key={a.title} delay={i * 120} className={cn(CARD, "group flex flex-col items-center px-6 py-8 text-center transition duration-300 hover:-translate-y-1.5")}>
+              <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#465FFF] to-[#7B4FE0] text-white shadow-[0_10px_24px_rgba(70,95,255,0.3)] transition duration-300 group-hover:scale-110"><a.icon size={22} aria-hidden="true" /></span>
               <h3 className="mt-5 text-[20px] font-black">{a.title}</h3>
               <p className="mt-2 text-[15px] font-medium leading-relaxed text-[#5B6070]">{a.text}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
       {/* Questions */}
-      <section id="faq" className="scroll-mt-6 border-t border-[#DDDAD0]">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[0.8fr_1.4fr] lg:gap-20 lg:py-24">
-          <div>
-            <h2 className="text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[40px]">
-              {L("Questions", "Pertanyaan")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", serif)}>{L("before you start.", "sebelum mulai.")}</span>
-            </h2>
-            <p className="mt-4 text-[15px] font-medium text-[#5B6070]">
-              {L("More answers in ", "Jawaban lain ada di ")}<Link href="/help" className="font-bold text-[#465FFF] underline-offset-4 hover:underline">{L("Help", "Bantuan")}</Link>.
-            </p>
-          </div>
-          <div className="border-t border-[#DDDAD0]">
+      <section id="faq" className="scroll-mt-6">
+        <div className="mx-auto max-w-3xl px-4 pb-20 sm:px-6 lg:pb-24">
+          <SectionHead title={L("Frequently Asked", "Pertanyaan yang")} accent={L("Questions.", "Sering Diajukan.")} />
+          <Reveal className={cn(CARD, "mt-10 overflow-hidden px-5 sm:px-7")}>
             {faqs.map((f) => (
-              <details key={f.q} className="group border-b border-[#DDDAD0]">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-[17px] font-bold [&::-webkit-details-marker]:hidden">
+              <details key={f.q} className="group border-b border-[#ECEAE3] last:border-b-0">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-[16px] font-bold sm:text-[17px] [&::-webkit-details-marker]:hidden">
                   {f.q}
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white text-[#465FFF] shadow-sm transition group-open:rotate-180">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#EEF1FF] text-[#465FFF] transition group-open:rotate-180">
                     <ChevronDown size={16} aria-hidden="true" />
                   </span>
                 </summary>
                 <p className="-mt-1 pb-5 pr-12 text-[15px] font-medium leading-relaxed text-[#5B6070]">{f.a}</p>
               </details>
             ))}
-          </div>
+          </Reveal>
+          <p className="mt-6 text-center text-[15px] font-medium text-[#5B6070]">
+            {L("Find more answers on our ", "Temukan jawaban lainnya di halaman ")}<Link href="/help" className="font-bold text-[#465FFF] underline-offset-4 hover:underline">{L("Help", "Bantuan")}</Link>.
+          </p>
         </div>
       </section>
 
       {/* Closing */}
       <section className="px-4 pb-20 sm:px-6">
-        <div className={cn("relative mx-auto max-w-6xl overflow-hidden rounded-[32px] px-6 py-16 text-center text-white sm:py-20", INK)}>
-          <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
-          <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 h-[320px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.45),transparent)]" />
+        <Reveal className={cn("relative mx-auto max-w-6xl overflow-hidden rounded-[32px] px-6 py-16 text-center text-white sm:py-24", INK)}>
+          <NarrativeField density={0.7} />
           <h2 className="relative text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[52px]">
-            {L("Try it for 14 days", "Coba 14 hari")}
-            <span className={cn("block bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", serif)}>{L("with your own brand.", "dengan brand Anda sendiri.")}</span>
+            <Typewriter
+              segments={[
+                { text: L("Try Narriv for 14 Days", "Coba Narriv Selama 14 Hari") },
+                { text: L("With Your Own Brand.", "dengan Brand Anda Sendiri."), className: cn(ACCENT_DARK, serif), block: true },
+              ]}
+            />
           </h2>
-          <p className="relative mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/60">
-            {L("Set up takes five minutes. The first results arrive within a minute.", "Pengaturan lima menit. Hasil pertama masuk dalam satu menit.")}
+          <p className="relative mx-auto mt-4 max-w-xl text-balance text-[16px] font-medium text-white/60">
+            {L("Setup takes five minutes, and initial results arrive within a minute.", "Pengaturan hanya lima menit, dan hasil awal tersedia dalam satu menit.")}
           </p>
-          <div className="relative mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row sm:items-start">
-            <Link href="/signup" className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-bold text-[#070A1F] shadow-[0_12px_40px_rgba(165,180,255,0.35)] transition hover:bg-[#EEF1FF]">
-              {L("Start the trial", "Mulai uji coba")}
+          <div className="relative mx-auto mt-9 flex w-full max-w-[320px] flex-col items-center justify-center gap-3 sm:max-w-none sm:flex-row sm:items-start">
+            <Link href="/signup" className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white px-7 text-[15px] font-bold text-[#070A1F] shadow-[0_12px_40px_rgba(165,180,255,0.35)] transition hover:bg-[#EEF1FF] sm:w-auto">
+              {L("Start Your Trial", "Mulai Uji Coba")}
               <ArrowUpRight size={17} aria-hidden="true" className="transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
             </Link>
-            <DemoButton className="text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] hover:bg-white/[0.06]">{L("See the demo first", "Lihat demo dulu")}</DemoButton>
+            <DemoButton className="text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)] hover:bg-white/[0.08]">{L("View the Demo First", "Lihat Demo Terlebih Dahulu")}</DemoButton>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       <SiteFooter />

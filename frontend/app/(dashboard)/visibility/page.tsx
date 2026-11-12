@@ -10,6 +10,7 @@ import { useUiStore } from "@/store/useUiStore";
 import { useToast } from "@/components/ui/toast";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 
 /**
  * AI Visibility (GEO): how often the five AI assistants name the brand when asked the workspace's test prompts,
@@ -25,7 +26,7 @@ function scoreLook(score: number) {
 }
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={cn("rounded-[16px] border border-[#E6EAF2] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>{children}</section>;
+  return <section className={cn(BOX, className)}>{children}</section>;
 }
 
 export default function VisibilityPage() {
@@ -109,7 +110,7 @@ export default function VisibilityPage() {
         <div className="flex gap-2">
           <button type="button" onClick={exportCsv} disabled={matrix.length === 0} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[13px] font-black text-[#31406B] transition hover:bg-[#F8FAFF] disabled:opacity-50">{L("Export CSV", "Ekspor CSV")}</button>
           <button type="button" onClick={() => void runNow()} disabled={running || isDemo} title={isDemo ? L("Not available in the demo", "Tidak tersedia di demo") : undefined} className="h-10 rounded-[10px] bg-[#465FFF] px-4 text-[13px] font-black text-white transition hover:bg-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50">
-            {running ? L("Asking 5 AIs…", "Menanyai 5 AI…") : L("Run test now", "Uji sekarang")}
+            {running ? L("Asking 5 AIs…", "Menanyai 5 AI…") : L("Run Test Now", "Uji Sekarang")}
           </button>
         </div>
       </header>
@@ -135,14 +136,14 @@ export default function VisibilityPage() {
                 </div>
               </div>
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.1em] text-white/60">{L("AI visibility score", "Skor visibilitas AI")}</p>
+                <p className="text-[11px] font-black text-white/60">{L("AI visibility score", "Skor visibilitas AI")}</p>
                 <p className="mt-1 inline-block rounded-[10px] px-3 py-1 text-[22px] font-black" style={{ background: look.bg, color: look.color }}>{L(...look.word)}</p>
                 <p className="mt-2 text-[13px] font-bold text-white/80">{L(`Named in ${totals.brand_answers} of ${totals.answers} AI answers`, `Disebut di ${totals.brand_answers} dari ${totals.answers} jawaban AI`)}</p>
               </div>
             </div>
 
             <div className="rounded-[14px] bg-white/[0.07] p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-white/60">{L("Who AI names", "Siapa yang disebut AI")}</p>
+              <p className="text-[11px] font-black text-white/60">{L("Who AI names", "Siapa yang disebut AI")}</p>
               <div className="mt-3 space-y-3">
                 {[{ name: brand, rate: brandRate, color: "#7C8CFF", you: true }, ...(topCompetitor ? [{ name: topCompetitor.name, rate: topCompetitorRate, color: "#FF6B6B", you: false }] : [])].map((row) => (
                   <div key={row.name}>
@@ -157,7 +158,7 @@ export default function VisibilityPage() {
             </div>
 
             <div className="rounded-[14px] p-4" style={{ background: competitorAhead ? "rgba(229,72,77,0.25)" : "rgba(18,166,106,0.25)" }}>
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-white/70">{L("What this means", "Artinya")}</p>
+              <p className="text-[11px] font-black text-white/70">{L("What this means", "Artinya")}</p>
               <p className="mt-2 text-[16px] font-black leading-snug">
                 {competitorAhead && topCompetitor
                   ? L(`${topCompetitor.name} is named more often than ${brand}.`, `${topCompetitor.name} lebih sering disebut daripada ${brand}.`)
@@ -180,7 +181,7 @@ export default function VisibilityPage() {
               const lk = scoreLook(s);
               const rate = Math.round((e?.brandPresenceRate ?? 0) * 100);
               return (
-                <div key={key} className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={e ? { backgroundImage: `linear-gradient(160deg, ${lk.bg}, #FFFFFF 70%)` } : undefined}>
+                <div key={key} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
                   <div className="flex items-center gap-2">
                     <span className="flex size-8 items-center justify-center rounded-[9px] bg-white shadow-sm"><Logo className="size-5" /></span>
                     <span className="text-[14px] font-black text-[#101334]">{name}</span>
@@ -191,7 +192,7 @@ export default function VisibilityPage() {
                         <span className="text-[34px] font-black leading-none tracking-[-0.04em] text-[#101334]">{s}</span>
                         <span className="rounded-full px-2 py-0.5 text-[11px] font-black" style={{ background: lk.bg, color: lk.color }}>{L(...lk.word)}</span>
                       </div>
-                      <div className="mt-3 h-2 rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full" style={{ width: `${s}%`, background: lk.bar }} /></div>
+                      <div className="mt-3 h-2 w-full rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full" style={{ width: `${s}%`, background: lk.bar }} /></div>
                       <p className="mt-2 text-[12px] font-bold text-[#3A4566]">{L(`Names you in ${rate}% of answers`, `Menyebut Anda di ${rate}% jawaban`)}</p>
                     </>
                   ) : (
@@ -241,7 +242,7 @@ export default function VisibilityPage() {
                 <table className="w-full table-fixed text-left">
                   <colgroup><col /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /></colgroup>
                   <thead>
-                    <tr className="bg-[#F4F6FC] text-[11px] font-black uppercase tracking-[0.05em] text-[#5A6478]">
+                    <tr className="bg-[#F4F6FC] text-[11px] font-black text-[#5A6478]">
                       <th className="px-3 py-2.5">{L("Question", "Pertanyaan")}</th>
                       {ENGINES.map(({ key, name, Logo }) => <th key={key} className="px-1 py-2.5 text-center" title={name}><Logo className="mx-auto size-4" /></th>)}
                       <th className="px-1 py-2.5 text-center">{L("Total", "Total")}</th>

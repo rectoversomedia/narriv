@@ -76,3 +76,27 @@ export function getAdminWorkspaces(): Promise<AdminWorkspacesResponse> {
 export function updateAdminWorkspace(id: string, patch: AdminWorkspacePatch) {
   return apiClient<Partial<AdminWorkspace> & { id: string }>(`/api/admin/platform/workspaces/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
 }
+
+export type AdminTestEmailResult = { report: "sent" | "failed" | "no_report" | null; alert: "sent" | "failed" | null };
+
+/** Sends a sample weekly report (with PDF) and a sample alert email to one address, to check delivery. */
+export interface AdminRegionBackfillResult {
+  processed: number;
+  updated: number;
+  nextOffset: number;
+  done: boolean;
+}
+
+/** (Re)fills one demo scenario's workspace with its fictional dataset. */
+export function seedAdminDemo(scenario: "brand" | "gov" | "cve") {
+  return apiClient<{ scenario: string; signals: number; alerts: number; reports: number }>("/api/admin/platform/seed-demo", { method: "POST", body: JSON.stringify({ scenario }) });
+}
+
+/** One batch of filling in the province of stored records; call again with nextOffset until done. */
+export function backfillAdminRegions(offset: number) {
+  return apiClient<AdminRegionBackfillResult>("/api/admin/platform/backfill-regions", { method: "POST", body: JSON.stringify({ offset }) });
+}
+
+export function sendAdminTestEmail(to: string) {
+  return apiClient<AdminTestEmailResult>("/api/admin/platform/test-email", { method: "POST", body: JSON.stringify({ to }) });
+}

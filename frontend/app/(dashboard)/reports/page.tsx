@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Calendar, CalendarClock, ChevronDown, Clock, Download, FileText, Mail, Plus, RefreshCcw, Search, Share2, Trash2, Edit2, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
 import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, downloadReportFile, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
@@ -124,7 +125,7 @@ function buildApiReportRows(
 
 function Panel({ children, className, ...props }: ComponentPropsWithoutRef<"section"> & { children: ReactNode }) {
   return (
-    <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)} {...props}>
+    <section className={cn(BOX, className)} {...props}>
       {children}
     </section>
   );
@@ -133,8 +134,8 @@ function Panel({ children, className, ...props }: ComponentPropsWithoutRef<"sect
 function MetricCard({ label, value, helper, tone }: { label: string; value: string; helper: string; icon?: LucideIcon; tone: Tone }) {
   const style = toneStyles[tone];
   return (
-    <div className="min-h-[104px] rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${style.rgb},0.11), rgba(${style.rgb},0.02) 60%)` }}>
-      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: style.color }}>{label}</p>
+    <div className="min-h-[120px] flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+      <p className="text-[11px] font-black" style={{ color: style.color }}>{label}</p>
       <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
       <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{helper}</p>
     </div>
@@ -185,20 +186,20 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
           </div>
 
           {top ? (
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[12px] bg-[#EEF1FF] p-3.5">
-                <p className="text-[10px] font-black uppercase tracking-[0.07em] text-[#3B52F5]">{L("Main issue", "Isu utama")}</p>
-                <p className="mt-1 text-[22px] font-black leading-none text-[#101334]">{Math.round((top.signalCount / totalInIssues) * 100)}%</p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+                <p className="text-[34px] font-black leading-none text-[#3B52F5]">{Math.round((top.signalCount / totalInIssues) * 100)}%</p>
+                <p className="mt-2 text-[13px] font-bold text-[#101334]">{L("Main Issue", "Isu Utama")}</p>
                 <p className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{top.title}</p>
               </div>
-              <div className="rounded-[12px] bg-[#FDECEC] p-3.5">
-                <p className="text-[10px] font-black uppercase tracking-[0.07em] text-[#C81E1E]">{L("Biggest risk", "Risiko terbesar")}</p>
-                <p className="mt-1 text-[22px] font-black leading-none text-[#101334]">{risk ? risk.signalCount : 0}</p>
+              <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+                <p className="text-[34px] font-black leading-none text-[#C81E1E]">{risk ? risk.signalCount : 0}</p>
+                <p className="mt-2 text-[13px] font-bold text-[#101334]">{L("Biggest Risk", "Risiko Terbesar")}</p>
                 <p className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{risk ? risk.title : L("No negative issue", "Tidak ada isu negatif")}</p>
               </div>
-              <div className="rounded-[12px] bg-[#FFF3DC] p-3.5">
-                <p className="text-[10px] font-black uppercase tracking-[0.07em] text-[#A04606]">{L("Fastest rising", "Naik paling cepat")}</p>
-                <p className="mt-1 text-[22px] font-black leading-none text-[#101334]">{fastest?.velocity || "—"}</p>
+              <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+                <p className="text-[34px] font-black leading-none text-[#A04606]">{fastest?.velocity || "—"}</p>
+                <p className="mt-2 text-[13px] font-bold text-[#101334]">{L("Fastest Rising", "Naik Paling Cepat")}</p>
                 <p className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{fastest?.title}</p>
               </div>
             </div>
@@ -428,7 +429,7 @@ function ReportsTable({
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               aria-label={pickL("Filter report type", "Saring jenis laporan")}
-              className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] outline-none transition hover:bg-white focus:border-[#465FFF] sm:w-auto"
+              className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] outline-none transition hover:bg-[#F7F8FC] focus:border-[#465FFF] sm:w-auto"
             >
               <option value="all">{pickL("All types", "Semua jenis")}</option>
               {Object.entries(REPORT_TYPE_LABELS).map(([key, [en, id]]) => <option key={key} value={pickL(en, id)}>{pickL(en, id)}</option>)}
@@ -443,7 +444,7 @@ function ReportsTable({
               {tr("clear") || "Reset"}
             </button>
           ) : null}
-          <button type="button" onClick={() => setSortDirection((value) => value === "desc" ? "asc" : "desc")} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white sm:flex-none">
+          <button type="button" onClick={() => setSortDirection((value) => value === "desc" ? "asc" : "desc")} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-[#F7F8FC] sm:flex-none">
             {sortDirection === "desc" ? tr("filter.latest") : tr("filter.oldest")} <ChevronDown size={12} className={cn("transition", sortDirection === "asc" && "rotate-180")} />
           </button>
         </div>
@@ -460,7 +461,7 @@ function ReportsTable({
               "h-7 rounded-[7px] px-3 text-[10.5px] font-black transition",
               activeTab === tab.value
                 ? "bg-[#465FFF] text-white shadow-sm"
-                : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#58648C] hover:bg-white"
+                : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#58648C] hover:bg-[#F7F8FC]"
             )}
           >
             {tr(`filter.${tab.key}`)}
@@ -509,7 +510,7 @@ function ReportsTable({
       <div className="mt-4 hidden overflow-x-auto md:block">
         <table className="w-full min-w-[780px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-[#E6EAF2] text-[9.5px] font-black uppercase tracking-[0.15em] text-[#5F6B94]">
+            <tr className="border-b border-[#E6EAF2] text-[9.5px] font-black text-[#5F6B94]">
               <th className="px-3 py-3 w-[280px]">{tr("table.report")}</th>
               <th className="px-3 py-3">{tr("table.type")}</th>
               <th className="px-3 py-3">{tr("table.period")}</th>
@@ -1295,7 +1296,7 @@ export default function ReportsPage() {
                     </div>
                   ) : schedulesQuery.data && schedulesQuery.data.data.length > 0 ? (
                     schedulesQuery.data.data.map((schedule) => (
-                      <div key={schedule.id} className="rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:border-[#DCE2F0] hover:bg-white transition shadow-sm">
+                      <div key={schedule.id} className="rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:border-[#DCE2F0] hover:bg-[#F7F8FC] transition shadow-sm">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <h3 className="font-black text-[#101334] text-[13px] truncate">{schedule.name}</h3>
@@ -1304,7 +1305,7 @@ export default function ReportsPage() {
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-2 mt-2">
-                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#3B52F5] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
+                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#3B52F5] px-2.5 py-1.5 rounded-[6px] font-black">
                               {tr(`scheduleModal.${schedule.cadence}`)}
                             </span>
                             {schedule.dayOfWeek && (
@@ -1379,7 +1380,7 @@ export default function ReportsPage() {
 {livePopularReports.length > 0 ? (
                 <div className="space-y-3">
                   {livePopularReports.map((report, idx) => (
-                    <div key={`${report.title}:${idx}`} className="flex items-center gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3 hover:border-[#DCE2F0] hover:bg-white transition">
+                    <div key={`${report.title}:${idx}`} className="flex items-center gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3 hover:border-[#DCE2F0] hover:bg-[#F7F8FC] transition">
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[12px] font-black text-[#3B52F5]">
                         {idx + 1}
                       </span>
@@ -1483,7 +1484,7 @@ export default function ReportsPage() {
                     </div>
                   ) : templatesQuery.data && templatesQuery.data.data.length > 0 ? (
                     templatesQuery.data.data.map((template) => (
-                      <div key={template.key} className="rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#DCE2F0] hover:bg-white transition shadow-sm">
+                      <div key={template.key} className="rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#DCE2F0] hover:bg-[#F7F8FC] transition shadow-sm">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <h3 className="font-black text-[#101334] text-[13px] truncate">{template.name}</h3>
@@ -1493,10 +1494,10 @@ export default function ReportsPage() {
                           </div>
                           <p className="text-[11px] font-bold text-[#5F6B94] mt-1 leading-relaxed">{template.description}</p>
                           <div className="flex flex-wrap gap-2 mt-3">
-                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#3B52F5] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
+                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#3B52F5] px-2.5 py-1.5 rounded-[6px] font-black">
                               {template.format}
                             </span>
-                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#8B5CFF]/10 text-[#6E44E8] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
+                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#8B5CFF]/10 text-[#6E44E8] px-2.5 py-1.5 rounded-[6px] font-black">
                               {template.cadence}
                             </span>
                           </div>

@@ -29,14 +29,14 @@ const PLANS: Array<{
     id: "pilot",
     name: "Pilot",
     price: 5_000_000,
-    tagline: ["Validate the value.", "Buktikan nilainya."],
-    audience: ["Pilot projects and proofs of concept", "Proyek percontohan dan uji konsep"],
-    limits: { brands: ["1", "1"], users: ["1", "1"], retention: ["30 days", "30 hari"] },
+    tagline: ["Validate the Value.", "Buktikan Nilainya."],
+    audience: ["Pilot Projects and Proofs of Concept", "Proyek Percontohan dan Uji Konsep"],
+    limits: { brands: ["1", "1"], users: ["1", "1"], retention: ["30 Days", "30 Hari"] },
     adds: [
-      ["News and YouTube, checked hourly", "Berita dan YouTube, dicek tiap jam"],
-      ["Alerts with an owner and a deadline", "Peringatan dengan PJ dan tenggat"],
-      ["Daily briefing and Ask Narriv", "Briefing harian dan Ask Narriv"],
-      ["Reports in PDF, Excel and email", "Laporan PDF, Excel, dan email"],
+      ["News and YouTube, Monitored Hourly", "Berita dan YouTube, Dipantau Tiap Jam"],
+      ["Alerts With Owner and Deadline", "Peringatan dengan Penanggung Jawab dan Tenggat"],
+      ["Daily Briefing and Ask Narriv", "Briefing Harian dan Ask Narriv"],
+      ["Reports in PDF, Excel and Email", "Laporan PDF, Excel, dan Email"],
     ],
   },
   {
@@ -44,28 +44,28 @@ const PLANS: Array<{
     name: "Intelligence",
     price: 25_000_000,
     popular: true,
-    tagline: ["Understand what matters.", "Pahami yang penting."],
-    audience: ["Corporate comms, brand and reputation teams", "Tim komunikasi korporat, brand, dan reputasi"],
-    limits: { brands: ["1", "1"], users: ["10", "10"], retention: ["12 months", "12 bulan"] },
+    tagline: ["Understand What Matters.", "Pahami Hal yang Penting."],
+    audience: ["Corporate Communications, Brand and Reputation Teams", "Tim Komunikasi Korporat, Brand, dan Reputasi"],
+    limits: { brands: ["1", "1"], users: ["10", "10"], retention: ["12 Months", "12 Bulan"] },
     adds: [
-      ["Everything in Pilot", "Semua di Pilot"],
-      ["AI visibility: ChatGPT, Claude and more", "Visibilitas di AI: ChatGPT, Claude, dan lainnya"],
-      ["Scheduled reports for the board", "Laporan terjadwal untuk direksi"],
-      ["Cases and response plans", "Kasus dan rencana respons"],
+      ["Everything in Pilot", "Seluruh Fitur Pilot"],
+      ["AI Visibility Across Leading Assistants", "Visibilitas di Asisten AI Utama"],
+      ["Scheduled Board Reports", "Laporan Terjadwal untuk Direksi"],
+      ["Cases and Response Plans", "Kasus dan Rencana Respons"],
     ],
   },
   {
     id: "decision",
     name: "Decision",
     price: 50_000_000,
-    tagline: ["Turn intelligence into action.", "Ubah wawasan jadi tindakan."],
-    audience: ["Organisations with several brands or products", "Organisasi dengan beberapa brand atau produk"],
-    limits: { brands: ["3", "3"], users: ["50", "50"], retention: ["12 months", "12 bulan"] },
+    tagline: ["Turn Intelligence Into Action.", "Ubah Wawasan Menjadi Tindakan."],
+    audience: ["Organisations With Multiple Brands or Products", "Organisasi dengan Beberapa Brand atau Produk"],
+    limits: { brands: ["3", "3"], users: ["50", "50"], retention: ["12 Months", "12 Bulan"] },
     adds: [
-      ["Everything in Intelligence", "Semua di Intelligence"],
+      ["Everything in Intelligence", "Seluruh Fitur Intelligence"],
       ["Instagram, TikTok, X and Facebook", "Instagram, TikTok, X, dan Facebook"],
-      ["Slack, Microsoft Teams and webhooks", "Slack, Microsoft Teams, dan webhook"],
-      ["Escalation matrix", "Matriks eskalasi"],
+      ["Slack, Microsoft Teams and Webhooks", "Slack, Microsoft Teams, dan Webhook"],
+      ["Escalation Matrix", "Matriks Eskalasi"],
     ],
   },
   {
@@ -73,14 +73,14 @@ const PLANS: Array<{
     name: "Command",
     price: null,
     from: 100_000_000,
-    tagline: ["Run it across the organisation.", "Jalankan di seluruh organisasi."],
-    audience: ["Banks, telcos, ministries and agencies", "Bank, telko, kementerian, dan agensi"],
-    limits: { brands: ["As needed", "Sesuai kebutuhan"], users: ["Unlimited", "Tanpa batas"], retention: ["Custom", "Kustom"] },
+    tagline: ["Scale Across the Organisation.", "Terapkan di Seluruh Organisasi."],
+    audience: ["Banks, Telcos, Ministries and Agencies", "Bank, Telko, Kementerian, dan Agensi"],
+    limits: { brands: ["As Needed", "Sesuai Kebutuhan"], users: ["Unlimited", "Tanpa Batas"], retention: ["Custom", "Kustom"] },
     adds: [
-      ["Everything in Decision", "Semua di Decision"],
-      ["A dedicated success manager", "Success manager khusus"],
-      ["Quarterly strategy review", "Tinjauan strategi tiap kuartal"],
-      ["Service level agreement", "Perjanjian tingkat layanan (SLA)"],
+      ["Everything in Decision", "Seluruh Fitur Decision"],
+      ["Dedicated Success Manager", "Success Manager Khusus"],
+      ["Quarterly Strategy Review", "Tinjauan Strategi Tiap Kuartal"],
+      ["Service Level Agreement (SLA)", "Perjanjian Tingkat Layanan (SLA)"],
     ],
   },
 ];
@@ -92,44 +92,44 @@ const COMPARE: Array<{ group: Copy; rows: Array<{ label: Copy; plans: PlanId[] |
   {
     group: ["Capacity", "Kapasitas"],
     rows: [
-      { label: ["Brands monitored", "Brand yang dipantau"], plans: { pilot: ["1", "1"], intelligence: ["1", "1"], decision: ["3", "3"], command: ["As needed", "Sesuai kebutuhan"] } },
-      { label: ["Keywords checked hourly, per brand", "Kata kunci dicek tiap jam, per brand"], plans: { pilot: ["3", "3"], intelligence: ["10", "10"], decision: ["25", "25"], command: ["50", "50"] } },
-      { label: ["Users", "Pengguna"], plans: { pilot: ["1", "1"], intelligence: ["10", "10"], decision: ["50", "50"], command: ["Unlimited", "Tanpa batas"] } },
-      { label: ["Data kept for", "Data disimpan"], plans: { pilot: ["30 days", "30 hari"], intelligence: ["12 months", "12 bulan"], decision: ["12 months", "12 bulan"], command: ["Custom", "Kustom"] } },
+      { label: ["Brands Monitored", "Brand yang Dipantau"], plans: { pilot: ["1", "1"], intelligence: ["1", "1"], decision: ["3", "3"], command: ["As Needed", "Sesuai Kebutuhan"] } },
+      { label: ["Hourly Keywords per Brand", "Kata Kunci Dipantau Tiap Jam per Brand"], plans: { pilot: ["3", "3"], intelligence: ["10", "10"], decision: ["25", "25"], command: ["50", "50"] } },
+      { label: ["Users", "Pengguna"], plans: { pilot: ["1", "1"], intelligence: ["10", "10"], decision: ["50", "50"], command: ["Unlimited", "Tanpa Batas"] } },
+      { label: ["Data Retention", "Masa Simpan Data"], plans: { pilot: ["30 Days", "30 Hari"], intelligence: ["12 Months", "12 Bulan"], decision: ["12 Months", "12 Bulan"], command: ["Custom", "Kustom"] } },
     ],
   },
   {
     group: ["Monitoring", "Pemantauan"],
     rows: [
-      { label: ["Online news and YouTube, hourly", "Berita online dan YouTube, tiap jam"], plans: from("pilot") },
-      { label: ["Sentiment and issues, automatic", "Sentimen dan isu otomatis"], plans: from("pilot") },
+      { label: ["Online News and YouTube, Hourly", "Berita Online dan YouTube, Tiap Jam"], plans: from("pilot") },
+      { label: ["Automatic Sentiment and Issue Detection", "Deteksi Sentimen dan Isu Otomatis"], plans: from("pilot") },
       { label: ["Instagram, TikTok, X, Facebook", "Instagram, TikTok, X, Facebook"], plans: from("decision") },
-      { label: ["AI visibility", "Visibilitas di AI"], plans: from("intelligence") },
+      { label: ["AI Visibility", "Visibilitas di AI"], plans: from("intelligence") },
     ],
   },
   {
     group: ["Action", "Tindakan"],
     rows: [
-      { label: ["Alerts with owner and deadline", "Peringatan dengan PJ dan tenggat"], plans: from("pilot") },
-      { label: ["Email notifications", "Notifikasi email"], plans: from("pilot") },
-      { label: ["Cases and response plans", "Kasus dan rencana respons"], plans: from("intelligence") },
-      { label: ["Escalation matrix", "Matriks eskalasi"], plans: from("decision") },
-      { label: ["Slack, Teams, webhooks", "Slack, Teams, webhook"], plans: from("decision") },
+      { label: ["Alerts With Owner and Deadline", "Peringatan dengan Penanggung Jawab dan Tenggat"], plans: from("pilot") },
+      { label: ["Email Notifications", "Notifikasi Email"], plans: from("pilot") },
+      { label: ["Cases and Response Plans", "Kasus dan Rencana Respons"], plans: from("intelligence") },
+      { label: ["Escalation Matrix", "Matriks Eskalasi"], plans: from("decision") },
+      { label: ["Slack, Teams and Webhooks", "Slack, Teams, dan Webhook"], plans: from("decision") },
     ],
   },
   {
     group: ["Reports", "Laporan"],
     rows: [
-      { label: ["Daily briefing and Ask Narriv", "Briefing harian dan Ask Narriv"], plans: from("pilot") },
-      { label: ["Export to PDF, Excel, email", "Ekspor PDF, Excel, email"], plans: from("pilot") },
-      { label: ["Scheduled reports", "Laporan terjadwal"], plans: from("intelligence") },
+      { label: ["Daily Briefing and Ask Narriv", "Briefing Harian dan Ask Narriv"], plans: from("pilot") },
+      { label: ["Export to PDF, Excel and Email", "Ekspor ke PDF, Excel, dan Email"], plans: from("pilot") },
+      { label: ["Scheduled Reports", "Laporan Terjadwal"], plans: from("intelligence") },
     ],
   },
   {
     group: ["Service", "Layanan"],
     rows: [
-      { label: ["Success manager and quarterly review", "Success manager dan tinjauan kuartalan"], plans: from("command") },
-      { label: ["Service level agreement", "SLA"], plans: from("command") },
+      { label: ["Success Manager and Quarterly Review", "Success Manager dan Tinjauan Kuartalan"], plans: from("command") },
+      { label: ["Service Level Agreement", "SLA"], plans: from("command") },
     ],
   },
 ];
@@ -143,11 +143,11 @@ export default function PricingPage() {
   const discount = annual ? 0.8 : 1;
 
   const faqs: Array<[Copy, Copy]> = [
-    [["Is there a free trial?", "Apakah ada uji coba gratis?"], ["Yes: 14 days with full access, set up with the Narriv team. The live demo needs no sign-up at all.", "Ada. Uji coba 14 hari dengan akses penuh, diatur bersama tim Narriv. Demo langsung bahkan tanpa daftar."]],
-    [["How do we pay?", "Bagaimana cara bayarnya?"], ["Bank transfer against an invoice, monthly or yearly. Yearly is 20% cheaper.", "Transfer bank dengan invoice, bulanan atau tahunan. Tahunan lebih hemat 20%."]],
-    [["Can we change plans later?", "Bisa ganti paket nanti?"], ["Yes. Tell the Narriv team and we change your workspace's plan.", "Bisa. Hubungi tim Narriv, lalu kami yang mengubah paket workspace Anda."]],
-    [["What counts as a brand?", "Apa yang dihitung sebagai brand?"], ["One workspace: a brand, product or client with its own keywords, alerts and reports.", "Satu workspace: satu brand, produk, atau klien dengan kata kunci, peringatan, dan laporannya sendiri."]],
-    [["Why is social media not in every plan?", "Kenapa media sosial tidak ada di semua paket?"], ["Collecting Instagram, TikTok, X and Facebook has a real cost per run, so it is included from Decision and switched on by the Narriv team.", "Pengambilan data Instagram, TikTok, X, dan Facebook ada biaya nyata tiap kali jalan, jadi tersedia mulai paket Decision dan diaktifkan oleh tim Narriv."]],
+    [["Is There a Free Trial?", "Apakah Tersedia Uji Coba Gratis?"], ["Yes. A 14-day trial with full access, set up together with the Narriv team. The live demo requires no registration.", "Ya. Uji coba 14 hari dengan akses penuh, disiapkan bersama tim Narriv. Demo langsung dapat diakses tanpa registrasi."]],
+    [["How Does Billing Work?", "Bagaimana Sistem Pembayarannya?"], ["Payment is by bank transfer against an invoice, billed monthly or annually. Annual billing saves 20%.", "Pembayaran melalui transfer bank berdasarkan invoice, ditagih bulanan atau tahunan. Tagihan tahunan lebih hemat 20%."]],
+    [["Can We Change Plans Later?", "Apakah Paket Dapat Diubah?"], ["Yes. Contact the Narriv team and we will update your workspace plan.", "Ya. Hubungi tim Narriv dan kami akan menyesuaikan paket workspace Anda."]],
+    [["What Counts as a Brand?", "Apa yang Dihitung sebagai Brand?"], ["One workspace: a brand, product or client with its own keywords, alerts and reports.", "Satu workspace: satu brand, produk, atau klien dengan kata kunci, peringatan, dan laporan tersendiri."]],
+    [["Why Is Social Media Not in Every Plan?", "Mengapa Media Sosial Tidak Tersedia di Semua Paket?"], ["Collecting data from Instagram, TikTok, X and Facebook carries a direct cost per run, so it is included from the Decision plan and activated by the Narriv team.", "Pengambilan data dari Instagram, TikTok, X, dan Facebook memiliki biaya langsung setiap kali dijalankan, sehingga tersedia mulai paket Decision dan diaktifkan oleh tim Narriv."]],
   ];
 
   return (
@@ -158,14 +158,14 @@ export default function PricingPage() {
         <SiteHeader />
         <div className="relative mx-auto max-w-3xl px-4 pt-10 text-center sm:px-6">
           <h1 className="text-balance text-[34px] font-black leading-[1.06] tracking-[-0.03em] sm:text-[52px]">
-            {L("One plan", "Satu paket")}{" "}
-            <span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", SERIF)}>{L("for each stage of your team.", "untuk tiap tahap tim Anda.")}</span>
+            {L("The Right Plan", "Paket yang Tepat")}{" "}
+            <span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", SERIF)}>{L("for Every Stage of Your Team.", "untuk Setiap Tahap Tim Anda.")}</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/60">{L("Every plan starts with a 14-day trial on your own brand.", "Semua paket dimulai dengan uji coba 14 hari memakai brand Anda sendiri.")}</p>
-          <div role="group" aria-label={L("Billing period", "Periode tagihan")} className="mt-8 inline-flex rounded-full bg-white/10 p-1">
+          <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/60">{L("Every plan begins with a 14-day trial on your own brand.", "Setiap paket diawali uji coba 14 hari menggunakan brand Anda sendiri.")}</p>
+          <div role="group" aria-label={L("Billing Period", "Periode Tagihan")} className="mt-8 inline-flex rounded-full bg-white/10 p-1">
             {[
               { v: false, label: L("Monthly", "Bulanan") },
-              { v: true, label: L("Yearly", "Tahunan") },
+              { v: true, label: L("Annual", "Tahunan") },
             ].map((o) => (
               <button
                 key={String(o.v)}
@@ -196,7 +196,7 @@ export default function PricingPage() {
             >
               {plan.popular ? (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#465FFF] px-3 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-white shadow-[0_6px_16px_rgba(70,95,255,0.4)]">
-                  {L("Most chosen", "Paling dipilih")}
+                  {L("Most Popular", "Paling Populer")}
                 </span>
               ) : null}
 
@@ -212,7 +212,7 @@ export default function PricingPage() {
                     <p className="whitespace-nowrap text-[26px] font-black leading-none tracking-[-0.02em] tabular-nums">{rupiah(Math.round(plan.price * discount))}</p>
                     <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>
                       {L("per month", "per bulan")}
-                      {annual ? <span className="block">{L("save", "hemat")} {rupiah(plan.price - Math.round(plan.price * discount))}</span> : null}
+                      {annual ? <span className="block">{L("Save", "Hemat")} {rupiah(plan.price - Math.round(plan.price * discount))}</span> : null}
                     </p>
                   </>
                 ) : (
@@ -227,7 +227,7 @@ export default function PricingPage() {
                 {[
                   { k: L("Brands", "Brand"), v: P(plan.limits.brands) },
                   { k: L("Users", "Pengguna"), v: P(plan.limits.users) },
-                  { k: L("Data kept", "Data disimpan"), v: P(plan.limits.retention) },
+                  { k: L("Data Retention", "Masa Simpan Data"), v: P(plan.limits.retention) },
                 ].map((x) => (
                   <div key={x.k} className="flex items-center justify-between gap-3 text-[13px]">
                     <dt className={cn("font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{x.k}</dt>
@@ -252,7 +252,7 @@ export default function PricingPage() {
                   plan.popular ? "bg-[#465FFF] text-white hover:bg-[#3B52F5]" : "bg-[#101334] text-white hover:bg-[#1B2155]",
                 )}
               >
-                {plan.price ? L("Start the 14-day trial", "Mulai uji coba 14 hari") : L("Talk to us", "Hubungi kami")}
+                {plan.price ? L("Start a 14-Day Trial", "Mulai Uji Coba 14 Hari") : L("Contact Sales", "Hubungi Tim Kami")}
                 <ArrowRight size={16} aria-hidden="true" />
               </Link>
             </div>
@@ -263,7 +263,7 @@ export default function PricingPage() {
       {/* Comparison */}
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("What", "Isi")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("each plan includes.", "tiap paket.")}</span></h2>
+          <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("What", "Isi")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("Each Plan Includes.", "Setiap Paket.")}</span></h2>
         </div>
         <div className="mt-10 overflow-hidden rounded-[22px] bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)]">
           <div className="overflow-x-auto">
@@ -289,7 +289,7 @@ export default function PricingPage() {
                               row.plans.includes(id) ? (
                                 <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#E8F7F0] text-[#047857]"><Check size={14} strokeWidth={3} aria-label={L("Included", "Termasuk")} /></span>
                               ) : (
-                                <span className="inline-flex size-6 items-center justify-center text-[#B8BED6]"><Minus size={14} aria-label={L("Not included", "Tidak termasuk")} /></span>
+                                <span className="inline-flex size-6 items-center justify-center text-[#B8BED6]"><Minus size={14} aria-label={L("Not Included", "Tidak Termasuk")} /></span>
                               )
                             ) : (
                               <span className="text-[14px] font-black">{P(row.plans[id])}</span>
@@ -309,7 +309,7 @@ export default function PricingPage() {
       {/* Questions */}
       <section className="mx-auto grid max-w-6xl gap-10 px-4 pb-20 sm:px-6 lg:grid-cols-[0.8fr_1.4fr] lg:gap-20">
         <div>
-          <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("About plans", "Soal paket")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("and billing.", "dan pembayaran.")}</span></h2>
+          <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("Plans", "Seputar Paket")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("and Billing.", "dan Pembayaran.")}</span></h2>
         </div>
         <div className={cn("border-t", RULE)}>
           {faqs.map(([q, a]) => (
@@ -329,18 +329,18 @@ export default function PricingPage() {
         <div className={cn("relative mx-auto max-w-6xl overflow-hidden rounded-[32px] px-6 py-16 text-center text-white", INK)}>
           <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
           <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 h-[320px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.45),transparent)]" />
-          <h2 className="relative text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[44px]">{L("Not sure", "Belum yakin")} <span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", SERIF)}>{L("which plan fits?", "paket mana yang cocok?")}</span></h2>
-          <p className="relative mx-auto mt-3 max-w-xl text-[16px] font-medium text-white/70">{L("Start with the trial. We look at the results with you after 14 days.", "Mulai dari uji coba. Setelah 14 hari, kami tinjau hasilnya bersama Anda.")}</p>
+          <h2 className="relative text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[44px]">{L("Not Sure", "Belum Yakin")} <span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", SERIF)}>{L("Which Plan Fits?", "Paket Mana yang Sesuai?")}</span></h2>
+          <p className="relative mx-auto mt-3 max-w-xl text-[16px] font-medium text-white/70">{L("Start with the trial. After 14 days, we will review the results with you.", "Mulai dengan uji coba. Setelah 14 hari, kami akan meninjau hasilnya bersama Anda.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/signup" className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-bold text-[#070A1F] shadow-[0_12px_40px_rgba(165,180,255,0.35)] hover:bg-[#EEF1FF]">
-              {L("Start the trial", "Mulai uji coba")}
+              {L("Start Your Trial", "Mulai Uji Coba")}
               <ArrowRight size={17} aria-hidden="true" />
             </Link>
-            <Link href="/help#contact" className="inline-flex h-12 items-center justify-center rounded-full px-6 text-[15px] font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] hover:bg-white/[0.06]">{L("Talk to us", "Hubungi kami")}</Link>
+            <Link href="/help#contact" className="inline-flex h-12 items-center justify-center rounded-full px-6 text-[15px] font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] hover:bg-white/[0.06]">{L("Contact Sales", "Hubungi Tim Kami")}</Link>
           </div>
           <a href="/contoh-laporan-narriv.pdf" target="_blank" rel="noopener" className="relative mt-6 inline-flex items-center gap-2 text-[14px] font-bold text-white/80 underline-offset-4 hover:text-white hover:underline">
             <FileText size={16} aria-hidden="true" />
-            {L("See a sample board report (PDF)", "Lihat contoh laporan untuk direksi (PDF)")}
+            {L("View a Sample Board Report (PDF)", "Lihat Contoh Laporan Direksi (PDF)")}
           </a>
         </div>
       </section>

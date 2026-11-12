@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import crypto from "crypto";
+import { APP_HOST, APP_ORIGIN, MARKETING_HOSTS, MARKETING_ORIGIN, SPLIT_LIVE, isMarketingPath } from "@/lib/hosts";
 
 const publicPaths = [
   "/welcome",
@@ -8,6 +9,7 @@ const publicPaths = [
   "/help",
   "/terms",
   "/privacy",
+  "/pasang",
   "/onboarding",
   "/login",
   "/signup",
@@ -16,6 +18,7 @@ const publicPaths = [
   "/verify-email",
   "/oauth/callback",
   "/new-password",
+  "/demo",
   "/api/auth",
 ];
 
@@ -68,6 +71,18 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Website and app live on their own hosts: each sends the other's pages across, keeping the path and query.
+  const host = request.headers.get("host") ?? "";
+  const search = request.nextUrl.search;
+  if (host === APP_HOST && isMarketingPath(pathname)) {
+    return NextResponse.redirect(`${MARKETING_ORIGIN}${pathname}${search}`);
+  }
+  if (SPLIT_LIVE && MARKETING_HOSTS.includes(host)) {
+    if (pathname === "/") return NextResponse.rewrite(new URL("/welcome", request.url));
+    if (!isMarketingPath(pathname)) return NextResponse.redirect(`${APP_ORIGIN}${pathname}${search}`);
+    return NextResponse.next();
+  }
+
   // Use JWT verification like middleware.ts — more secure than boolean cookie
   const authCookie = request.cookies.get("narriv_auth");
   const authenticated = authCookie?.value ? verifyJwt(authCookie.value, JWT_SECRET) : false;
@@ -80,13 +95,15 @@ export function proxy(request: NextRequest) {
   }
 
   // Visitors who are not signed in see the landing page at the root; signed-in users get the dashboard there.
+  // On the app host the root is the product, so a visitor there signs in instead.
   if (!authenticated && pathname === "/") {
+    if (host === APP_HOST) return NextResponse.redirect(new URL("/login", request.url));
     return NextResponse.rewrite(new URL("/welcome", request.url));
   }
 
   if (!authenticated) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
+    loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 

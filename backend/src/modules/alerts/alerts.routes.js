@@ -1,5 +1,7 @@
 import express from "express";
 import supabase from "../../lib/supabase.js";
+import { getWorkspaceProfile } from "../../lib/workspace-profile.js";
+import { maskSignal } from "../../lib/privacy.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
@@ -366,7 +368,8 @@ router.get("/:id", async (req, res) => {
                 .select("id, title, url, platform, author, sentiment, captured_at, published_at")
                 .eq("workspace_id", alert.workspace_id)
                 .in("id", evidenceIds);
-            evidence = (evidenceRows || []).map((s) => ({
+            const { privacyMode } = await getWorkspaceProfile(alert.workspace_id);
+            evidence = (evidenceRows || []).map((s) => (privacyMode ? maskSignal(s) : s)).map((s) => ({
                 id: s.id,
                 title: s.title,
                 url: s.url || null,

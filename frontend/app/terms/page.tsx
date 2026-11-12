@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import { LegalDraft } from "@/components/legal/legal-draft";
+import { LegalPage } from "@/components/legal/legal-page";
 
-export const metadata: Metadata = { title: "Ketentuan Layanan", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Ketentuan Layanan" };
 
-// Describes the service as it works today (plans, trial, AI output, public sources). Still a draft: the owner and
-// legal counsel review it before the draft note is removed.
+// Describes the service as it works today (plans, trial, AI output, public sources). Approved and in effect.
 
 const ID = (
   <>
-    <p>Ketentuan ini mengatur penggunaan Narriv (narriv.digital), layanan yang disediakan oleh <b>PT Primer Rectoverso Media</b> (&quot;kami&quot;), beralamat di [alamat terdaftar]. Dengan membuat akun atau memakai Narriv, Anda dan organisasi yang Anda wakili (&quot;klien&quot;) menyetujui ketentuan ini.</p>
+    <p>Ketentuan ini mengatur penggunaan Narriv (narriv.digital), layanan yang disediakan oleh <b>PT Primer Rectoverso Media</b> (&quot;kami&quot;), beralamat di Gedung Cibis Nine Lt. 11, Jl. TB Simatupang No. 2, Cilandak Timur, Pasar Minggu, Jakarta Selatan, DKI Jakarta 12560. Dengan membuat akun atau memakai Narriv, Anda dan organisasi yang Anda wakili (&quot;klien&quot;) menyetujui ketentuan ini.</p>
 
     <h2>1. Layanan</h2>
     <p>Narriv memantau konten publik (berita online, YouTube, dan media sosial bila diaktifkan) yang memuat kata kunci workspace, menganalisisnya dengan sistem otomatis termasuk model AI pihak ketiga, lalu menyajikan sentimen, isu, peringatan, rekomendasi, dan laporan. Narriv tidak memublikasikan apa pun atas nama klien.</p>
@@ -26,7 +25,7 @@ const ID = (
     <h2>4. Paket, biaya, dan pembayaran</h2>
     <ul>
       <li>Paket dan harga tercantum di halaman Harga atau dalam penawaran tertulis. Harga dapat berubah, dan perubahan berlaku pada periode tagihan berikutnya setelah kami memberi tahu.</li>
-      <li>Pembayaran dilakukan lewat transfer bank berdasarkan invoice, bulanan atau tahunan, paling lambat [14] hari sejak invoice diterbitkan.</li>
+      <li>Pembayaran dilakukan lewat transfer bank berdasarkan invoice, bulanan atau tahunan, paling lambat 14 hari sejak invoice diterbitkan.</li>
       <li>Bila pembayaran terlambat, kami dapat menjeda layanan setelah memberi pemberitahuan.</li>
       <li>Biaya yang sudah dibayar tidak dapat dikembalikan, kecuali disepakati lain secara tertulis.</li>
     </ul>
@@ -67,16 +66,16 @@ const ID = (
     <p>Kami dapat mengubah ketentuan ini. Perubahan penting diberitahukan kepada pemilik workspace paling lambat 14 hari sebelum berlaku.</p>
 
     <h2>14. Hukum dan penyelesaian sengketa</h2>
-    <p>Ketentuan ini tunduk pada hukum Republik Indonesia. Sengketa diselesaikan lebih dulu secara musyawarah dalam 30 hari. Bila tidak tercapai kesepakatan, sengketa diselesaikan di Pengadilan Negeri [kota].</p>
+    <p>Ketentuan ini tunduk pada hukum Republik Indonesia. Sengketa diselesaikan lebih dulu secara musyawarah dalam 30 hari. Bila tidak tercapai kesepakatan, sengketa diselesaikan di Pengadilan Negeri Jakarta Selatan.</p>
 
     <h2>15. Kontak</h2>
-    <p>PT Primer Rectoverso Media, [alamat terdaftar]. WhatsApp 0811-190-692, email hello@narriv.digital.</p>
+    <p>PT Primer Rectoverso Media, Gedung Cibis Nine Lt. 11, Jl. TB Simatupang No. 2, Cilandak Timur, Pasar Minggu, Jakarta Selatan, DKI Jakarta 12560. WhatsApp 0811-190-692, email hello@narriv.digital.</p>
   </>
 );
 
 const EN = (
   <>
-    <p>These terms govern the use of Narriv (narriv.digital), a service provided by <b>PT Primer Rectoverso Media</b> (&quot;we&quot;), of [registered address]. By creating an account or using Narriv, you and the organisation you represent (the &quot;client&quot;) accept these terms. The Indonesian version prevails.</p>
+    <p>These terms govern the use of Narriv (narriv.digital), a service provided by <b>PT Primer Rectoverso Media</b> (&quot;we&quot;), of Cibis Nine Building, 11th floor, Jl. TB Simatupang No. 2, Cilandak Timur, Pasar Minggu, South Jakarta, DKI Jakarta 12560, Indonesia. By creating an account or using Narriv, you and the organisation you represent (the &quot;client&quot;) accept these terms. The Indonesian version prevails.</p>
 
     <h2>1. The service</h2>
     <p>Narriv monitors public content (online news, YouTube, and social media when switched on) that contains the workspace&apos;s keywords, analyses it with automated systems including third-party AI models, and presents sentiment, issues, alerts, recommendations and reports. Narriv publishes nothing on the client&apos;s behalf.</p>
@@ -94,7 +93,7 @@ const EN = (
     <h2>4. Plans, fees and payment</h2>
     <ul>
       <li>Plans and prices are those on the Pricing page or in a written offer. Prices may change; a change applies from the next billing period after we give notice.</li>
-      <li>Payment is by bank transfer against an invoice, monthly or yearly, within [14] days of the invoice date.</li>
+      <li>Payment is by bank transfer against an invoice, monthly or yearly, within 14 days of the invoice date.</li>
       <li>If payment is late, we may pause the service after giving notice.</li>
       <li>Fees paid are not refundable unless agreed otherwise in writing.</li>
     </ul>
@@ -135,13 +134,13 @@ const EN = (
     <p>We may change these terms. Material changes are notified to workspace owners at least 14 days before they take effect.</p>
 
     <h2>14. Governing law and disputes</h2>
-    <p>These terms are governed by the laws of the Republic of Indonesia. Disputes are first settled by negotiation within 30 days, and failing that, before the District Court of [city].</p>
+    <p>These terms are governed by the laws of the Republic of Indonesia. Disputes are first settled by negotiation within 30 days, and failing that, before the South Jakarta District Court.</p>
 
     <h2>15. Contact</h2>
-    <p>PT Primer Rectoverso Media, [registered address]. WhatsApp +62 811-190-692, email hello@narriv.digital.</p>
+    <p>PT Primer Rectoverso Media, Cibis Nine Building, 11th floor, Jl. TB Simatupang No. 2, Cilandak Timur, Pasar Minggu, South Jakarta, DKI Jakarta 12560, Indonesia. WhatsApp +62 811-190-692, email hello@narriv.digital.</p>
   </>
 );
 
 export default function TermsPage() {
-  return <LegalDraft title={["Terms of Service", "Ketentuan Layanan"]} updated={["Last updated: [effective date]", "Terakhir diperbarui: [tanggal berlaku]"]} id={ID} en={EN} />;
+  return <LegalPage title={["Terms of Service", "Ketentuan Layanan"]} updated={["Last updated: 12 November 2026", "Terakhir diperbarui: 12 November 2026"]} id={ID} en={EN} />;
 }

@@ -278,7 +278,7 @@ export default function AlertDetailPage() {
           <div className="p-5 sm:p-6">
             {/* Severity and status: the two facts that decide how fast to move. */}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className={`rounded-[6px] px-2.5 py-1 text-[11px] font-black uppercase tracking-wide ${severityTag(liveData.severity)}`}>{severityLabel(liveData.severity, L)}</span>
+              <span className={`rounded-[6px] px-2.5 py-1 text-[11px] font-black ${severityTag(liveData.severity)}`}>{severityLabel(liveData.severity, L)}</span>
               <div role="group" aria-label={L("Status", "Status")} className="flex rounded-[10px] border border-[#DDE3EF] bg-white p-1">
                 {(["open", "acknowledged", "resolved"] as const).map((status) => (
                   <button
@@ -337,7 +337,7 @@ export default function AlertDetailPage() {
                 <li>
                   <button type="button" onClick={() => setIsActionPlanModalOpen(true)} className="flex h-full w-full items-start gap-3 rounded-[10px] border border-[#E6EAF2] bg-white p-3 text-left transition hover:border-[#465FFF]/40">
                     <span className="text-[16px] font-black text-[#465FFF]">2</span>
-                    <span><b className="block text-[13px] font-black text-[#101334]">{L("Create a response plan", "Buat rencana respons")}</b><span className="text-[11px] font-semibold text-[#5F6B94]">{L("AI drafts it; you approve", "Disusun AI, Anda yang menyetujui")}</span></span>
+                    <span><b className="block text-[13px] font-black text-[#101334]">{L("Create Action Plan", "Buat Rencana Aksi")}</b><span className="text-[11px] font-semibold text-[#5F6B94]">{L("AI drafts it; you approve", "Disusun AI, Anda yang menyetujui")}</span></span>
                   </button>
                 </li>
                 <li>

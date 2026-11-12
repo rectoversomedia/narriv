@@ -140,8 +140,8 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
     if (clusters.length > 0 && withMomentum.length === 0) uncertainty.push(tr("Narrative momentum unavailable: no member observations for the tracked clusters.", "Momentum narasi belum tersedia: belum ada pengamatan untuk klaster yang dipantau."));
     add("narrative_momentum", emerging.length / 3,
         emerging.length
-            ? tr(`${emerging.length} narrative(s) emerging: at least ${EMERGING_MIN_SIGNALS_24H} new mentions in 24h and growth >= ${EMERGING_MIN_GROWTH_PCT}% vs the previous 24h (or newly appeared).`, `${emerging.length} narasi mulai muncul: minimal ${EMERGING_MIN_SIGNALS_24H} percakapan baru dalam 24 jam dan tumbuh ≥ ${EMERGING_MIN_GROWTH_PCT}% dibanding 24 jam sebelumnya (atau baru muncul).`)
-            : tr("No narrative meets the emerging criteria (fresh volume plus growth vs the previous 24h).", "Belum ada narasi yang memenuhi kriteria narasi baru (volume baru plus pertumbuhan dibanding 24 jam sebelumnya)."),
+            ? tr(`${emerging.length} new narrative(s) rising fast in 24h.`, `${emerging.length} narasi baru naik cepat dalam 24 jam.`)
+            : tr("No new narrative rising.", "Belum ada narasi baru yang naik."),
         emerging.flatMap((c) => [c.id, ...c.duplicateIds]),
         { emergingNarratives: emerging.length, duplicateClusters: duplicates, clustersWithObservations: withMomentum.length, minSignals24h: EMERGING_MIN_SIGNALS_24H, minGrowthPct: EMERGING_MIN_GROWTH_PCT });
 

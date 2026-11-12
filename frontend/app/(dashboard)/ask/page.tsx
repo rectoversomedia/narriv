@@ -121,20 +121,20 @@ function AskPulse({ summary, topIssue, onAsk, language }: { summary: DashboardSu
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-4">
         {tiles.map((t) => (
-          <div key={t.label} className="rounded-[14px] bg-white p-4 shadow-[0_2px_10px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${t.rgb},0.12), rgba(${t.rgb},0.02) 65%)` }}>
-            <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: t.color }}>{t.label}</p>
+          <div key={t.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+            <p className="text-[11px] font-black" style={{ color: t.color }}>{t.label}</p>
             <p className="mt-1.5 text-[28px] font-black leading-none tracking-[-0.04em] text-[#101334]">{t.value}</p>
             <p className="mt-1.5 text-[11px] font-bold text-[#5A6478]">{t.sub}</p>
           </div>
         ))}
         <div className="rounded-[14px] bg-[#101334] p-4 text-white">
-          <p className="text-[11px] font-black uppercase tracking-[0.06em] text-[#A9B4FF]">{L("Top issue", "Isu utama")}</p>
+          <p className="text-[11px] font-black text-[#A9B4FF]">{L("Top issue", "Isu utama")}</p>
           <p className="mt-1.5 line-clamp-3 text-[14px] font-black leading-snug">{topIssue?.title ?? L("No issue yet", "Belum ada isu")}</p>
           {topIssue ? <p className="mt-1.5 text-[11px] font-bold text-white/70">{topIssue.signalCount} {L("mentions", "percakapan")}</p> : null}
         </div>
       </div>
       <div>
-        <p className="mb-2 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("Ask in one tap", "Tanya sekali klik")}</p>
+        <p className="mb-2 text-[11px] font-black text-[#5A6478]">{L("Ask in one tap", "Tanya sekali klik")}</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {SUGGESTED_CATEGORIES.slice(0, 6).map((cat, i) => (
             <button key={cat.id} type="button" onClick={() => onAsk(cat.question[language])} className="flex items-center gap-3 rounded-[12px] bg-white px-4 py-3 text-left shadow-[0_2px_10px_rgba(16,24,40,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(16,24,40,0.08)]">
@@ -261,8 +261,8 @@ export default function AskPage() {
   // Dynamic welcome message — uses loaded real or mock data
   const welcomeContent = useMemo(() => {
     return pickL(
-      "Ask anything about your data. I answer only from this workspace's signals, alerts and issues, and show the records I used.",
-      "Tanya apa saja soal data Anda. Saya menjawab hanya dari percakapan, peringatan, dan isu di workspace ini, lengkap dengan sumbernya.",
+      "Ask anything. Answers come from this workspace's data, with sources.",
+      "Tanya apa saja. Jawaban dari data workspace ini, lengkap dengan sumber.",
     );
   }, []);
 
@@ -312,7 +312,7 @@ export default function AskPage() {
           {/* Suggested questions */}
           {sidebarOpen && (
             <div className="flex flex-col gap-1">
-              <p className="mb-1 px-1 text-[10px] font-black uppercase tracking-wider text-[#5A6478]">
+              <p className="mb-1 px-1 text-[10px] font-black text-[#5A6478]">
                 {pickL("Suggested questions", "Pertanyaan yang disarankan")}
               </p>
               {SUGGESTED_CATEGORIES.map((cat) => {
@@ -439,7 +439,7 @@ export default function AskPage() {
                     {/* Evidence bullets */}
                     {msg.evidence && msg.evidence.length > 0 && (
                       <ul className="mt-3 space-y-1.5">
-                        <li className="text-[10px] font-black uppercase tracking-wide text-[#5A6478]">{language === "id" ? "Sumber yang dikutip" : "Sources cited"}</li>
+                        <li className="text-[10px] font-black text-[#5A6478]">{language === "id" ? "Sumber yang dikutip" : "Sources cited"}</li>
                         {msg.evidence.map((e) => {
                           const label = e.title || e.id;
                           const kind = e.kind === "alert" ? "Alert" : e.kind === "narrative" ? "Narrative" : e.kind === "signal" ? "Signal" : "Record";
@@ -448,7 +448,7 @@ export default function AskPage() {
                             <li key={e.id} className="flex items-start gap-2 text-[12px] font-semibold text-[#5A6478]">
                               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#465FFF]/40" />
                               <span className="min-w-0">
-                                <span className="mr-1.5 text-[10px] font-black uppercase text-[#5A6478]">{kind}</span>
+                                <span className="mr-1.5 text-[10px] font-black text-[#5A6478]">{kind}</span>
                                 {href ? (
                                   <a href={href} {...(e.kind === "signal" ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="text-[#3B52F5] underline-offset-2 hover:underline">{label}</a>
                                 ) : (

@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import { createIntegration, deleteIntegration, getIntegrations, updateIntegration, testIntegration, type IntegrationRecord } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { intlLocale } from "@/store/useUiStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
@@ -192,7 +193,7 @@ export default function IntegrationsPage() {
       </header>
 
       <section className="rounded-[16px] p-5 text-white shadow-[0_12px_32px_rgba(16,19,52,0.16)]" style={{ background: banner.bg }}>
-        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/70">{pickL("Alert delivery", "Pengiriman peringatan")}</p>
+        <p className="text-[11px] font-black text-white/70">{pickL("Alert delivery", "Pengiriman peringatan")}</p>
         <p className="mt-1 text-[24px] font-black leading-tight">{banner.title}</p>
         <p className="mt-1 text-[13px] font-bold text-white/85">{banner.sub}</p>
       </section>
@@ -209,7 +210,6 @@ export default function IntegrationsPage() {
               type="button"
               onClick={() => { setPlatform(c.value); setFormError(""); document.getElementById("integration-name")?.focus(); }}
               className={cn("rounded-[14px] bg-white p-4 text-left shadow-[0_2px_12px_rgba(16,24,40,0.05)] transition", selected ? "ring-2 ring-[#465FFF]" : "hover:shadow-[0_6px_20px_rgba(16,24,40,0.08)]")}
-              style={{ backgroundImage: `linear-gradient(160deg, rgba(${c.rgb},0.10), rgba(${c.rgb},0.02) 60%)` }}
             >
               <div className="flex items-center justify-between">
                 <span className="flex size-10 items-center justify-center rounded-[10px] bg-white shadow-sm"><c.Icon className="size-6 text-[#3B52F5]" /></span>
@@ -227,7 +227,7 @@ export default function IntegrationsPage() {
       </button>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.3fr)]">
-        <section className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+        <section className={BOX}>
           <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL(`Connect ${channel.name}`, `Hubungkan ${channel.name}`)}</h2>
           <ol className="mt-3 space-y-2">
             {channel.steps.map((step, i) => (
@@ -271,7 +271,7 @@ export default function IntegrationsPage() {
           </form>
         </section>
 
-        <section className="rounded-[16px] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+        <section className={BOX}>
           <div className="flex items-baseline justify-between gap-3 px-5 pt-5">
             <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("Connected channels", "Saluran terhubung")}</h2>
             {integrations.length ? <span className="text-[12px] font-bold text-[#5A6478]">{pickL(`${activeCount} of ${integrations.length} sending`, `${activeCount} dari ${integrations.length} mengirim`)}</span> : null}

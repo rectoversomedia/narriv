@@ -114,6 +114,9 @@ const nextConfig: NextConfig = {
   // Redirects for legacy and shorthand workspace routes
   async redirects() {
     return [
+      // The simplified /v2 screens were tried and removed; old links land on the overview.
+      { source: "/v2", destination: "/", permanent: false },
+      { source: "/v2/:path*", destination: "/", permanent: false },
       {
         source: "/cases",
         destination: "/workspace/cases",

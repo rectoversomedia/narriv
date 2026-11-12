@@ -60,7 +60,7 @@ export function BrandHero({
       {action ? <div className="relative mb-4 flex justify-end sm:absolute sm:right-5 sm:top-5 sm:mb-0">{action}</div> : null}
       <div className="relative flex flex-col items-center text-center">
         <BrandMark name={brandName} logoUrl={logoUrl} />
-        <p className="mt-4 text-[11px] font-black uppercase tracking-[0.16em] text-white/60">{eyebrow}</p>
+        <p className="mt-4 text-[11px] font-black text-white/60">{eyebrow}</p>
         <h2 className="mt-1 max-w-full truncate text-[26px] font-black leading-tight tracking-[-0.02em] sm:text-[34px]">{brandName}</h2>
         <ul className="mt-3 flex flex-wrap justify-center gap-1.5 sm:gap-2">
           {pills.map((pill, i) => {

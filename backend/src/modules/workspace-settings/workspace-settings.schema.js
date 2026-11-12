@@ -27,6 +27,12 @@ export const monitoringPauseBodySchema = z.object({
     paused: z.boolean({ error: (issue) => (issue.input === undefined ? "paused is required." : undefined) }),
 }).strict();
 
+export const workspaceProfileBodySchema = z.object({
+    workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
+    useCase: z.enum(["brand", "gov", "cve"], { error: () => "useCase must be brand, gov or cve." }).optional(),
+    privacyMode: z.boolean().optional(),
+}).strict().refine((d) => d.useCase !== undefined || d.privacyMode !== undefined, { message: "useCase or privacyMode is required." });
+
 export const workspaceMembersQuerySchema = z.object({
     workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
 });

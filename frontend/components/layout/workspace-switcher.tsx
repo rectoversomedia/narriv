@@ -54,7 +54,7 @@ export function WorkspaceOptions({ onDone }: { onDone?: () => void }) {
 
   return (
     <>
-      <p className="px-2.5 pb-1.5 pt-1 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#5A6478]">{L("Workspaces", "Workspace")}</p>
+      <p className="px-2.5 pb-1.5 pt-1 text-[11px] font-extrabold text-[#5A6478]">{L("Workspaces", "Workspace")}</p>
       {query.isLoading ? (
         <p className="px-2.5 py-2 text-[12px] text-[#5A6478]">{L("Loading…", "Memuat…")}</p>
       ) : query.isError ? (

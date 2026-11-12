@@ -162,7 +162,7 @@ const runDaily = async (req, res) => {
             results.reportSchedules = { ran: run.ran, failed: (run.results || []).filter((r) => r.status === "failed").length, error: run.error };
         } catch (e) { results.reportSchedules = { error: e.message }; }
 
-        // 3c. The demo workspace is reseeded with fresh dates once its newest record is a day old.
+        // 3c. Each demo scenario is reseeded with fresh dates once its newest record is a day old.
         try {
             const { refreshDemoWorkspaceIfStale } = await import("../demo/demo-seed.js");
             results.demo = await refreshDemoWorkspaceIfStale();
@@ -252,13 +252,13 @@ const runSocial = async (req, res) => {
 router.get("/social", runSocial);
 router.post("/social", runSocial);
 
-// Nightly demo refresh (03:00 WIB): reseeds the demo workspace so its dates stay recent and visitors' changes reset.
+// Nightly demo refresh (03:00 WIB): reseeds every demo scenario so dates stay recent and visitors' changes reset.
 // Database writes only; no AI or paid provider is called.
 const runDemoRefresh = async (req, res) => {
     if (!verifyCronSecret(req)) return res.status(401).json({ error: "Unauthorized" });
     try {
-        const { seedDemoWorkspace } = await import("../demo/demo-seed.js");
-        res.json({ seeded: await seedDemoWorkspace() });
+        const { seedAllDemoWorkspaces } = await import("../demo/demo-seed.js");
+        res.json({ seeded: await seedAllDemoWorkspaces() });
     } catch (error) {
         logStructured("error", "cron_demo_refresh_failed", { error: error.message });
         res.status(500).json({ error: "Internal server error" });

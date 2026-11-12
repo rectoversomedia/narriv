@@ -4,6 +4,8 @@
  */
 
 import express from "express";
+import { getProfilesFor } from "../../lib/workspace-profile.js";
+import { maskSignal } from "../../lib/privacy.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 import {
@@ -73,6 +75,9 @@ router.get("/signals", async (req, res) => {
             total: result.pagination.total
         });
 
+        if ((await getProfilesFor(await getUserWorkspaceIds(req.user.id))).privacyMode) {
+            result.data = (result.data || []).map((row) => maskSignal(row));
+        }
         res.json(result);
     } catch (error) {
         logStructured("error", "search_signals_error", {

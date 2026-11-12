@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { AuthShell, CenterIcon, HelpAction, InfoCallout, PrimaryButton, SecondaryLinkButton, VerificationCodeInput } from "@/components/auth/auth-shell";
 import { resendVerificationCode, verifyEmailCode } from "@/lib/api-service";
 import { useAuthStore } from "@/store/useAuthStore";
+import { launchDashboard } from "@/lib/launch";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -82,7 +83,7 @@ export default function VerifyEmailPage() {
         { name: response.user.name, email: response.user.email, provider: "password", workspace: "Narriv" }, 
         response.refreshToken
       );
-      router.push("/");
+      launchDashboard(() => router.push("/"));
     } catch {
       setApiError(t("errors.verifyFailed"));
     } finally {

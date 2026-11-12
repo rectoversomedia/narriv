@@ -293,6 +293,21 @@ export const analyzeText = async (text) => {
 };
 
 /**
+ * Suggests a CVE narrative category for one record (cve-categories.js), for a person to confirm or dismiss.
+ * Used only in workspaces whose use case is "cve". Throws when no AI provider is configured or the answer is not
+ * JSON; the caller then stores the record without a category, never a guessed one.
+ */
+export const classifyCveNarrative = async (title, content, usageCtx = null) => {
+    if (!OPENAI_API_KEY) throw new Error("OpenAI API key is not configured.");
+    const { CVE_SYSTEM_PROMPT, normalizeCveResult } = await import("../../lib/cve-categories.js");
+    const text = `${title ? `Title: ${title}\n` : ""}Content: ${String(content || "").slice(0, 3000)}`;
+    const raw = await callOpenAI([{ role: "system", content: CVE_SYSTEM_PROMPT }, { role: "user", content: text }], { ...(usageCtx || {}), operation: usageCtx?.operation || "cve_classification" });
+    const parsed = tryParseJSON(raw);
+    if (!parsed.ok) throw new Error(`CVE classification returned invalid JSON: ${parsed.error}`);
+    return { ...normalizeCveResult(parsed.data), model: "gpt-4o-mini", at: new Date().toISOString() };
+};
+
+/**
  * Analyzes an alert and its context to generate strategic insights.
  *
  * @param {object} alertData - The basic alert information.
@@ -438,6 +453,8 @@ function buildFallbackSummary(signals = [], contextInfo = {}) {
 // so it is kept for a few hours per input instead of calling the model again (per warm instance).
 const SUMMARY_CACHE = new Map();
 const SUMMARY_TTL_MS = 6 * 60 * 60 * 1000;
+const SUMMARY_PENDING = new Map();
+const SUMMARY_WAIT_MS = 900;
 
 export const generateSignalsSummary = async (signals = [], contextInfo = {}) => {
     if (!signals || signals.length === 0) {
@@ -446,10 +463,24 @@ export const generateSignalsSummary = async (signals = [], contextInfo = {}) => 
     const cacheKey = crypto.createHash("sha1").update(JSON.stringify([signals.slice(0, 8).map((s) => [s.title, s.sentiment]), contextInfo])).digest("hex");
     const cached = SUMMARY_CACHE.get(cacheKey);
     if (cached && cached.at > Date.now() - SUMMARY_TTL_MS) return cached.value;
-    const value = await generateSignalsSummaryUncached(signals, contextInfo);
-    if (SUMMARY_CACHE.size > 200) SUMMARY_CACHE.delete(SUMMARY_CACHE.keys().next().value);
-    SUMMARY_CACHE.set(cacheKey, { at: Date.now(), value });
-    return value;
+    // One generation per key at a time; a page waits at most SUMMARY_WAIT_MS for it and otherwise gets the
+    // plain summary now, while the AI one finishes into the cache for the next load.
+    let pending = SUMMARY_PENDING.get(cacheKey);
+    if (!pending) {
+        pending = generateSignalsSummaryUncached(signals, contextInfo)
+            .then((value) => {
+                if (SUMMARY_CACHE.size > 200) SUMMARY_CACHE.delete(SUMMARY_CACHE.keys().next().value);
+                SUMMARY_CACHE.set(cacheKey, { at: Date.now(), value });
+                return value;
+            })
+            .finally(() => SUMMARY_PENDING.delete(cacheKey));
+        SUMMARY_PENDING.set(cacheKey, pending);
+    }
+    let timer;
+    const waited = new Promise((resolve) => { timer = setTimeout(() => resolve(null), SUMMARY_WAIT_MS); });
+    const value = await Promise.race([pending.catch(() => null), waited]);
+    clearTimeout(timer);
+    return value ?? (cached?.value || buildFallbackSummary(signals, contextInfo));
 };
 
 async function generateSignalsSummaryUncached(signals, contextInfo) {

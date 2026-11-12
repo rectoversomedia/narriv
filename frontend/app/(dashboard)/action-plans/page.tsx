@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { BarChart3, Check, ChevronRight, Clock3, Flag, Lightbulb, MoreVertical, Search, Sparkles, Target, Timer, TrendingDown, TrendingUp, type LucideIcon } from "lucide-react";
+import { Check, ChevronRight, Clock3, Flag, MoreVertical, Search, Sparkles, Target, Timer, TrendingDown, TrendingUp, type LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
@@ -12,6 +12,7 @@ import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore"
 import { getActionPlanById, getActionQueue, getFeedbackAccuracy, getWorkspaceMembers, submitActionPlanFeedback, getActionPlansMetrics, getActionPlanLearning, type ActionPlanResponse, type ActionQueueRecord, type MetaPaginatedResponse, type WorkspaceMemberRecord } from "@/lib/api-service";
 import { assigneeName } from "@/lib/member-name";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { CreateActionPlanModal } from "./components/create-action-plan-modal";
 import { PlanWorkflowControls } from "./components/plan-workflow-controls";
 import { RejectActionPlanModal } from "./components/reject-action-plan-modal";
@@ -120,7 +121,7 @@ function hasActionPlanData(plan: ActionPlanResponse | null | undefined) {
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <Card className={cn("rounded-[14px] border-[#E6EAF2] bg-white text-[#101334] shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
+    <Card className={cn("!border-0 text-[#101334]", BOX, className)}>
       {children}
     </Card>
   );
@@ -132,8 +133,8 @@ function MetricCard({ label, value, helper, trend, tone, negative = false }: { l
   // "No earlier period to compare" carries no information; show it nowhere rather than five times.
   const showHelper = helper && !/sebelumnya untuk dibandingkan|previous period to compare/i.test(helper);
   return (
-    <div className="min-h-[104px] rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${style.rgb},0.11), rgba(${style.rgb},0.02) 60%)` }}>
-      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: style.color }}>{label}</p>
+    <div className="min-h-[120px] flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+      <p className="text-[11px] font-black" style={{ color: style.color }}>{label}</p>
       <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
       {trend != null && trend !== 0 ? (
         <p className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", isNegativeDisplay ? "text-[#C81E1E]" : "text-[#047857]")}><span aria-hidden="true">{trend > 0 ? "▲" : "▼"}</span> {helper}</p>
@@ -145,7 +146,7 @@ function MetricCard({ label, value, helper, trend, tone, negative = false }: { l
 function StatusPill({ status, t }: { status: ActionStatus; t: (key: string) => string }) {
   const style = status === "done" ? "bg-[#10B981]/12 text-[#047857]" : status === "in-progress" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#EF4444]/10 text-[#C81E1E]";
   const label = status === "done" ? t("statusDone") : status === "in-progress" ? t("statusInProgress") : t("statusActive");
-  return <span className={cn("rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.08em]", style)}>{label}</span>;
+  return <span className={cn("rounded-full px-3 py-1 text-[9px] font-black", style)}>{label}</span>;
 }
 
 function Avatar({ name }: { name: string }) {
@@ -187,10 +188,9 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
       type="button"
       onClick={() => onSelect(action)}
       className={cn(
-        "w-full rounded-[12px] p-4 text-left shadow-[0_2px_10px_rgba(16,24,40,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)]",
-        // Priority reads from the fill, not from a coloured edge.
-        action.status !== "done" && action.priority === "high" ? "bg-[#FDECEC]" : action.status !== "done" && action.priority === "medium" ? "bg-[#FFF6E0]" : "bg-white",
-        selected && "ring-2 ring-[#465FFF]",
+        // A task is a flat white sheet: the status pill and title carry it, no tint or shadow.
+        "w-full rounded-[14px] bg-white p-4 text-left transition hover:ring-2 hover:ring-[#DDE3EF]",
+        selected && "ring-2 ring-[#465FFF] hover:ring-[#465FFF]",
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -513,17 +513,18 @@ export default function ActionPlansPage() {
         </CardContent>
       </Panel>
 
+      {/* Preview, performance and learning describe a picked plan; with none yet they would be three empty boxes. */}
+      {liveActions.length > 0 ? (
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)_minmax(340px,0.82fr)]">
         <Panel>
           <CardContent className="p-5">
             <div className="flex items-start gap-3">
-              <Sparkles size={20} className="mt-0.5 text-[#3B52F5]" />
               <div>
                 <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("detail")}</h2>
               </div>
             </div>
             {!selectedActionId ? (
-              <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
+              <div className="mt-6 flex flex-col items-center justify-center gap-3 py-8 text-center">
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("detailEmptyTitle")}</p>
                   <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("detailEmptyDesc")}</p>
@@ -532,7 +533,7 @@ export default function ActionPlansPage() {
             ) : actionPlanQuery.isPending ? (
               <PanelSkeleton className="mt-6" />
             ) : !hasActionPlanData(latestPlan) ? (
-              <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
+              <div className="mt-6 flex flex-col items-center justify-center gap-3 py-8 text-center">
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("detailNoPlanTitle")}</p>
                   <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("detailNoPlanDesc")}</p>
@@ -540,32 +541,32 @@ export default function ActionPlansPage() {
               </div>
             ) : (<>
             <div className="mt-5 flex flex-wrap gap-2">
-              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedPriority === "high" ? "bg-[#EF4444]/10 text-[#C81E1E]" : selectedPriority === "medium" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/12 text-[#047857]")}>{t(`lanes.${selectedPriority}`)}</span>
-              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedStatus === "active" ? "bg-[#EF4444]/10 text-[#C81E1E]" : selectedStatus === "in-progress" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/12 text-[#047857]")}>{selectedStatusLabel}</span>
-              <span className="rounded-full bg-[#EEF1F7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#53608C]">{selectedDue}</span>
+              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black", selectedPriority === "high" ? "bg-[#EF4444]/10 text-[#C81E1E]" : selectedPriority === "medium" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/12 text-[#047857]")}>{t(`lanes.${selectedPriority}`)}</span>
+              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black", selectedStatus === "active" ? "bg-[#EF4444]/10 text-[#C81E1E]" : selectedStatus === "in-progress" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/12 text-[#047857]")}>{selectedStatusLabel}</span>
+              <span className="rounded-full bg-[#EEF1F7] px-3 py-1 text-[10px] font-black text-[#53608C]">{selectedDue}</span>
             </div>
             <h3 className="mt-4 text-[18px] font-black text-[#101334]">{selectedAction?.title ?? latestPlan?.id ?? t("detail")}</h3>
             <p className="mt-3 text-[12px] font-semibold leading-relaxed text-[#53608C]">{latestPlan?.inputNarrative}</p>
             {/* The issue gets the full width; impact and due date sit side by side (status is already a pill above). */}
-            <div className="mt-5 rounded-[12px] bg-[#EEF1FF] p-3.5">
-              <p className="text-[10px] font-black uppercase tracking-[0.07em] text-[#3B52F5]">{t("categoryLabel")}</p>
-              <p className="mt-1 text-[14px] font-black leading-snug text-[#101334]">{selectedIssue}</p>
+            <div className="mt-5">
+              <p className="text-[12px] font-bold text-[#647099]">{t("categoryLabel")}</p>
+              <p className="mt-1 text-[16px] font-black leading-snug text-[#101334]">{selectedIssue}</p>
             </div>
-            <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-              <div className="rounded-[12px] bg-[#FDECEC] p-3.5">
-                <p className="text-[10px] font-black uppercase tracking-[0.07em] text-[#C81E1E]">{t("impactFieldLabel")}</p>
-                <p className="mt-1 text-[16px] font-black text-[#101334]">{impactWord(String(selectedImpact)) || selectedImpact}</p>
+            <div className="mt-4 grid grid-cols-2 gap-6">
+              <div>
+                <p className="text-[12px] font-bold text-[#647099]">{t("impactFieldLabel")}</p>
+                <p className="mt-1 text-[22px] font-black text-[#C81E1E]">{impactWord(String(selectedImpact)) || selectedImpact}</p>
               </div>
-              <div className="rounded-[12px] bg-[#FFF3DC] p-3.5">
-                <p className="text-[10px] font-black uppercase tracking-[0.07em] text-[#A04606]">{t("dueDateLabel")}</p>
-                <p className="mt-1 text-[16px] font-black text-[#101334]">{selectedDue}</p>
+              <div>
+                <p className="text-[12px] font-bold text-[#647099]">{t("dueDateLabel")}</p>
+                <p className="mt-1 text-[22px] font-black text-[#101334]">{selectedDue}</p>
               </div>
             </div>
             <div className="mt-5">
               <p className="text-[12px] font-black text-[#101334]">{t("aiStepsTitle")}</p>
               <div className="mt-2 grid gap-2">
                 {(detailSteps ?? []).slice(0, 3).map(([item, owner], stepIndex) => (
-                  <div key={`${stepIndex}:${item}`} className="flex items-center justify-between gap-3 rounded-[10px] bg-[#F4F6FC] px-3 py-2.5 text-[13px] font-bold text-[#101334]">
+                  <div key={`${stepIndex}:${item}`} className="flex items-center justify-between gap-3 border-b border-[#E6EAF2] py-2.5 text-[14px] font-bold text-[#101334] last:border-b-0">
                     <span className="flex items-center gap-2">{item}</span>
                     <span className="text-[10px] font-black text-[#5F6B94]">{owner}</span>
                   </div>
@@ -587,13 +588,12 @@ export default function ActionPlansPage() {
         <Panel>
           <CardContent className="p-5">
                <div className="flex items-start gap-3">
-                <BarChart3 size={20} className="mt-0.5 text-[#3B52F5]" />
                 <div>
                   <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("performance")}</h2>
                 </div>
               </div>
             {!selectedActionId ? (
-              <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
+              <div className="mt-6 flex flex-col items-center justify-center gap-3 py-8 text-center">
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("performanceEmptyTitle")}</p>
                   <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("performanceEmptyDesc")}</p>
@@ -602,7 +602,7 @@ export default function ActionPlansPage() {
             ) : feedbackAccuracyQuery.isPending ? (
               <PanelSkeleton className="mt-5" />
             ) : !hasLearningData ? (
-              <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
+              <div className="mt-6 flex flex-col items-center justify-center gap-3 py-8 text-center">
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("learningNoDataTitle")}</p>
                   <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("learningNoDataDesc")}</p>
@@ -611,9 +611,9 @@ export default function ActionPlansPage() {
             ) : (
               <>
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#647099]">{t("aiAccuracy")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{accuracyScorePercent != null ? `${accuracyScorePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#647099]">{t("aiAccuracyHelper")}</p></div>
-                  <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#647099]">{t("acceptanceRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{acceptanceRatePercent != null ? `${acceptanceRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#047857]">{t("acceptanceRateHelper")}</p></div>
-                  <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#647099]">{t("rejectionRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{rejectionRatePercent != null ? `${rejectionRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#C81E1E]">{t("rejectionRateHelper")}</p></div>
+                  <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]"><p className="text-[12px] font-bold text-[#647099]">{t("aiAccuracy")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{accuracyScorePercent != null ? `${accuracyScorePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#647099]">{t("aiAccuracyHelper")}</p></div>
+                  <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]"><p className="text-[12px] font-bold text-[#647099]">{t("acceptanceRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{acceptanceRatePercent != null ? `${acceptanceRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#047857]">{t("acceptanceRateHelper")}</p></div>
+                  <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]"><p className="text-[12px] font-bold text-[#647099]">{t("rejectionRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{rejectionRatePercent != null ? `${rejectionRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#C81E1E]">{t("rejectionRateHelper")}</p></div>
                 </div>
                 {accuracy && Object.keys(accuracy.by_type).length > 0 ? (
                   <div className="mt-5">
@@ -628,7 +628,7 @@ export default function ActionPlansPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-5 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
+                  <div className="mt-5 flex flex-col items-center justify-center gap-2 py-6 text-center">
                     <p className="text-[12px] font-bold text-[#58648C]">{t("noFeedback")}</p>
                     <p className="text-[10px] font-semibold text-[#647099]">{t("noFeedbackDesc")}</p>
                   </div>
@@ -642,13 +642,12 @@ export default function ActionPlansPage() {
         <Panel>
           <CardContent className="p-5">
             <div className="flex items-start gap-3">
-              <Lightbulb size={20} className="mt-0.5 text-[#3B52F5]" />
               <div>
                 <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("learning")}</h2>
               </div>
             </div>
             {!selectedActionId ? (
-              <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
+              <div className="mt-6 flex flex-col items-center justify-center gap-3 py-8 text-center">
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("learningEmptyTitle")}</p>
                   <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("learningEmptyDesc")}</p>
@@ -698,6 +697,7 @@ export default function ActionPlansPage() {
           </CardContent>
         </Panel>
       </section>
+      ) : null}
     </div>
   );
 }

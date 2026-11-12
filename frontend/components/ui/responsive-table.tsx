@@ -205,7 +205,7 @@ export function ResponsiveTable<T>({
                 <th
                   key={col.key}
                   className={cn(
-                    "px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[#5A6478]",
+                    "px-4 py-3 text-xs font-semibold text-[#5A6478]",
                     col.headerClassName
                   )}
                 >
