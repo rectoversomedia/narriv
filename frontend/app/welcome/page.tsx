@@ -14,13 +14,14 @@ import { cn } from "@/lib/utils";
 
 // The public landing page, served at "/" to visitors who are not signed in (see proxy.ts).
 // Every number on it is either a product fact or labelled as sample data from the fictional demo bank.
-// Look: ink and warm paper, every section centred, soft white cards on the paper, and quiet motion
+// Look: the Narriv signature (globals.css): ink night sections and dotted paper, ink-outlined cards on a solid
+// shadow, the brush marker behind each headline's key words, a ribbon of what Narriv does, and quiet motion
 // (components/marketing/motion.tsx) that holds still for visitors who ask for reduced motion.
 
 /** The accent line of a headline on a dark section, with a slow sheen. */
 const ACCENT_DARK = "bg-gradient-to-r from-[#8EA0FF] via-[#D8B4FE] to-[#8EA0FF] bg-clip-text text-transparent mk-shine";
-/** The accent line of a headline on paper. */
-const ACCENT_LIGHT = "bg-gradient-to-r from-[#465FFF] via-[#9B4DDB] to-[#465FFF] bg-clip-text text-transparent mk-shine";
+/** The accent line of a headline on paper: the brush marker behind it. */
+const ACCENT_LIGHT = "mk-brush";
 
 /** Opens the demo picker; the visitor chooses the case (brand, government, CVE) before the app opens. */
 function DemoButton({ className, children }: { className?: string; children: ReactNode }) {
@@ -47,8 +48,18 @@ const USPS: { icon: LucideIcon; title: [string, string]; body: [string, string] 
   { icon: Sparkles, title: ["AI Visibility", "Visibilitas di AI"], body: ["How AI assistants describe and recommend your brand.", "Cara asisten AI menyebut dan merekomendasikan brand Anda."] },
 ];
 
-/** A soft white card on the paper sections. */
-const CARD = "rounded-[26px] bg-white shadow-[0_1px_0_rgba(16,19,52,0.04),0_24px_50px_-24px_rgba(16,19,52,0.25)]";
+/** The ribbon under the hero. */
+const RIBBON: [string, string][] = [
+  ["Monitor Every Hour", "Pantau Setiap Jam"],
+  ["Detect Risk Early", "Deteksi Risiko Lebih Awal"],
+  ["News · Social · YouTube · AI", "Berita · Sosial · YouTube · AI"],
+  ["Alert the Right Owner", "Kabari Penanggung Jawab"],
+  ["Act Before It Spreads", "Bertindak Sebelum Menyebar"],
+  ["Board-Ready Every Monday", "Siap untuk Direksi Setiap Senin"],
+];
+
+/** An ink-outlined card on the paper sections. */
+const CARD = "rounded-[24px] border-[1.5px] border-[#101334] bg-white shadow-[0_5px_0_#101334]";
 
 /** The logos of the AI assistants, overlapping, for the hero's AI chip. */
 function EngineStack({ size = "size-7" }: { size?: string }) {
@@ -305,7 +316,7 @@ function Comparison() {
     [L("Manual exports and reporting", "Ekspor data dan laporan manual"), L("Board-ready briefing every Monday", "Ringkasan siap direksi setiap Senin")],
   ];
   return (
-    <Reveal className="relative mx-auto mt-12 max-w-4xl overflow-hidden rounded-[28px] shadow-[0_30px_80px_-30px_rgba(16,19,52,0.45)] lg:mt-16">
+    <Reveal className="relative mx-auto mt-12 max-w-4xl overflow-hidden rounded-[28px] border-[1.5px] border-[#101334] shadow-[0_6px_0_#101334] lg:mt-16">
       {/* The two halves: paper for ordinary monitoring, ink for Narriv. Rows sit across both so each pair lines up. */}
       <div aria-hidden="true" className="absolute inset-y-0 left-0 w-1/2 bg-white" />
       <div aria-hidden="true" className={cn("absolute inset-y-0 right-0 w-1/2 overflow-hidden", INK)}>
@@ -414,7 +425,7 @@ export default function WelcomePage() {
   ];
 
   return (
-    <div className="min-h-dvh overflow-x-clip bg-[#F6F5F1] text-[#101334]">
+    <div className="nv-paper min-h-dvh overflow-x-clip text-[#101334]">
       {/* Hero */}
       <section className={cn("relative overflow-hidden text-white", INK)}>
         <NarrativeField />
@@ -428,7 +439,7 @@ export default function WelcomePage() {
                 delay={200}
                 segments={[
                   { text: L("Detect Reputational Risk", "Deteksi Risiko Reputasi") },
-                  { text: L("Before It Escalates.", "Sebelum Menjadi Krisis."), className: cn("pb-1", ACCENT_DARK, serif), block: true },
+                  { text: L("Before It Escalates.", "Sebelum Menjadi Krisis."), className: cn("mk-brush mt-2 inline-block", serif), block: true },
                 ]}
               />
             </h1>
@@ -441,11 +452,11 @@ export default function WelcomePage() {
               )}
             </p>
             <div className="mk-pop mt-8 flex w-full max-w-[320px] flex-col items-center gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-start sm:justify-center" style={{ "--mk-delay": "1700ms" } as CSSProperties}>
-              <DemoButton className="bg-white text-[#070A1F] shadow-[0_12px_40px_rgba(165,180,255,0.35)] hover:bg-[#EEF1FF]">
+              <DemoButton className="border-[1.5px] border-[#101334] bg-white text-[#070A1F] shadow-[0_4px_0_#465FFF] hover:bg-[#EEF1FF] active:translate-y-[2px] active:shadow-[0_2px_0_#465FFF]">
                 {L("Explore the Live Demo", "Lihat Demo Langsung")}
                 <ArrowRight size={17} aria-hidden="true" className="transition group-hover:translate-x-0.5" />
               </DemoButton>
-              <Link href="/signup" className="inline-flex h-12 w-full items-center justify-center rounded-full px-7 text-[15px] font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)] backdrop-blur transition hover:bg-white/[0.08] sm:w-auto">
+              <Link href="/signup" className="inline-flex h-12 w-full items-center justify-center rounded-full border-[1.5px] border-white/70 px-7 text-[15px] font-bold text-white shadow-[0_4px_0_rgba(255,255,255,0.28)] backdrop-blur transition hover:bg-white/[0.08] active:translate-y-[2px] sm:w-auto">
                 {L("Start a 14-Day Trial", "Mulai Uji Coba 14 Hari")}
               </Link>
             </div>
@@ -470,15 +481,28 @@ export default function WelcomePage() {
         </div>
       </section>
 
+      {/* The ribbon: what Narriv does, in its own voice */}
+      <div className="relative z-10 -mt-3 mb-2" aria-hidden="true">
+        <div className="nv-ribbon">
+          <div className="nv-ribbon__track">
+            {[0, 1].map((copy) => (
+              <span key={copy} className="flex">
+                {RIBBON.map((item) => <span key={item[0] + copy} className="nv-ribbon__item">{L(item[0], item[1])}</span>)}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Why Narriv is not another monitoring tool */}
       <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-6 lg:pt-28">
         <SectionHead
           stacked
           title={L("More Than Social Listening.", "Lebih dari Sekadar Social Listening.")}
           accent={[
-            { text: L("This Is ", "Inilah ") },
+            { text: L("This Is ", "Inilah "), className: "" },
             { text: NI_TEXT, className: NI_CLASS, mark: NI_MARK },
-            { text: "." },
+            { text: ".", className: "" },
           ]}
           lead={L(
             "Conventional monitoring tools stop at charts and mention counts. Narriv goes further, to what protects your reputation: what it means, who should act, and by when.",
@@ -497,7 +521,7 @@ export default function WelcomePage() {
         />
         <ol className="mt-12 grid gap-5 lg:mt-16 lg:grid-cols-3">
           {steps.map((step, i) => (
-            <Reveal as="li" key={step.title} delay={i * 120} className={cn(CARD, "group flex flex-col items-center p-6 text-center transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_1px_0_rgba(16,19,52,0.04),0_32px_60px_-24px_rgba(70,95,255,0.4)] sm:p-7")}>
+            <Reveal as="li" key={step.title} delay={i * 120} className={cn(CARD, "group flex flex-col items-center p-6 text-center transition duration-300 hover:-translate-y-1 hover:shadow-[0_9px_0_#465FFF] sm:p-7")}>
               <span className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#465FFF] to-[#7B4FE0] text-white shadow-[0_12px_28px_rgba(70,95,255,0.35)] transition duration-300 group-hover:scale-110"><step.icon size={24} aria-hidden="true" /></span>
               <h3 className="mt-5 text-[22px] font-black tracking-[-0.01em]">{step.title}</h3>
               <p className="mt-2 max-w-xs text-balance text-[15px] font-medium leading-relaxed text-[#5B6070]">{step.text}</p>

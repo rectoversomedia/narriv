@@ -186,7 +186,7 @@ function formatCompact(value: number) {
 
 function Tile({ label, value, sub, rgb: _rgb, color }: { label: string; value: string; sub: string; rgb: string; color: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+    <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
       <p className="text-[11px] font-black" style={{ color }}>{label}</p>
       <p className="mt-2 truncate text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
       <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{sub}</p>

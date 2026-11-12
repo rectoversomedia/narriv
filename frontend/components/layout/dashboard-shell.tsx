@@ -65,7 +65,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       <div className={`flex min-h-screen flex-col transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[240px]"}`}>
         <Topbar />
         {/* A soft colour wash behind every page: white cards read as cards, and pages are not flat grey. */}
-        <main className="relative flex-1 bg-[linear-gradient(180deg,#F5F7FF_0%,#F8F6FF_40%,#FAFBFF_100%)] px-4 pb-32 pt-6 sm:px-6 lg:px-6 lg:pb-10 2xl:px-8">
+        <main className="nv-paper relative flex-1 px-4 pb-32 pt-6 sm:px-6 lg:px-6 lg:pb-10 2xl:px-8">
           <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[420px] overflow-hidden">
             <div className="absolute -left-24 -top-32 h-[360px] w-[520px] rounded-full bg-[#C7D2FE] opacity-40 blur-[110px]" />
             <div className="absolute -right-24 -top-24 h-[320px] w-[460px] rounded-full bg-[#FBCFE8] opacity-35 blur-[110px]" />

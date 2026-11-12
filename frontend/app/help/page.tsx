@@ -237,7 +237,7 @@ export default function HelpCenterPage() {
                         const key = `${g.id}:${faq.q[0]}`;
                         const open = expanded === key || Boolean(query);
                         return (
-                          <div key={key} className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_8px_24px_rgba(16,19,52,0.05)]">
+                          <div key={key} className="overflow-hidden rounded-2xl bg-white border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
                             <button
                               type="button"
                               onClick={() => setExpanded(expanded === key ? null : key)}

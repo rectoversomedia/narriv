@@ -21,7 +21,7 @@ export function LegalPage({ title, updated, id, en }: { title: [string, string];
         <p className="relative mt-3 text-center text-[14px] font-semibold text-white/60">{L(updated[0], updated[1])}</p>
       </header>
       <main className="mx-auto -mt-8 max-w-3xl px-4 pb-16 sm:px-6">
-        <div className="rounded-[22px] bg-white p-6 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.08)] sm:p-10">
+        <div className="rounded-[22px] bg-white p-6 border-[1.5px] border-[#101334] shadow-[0_5px_0_#101334] sm:p-10">
           <div className="space-y-4 text-[15px] leading-7 text-[#31406B] [&_b]:text-[#101334] [&_h2]:pt-4 [&_h2]:text-[18px] [&_h2]:font-black [&_h2]:text-[#101334] [&_li]:ml-5 [&_li]:list-disc [&_ul]:space-y-1.5">
             {L("en", "id") === "id" ? id : en}
           </div>

@@ -121,7 +121,7 @@ function AskPulse({ summary, topIssue, onAsk, language }: { summary: DashboardSu
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-4">
         {tiles.map((t) => (
-          <div key={t.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+          <div key={t.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
             <p className="text-[11px] font-black" style={{ color: t.color }}>{t.label}</p>
             <p className="mt-1.5 text-[28px] font-black leading-none tracking-[-0.04em] text-[#101334]">{t.value}</p>
             <p className="mt-1.5 text-[11px] font-bold text-[#5A6478]">{t.sub}</p>

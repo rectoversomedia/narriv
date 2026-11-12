@@ -158,7 +158,7 @@ export default function ActionCenterPage() {
         return (
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {tiles.map((tile) => (
-              <div key={tile.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+              <div key={tile.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
                 <p className="text-[11px] font-black" style={{ color: tile.color }}>{tile.label}</p>
                 <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{tile.value}</p>
                 <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{tile.sub}</p>
@@ -227,13 +227,13 @@ export default function ActionCenterPage() {
                     {steps[2].done ? (
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {(a.followUp?.plans ?? []).map((pl) => (
-                          <Link key={pl.id} href="/action-plans" className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#101334] shadow-[0_1px_2px_rgba(16,19,52,0.08)] hover:bg-[#EEF1FF]">
+                          <Link key={pl.id} href="/action-plans" className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#101334] border-[1.5px] border-[#101334] shadow-[0_2px_0_#101334] hover:bg-[#EEF1FF]">
                             <span className={cn("size-2 shrink-0 rounded-full", pl.status === "done" || pl.status === "completed" ? "bg-[#12A66A]" : "bg-[#F59E0B]")} />
                             <span className="truncate">{pl.title || to("untitled")}</span>
                           </Link>
                         ))}
                         {(a.followUp?.cases ?? []).map((c) => (
-                          <Link key={c.id} href="/workspace/cases" className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#101334] shadow-[0_1px_2px_rgba(16,19,52,0.08)] hover:bg-[#EEF1FF]">
+                          <Link key={c.id} href="/workspace/cases" className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#101334] border-[1.5px] border-[#101334] shadow-[0_2px_0_#101334] hover:bg-[#EEF1FF]">
                             <span className={cn("size-2 shrink-0 rounded-full", c.status === "resolved" || c.status === "closed" ? "bg-[#12A66A]" : "bg-[#465FFF]")} />
                             <span className="truncate">{L("Case", "Kasus")}: {c.title || to("untitled")}</span>
                           </Link>
@@ -243,7 +243,7 @@ export default function ActionCenterPage() {
                     ) : (
                       <div className="mt-2 flex flex-wrap gap-2">
                         <button type="button" onClick={() => setPlanFor(a)} className="h-10 rounded-full bg-[#465FFF] px-5 text-[13px] font-bold text-white hover:bg-[#3B52F5]">{t("createPlan")}</button>
-                        <button type="button" onClick={() => setCaseFor(a)} disabled={!a.signalIds?.length} className="h-10 rounded-full bg-white px-5 text-[13px] font-bold text-[#101334] shadow-[0_1px_2px_rgba(16,19,52,0.08)] hover:bg-[#F8FAFF] disabled:opacity-50">{t("createCase")}</button>
+                        <button type="button" onClick={() => setCaseFor(a)} disabled={!a.signalIds?.length} className="h-10 rounded-full bg-white px-5 text-[13px] font-bold text-[#101334] border-[1.5px] border-[#101334] shadow-[0_2px_0_#101334] hover:bg-[#F8FAFF] disabled:opacity-50">{t("createCase")}</button>
                       </div>
                     )}
                   </div>

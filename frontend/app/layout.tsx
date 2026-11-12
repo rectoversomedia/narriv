@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins } from "next/font/google";
+import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { ReactQueryProvider } from "@/components/providers/react-query-provider";
@@ -9,10 +9,18 @@ import { LaunchOverlay } from "@/components/launch/launch-overlay";
 import { LAUNCH_BOOT_SCRIPT } from "@/lib/launch";
 import { cn } from "@/lib/utils";
 
-const poppins = Poppins({
+// Narriv's type: Plus Jakarta Sans for everything people read, JetBrains Mono for the machine's voice (timestamps,
+// counts, status stamps), so data reads as data.
+const sans = Plus_Jakarta_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["500", "700"],
   display: "swap",
 });
 
@@ -67,7 +75,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={cn("h-full", "antialiased", poppins.variable, "font-sans")}
+      className={cn("h-full", "antialiased", sans.variable, mono.variable, "font-sans")}
       suppressHydrationWarning
     >
       <head>

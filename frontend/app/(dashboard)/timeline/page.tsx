@@ -163,7 +163,7 @@ export default function TimelinePage() {
 
       <div className="grid grid-cols-2 gap-5 lg:grid-cols-5">
         {(["alert", "opportunity", "case", "plan", "report"] as Kind[]).map((k) => (
-          <div key={k} className={cn("flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]", KIND[k].chip.replace(/\bbg-\S+/g, ""))}>
+          <div key={k} className={cn("flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]", KIND[k].chip.replace(/\bbg-\S+/g, ""))}>
             <p className="text-[36px] font-black leading-none tracking-[-0.03em]">{loading ? "…" : count(k)}</p>
             <p className="mt-2 text-[13px] font-bold text-[#101334]">{L(KIND[k].en, KIND[k].id)}</p>
           </div>

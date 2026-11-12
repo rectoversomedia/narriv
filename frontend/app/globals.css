@@ -438,3 +438,76 @@ html.narriv-revealing main { animation: narrivLaunchPage 0.7s cubic-bezier(0.2, 
 @keyframes onbPulse { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
 @keyframes onbStepIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .onb-node, .onb-pulse, .onb-step-in { animation: none; } }
+
+/* ══ Narriv signature ══════════════════════════════════════════════════════════════════════════════════════════
+   The house style, shared with the studio's other products (ink outlines, a hard offset shadow, a marker behind the
+   key word) but in Narriv's own terms: a newsroom that watches signals. Paper with a faint dot matrix, ink-outlined
+   surfaces that sit on a solid shadow, the blue→violet→pink brush as the highlighter, and a mono voice for data.
+   Buttons get the treatment here by their existing fill classes, so every page follows without a rewrite. */
+:root { --ink: #101334; }
+
+/* Paper: the dashboard and auth canvas. */
+.nv-paper {
+  background-color: #f6f7fc;
+  background-image: radial-gradient(rgba(16, 19, 52, 0.09) 1px, transparent 1.2px);
+  background-size: 22px 22px;
+}
+
+/* Ink surface: outlined, sitting on a solid shadow. */
+.nv-ink { border: 1.5px solid var(--ink); box-shadow: 0 4px 0 var(--ink); }
+
+/* Tactile buttons: primary (blue) and dark buttons sit on an ink/blue shadow and press down when clicked. */
+:is(button, a).bg-\[\#465FFF\],
+:is(button, a).bg-\[\#3B52F5\] {
+  border: 1.5px solid var(--ink);
+  box-shadow: 0 3px 0 var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
+}
+:is(button, a).bg-\[\#101334\] {
+  box-shadow: 0 3px 0 #465fff;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
+}
+:is(button, a).bg-\[\#465FFF\]:not(:disabled):active,
+:is(button, a).bg-\[\#3B52F5\]:not(:disabled):active,
+:is(button, a).bg-\[\#101334\]:not(:disabled):active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+/* Secondary (white, light-bordered) buttons take an ink outline and a thinner shadow; square controls such as
+   checkboxes (no horizontal padding class) are left alone. */
+:is(button, a)[class*="px-"].border-\[\#DDE3EF\].bg-white,
+:is(button, a)[class*="px-"].border-\[\#D6DDEC\].bg-white {
+  border-color: var(--ink);
+  box-shadow: 0 2px 0 var(--ink);
+}
+
+/* Data voice: stamps for status and time. */
+.nv-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: #fff;
+  padding: 3px 9px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  box-shadow: 0 2px 0 var(--ink);
+}
+
+/* Ribbon: a tilted band of what Narriv does, scrolling sideways. */
+.nv-ribbon { overflow: hidden; border-block: 1.5px solid var(--ink); background: linear-gradient(90deg, #465fff, #8b5cf6 55%, #ec4899); transform: rotate(-1.5deg); }
+.nv-ribbon__track { display: flex; width: max-content; animation: nvRibbon 32s linear infinite; }
+.nv-ribbon__item { display: inline-flex; align-items: center; gap: 22px; padding: 12px 22px 12px 0; font-family: var(--font-mono), monospace; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; white-space: nowrap; }
+.nv-ribbon__item::after { content: ""; width: 8px; height: 8px; border-radius: 9999px; background: #fff; box-shadow: 0 0 10px #fff; }
+@keyframes nvRibbon { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .nv-ribbon__track { animation: none; } }
+
+/* Auth card on short laptop screens (1366×768): tighter, so sign-up fits without scrolling. */
+@media (min-width: 1024px) and (max-height: 820px) {
+  .nv-auth-section { padding-block: 6px; }
+  .nv-auth-card { margin-top: 22px; padding-block: 14px; }
+  .nv-auth-card .mt-5 { margin-top: 12px; }
+  .nv-auth-card .mb-5 { margin-bottom: 12px; }
+}

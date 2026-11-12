@@ -307,7 +307,7 @@ export default function DashboardPage() {
           <h1 className="text-[28px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{L("Overview", "Ringkasan")}</h1>
           {lastDataAt && !showHero ? <p className="mt-1 text-[13px] font-medium text-[#5A6478]">{L("Last data", "Data terakhir")}: <b className="font-black text-[#101334]">{timeAgo(lastDataAt)}</b></p> : null}
         </div>
-        <div role="group" aria-label={L("Period", "Periode")} className="flex rounded-full bg-white p-1 shadow-[0_1px_2px_rgba(16,19,52,0.08)]">
+        <div role="group" aria-label={L("Period", "Periode")} className="flex rounded-full bg-white p-1 border-[1.5px] border-[#101334] shadow-[0_2px_0_#101334]">
           {(["24h", "7d", "30d"] as DateRangeKey[]).map((key) => (
             <button key={key} type="button" onClick={() => setPeriod(key)} aria-pressed={period === key} className={cn("rounded-full px-4 py-2 text-[12.5px] font-bold transition", period === key ? "bg-[#101334] text-white" : "text-[#5A6478] hover:text-[#101334]")}>
               {periodButton[key]}

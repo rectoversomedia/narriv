@@ -181,7 +181,7 @@ export default function VisibilityPage() {
               const lk = scoreLook(s);
               const rate = Math.round((e?.brandPresenceRate ?? 0) * 100);
               return (
-                <div key={key} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+                <div key={key} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
                   <div className="flex items-center gap-2">
                     <span className="flex size-8 items-center justify-center rounded-[9px] bg-white shadow-sm"><Logo className="size-5" /></span>
                     <span className="text-[14px] font-black text-[#101334]">{name}</span>

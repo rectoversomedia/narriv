@@ -134,7 +134,7 @@ function Panel({ children, className, ...props }: ComponentPropsWithoutRef<"sect
 function MetricCard({ label, value, helper, tone }: { label: string; value: string; helper: string; icon?: LucideIcon; tone: Tone }) {
   const style = toneStyles[tone];
   return (
-    <div className="min-h-[120px] flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+    <div className="min-h-[120px] flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
       <p className="text-[11px] font-black" style={{ color: style.color }}>{label}</p>
       <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
       <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{helper}</p>
@@ -187,17 +187,17 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
 
           {top ? (
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+              <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
                 <p className="text-[34px] font-black leading-none text-[#3B52F5]">{Math.round((top.signalCount / totalInIssues) * 100)}%</p>
                 <p className="mt-2 text-[13px] font-bold text-[#101334]">{L("Main Issue", "Isu Utama")}</p>
                 <p className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{top.title}</p>
               </div>
-              <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+              <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
                 <p className="text-[34px] font-black leading-none text-[#C81E1E]">{risk ? risk.signalCount : 0}</p>
                 <p className="mt-2 text-[13px] font-bold text-[#101334]">{L("Biggest Risk", "Risiko Terbesar")}</p>
                 <p className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{risk ? risk.title : L("No negative issue", "Tidak ada isu negatif")}</p>
               </div>
-              <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+              <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
                 <p className="text-[34px] font-black leading-none text-[#A04606]">{fastest?.velocity || "—"}</p>
                 <p className="mt-2 text-[13px] font-bold text-[#101334]">{L("Fastest Rising", "Naik Paling Cepat")}</p>
                 <p className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{fastest?.title}</p>

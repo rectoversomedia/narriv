@@ -7,13 +7,16 @@ const config: Config = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    // Shared class strings live here too (lib/surface.ts BOX, navigation), so their utilities must be generated.
+    "./lib/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
-      // `font-sans` must resolve to Poppins (next/font variable), otherwise it
+      // `font-sans` must resolve to Plus Jakarta Sans (next/font variable), otherwise it
       // resets a subtree to the system stack.
       fontFamily: {
         sans: ["var(--font-sans)", "Arial", "Helvetica", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       colors: {
         background: "var(--background)",

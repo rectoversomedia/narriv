@@ -191,7 +191,7 @@ export default function PricingPage() {
               key={plan.id}
               className={cn(
                 "relative grid grid-rows-subgrid gap-y-5 rounded-[22px] p-6 [grid-row:span_5]",
-                plan.popular ? "bg-[#101334] text-white shadow-[0_24px_60px_rgba(16,19,52,0.35)]" : "bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.08)]",
+                plan.popular ? "bg-[#101334] text-white shadow-[0_24px_60px_rgba(16,19,52,0.35)]" : "bg-white border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]",
               )}
             >
               {plan.popular ? (
@@ -265,7 +265,7 @@ export default function PricingPage() {
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("What", "Isi")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("Each Plan Includes.", "Setiap Paket.")}</span></h2>
         </div>
-        <div className="mt-10 overflow-hidden rounded-[22px] bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)]">
+        <div className="mt-10 overflow-hidden rounded-[22px] bg-white border-[1.5px] border-[#101334] shadow-[0_5px_0_#101334]">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left">
               <thead>

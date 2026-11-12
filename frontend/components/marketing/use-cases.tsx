@@ -207,7 +207,7 @@ export function UseCases() {
               }}
               className={cn(
                 "relative inline-flex h-11 shrink-0 snap-start items-center gap-2 overflow-hidden whitespace-nowrap rounded-full px-4 text-[14px] font-bold transition",
-                on ? "bg-[#101334] text-white shadow-[0_10px_24px_rgba(16,19,52,0.25)]" : "bg-white text-[#31406B] shadow-[0_1px_2px_rgba(16,19,52,0.08)] hover:bg-[#EEF1FF]",
+                on ? "bg-[#101334] text-white shadow-[0_10px_24px_rgba(16,19,52,0.25)]" : "bg-white text-[#31406B] border-[1.5px] border-[#101334] shadow-[0_2px_0_#101334] hover:bg-[#EEF1FF]",
               )}
             >
               <item.icon size={16} aria-hidden="true" className={on ? "text-[#A5B4FF]" : "text-[#465FFF]"} />
@@ -221,7 +221,7 @@ export function UseCases() {
         })}
       </div>
 
-      <div id="usecase-panel" role="tabpanel" className="mt-6 grid gap-4 rounded-[28px] bg-white p-4 shadow-[0_1px_0_rgba(16,19,52,0.04),0_30px_70px_-30px_rgba(16,19,52,0.35)] sm:p-6 lg:grid-cols-[1.15fr_1fr] lg:gap-6">
+      <div id="usecase-panel" role="tabpanel" className="mt-6 grid gap-4 rounded-[28px] bg-white p-4 border-[1.5px] border-[#101334] shadow-[0_5px_0_#101334] sm:p-6 lg:grid-cols-[1.15fr_1fr] lg:gap-6">
         <div key={c.key} className="flex flex-col gap-3">
           <div className="flex items-center justify-center gap-3 pb-1 pt-1 lg:justify-start">
             <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#465FFF] to-[#7B4FE0] text-white shadow-[0_10px_24px_rgba(70,95,255,0.35)]"><c.icon size={20} aria-hidden="true" /></span>

@@ -263,7 +263,7 @@ export default function ActivityPage() {
 
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {tiles.map((tile) => (
-          <div key={tile.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+          <div key={tile.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
             <p className="text-[11px] font-black" style={{ color: tile.color }}>{tile.label}</p>
             {/* Numbers stay big; a name or event wraps at a smaller size instead of being cut off. */}
             <p className={cn("mt-2 font-black tracking-[-0.03em] text-[#101334]", /^[\d.,\s—]+$/.test(tile.value) ? "truncate text-[26px] leading-none" : "line-clamp-2 text-[17px] leading-tight sm:text-[20px]")} title={tile.value}>{tile.value}</p>

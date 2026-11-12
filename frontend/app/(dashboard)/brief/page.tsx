@@ -48,7 +48,7 @@ function DateRangeSelector({ value, onChange }: { value: DateRange; onChange: (v
         aria-label={L("Date range", "Rentang waktu")}
         value={value}
         onChange={(e) => onChange(e.target.value as DateRange)}
-        className="h-10 cursor-pointer appearance-none rounded-full bg-white pl-4 pr-8 shadow-[0_1px_2px_rgba(16,19,52,0.08)] text-[13px] font-bold text-[#101334] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/30"
+        className="h-10 cursor-pointer appearance-none rounded-full bg-white pl-4 pr-8 border-[1.5px] border-[#101334] shadow-[0_2px_0_#101334] text-[13px] font-bold text-[#101334] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/30"
       >
         {options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
       </select>
@@ -83,7 +83,7 @@ function reputationLook(score: number) {
 
 function Tile({ label, value, sub, rgb: _rgb, color, bar, barColor }: { label: string; value: string; sub: string; rgb: string; color: string; bar?: number; barColor?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+    <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
       <p className="text-[40px] font-black leading-none tracking-[-0.04em]" style={{ color: typeof bar === "number" ? color : "#101334" }}>{value}</p>
       <p className="mt-2 text-[13px] font-bold text-[#101334]">{label}</p>
       {typeof bar === "number" ? <div className="mt-3 h-2 w-full rounded-full bg-[#E8ECF6]"><div className="h-full rounded-full" style={{ width: `${Math.max(2, Math.min(100, bar))}%`, background: barColor }} /></div> : null}

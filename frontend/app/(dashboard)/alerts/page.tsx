@@ -145,7 +145,7 @@ function MetricCard({ metric }: { metric: Metric }) {
   const helperStyle = toneStyles[metric.helperTone];
 
   return (
-    <div className="min-h-[120px] flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+    <div className="min-h-[120px] flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
       <p className="text-[11px] font-black" style={{ color: style.color }}>{metric.label}</p>
       <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-navy">{metric.value}</p>
       <p className={cn("mt-2 text-[11px] font-bold leading-tight", helperStyle.text)}>{metric.helper}</p>
@@ -415,13 +415,13 @@ function CriticalIncident({
               id="incident-owner"
               value={alert.assigneeId ?? ""}
               onChange={(e) => e.target.value && onAssign(alert.id, e.target.value)}
-              className={cn("h-10 w-full max-w-full rounded-full px-4 text-[13px] font-bold outline-none sm:w-auto", unassigned ? "bg-[#C81E1E] text-white" : "bg-white text-[#101334] shadow-[0_1px_2px_rgba(16,19,52,0.08)]")}
+              className={cn("h-10 w-full max-w-full rounded-full px-4 text-[13px] font-bold outline-none sm:w-auto", unassigned ? "bg-[#C81E1E] text-white" : "bg-white text-[#101334] border-[1.5px] border-[#101334] shadow-[0_2px_0_#101334]")}
             >
               <option value="">{pickL("Assign an Owner…", "Tunjuk Penanggung Jawab…")}</option>
               {members.map((m) => <option key={m.userId} value={m.userId}>{memberName(m)}</option>)}
             </select>
             {alert.status === "New" ? (
-              <button type="button" onClick={() => onStatusChange(alert.id, "acknowledged")} className="h-10 rounded-full bg-white px-5 text-[13px] font-bold text-[#101334] shadow-[0_1px_2px_rgba(16,19,52,0.08)] transition hover:bg-[#F8FAFF]">{pickL("Mark as Being Handled", "Tandai Sedang Ditangani")}</button>
+              <button type="button" onClick={() => onStatusChange(alert.id, "acknowledged")} className="h-10 rounded-full bg-white px-5 text-[13px] font-bold text-[#101334] border-[1.5px] border-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#F8FAFF]">{pickL("Mark as Being Handled", "Tandai Sedang Ditangani")}</button>
             ) : null}
             <button type="button" onClick={() => onPlan(alert)} className="h-10 rounded-full bg-[#465FFF] px-5 text-[13px] font-bold text-white transition hover:bg-[#3B52F5]">{pickL("Create Action Plan", "Buat Rencana Aksi")}</button>
           </div>

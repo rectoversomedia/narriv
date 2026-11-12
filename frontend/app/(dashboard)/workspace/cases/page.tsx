@@ -124,7 +124,7 @@ function MetricCard({
   const locale = useUiStore((state) => state.language);
 
   return (
-    <div className="overflow-hidden flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+    <div className="overflow-hidden flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
       <div className="flex items-center gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-black text-[#5A6478]">

@@ -16,7 +16,7 @@ export const INK = "bg-[#070A1F]";
 /** A soft light from the top of dark sections; no pattern. */
 export const GRID = "bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(120,135,255,0.16),transparent_70%)]";
 /** Warm paper for light sections, and the hairline colour on it. */
-export const PAPER = "bg-[#F6F5F1]";
+export const PAPER = "nv-paper";
 export const RULE = "border-[#DDDAD0]";
 
 export function LanguageSwitch({ dark = false }: { dark?: boolean }) {

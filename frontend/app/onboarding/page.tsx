@@ -395,7 +395,7 @@ export default function OnboardingPage() {
                 onRetry={handleSubmit}
               />
             ) : (
-              <div className="overflow-hidden rounded-[24px] bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_24px_48px_-24px_rgba(16,19,52,0.28)]">
+              <div className="overflow-hidden rounded-[24px] bg-white border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
                 <div className="p-5 sm:p-8 lg:p-10">
                   {step === 1 && (
                     <ProfileStep data={data.profile} onChange={updateProfile} />

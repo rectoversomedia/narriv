@@ -133,7 +133,7 @@ function MetricCard({ label, value, helper, trend, tone, negative = false }: { l
   // "No earlier period to compare" carries no information; show it nowhere rather than five times.
   const showHelper = helper && !/sebelumnya untuk dibandingkan|previous period to compare/i.test(helper);
   return (
-    <div className="min-h-[120px] flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+    <div className="min-h-[120px] flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
       <p className="text-[11px] font-black" style={{ color: style.color }}>{label}</p>
       <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
       {trend != null && trend !== 0 ? (
@@ -611,9 +611,9 @@ export default function ActionPlansPage() {
             ) : (
               <>
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]"><p className="text-[12px] font-bold text-[#647099]">{t("aiAccuracy")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{accuracyScorePercent != null ? `${accuracyScorePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#647099]">{t("aiAccuracyHelper")}</p></div>
-                  <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]"><p className="text-[12px] font-bold text-[#647099]">{t("acceptanceRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{acceptanceRatePercent != null ? `${acceptanceRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#047857]">{t("acceptanceRateHelper")}</p></div>
-                  <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]"><p className="text-[12px] font-bold text-[#647099]">{t("rejectionRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{rejectionRatePercent != null ? `${rejectionRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#C81E1E]">{t("rejectionRateHelper")}</p></div>
+                  <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]"><p className="text-[12px] font-bold text-[#647099]">{t("aiAccuracy")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{accuracyScorePercent != null ? `${accuracyScorePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#647099]">{t("aiAccuracyHelper")}</p></div>
+                  <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]"><p className="text-[12px] font-bold text-[#647099]">{t("acceptanceRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{acceptanceRatePercent != null ? `${acceptanceRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#047857]">{t("acceptanceRateHelper")}</p></div>
+                  <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]"><p className="text-[12px] font-bold text-[#647099]">{t("rejectionRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{rejectionRatePercent != null ? `${rejectionRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#C81E1E]">{t("rejectionRateHelper")}</p></div>
                 </div>
                 {accuracy && Object.keys(accuracy.by_type).length > 0 ? (
                   <div className="mt-5">

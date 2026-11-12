@@ -369,7 +369,7 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
       </div>
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 lg:self-start">
         {tiles.map((tile) => (
-          <div key={tile.key} className="flex min-w-0 flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center shadow-[0_1px_2px_rgba(16,19,52,0.06),0_10px_24px_-16px_rgba(16,19,52,0.25)]">
+          <div key={tile.key} className="flex min-w-0 flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
             <dd className="text-[38px] font-black leading-none tracking-[-0.04em] tabular-nums" style={{ color: tile.key === "total" ? "#101334" : tile.tone }}>{tile.value}</dd>
             <dt className="mt-2 text-[13px] font-bold text-[#5A6478]">{tile.label}</dt>
           </div>

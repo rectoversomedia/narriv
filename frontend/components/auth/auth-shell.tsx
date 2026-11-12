@@ -39,10 +39,10 @@ export function AuthShell({ visual, children, topAction, email }: AuthShellProps
   return (
     <main className="min-h-dvh bg-white font-sans text-[#111536] lg:grid lg:grid-cols-[minmax(520px,1fr)_minmax(560px,1fr)]">
       <BrandPanel visual={visual} email={email} />
-      <section className="relative flex min-h-dvh items-center justify-center px-6 py-8 sm:px-10 lg:px-14">
+      <section className="nv-paper nv-auth-section relative flex min-h-dvh items-center justify-center px-4 py-8 sm:px-10 lg:px-14">
         {topAction ? <div className="absolute right-6 top-5 sm:right-10 lg:right-14 lg:top-6">{topAction}</div> : null}
-        {/* Room for the language picker above the form at every width. */}
-        <div className="w-full max-w-[460px] pt-12 lg:pt-10">{children}</div>
+        {/* Room for the language picker above the form at every width; the form sits on an ink card (Narriv signature). */}
+        <div className="nv-auth-card mt-12 w-full max-w-[500px] rounded-[24px] border-[1.5px] border-[#101334] bg-white px-5 py-7 shadow-[0_6px_0_#101334] sm:px-9 sm:py-9 lg:mt-10">{children}</div>
       </section>
     </main>
   );
@@ -83,8 +83,8 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
                 <p className="text-[clamp(28px,4.6dvh,42px)] font-bold leading-[1.1] tracking-[-0.04em] text-white">
                   {t("brand.line2")}
                 </p>
-                <p className="bg-gradient-to-r from-[#8D4DFF] via-[#6B63FF] to-[#22B8FF] bg-clip-text text-[clamp(28px,4.6dvh,42px)] font-bold leading-[1.1] tracking-[-0.04em] text-transparent">
-                  {t("brand.line3")}
+                <p className="mt-1 text-[clamp(28px,4.6dvh,42px)] font-bold leading-[1.1] tracking-[-0.04em]">
+                  <span className="mk-brush">{t("brand.line3")}</span>
                 </p>
                 <p className="mx-auto mt-3 max-w-[460px] text-[clamp(14px,2dvh,18px)] leading-relaxed text-white/60">
                   {visual === "features"
