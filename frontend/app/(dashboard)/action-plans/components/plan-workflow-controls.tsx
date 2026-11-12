@@ -54,26 +54,25 @@ export function PlanWorkflowControls({ planId, status, assignedTo }: { planId: s
   };
 
   return (
-    <div className="mt-5 rounded-[10px] border border-[#E8ECF5] p-3">
-      <p className="text-[12px] font-black text-[#101334]">{L("Track this action", "Pantau tindakan ini")}</p>
-      <p className="mt-0.5 text-[11px] font-semibold text-[#647099]">{L("Draft only; nothing is sent for you.", "Hanya draf; tidak ada yang dikirim otomatis.")}</p>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <label className="text-[10px] font-black text-[#647099]">
+    <div className="mt-3">
+      <p className="text-[12px] font-semibold text-[#647099]">{L("Draft only; nothing is sent for you.", "Hanya draf; tidak ada yang dikirim otomatis.")}</p>
+      <div className="mt-3 grid gap-3">
+        <label className="text-[12px] font-bold text-[#31406B]">
           {L("Status", "Status")}
-          <select value={nextStatus} onChange={(e) => setNextStatus(e.target.value as WorkflowStatus)} className="mt-1 h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-2 text-[12px] font-bold text-[#101334] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30">
+          <select value={nextStatus} onChange={(e) => setNextStatus(e.target.value as WorkflowStatus)} className="mt-1.5 h-11 w-full rounded-[10px] border-[1.5px] border-[#DDE3EF] bg-white px-3 text-[13px] font-bold text-[#101334] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30">
             {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{L(o.label[0], o.label[1])}</option>)}
           </select>
         </label>
-        <label className="text-[10px] font-black text-[#647099]">
+        <label className="text-[12px] font-bold text-[#31406B]">
           {L("Owner", "Penanggung jawab")}
-          <select value={owner} onChange={(e) => setOwner(e.target.value)} disabled={members.isLoading} className="mt-1 h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-2 text-[12px] font-bold text-[#101334] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30">
+          <select value={owner} onChange={(e) => setOwner(e.target.value)} disabled={members.isLoading} className="mt-1.5 h-11 w-full rounded-[10px] border-[1.5px] border-[#DDE3EF] bg-white px-3 text-[13px] font-bold text-[#101334] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30">
             <option value="">{L("Unassigned", "Belum ditugaskan")}</option>
             {(members.data ?? []).map((m) => <option key={m.userId} value={m.userId}>{m.user?.name || m.user?.email || m.userId}</option>)}
           </select>
         </label>
       </div>
       {members.isError ? <p className="mt-2 text-[10px] font-semibold text-rose-600">{L("Workspace members could not be loaded.", "Daftar anggota workspace gagal dimuat.")}</p> : null}
-      <button type="button" onClick={save} disabled={!dirty || saving} className="mt-3 h-9 w-full rounded-[8px] bg-[#465FFF] text-[12px] font-black text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
+      <button type="button" onClick={save} disabled={!dirty || saving} className="mt-3 h-11 w-full rounded-[12px] bg-[#465FFF] text-[14px] font-black text-white transition hover:bg-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50">
         {saving ? L("Saving…", "Menyimpan…") : L("Save", "Simpan")}
       </button>
     </div>

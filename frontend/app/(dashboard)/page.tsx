@@ -368,19 +368,24 @@ export default function DashboardPage() {
                         : net >= 5
                           ? { text: L("Leaning Positive", "Cenderung Positif"), cls: "text-[#047857]" }
                           : { text: L("Balanced", "Seimbang"), cls: "text-[#31406B]" };
+                    // Said in words instead of a "net points" score: how many were negative, how many positive, and
+                    // which side is ahead by how much.
+                    const gap = Math.abs(dist.negative - dist.positive);
+                    const lead = dist.negative > dist.positive
+                      ? <>{L("Negative leads by ", "Negatif unggul ")}<b className="text-[#B42318]">{fmt(gap)}</b>.</>
+                      : dist.positive > dist.negative
+                        ? <>{L("Positive leads by ", "Positif unggul ")}<b className="text-[#047857]">{fmt(gap)}</b>.</>
+                        : L("Positive and negative are even.", "Positif dan negatif seimbang.");
                     return (
-                      <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+                      <div className="mb-5">
                         <p className={cn("text-[34px] font-black leading-none tracking-[-0.03em]", verdict.cls)}>{verdict.text}</p>
-                        <div className="flex items-end gap-6 text-right">
-                          <div>
-                            <p className={cn("text-[26px] font-black leading-none tabular-nums", verdict.cls)}>{net > 0 ? `+${net}` : net}</p>
-                            <p className="mt-1 text-[11px] font-bold text-[#5A6478]">{L("Net Points", "Poin Bersih")}</p>
-                          </div>
-                          <div>
-                            <p className="text-[26px] font-black leading-none tabular-nums text-[#101334]">{fmt(total)}</p>
-                            <p className="mt-1 text-[11px] font-bold text-[#5A6478]">{L("Mentions", "Percakapan")}</p>
-                          </div>
-                        </div>
+                        <p className="mt-2.5 text-[15px] font-medium leading-relaxed text-[#31406B]">
+                          <b className="text-[#B42318]">{fmt(dist.negative)} {L("negative", "negatif")}</b>
+                          {L(" vs ", " vs ")}
+                          <b className="text-[#047857]">{fmt(dist.positive)} {L("positive", "positif")}</b>
+                          {L(` out of ${fmt(total)} mentions. `, ` dari ${fmt(total)} percakapan. `)}
+                          {analysed > 0 ? lead : null}
+                        </p>
                       </div>
                     );
                   })()}

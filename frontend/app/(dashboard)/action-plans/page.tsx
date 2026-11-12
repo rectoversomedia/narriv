@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { ChevronRight, MoreVertical, Search, Timer, TrendingDown, TrendingUp } from "lucide-react";
+import { CheckCircle2, ChevronRight, MoreVertical, Search, Timer, TrendingDown, TrendingUp, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
@@ -378,7 +377,6 @@ export default function ActionPlansPage() {
     queryFn: () => selectedActionId ? getActionPlanLearning(selectedActionId) : null,
     enabled: !!selectedActionId,
   });
-  const hasLearningData = Boolean(actionPlanLearningQuery.data?.insights?.length || actionPlanLearningQuery.data?.templates?.length);
   const detailSteps = hasActionPlanData(latestPlan) && latestPlan?.plan?.length ? latestPlan.plan : null;
 
   const highActions = actionItems.filter((action) => action.status !== "done" && action.priority === "high");
@@ -466,7 +464,7 @@ export default function ActionPlansPage() {
             <>
               <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {paginatedItems.map((action) => (
-                  <ActionCard key={action.id} action={action} selected={selectedAction?.id === action.id} onSelect={(item) => setSelectedActionId(item.id)} t={t} />
+                  <ActionCard key={action.id} action={action} selected={selectedAction?.id === action.id} onSelect={(item) => { setSelectedActionId(item.id); requestAnimationFrame(() => document.getElementById("plan-detail")?.scrollIntoView({ behavior: "smooth", block: "start" })); }} t={t} />
                 ))}
               </div>
               {totalFilteredItems > pageSize && (
@@ -507,189 +505,147 @@ export default function ActionPlansPage() {
         </CardContent>
       </Panel>
 
-      {/* Preview, performance and learning describe a picked plan; with none yet they would be three empty boxes. */}
+      {/* The picked plan, laid out for a decision: what it is, the steps, and approve/reject; the side column tracks
+          it (status, owner) and shows how well the AI's plans have been received. With no plans there is nothing to show. */}
       {liveActions.length > 0 ? (
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)_minmax(340px,0.82fr)]">
-        <Panel>
-          <CardContent className="p-5">
-            <div className="flex items-start gap-3">
-              <div>
-                <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("detail")}</h2>
-              </div>
-            </div>
+      <section id="plan-detail" className="grid scroll-mt-6 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <Panel className="overflow-hidden !p-0">
+          <div className="h-2" style={{ backgroundColor: selectedPriority === "high" ? "#B42318" : selectedPriority === "medium" ? "#F59E0B" : "#12A66A" }} />
+          <CardContent className="p-5 sm:p-7">
             {!selectedActionId ? (
-              <div className="mt-6 flex flex-col items-center justify-center gap-3 py-8 text-center">
-                <div>
-                  <p className="text-[12px] font-bold text-[#58648C]">{t("detailEmptyTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("detailEmptyDesc")}</p>
-                </div>
+              <div className="flex flex-col items-center justify-center gap-1 py-10 text-center">
+                <p className="text-[14px] font-bold text-[#58648C]">{t("detailEmptyTitle")}</p>
+                <p className="text-[12px] font-semibold text-[#647099]">{t("detailEmptyDesc")}</p>
               </div>
             ) : actionPlanQuery.isPending ? (
-              <PanelSkeleton className="mt-6" />
+              <PanelSkeleton />
             ) : !hasActionPlanData(latestPlan) ? (
-              <div className="mt-6 flex flex-col items-center justify-center gap-3 py-8 text-center">
-                <div>
-                  <p className="text-[12px] font-bold text-[#58648C]">{t("detailNoPlanTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("detailNoPlanDesc")}</p>
-                </div>
+              <div className="flex flex-col items-center justify-center gap-1 py-10 text-center">
+                <p className="text-[14px] font-bold text-[#58648C]">{t("detailNoPlanTitle")}</p>
+                <p className="text-[12px] font-semibold text-[#647099]">{t("detailNoPlanDesc")}</p>
               </div>
             ) : (<>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black", selectedPriority === "high" ? "bg-[#EF4444]/10 text-[#C81E1E]" : selectedPriority === "medium" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/12 text-[#047857]")}>{t(`lanes.${selectedPriority}`)}</span>
-              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black", selectedStatus === "active" ? "bg-[#EF4444]/10 text-[#C81E1E]" : selectedStatus === "in-progress" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/12 text-[#047857]")}>{selectedStatusLabel}</span>
-              <span className="rounded-full bg-[#EEF1F7] px-3 py-1 text-[10px] font-black text-[#53608C]">{selectedDue}</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={cn("rounded-[8px] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em]", selectedPriority === "high" ? "bg-[#B42318] text-white" : selectedPriority === "medium" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#E8F7EF] text-[#047857]")}>{t(`lanes.${selectedPriority}`)}</span>
+              <span className="nv-stamp">{selectedStatusLabel}</span>
+              <span className="font-mono text-[11.5px] font-medium text-[#5F6B94]">{t("dueDateLabel")} {selectedDue}</span>
             </div>
-            <h3 className="mt-4 text-[18px] font-black text-[#101334]">{selectedAction?.title ?? latestPlan?.id ?? t("detail")}</h3>
-            <p className="mt-3 text-[12px] font-semibold leading-relaxed text-[#53608C]">{latestPlan?.inputNarrative}</p>
-            {/* The issue gets the full width; impact and due date sit side by side (status is already a pill above). */}
-            <div className="mt-5">
-              <p className="text-[12px] font-bold text-[#647099]">{t("categoryLabel")}</p>
-              <p className="mt-1 text-[16px] font-black leading-snug text-[#101334]">{selectedIssue}</p>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-6">
-              <div>
-                <p className="text-[12px] font-bold text-[#647099]">{t("impactFieldLabel")}</p>
-                <p className="mt-1 text-[22px] font-black text-[#C81E1E]">{impactWord(String(selectedImpact)) || selectedImpact}</p>
+            <h2 className="mt-4 max-w-3xl text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] sm:text-[30px]">{selectedAction?.title ?? latestPlan?.id ?? t("detail")}</h2>
+            {latestPlan?.inputNarrative ? <p className="mt-2 max-w-3xl text-[15.5px] font-medium leading-relaxed text-[#31406B]">{latestPlan.inputNarrative}</p> : null}
+
+            <dl className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <div className="min-w-0 rounded-[14px] bg-[#F6F7FC] px-4 py-3">
+                <dt className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("categoryLabel")}</dt>
+                <dd className="mt-1 text-[16px] font-black leading-snug text-[#101334]">{selectedIssue}</dd>
               </div>
-              <div>
-                <p className="text-[12px] font-bold text-[#647099]">{t("dueDateLabel")}</p>
-                <p className="mt-1 text-[22px] font-black text-[#101334]">{selectedDue}</p>
+              <div className="min-w-0 rounded-[14px] bg-[#FFF5F4] px-4 py-3 shadow-[inset_0_0_0_1.5px_#F5B5B0]">
+                <dt className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("impactFieldLabel")}</dt>
+                <dd className="mt-1 text-[20px] font-black leading-tight text-[#B42318]">{impactWord(String(selectedImpact)) || selectedImpact}</dd>
               </div>
-            </div>
-            <div className="mt-5">
-              <p className="text-[12px] font-black text-[#101334]">{t("aiStepsTitle")}</p>
-              <div className="mt-2 grid gap-2">
-                {(detailSteps ?? []).slice(0, 3).map(([item, owner], stepIndex) => (
-                  <div key={`${stepIndex}:${item}`} className="flex items-center justify-between gap-3 border-b border-[#E6EAF2] py-2.5 text-[14px] font-bold text-[#101334] last:border-b-0">
-                    <span className="flex items-center gap-2">{item}</span>
-                    <span className="text-[10px] font-black text-[#5F6B94]">{owner}</span>
-                  </div>
+            </dl>
+
+            {/* The steps, numbered, each with when it should happen. */}
+            <div className="mt-6">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("aiStepsTitle")}</p>
+              <ol className="mt-2 divide-y divide-[#EEF0F6]">
+                {(detailSteps ?? []).map(([item, when], stepIndex) => (
+                  <li key={`${stepIndex}:${item}`} className="flex items-start gap-3 py-3">
+                    <span className="grid size-7 shrink-0 place-items-center rounded-full border-[1.5px] border-[#101334] font-mono text-[11px] font-bold text-[#101334]">{String(stepIndex + 1).padStart(2, "0")}</span>
+                    <span className="min-w-0 flex-1 pt-0.5 text-[15px] font-bold leading-snug text-[#101334]">{item}</span>
+                    {when ? <span className="shrink-0 rounded-[6px] bg-[#EEF1FF] px-2 py-1 font-mono text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#3B52F5]">{when}</span> : null}
+                  </li>
                 ))}
-              </div>
+              </ol>
             </div>
-            {latestPlan?.id ? (
-              <PlanWorkflowControls key={`${latestPlan.id}-${latestPlan.workflowStatus ?? ""}-${latestPlan.assignedTo ?? ""}`} planId={latestPlan.id} status={latestPlan.workflowStatus} assignedTo={latestPlan.assignedTo} />
-            ) : null}
-            <button type="button" onClick={() => setSelectedActionId("")} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#3B52F5] transition hover:bg-[#465FFF]/5">{t("backToQueue")} <ChevronRight size={14} /></button>
-            <div className="mt-3 flex gap-2">
-              <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#10B981]/10 text-[11px] font-black text-[#047857] transition hover:bg-[#10B981]/20 disabled:opacity-50">{t("approve")}</button>
-              <button type="button" onClick={() => { if (latestPlan?.id) setIsRejectModalOpen(true); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#EF4444]/10 text-[11px] font-black text-[#C81E1E] transition hover:bg-[#EF4444]/20 disabled:opacity-50">{t("reject")}</button>
+
+            {/* The decision on the AI's draft. */}
+            <div className="mt-5 rounded-[18px] bg-[#101334] p-5 text-white">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{pickL("Your Decision", "Keputusan Anda")}</p>
+              <p className="mt-1.5 text-[15px] font-semibold text-white/80">{pickL("AI drafted this plan. Approve it to go ahead, or reject it with a reason so the next draft is better.", "Rencana ini disusun AI. Setujui untuk dijalankan, atau tolak dengan alasan supaya draf berikutnya lebih baik.")}</p>
+              <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
+                <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-[#465FFF] px-6 text-[14px] font-black text-white transition hover:bg-[#3B52F5] disabled:opacity-50">
+                  <CheckCircle2 size={16} /> {pickL("Approve Plan", "Setujui Rencana")}
+                </button>
+                <button type="button" onClick={() => { if (latestPlan?.id) setIsRejectModalOpen(true); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-white/40 px-6 text-[14px] font-black text-white/90 transition hover:bg-white/10 disabled:opacity-50">
+                  <XCircle size={16} /> {pickL("Reject", "Tolak")}
+                </button>
+              </div>
             </div>
             </>)}
           </CardContent>
         </Panel>
 
-        <Panel>
-          <CardContent className="p-5">
-               <div className="flex items-start gap-3">
-                <div>
-                  <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("performance")}</h2>
-                </div>
-              </div>
-            {!selectedActionId ? (
-              <div className="mt-6 flex flex-col items-center justify-center gap-3 py-8 text-center">
-                <div>
-                  <p className="text-[12px] font-bold text-[#58648C]">{t("performanceEmptyTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("performanceEmptyDesc")}</p>
-                </div>
-              </div>
-            ) : feedbackAccuracyQuery.isPending ? (
-              <PanelSkeleton className="mt-5" />
-            ) : !hasLearningData ? (
-              <div className="mt-6 flex flex-col items-center justify-center gap-3 py-8 text-center">
-                <div>
-                  <p className="text-[12px] font-bold text-[#58648C]">{t("learningNoDataTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("learningNoDataDesc")}</p>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]"><p className="text-[12px] font-bold text-[#647099]">{t("aiAccuracy")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{accuracyScorePercent != null ? `${accuracyScorePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#647099]">{t("aiAccuracyHelper")}</p></div>
-                  <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]"><p className="text-[12px] font-bold text-[#647099]">{t("acceptanceRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{acceptanceRatePercent != null ? `${acceptanceRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#047857]">{t("acceptanceRateHelper")}</p></div>
-                  <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]"><p className="text-[12px] font-bold text-[#647099]">{t("rejectionRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{rejectionRatePercent != null ? `${rejectionRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#C81E1E]">{t("rejectionRateHelper")}</p></div>
-                </div>
-                {accuracy && Object.keys(accuracy.by_type).length > 0 ? (
-                  <div className="mt-5">
-                    <div className="mb-2 flex items-center justify-between text-[12px] font-black text-[#101334]"><span>{t("accuracyPerCategory")}</span><span className="flex gap-3 text-[10px] text-[#53608C]"><b className="text-[#3B52F5]">{t("total")}</b><b className="text-[#047857]">{t("accuracy")}</b></span></div>
-                    <div className="grid gap-2">
-                      {Object.entries(accuracy.by_type).map(([key, value]) => (
-                        <div key={key} className="flex items-center justify-between rounded-[8px] border border-[#E9EDF5] bg-white px-3 py-2 text-[11px]">
-                          <span className="font-bold capitalize text-[#101334]">{key.replace(/_/g, " ")}</span>
-                          <span className="flex items-center gap-3 text-[#53608C]"><span className="font-black text-[#3B52F5]">{value.total}</span><span className="font-black text-[#047857]">{Math.round(value.accuracy * 100)}%</span></span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-5 flex flex-col items-center justify-center gap-2 py-6 text-center">
-                    <p className="text-[12px] font-bold text-[#58648C]">{t("noFeedback")}</p>
-                    <p className="text-[10px] font-semibold text-[#647099]">{t("noFeedbackDesc")}</p>
-                  </div>
-                )}
-              </>
-            )}
-            <Link href="/alerts" className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#3B52F5] transition hover:bg-[#465FFF]/5">{t("viewFullAnalytics")} <ChevronRight size={14} /></Link>
-          </CardContent>
-        </Panel>
+        <div className="space-y-5 xl:sticky xl:top-6">
+          {latestPlan?.id ? (
+            <Panel className="!p-0">
+              <CardContent className="p-5">
+                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{pickL("Tracking", "Pelacakan")}</p>
+                <PlanWorkflowControls key={`${latestPlan.id}-${latestPlan.workflowStatus ?? ""}-${latestPlan.assignedTo ?? ""}`} planId={latestPlan.id} status={latestPlan.workflowStatus} assignedTo={latestPlan.assignedTo} />
+                <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="mt-3 flex items-center justify-center gap-1 text-[13px] font-bold text-[#3B52F5] hover:underline">{pickL("Pick Another Plan", "Pilih Rencana Lain")} <ChevronRight size={14} className="-rotate-90" /></a>
+              </CardContent>
+            </Panel>
+          ) : null}
 
-        <Panel>
-          <CardContent className="p-5">
-            <div className="flex items-start gap-3">
-              <div>
-                <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("learning")}</h2>
-              </div>
-            </div>
-            {!selectedActionId ? (
-              <div className="mt-6 flex flex-col items-center justify-center gap-3 py-8 text-center">
-                <div>
-                  <p className="text-[12px] font-bold text-[#58648C]">{t("learningEmptyTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("learningEmptyDesc")}</p>
-                </div>
-              </div>
-            ) : actionPlanLearningQuery.isPending ? (
-              <PanelSkeleton className="mt-5" />
-            ) : (
-              <>
-                {actionPlanLearningQuery.data?.insights && actionPlanLearningQuery.data.insights.length > 0 && (
-                  <div className="mt-5">
-                    <p className="text-[13px] font-black text-[#101334]">{t("keyInsights")}</p>
-                    <div className="mt-3 grid gap-2.5">
-                      {actionPlanLearningQuery.data.insights.map((insight) => {
-                        const stats = actionPlanLearningQuery.data?.stats;
-                        const row =
-                          insight.type === "acceptance_rate"
-                            ? { Icon: TrendingUp, label: pickL("AI suggestions accepted", "Saran AI yang diterima"), value: `${insight.value}%`, hint: stats ? pickL(`${stats.accepted} of ${stats.totalFeedback} reviews`, `${stats.accepted} dari ${stats.totalFeedback} tinjauan`) : "" }
-                            : insight.type === "avg_rating"
-                              ? { Icon: Timer, label: pickL("Average content rating", "Rata-rata nilai konten"), value: `${insight.value}/5`, hint: "" }
-                              : { Icon: TrendingDown, label: pickL("More suggestions rejected than accepted", "Lebih banyak saran ditolak daripada diterima"), value: String(insight.value), hint: pickL("Review the plan's prompt and context", "Tinjau konteks dan arahan rencana ini") };
-                        return (
-                          <div key={insight.type} className="flex items-center justify-between gap-4 rounded-[9px] bg-[#FBFCFF] p-3 text-[11px] font-semibold text-[#53608C]">
-                            <span className="flex min-w-0 items-center gap-2"><row.Icon size={15} className="shrink-0 text-[#3B52F5]" /><span className="min-w-0"><span className="block">{row.label}</span>{row.hint ? <span className="block text-[10px] text-[#647099]">{row.hint}</span> : null}</span></span>
-                            <b className="shrink-0 text-[#53608C]">{row.value}</b>
-                          </div>
-                        );
-                      })}
-                    </div>
+          {/* How the AI's plans have been received, plus what it learned; one card instead of two. */}
+          <Panel className="!p-0">
+            <CardContent className="p-5">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("performance")}</p>
+              {feedbackAccuracyQuery.isPending ? (
+                <PanelSkeleton className="mt-3" />
+              ) : accuracy ? (
+                <>
+                  <div className="mt-3 grid grid-cols-3 divide-x divide-[#EEF0F6] rounded-[14px] bg-[#F6F7FC] py-3 text-center">
+                    {[
+                      [t("aiAccuracy"), accuracyScorePercent, "text-[#101334]"],
+                      [t("acceptanceRate"), acceptanceRatePercent, "text-[#047857]"],
+                      [t("rejectionRate"), rejectionRatePercent, "text-[#B42318]"],
+                    ].map(([label, value, tone]) => (
+                      <div key={String(label)} className="px-2">
+                        <p className={cn("text-[22px] font-black leading-none", String(tone))}>{value != null ? `${value}%` : "—"}</p>
+                        <p className="mt-1.5 text-[11px] font-bold leading-tight text-[#5F6B94]">{label}</p>
+                      </div>
+                    ))}
                   </div>
-                )}
-                {actionPlanLearningQuery.data?.templates && actionPlanLearningQuery.data.templates.length > 0 && (
-                  <div className="mt-5">
-                    <p className="text-[13px] font-black text-[#101334]">{t("popularTemplates")}</p>
-                    <div className="mt-3 grid gap-2.5">
-                      {actionPlanLearningQuery.data.templates.map((template) => (
-                        <div key={template.id} className="rounded-[9px] border border-[#EEF1F7] px-3 py-2.5 text-[12px] font-semibold text-[#53608C]">
-                          <span className="flex items-center gap-2 font-black text-[#101334]">{template.type}</span>
-                          <span className="mt-1 block line-clamp-2 text-[11px]">{template.content}</span>
-                        </div>
+                  {Object.keys(accuracy.by_type).length > 0 ? (
+                    <ul className="mt-3 space-y-1.5">
+                      {Object.entries(accuracy.by_type).map(([key, value]) => (
+                        <li key={key} className="flex items-center justify-between text-[12.5px]">
+                          <span className="font-bold capitalize text-[#101334]">{key.replace(/_/g, " ")}</span>
+                          <span className="font-mono font-bold text-[#5F6B94]">{value.total}× · <span className="text-[#047857]">{Math.round(value.accuracy * 100)}%</span></span>
+                        </li>
                       ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Panel>
+                    </ul>
+                  ) : null}
+                </>
+              ) : (
+                <p className="mt-3 text-[13px] font-semibold text-[#647099]">{t("noFeedbackDesc")}</p>
+              )}
+
+              {actionPlanLearningQuery.data?.insights?.length ? (
+                <div className="mt-5 border-t border-[#EEF0F6] pt-4">
+                  <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("keyInsights")}</p>
+                  <ul className="mt-2 space-y-2">
+                    {actionPlanLearningQuery.data.insights.map((insight) => {
+                      const stats = actionPlanLearningQuery.data?.stats;
+                      const row =
+                        insight.type === "acceptance_rate"
+                          ? { Icon: TrendingUp, label: pickL("AI suggestions accepted", "Saran AI yang diterima"), value: `${insight.value}%`, hint: stats ? pickL(`${stats.accepted} of ${stats.totalFeedback} reviews`, `${stats.accepted} dari ${stats.totalFeedback} tinjauan`) : "" }
+                          : insight.type === "avg_rating"
+                            ? { Icon: Timer, label: pickL("Average content rating", "Rata-rata nilai konten"), value: `${insight.value}/5`, hint: "" }
+                            : { Icon: TrendingDown, label: pickL("More suggestions rejected than accepted", "Lebih banyak saran ditolak daripada diterima"), value: String(insight.value), hint: pickL("Review the plan's prompt and context", "Tinjau konteks dan arahan rencana ini") };
+                      return (
+                        <li key={insight.type} className="flex items-center justify-between gap-3 text-[13px]">
+                          <span className="flex min-w-0 items-center gap-2"><row.Icon size={15} className="shrink-0 text-[#3B52F5]" /><span className="min-w-0"><span className="block font-bold text-[#101334]">{row.label}</span>{row.hint ? <span className="block text-[11.5px] text-[#647099]">{row.hint}</span> : null}</span></span>
+                          <b className="shrink-0 font-mono text-[#101334]">{row.value}</b>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ) : null}
+            </CardContent>
+          </Panel>
+        </div>
       </section>
       ) : null}
     </div>
