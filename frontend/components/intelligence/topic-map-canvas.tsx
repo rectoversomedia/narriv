@@ -121,7 +121,8 @@ function MapNodeButton({ node, placed, rank, selected, onSelect, signalLabel }: 
   const numberSize = Math.round(Math.min(40, Math.max(16, r * 0.44)));
   const titleSize = Math.round(Math.min(13.5, Math.max(10, r * 0.16)));
   const showTitle = r >= 34;
-  const growth = node.growth === "new" ? pickL("New", "Baru") : node.growth && node.growth !== "0%" ? node.growth : null;
+  // No stamp when there is nothing to say (no change, or no earlier period to compare).
+  const growth = node.growth === "new" ? pickL("New", "Baru") : node.growth && !/^[+-]?0%$|^[–—-]$/.test(node.growth.trim()) ? node.growth : null;
   const rising = node.growth === "new" || /^\+/.test(node.growth);
   return (
     <button
