@@ -272,7 +272,7 @@ export default function SettingsPage() {
   const industryValue = industry ?? workspaceSettingsQuery.data?.industry ?? ts("workspaceInfo.industryTechnology");
   // Stored values are IANA ids; older rows hold labels like "Asia/Jakarta (GMT+7)".
   const timezoneValue = (timezone ?? workspaceSettingsQuery.data?.timezone ?? "Asia/Jakarta").replace(/\s*\(.*\)\s*$/, "");
-  const languageValue = language ?? workspaceSettingsQuery.data?.language ?? "id";
+  const languageValue = language ?? workspaceSettingsQuery.data?.language ?? "en";
   // Email/WhatsApp alert switches live in workspace_notification_settings (booleans) and save on toggle; they used
   // to be sent with the workspace form as notificationEmail: "enabled", which the API rejects as an invalid email,
   // so saving the workspace name, industry or time zone always failed.

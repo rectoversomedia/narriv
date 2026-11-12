@@ -124,7 +124,7 @@ export async function runDueReportSchedules({ now = new Date(), generate, db = b
  * Every new workspace gets one weekly board report (Executive Brief, Monday 08:00 WIB) unless it already has a
  * schedule. The client can switch it off or change it on the Reports page. Never throws.
  */
-export async function ensureWeeklyBoardReport(workspaceId, lang = "id", db = baseSupabaseAdmin) {
+export async function ensureWeeklyBoardReport(workspaceId, lang = "en", db = baseSupabaseAdmin) {
     try {
         const { count } = await db.from("report_schedules").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId);
         if ((count || 0) > 0) return { created: false, reason: "has_schedule" };

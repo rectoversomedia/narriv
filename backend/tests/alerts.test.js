@@ -54,11 +54,11 @@ describe('alert rule evaluation', () => {
   });
 
   it('raises a workspace-scoped alert with evidence links for a qualifying negative spike', async () => {
-    respond = db({ signals: SPIKE });
+    respond = db({ language: 'id', signals: SPIKE });
     const created = await detectAlerts(WS);
     expect(created).toHaveLength(1);
     const [{ payload }] = inserts();
-    // Stored text follows the workspace content language (default Indonesian).
+    // Stored text follows the workspace content language (Indonesian here; English when none is set).
     expect(payload).toMatchObject({ workspace_id: WS, type: 'risk', severity: 'medium', status: 'open', title: 'Lonjakan Sentimen Negatif: Bank A' });
     expect(payload.description).toBe('3 dari 5 percakapan terbaru (60%) bernada negatif untuk Bank A.');
     expect(payload.metadata.signal_ids).toEqual(['s1', 's2', 's3']);
@@ -66,8 +66,8 @@ describe('alert rule evaluation', () => {
     expect(signalQuery.filters).toContainEqual({ name: 'eq', args: ['workspace_id', WS] });
   });
 
-  it('writes the alert in English for a workspace whose content language is English', async () => {
-    respond = db({ language: 'en', signals: SPIKE });
+  it('writes the alert in English for a workspace with no content language set (the default)', async () => {
+    respond = db({ signals: SPIKE });
     await detectAlerts(WS);
     const [{ payload }] = inserts();
     expect(payload.title).toBe('Negative Sentiment Spike: Bank A');

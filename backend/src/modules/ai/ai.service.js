@@ -111,7 +111,7 @@ Analyze the above and provide the strategic insights in JSON.`;
 /**
  * Builds the strict system prompt for cluster analysis.
  */
-function buildClusterAnalysisSystemPrompt(lang = "id") {
+function buildClusterAnalysisSystemPrompt(lang = "en") {
     const language = lang === "en" ? "English" : "Indonesian (Bahasa Indonesia)";
     return `You are a strategic intelligence analyst for a PR & crisis communications platform.
 Your task is to analyze a cluster of related signals and provide a narrative summary.
@@ -378,7 +378,7 @@ export const enhanceAlert = async (alertData, signalsContext) => {
  * @param {string} signalsContext - Summarized text of signals in the cluster.
  * @returns {Promise<object>} - { title, description, dominant_sentiment, impact }
  */
-export const analyzeCluster = async (signalsContext, lang = "id") => {
+export const analyzeCluster = async (signalsContext, lang = "en") => {
     if (!OPENAI_API_KEY) {
         logStructured("warn", "[AI] Cannot analyze cluster: Missing API key.");
         return null;
