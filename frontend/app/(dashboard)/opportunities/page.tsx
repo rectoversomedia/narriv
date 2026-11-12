@@ -11,7 +11,6 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { getAlerts, getSignals, type Alert, type Signal } from "@/lib/api-service";
 import { useL } from "@/lib/use-l";
-import { monitoringHref } from "@/lib/evidence-links";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
 import { intlLocale } from "@/store/useUiStore";
@@ -99,8 +98,8 @@ function OpportunityRow({ alert }: { alert: Alert }) {
 }
 
 /**
- * One piece of good news. The row always opens something: the original post when its link is shown, otherwise the
- * mentions of its issue (privacy mode hides post links). "Amplify" starts a plan from it.
+ * One piece of good news. With a link the row opens the original source in a new tab; without one (privacy mode
+ * hides post links) it is plain text. "Amplify" starts a plan from it.
  */
 function GoodNewsRow({ signal, onAmplify }: { signal: Signal; onAmplify: (signal: Signal) => void }) {
   const L = useL();
@@ -110,20 +109,19 @@ function GoodNewsRow({ signal, onAmplify }: { signal: Signal; onAmplify: (signal
     <>
       <PlatformIcon platform={signal.platform || "news"} className="mt-0.5 size-6" />
       <span className="min-w-0 flex-1">
-        <span className="line-clamp-2 block text-[15px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]">{text}</span>
+        <span className={cn("line-clamp-2 block text-[15px] font-bold leading-snug text-[#101334]", signal.url && "group-hover:text-[#3B52F5]")}>{text}</span>
         <span className="mt-1 block font-mono text-[11.5px] font-medium text-[#5F6B94]">
           {[signal.author, shortDate(signal.publishedAt || signal.capturedAt)].filter(Boolean).join(" · ")}
           {narrative ? <> · <span className="font-semibold text-[#31406B]">{narrative.title}</span></> : null}
         </span>
       </span>
-      {signal.url ? <ExternalLink size={15} className="mt-1 shrink-0 text-[#9AA3BC] group-hover:text-[#3B52F5]" aria-label={L("Open the source", "Buka sumber")} /> : <ArrowRight size={15} className="mt-1 shrink-0 text-[#9AA3BC] group-hover:text-[#3B52F5]" aria-hidden="true" />}
+      {signal.url ? <ExternalLink size={15} className="mt-1 shrink-0 text-[#9AA3BC] group-hover:text-[#3B52F5]" aria-label={L("Open the source", "Buka sumber")} /> : null}
     </>
   );
-  const cls = "group flex min-w-0 flex-1 items-start gap-3 rounded-[12px] px-2 py-3.5 transition hover:bg-[#F7F8FC]";
-  const href = narrative ? monitoringHref({ narrative: narrative.id, sentiment: "positive" }) : monitoringHref({ sentiment: "positive", q: (signal.title || "").slice(0, 60) || undefined });
+  const cls = "flex min-w-0 flex-1 items-start gap-3 rounded-[12px] px-2 py-3.5";
   return (
     <div className="-mx-2 flex items-center gap-2">
-      {signal.url ? <a href={signal.url} target="_blank" rel="noopener noreferrer" className={cls}>{body}</a> : <Link href={href} className={cls}>{body}</Link>}
+      {signal.url ? <a href={signal.url} target="_blank" rel="noopener noreferrer" className={cn(cls, "group transition hover:bg-[#F7F8FC]")}>{body}</a> : <div className={cls}>{body}</div>}
       <button type="button" onClick={() => onAmplify(signal)} className="hidden h-9 shrink-0 items-center gap-1.5 rounded-[10px] border-[1.5px] border-[#101334] bg-white px-3 text-[12.5px] font-black text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#E8F7EF] sm:inline-flex">
         <Megaphone size={14} /> {L("Amplify", "Perkuat")}
       </button>
