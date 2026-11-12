@@ -1,4 +1,5 @@
 import { Worker } from "bullmq";
+import { resolveRecordRegion } from "../lib/indonesia-regions.js";
 import crypto from "crypto";
 import connection from "../lib/redis.js";
 import supabase from "../lib/supabase.js";
@@ -11,6 +12,7 @@ import { logStructured } from "../lib/logger.js";
 import { canSyncSource } from "../lib/source-cost-controls.js";
 import { checkAutoThrottle } from "../lib/cost-management.js";
 import { SOURCE_LIMITS } from "../lib/source-cost-controls.js";
+import { isStaleRecord } from "../lib/record-age.js";
 
 class IngestionCancelledError extends Error {
     constructor(message) {
@@ -252,6 +254,8 @@ const ingestionWorker = new Worker(
                 await assertNotCancelled(jobId);
                 const content = item.text || item.description || item.snippet || item.title || "";
                 if (!content) continue;
+                // Same recency limit as every other source: old posts are not today's conversation.
+                if (isStaleRecord(parseDateOrNull(item.publishedDate))) continue;
 
                 const deterministicDocHash = buildDeterministicDocHash({
                     workspaceId: source.workspace_id,
@@ -347,7 +351,7 @@ const ingestionWorker = new Worker(
                         platform: createdDoc.platform || createdDoc.source_type || source.type || null,
                         url: createdDoc.url,
                         published_at: createdDoc.published_at,
-                        region: item.region || null,
+                        region: resolveRecordRegion({ title: createdDoc.title, content: createdDoc.content, label: item.region }).region,
                         language: item.language || null,
                         dedupe_hash: dedupeHash,
                         sentiment: "neutral",

@@ -2,6 +2,9 @@ import { jest } from '@jest/globals';
 import { createMemoryDb } from './helpers/memory-db.js';
 import { supabaseModuleFor } from './helpers/fake-supabase.js';
 
+// Fixtures carry fixed publication dates; keep them inside the ingestion recency window however much time passes.
+process.env.MAX_RECORD_AGE_DAYS = '36500';
+
 // Apify platform collection: start on Apify's side, store the dataset once
 // the run succeeded. The Apify client is a fake; no actor ever runs here.
 const db = createMemoryDb();

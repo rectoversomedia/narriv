@@ -3,6 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import { createFakeSupabase, supabaseModuleFor } from './helpers/fake-supabase.js';
 
+// Fixtures carry fixed publication dates; keep them inside the ingestion recency window however much time passes.
+process.env.MAX_RECORD_AGE_DAYS = '36500';
+
 // Every test sets `respond` to control what the fake database returns.
 let respond = () => ({ data: [], error: null });
 const fake = createFakeSupabase((q) => respond(q));

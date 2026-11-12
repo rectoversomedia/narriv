@@ -10,9 +10,12 @@
  * engagement. Clustering and alert rules run once per batch afterwards.
  */
 import supabaseAdmin from "../../lib/supabase.js";
+import { resolveRecordRegion } from "../../lib/indonesia-regions.js";
 import { logStructured } from "../../lib/logger.js";
 import { checkBudgetAllowance } from "../../lib/cost-management.js";
 import { analyzeSignal } from "../ai/ai.service.js";
+import { getWorkspaceProfile } from "../../lib/workspace-profile.js";
+import { isStaleRecord } from "../../lib/record-age.js";
 import { runClustering } from "../clustering/clustering.service.js";
 import { detectAlerts } from "../alerts/alerts.service.js";
 
@@ -90,6 +93,7 @@ export async function persistCollectedRecords(records, {
   let analysisFailed = 0;
   let insertFailed = 0;
   let skippedInvalid = 0;
+  let skippedStale = 0;
 
   // Budget gate: when the workspace's AI budget is exhausted, records are
   // still stored (unanalyzed) so the backfill can analyze them later.
@@ -106,6 +110,10 @@ export async function persistCollectedRecords(records, {
       const content = String(record.content || record.title || "").trim();
       if (!content || !record.externalId) {
         skippedInvalid++;
+        return;
+      }
+      if (isStaleRecord(record.publishedAt)) {
+        skippedStale++;
         return;
       }
       const url = safeRecordUrl(record.url);
@@ -169,6 +177,21 @@ export async function persistCollectedRecords(records, {
         ? (dbSentiment === "NEGATIVE" ? -Math.abs(aiResult.confidence_score) : Math.abs(aiResult.confidence_score))
         : null;
 
+      // CVE workspaces also get a narrative category suggestion for review (cve-categories.js). A failed call
+      // stores no category, so the record can be classified later; nothing is guessed.
+      let cve = null;
+      if (aiAllowed && (await getWorkspaceProfile(workspaceId, supabaseAdmin)).useCase === "cve") {
+        try {
+          const { classifyCveNarrative } = await import("../ai/ai.service.js");
+          cve = await classifyCveNarrative(record.title, content, { workspaceId, operation: "cve_classification" });
+        } catch (cveErr) {
+          logStructured("warn", "cve_classification_failed", { error: cveErr.message, workspaceId });
+        }
+      }
+
+      // The province the record is about, from its own text (else its location label); see indonesia-regions.js.
+      const place = resolveRecordRegion({ title: record.title, content, label: record.region, fallback: signalDefaults.region });
+
       const { data: signal, error: signalErr } = await supabaseAdmin
         .from("signals")
         .insert({
@@ -185,7 +208,7 @@ export async function persistCollectedRecords(records, {
           sentiment: dbSentiment,
           sentiment_score: sentimentScore,
           severity: dbSeverity,
-          region: record.region ?? signalDefaults.region ?? null,
+          region: place.region,
           language: record.language ?? signalDefaults.language ?? null,
           topics: [keyword, aiResult?.narrative_type || null].filter(Boolean),
           metadata: {
@@ -195,6 +218,8 @@ export async function persistCollectedRecords(records, {
             recommended_action: aiResult?.recommended_action || null,
             ingestion_type: ingestionType,
             keyword,
+            ...(place.geo ? { geo: place.geo } : {}),
+            ...(cve ? { cve } : {}),
             ...(record.metadata || {}),
           },
         })
@@ -262,6 +287,7 @@ export async function persistCollectedRecords(records, {
     createdRawDocs,
     skippedDuplicates,
     skippedInvalid,
+    skippedStale,
     analyzed,
     analysisFailed,
     insertFailed,
