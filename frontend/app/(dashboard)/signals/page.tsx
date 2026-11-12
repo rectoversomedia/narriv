@@ -327,54 +327,67 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
   ];
   const tiles = [
     { key: "total", label: L("Mentions", "Percakapan"), value: num(total), tone: "#101334" },
-    { key: "neg", label: L("Negative", "Negatif"), value: num(negative), tone: "#C81E1E" },
-    { key: "crit", label: L("Critical Alerts", "Peringatan Kritis"), value: num(critical), tone: critical > 0 ? "#C2410C" : "#8A93AD" },
+    { key: "neg", label: L("Negative", "Negatif"), value: num(negative), tone: negative > 0 ? "#B42318" : "#101334" },
+    { key: "crit", label: L("Critical", "Kritis"), value: num(critical), tone: critical > 0 ? "#B42318" : "#101334" },
     { key: "pos", label: L("Positive", "Positif"), value: num(positive), tone: "#047857" },
   ];
 
+  const band = total === 0 ? "#C9D0E3" : verdict.color === "#C81E1E" ? "#B42318" : verdict.color === "#047857" ? "#12A66A" : "#465FFF";
+
+  // One decision card: the day's verdict, its numbers, and the step to take, with the buttons for it.
   return (
-    <section className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-      <div className={cn("min-w-0", BOX)}>
-        <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{L("Last 24 Hours", "24 Jam Terakhir")}</h2>
-        <p className="mt-3 text-[40px] font-black leading-none tracking-[-0.03em]" style={{ color: verdict.color }}>{verdict.word}</p>
-        {total > 0 ? (
-          <div className="mt-4">
-            <div className="flex h-3 w-full overflow-hidden rounded-full bg-[#E8ECF6]">
-              {segments.map((seg) => seg.value > 0 ? <span key={seg.key} style={{ width: `${pct(seg.value)}%`, background: seg.color }} title={`${seg.label}: ${seg.value}`} /> : null)}
-            </div>
-            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] font-bold text-[#3A4566]">
-              {segments.map((seg) => (
-                <span key={seg.key} className="inline-flex items-center gap-1.5">
-                  <span className="size-2.5 rounded-full" style={{ background: seg.color }} />
-                  {seg.label} <b className="font-black text-[#101334]">{pct(seg.value)}%</b>
-                </span>
-              ))}
-            </div>
+    <section className={cn(BOX, "overflow-hidden !p-0")}>
+      <div className="h-2" style={{ backgroundColor: band }} />
+      <div className="p-5 sm:p-7">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Last 24 Hours", "24 Jam Terakhir")}</p>
+          <span className="rounded-[6px] px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em]" style={{ backgroundColor: verdict.bg, color: verdict.color }}>{verdict.word}</span>
+        </div>
+
+        <div className="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-end">
+          <div className="min-w-0">
+            {headline ? (
+              <p className="text-balance text-[22px] font-black leading-[1.25] tracking-[-0.02em] text-[#101334] sm:text-[26px]" title={headline}>{headline}</p>
+            ) : (
+              <p className="text-[18px] font-bold text-[#5A6478]">{L("No mentions in the last 24 hours yet.", "Belum ada percakapan dalam 24 jam terakhir.")}</p>
+            )}
+            {total > 0 ? (
+              <div className="mt-4">
+                <div className="flex h-3 w-full overflow-hidden rounded-full bg-[#EEF0F6]">
+                  {segments.map((seg) => seg.value > 0 ? <span key={seg.key} className="border-r-2 border-white last:border-r-0" style={{ width: `${pct(seg.value)}%`, background: seg.color }} title={`${seg.label}: ${seg.value}`} /> : null)}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] font-bold text-[#31406B]">
+                  {segments.map((seg) => (
+                    <span key={seg.key} className="inline-flex items-center gap-1.5">
+                      <span className="size-2.5 rounded-full" style={{ background: seg.color }} />
+                      {seg.label} <b className="font-mono font-bold text-[#101334]">{pct(seg.value)}%</b>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
-        ) : null}
-        {headline ? <p className="mt-4 line-clamp-2 text-[15px] font-bold leading-6 text-[#101334]" title={headline}>{headline}</p> : (
-          <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{L("No mentions in the last 24 hours yet.", "Belum ada percakapan dalam 24 jam terakhir.")}</p>
-        )}
-        {/* The one thing to do now, set apart so it cannot be missed, with the buttons that start it. */}
-        {advice ? (
-          <div className="mt-5 rounded-[20px] bg-gradient-to-r from-[#101334] to-[#2B2F9E] p-5 text-white shadow-[0_16px_40px_-18px_rgba(16,19,52,0.7)]">
-            <p className="inline-flex rounded-full bg-[#FBBF24] px-3 py-1 text-[12px] font-black text-[#101334]">{L("Next Step", "Langkah Berikutnya")}</p>
-            <p className="mt-3 text-balance text-[20px] font-black leading-snug tracking-[-0.01em] sm:text-[22px]" title={advice}>{advice}</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {onPlan ? <button type="button" onClick={onPlan} className="h-11 rounded-full bg-white px-5 text-[14px] font-bold text-[#101334] transition hover:bg-[#EEF1FF]">{L("Create Action Plan", "Buat Rencana Aksi")}</button> : null}
-              {onShowNegative && negative > 0 ? <button type="button" onClick={onShowNegative} className="h-11 rounded-full bg-white/10 px-5 text-[14px] font-bold text-white transition hover:bg-white/20">{L(`See ${num(negative)} Negative`, `Lihat ${num(negative)} yang Negatif`)}</button> : null}
-            </div>
+          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
+            {tiles.map((tile) => (
+              <div key={tile.key} className="rounded-[14px] bg-[#F6F7FC] px-4 py-3">
+                <dt className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{tile.label}</dt>
+                <dd className="mt-1 text-[28px] font-black leading-none tracking-[-0.03em] tabular-nums" style={{ color: tile.tone }}>{tile.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        {advice || onPlan ? (
+          <div className="mt-5 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:items-center">
+            <p className="min-w-0 flex-1 px-1 text-[15px] font-bold leading-snug text-white">
+              <span className="mb-1 block font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{L("Next Step", "Langkah Berikutnya")}</span>
+              {advice ?? L("Review today's negative mentions and decide on a response.", "Tinjau percakapan negatif hari ini dan putuskan responsnya.")}
+            </p>
+            {onPlan ? <button type="button" onClick={onPlan} className="inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5] sm:w-auto">{L("Create Action Plan", "Buat Rencana Aksi")}</button> : null}
+            {onShowNegative && negative > 0 ? <button type="button" onClick={onShowNegative} className="inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[12px] border-[1.5px] border-white/80 px-5 text-[14px] font-black text-white transition hover:bg-white/10 sm:w-auto">{L(`See ${num(negative)} Negative`, `Lihat ${num(negative)} Negatif`)}</button> : null}
           </div>
         ) : null}
       </div>
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 lg:self-start">
-        {tiles.map((tile) => (
-          <div key={tile.key} className="flex min-w-0 flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
-            <dd className="text-[38px] font-black leading-none tracking-[-0.04em] tabular-nums" style={{ color: tile.key === "total" ? "#101334" : tile.tone }}>{tile.value}</dd>
-            <dt className="mt-2 text-[13px] font-bold text-[#5A6478]">{tile.label}</dt>
-          </div>
-        ))}
-      </dl>
     </section>
   );
 }
@@ -589,7 +602,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
               <col className="w-[11%]" />
             </colgroup>
             <thead>
-              <tr className="border-b border-[#DDE3EF] text-[12px] font-black text-[#5F6B94]">
+              <tr className="border-b border-[#EEF0F6] font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                 <th className="px-2.5 py-3">
                   <button
                     type="button"
@@ -611,7 +624,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
             </thead>
             <tbody className="divide-y divide-[#EDF1F7]">
               {rows.map((row) => (
-                <tr key={row.id} className={cn("transition hover:bg-[#F8FAFF]", row.sentiment === "NEGATIVE" && "bg-[#FDF0F0]", selectedIds.has(row.id) && "bg-[#EEF2FF]")}>
+                <tr key={row.id} className={cn("transition hover:bg-[#F7F8FC]", row.sentiment === "NEGATIVE" && "bg-[#FFF8F7] shadow-[inset_4px_0_0_#EF4444]", row.sentiment === "POSITIVE" && "shadow-[inset_4px_0_0_#10B981]", selectedIds.has(row.id) && "bg-[#EEF2FF]")}>
                   <td className="px-2.5 py-3 align-middle">
                     <button
                       type="button"
@@ -630,9 +643,9 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                   <td className="px-2.5 py-3">
                     {/* One line per record: the headline opens the original article. */}
                     {row.url ? (
-                      <a href={row.url} target="_blank" rel="noopener noreferrer" title={row.title} className="line-clamp-2 break-words text-[13px] font-bold leading-snug text-navy hover:text-[#3B52F5] hover:underline">{row.title}</a>
+                      <a href={row.url} target="_blank" rel="noopener noreferrer" title={row.title} className="line-clamp-2 break-words text-[14px] font-bold leading-snug text-navy hover:text-[#3B52F5] hover:underline">{row.title}</a>
                     ) : (
-                      <span title={row.title} className="line-clamp-2 break-words text-[13px] font-bold leading-snug text-navy">{row.title}</span>
+                      <span title={row.title} className="line-clamp-2 break-words text-[14px] font-bold leading-snug text-navy">{row.title}</span>
                     )}
                     {row.place || row.cve ? <div className="mt-1 flex flex-wrap items-center gap-1.5"><PlaceChip place={row.place} /><CveChip id={row.id} cve={row.cve} /></div> : null}
                   </td>
@@ -648,7 +661,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     )}
                   </td>
                   <td className="px-2.5 py-3 align-middle"><AnalysisBadge status={row.analysisStatus} confidence={row.analysisConfidence} /></td>
-                  <td className="px-2.5 py-3 align-middle text-[12px] font-bold leading-snug text-[#31406B]">{row.time}</td>
+                  <td className="px-2.5 py-3 align-middle font-mono text-[11.5px] font-medium leading-snug text-[#5F6B94]">{row.time}</td>
                   <td className="px-2.5 py-3 align-middle">
                     {/* One button per row: a negative or mixed record needs checking, a positive or neutral one a plan. */}
                     {row.sentiment === "NEGATIVE" || row.sentiment === "MIXED" ? (
