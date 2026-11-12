@@ -4128,7 +4128,7 @@
     "seeEvidence": "Lihat Bukti",
     "decisionPending": "Belum diputuskan. Pilih apakah perlu rencana respons (draf AI untuk ditinjau) atau kasus untuk ditugaskan.",
     "decisionMade": "Keputusan diambil: tindak lanjut dibuat {date}.",
-    "createPlan": "Buat Draf Rencana",
+    "createPlan": "Buat Rencana Aksi",
     "createCase": "Buka Kasus",
     "followUpNone": "Belum ada rencana atau kasus yang terhubung.",
     "outcomeNone": "Belum ada hasil tercatat.",

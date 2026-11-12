@@ -4128,7 +4128,7 @@
     "seeEvidence": "See Evidence",
     "decisionPending": "Not decided yet. Choose whether this needs a response plan (an AI draft to review) or a case to assign.",
     "decisionMade": "Decided: follow-up created {date}.",
-    "createPlan": "Draft a Plan",
+    "createPlan": "Create Action Plan",
     "createCase": "Open Case",
     "followUpNone": "No plan or case is linked yet.",
     "outcomeNone": "No outcome recorded yet.",
