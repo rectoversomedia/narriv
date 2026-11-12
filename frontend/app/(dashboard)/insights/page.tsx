@@ -46,6 +46,9 @@ const TREND: Record<string, { en: string; id: string; tone: string; Icon: typeof
   DECLINING: { en: "Falling", id: "Turun", tone: "text-[#047857]", Icon: TrendingDown },
 };
 
+/** One colour per driver, biggest first, shared by the score bar and the driver cards. */
+const DRIVER_COLORS = ["#B42318", "#F97316", "#F59E0B", "#465FFF", "#8B5CF6"];
+
 /** Where each score driver's evidence can be seen. */
 function driverHref(c: RiskComponent, hours: number): { href: string; label: [string, string] } | null {
   const period = hours as MonitoringPeriod;
@@ -148,9 +151,21 @@ export default function InsightsPage() {
                   <span className={cn("text-[56px] font-black leading-none tracking-[-0.04em]", hasRisk ? tone.text : "text-[#9AA3BC]")}>{hasRisk ? n.riskScore : "—"}</span>
                   <span className="font-mono text-[14px] font-bold text-[#5F6B94]">/100</span>
                 </p>
-                <div className="mt-3 h-2.5 w-full max-w-sm overflow-hidden rounded-full bg-[#EEF0F6]">
-                  <div className={cn("h-full rounded-full", tone.band)} style={{ width: `${hasRisk ? Math.min(100, n.riskScore) : 0}%` }} />
+                {/* The score as its parts: each driver's points in its colour, out of 100. */}
+                <div className="mt-3 flex h-3 w-full max-w-md overflow-hidden rounded-full bg-[#EEF0F6]">
+                  {hasRisk && drivers.length
+                    ? drivers.map((c, i) => <div key={c.key} title={`${driverName(c)} +${c.contribution}`} className="h-full border-r-2 border-white last:border-r-0" style={{ width: `${c.contribution}%`, backgroundColor: DRIVER_COLORS[i % DRIVER_COLORS.length] }} />)
+                    : <div className={cn("h-full", tone.band)} style={{ width: `${hasRisk ? Math.min(100, n.riskScore) : 0}%` }} />}
                 </div>
+                {hasRisk && drivers.length ? (
+                  <ul className="mt-2 flex max-w-md flex-wrap gap-x-3 gap-y-1">
+                    {drivers.map((c, i) => (
+                      <li key={c.key} className="flex items-center gap-1.5 text-[11.5px] font-bold text-[#31406B]">
+                        <span className="size-2 rounded-full" style={{ backgroundColor: DRIVER_COLORS[i % DRIVER_COLORS.length] }} />{driverName(c)}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
                 <p className="mt-3 max-w-xl text-[15.5px] font-medium leading-relaxed text-[#31406B]">
                   {!hasRisk
                     ? L("Not enough conversations in this period to score the risk.", "Percakapan di periode ini belum cukup untuk menilai risiko.")
@@ -212,29 +227,32 @@ export default function InsightsPage() {
           ) : drivers.length === 0 ? (
             <p className="text-[14px] font-semibold text-[#5F6B94]">{t("noComponent")}</p>
           ) : (
-            <ol className="divide-y divide-[#EEF0F6]">
+            <ol className="grid gap-3 md:grid-cols-2">
               {drivers.map((c, i) => {
                 const link = driverHref(c, hours);
+                const color = DRIVER_COLORS[i % DRIVER_COLORS.length];
+                const share = hasRisk && n.riskScore > 0 ? Math.round((c.contribution / n.riskScore) * 100) : null;
                 return (
-                  <li key={c.key} className="py-4 first:pt-1">
-                    <div className="flex items-start gap-3">
-                      <span className="grid size-7 shrink-0 place-items-center rounded-full border-[1.5px] border-[#101334] font-mono text-[11px] font-bold text-[#101334]">{String(i + 1).padStart(2, "0")}</span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline justify-between gap-3">
-                          <p className="text-[16px] font-black text-[#101334]">{driverName(c)}</p>
-                          <p className="shrink-0 font-mono text-[15px] font-bold text-[#B42318]">+{c.contribution}</p>
-                        </div>
-                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#EEF0F6]">
-                          <div className="h-full rounded-full bg-gradient-to-r from-[#465FFF] to-[#B42318]" style={{ width: `${(c.contribution / maxContribution) * 100}%` }} />
-                        </div>
-                        <p className="mt-2 text-[14px] font-medium leading-relaxed text-[#31406B]">{c.reason}</p>
-                        {link ? (
-                          <Link href={link.href} className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-bold text-[#3B52F5] hover:underline">
-                            {L(link.label[0], link.label[1])} <ArrowRight size={14} />
-                          </Link>
-                        ) : null}
+                  <li key={c.key} className="flex flex-col rounded-[16px] bg-[#F6F7FC] p-4" style={{ boxShadow: `inset 4px 0 0 ${color}` }}>
+                    <div className="flex items-start justify-between gap-3 pl-1">
+                      <div className="min-w-0">
+                        <p className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L(`Factor ${i + 1}`, `Faktor ${i + 1}`)}</p>
+                        <p className="mt-1 text-[16px] font-black leading-snug text-[#101334]">{driverName(c)}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-[24px] font-black leading-none tracking-[-0.02em]" style={{ color }}>+{c.contribution}</p>
+                        {share != null ? <p className="mt-1 font-mono text-[10.5px] font-bold text-[#5F6B94]">{L(`${share}% of score`, `${share}% dari skor`)}</p> : null}
                       </div>
                     </div>
+                    <div className="ml-1 mt-3 h-1.5 overflow-hidden rounded-full bg-white">
+                      <div className="h-full rounded-full" style={{ width: `${(c.contribution / maxContribution) * 100}%`, backgroundColor: color }} />
+                    </div>
+                    <p className="mt-2.5 flex-1 pl-1 text-[14px] font-medium leading-relaxed text-[#31406B]">{c.reason}</p>
+                    {link ? (
+                      <Link href={link.href} className="ml-1 mt-3 inline-flex w-fit items-center gap-1.5 rounded-[10px] border-[1.5px] border-[#101334] bg-white px-3 py-2 text-[13px] font-black text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#EEF1FF]">
+                        {L(link.label[0], link.label[1])} <ArrowRight size={14} />
+                      </Link>
+                    ) : null}
                   </li>
                 );
               })}
