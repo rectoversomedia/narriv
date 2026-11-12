@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { intlLocale } from "@/store/useUiStore";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -64,7 +65,9 @@ function formatDateTime(value?: string | null) {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  // The year shows whenever it is not this one, so an old article never passes for a recent one.
+  const year = date.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined;
+  return date.toLocaleString(intlLocale(), { day: "2-digit", month: "short", year, hour: "2-digit", minute: "2-digit" });
 }
 
 function memberLabel(member: WorkspaceMemberRecord) {

@@ -320,7 +320,13 @@ export const enhanceAlert = async (alertData, signalsContext) => {
         return { whyItMatters: null, whatToDo: null };
     }
 
-    const systemPrompt = buildAlertEnhancementSystemPrompt();
+    // The alert's own text is written in the workspace language; the AI part must match it, not default to English.
+    const languageRule = alertData.language === "id"
+        ? "\n\nWrite why_it_matters and what_to_do in Bahasa Indonesia (formal, concise), whatever language the signals are in."
+        : alertData.language === "en"
+            ? "\n\nWrite why_it_matters and what_to_do in English, whatever language the signals are in."
+            : "";
+    const systemPrompt = buildAlertEnhancementSystemPrompt() + languageRule;
     const userMessage = buildAlertEnhancementUserMessage(alertData, signalsContext);
 
     const messages = [

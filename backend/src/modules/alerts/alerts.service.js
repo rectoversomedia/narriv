@@ -18,6 +18,11 @@ const SOURCE_STRENGTH = {
 
 const ESCALATION_ORDER = ["low", "medium", "high", "critical"];
 
+// Spike rule thresholds: below these a "spike" is one or two articles, which is noise, not a pattern.
+const SPIKE_MIN_TOTAL = 5;
+const SPIKE_MIN_NEGATIVE = 3;
+const SPIKE_VOLUME = 8;
+
 function nextEscalationLevel(currentLevel) {
     const currentIndex = ESCALATION_ORDER.indexOf((currentLevel || "low").toLowerCase());
     if (currentIndex < 0) return "medium";
@@ -185,6 +190,7 @@ async function detectAlertsNow(workspaceId) {
             topics,
             metadata,
             captured_at,
+            published_at,
             analyses:signal_analyses (
                 confidence,
                 analysis
@@ -203,9 +209,15 @@ async function detectAlertsNow(workspaceId) {
         return alerts;
     }
 
+    // A spike is about when things were said, not when Narriv fetched them: the first fetch for a new keyword brings in
+    // weeks of articles at once, which by fetch time all look "recent". Publication time decides; fetch time is the
+    // fallback when a source gives no date.
+    const eventTime = (s) => new Date(s.published_at || s.captured_at);
+    const inWindow = recentSignals.filter((s) => eventTime(s) >= twentyFourHoursAgo);
+
     // Group signals by target keyword or primary topic
     const topicBuckets = new Map();
-    for (const signal of recentSignals) {
+    for (const signal of inWindow) {
         const key = signal.metadata?.keyword || (Array.isArray(signal.topics) && signal.topics[0]) || buildTopicKey(signal);
         const normalizedKey = String(key).trim();
         if (!topicBuckets.has(normalizedKey)) topicBuckets.set(normalizedKey, []);
@@ -214,7 +226,7 @@ async function detectAlertsNow(workspaceId) {
 
     for (const [topicKey, signals] of topicBuckets.entries()) {
         const totalCount = signals.length;
-        if (totalCount < 2) continue;
+        if (totalCount < SPIKE_MIN_TOTAL) continue;
 
         // Negative signals
         const negativeSignals = signals.filter((s) => signalSentiment(s) === "NEGATIVE");
@@ -223,23 +235,25 @@ async function detectAlertsNow(workspaceId) {
         const roundedRatio = Math.round(negativeRatio);
 
         // Recent 6-hour signals
-        const recent6hSignals = signals.filter(s => new Date(s.captured_at) >= sixHoursAgo);
+        const recent6hSignals = signals.filter(s => eventTime(s) >= sixHoursAgo);
         const recent6hNegatives = recent6hSignals.filter((s) => signalSentiment(s) === "NEGATIVE");
-        const recent6hNegRatio = recent6hSignals.length > 0 
-            ? (recent6hNegatives.length / recent6hSignals.length) * 100 
+        const recent6hNegRatio = recent6hSignals.length > 0
+            ? (recent6hNegatives.length / recent6hSignals.length) * 100
             : 0;
 
-        const hasCritical = signals.some(s => String(s.severity).toLowerCase() === "critical");
-        const hasHigh = signals.some(s => String(s.severity).toLowerCase() === "high");
+        // A single item the analysis itself rated critical and negative is worth an alert on its own.
+        const criticalNegative = negativeSignals.some(s => String(s.severity).toLowerCase() === "critical");
+        const hasHigh = negativeSignals.some(s => String(s.severity).toLowerCase() === "high");
 
-        // Rule condition:
-        // 1. Negative ratio >= 30% in recent 6h window or 24h window (with at least 1 negative signal)
-        // OR 2. Severe volume surge (>= 3 negative signals)
-        // OR 3. Critical severity signal with negative sentiment
-        const isTriggered = (recent6hNegRatio >= 30 && recent6hNegatives.length >= 1) ||
-                            (negativeRatio >= 30 && negativeCount >= 1) ||
-                            negativeCount >= 3 ||
-                            (hasCritical && negativeCount >= 1);
+        // Rule condition: enough negative items that it is a pattern, not noise.
+        // 1. At least SPIKE_MIN_NEGATIVE negative items that are 30%+ of the topic's last 24 hours
+        // 2. Or the same inside the last 6 hours at 40%+ (an acute burst)
+        // 3. Or a large negative volume whatever the ratio
+        // 4. Or one item rated critical and negative
+        const isTriggered = (negativeCount >= SPIKE_MIN_NEGATIVE && negativeRatio >= 30) ||
+                            (recent6hNegatives.length >= SPIKE_MIN_NEGATIVE && recent6hNegRatio >= 40) ||
+                            negativeCount >= SPIKE_VOLUME ||
+                            criticalNegative;
 
         if (!isTriggered) continue;
 
@@ -276,10 +290,11 @@ async function detectAlertsNow(workspaceId) {
         }
 
         // Calculate severity
+        // Critical is kept for what is both large and lopsided (or rated critical by the analysis), so it stays rare.
         let severity = "medium";
-        if (negativeRatio >= 50 || hasCritical || negativeCount >= 4) {
+        if (criticalNegative || (negativeCount >= 10 && negativeRatio >= 50)) {
             severity = "critical";
-        } else if (negativeRatio >= 35 || hasHigh || negativeCount >= 2) {
+        } else if (hasHigh || (negativeCount >= 5 && negativeRatio >= 40)) {
             severity = "high";
         }
 
@@ -312,6 +327,7 @@ async function detectAlertsNow(workspaceId) {
                 severity,
                 title,
                 whatHappened,
+                language: id ? "id" : "en",
             }, signalsContext);
             if (enhanced?.whyItMatters) whyItMatters = enhanced.whyItMatters;
             if (enhanced?.whatToDo) whatToDo = enhanced.whatToDo;

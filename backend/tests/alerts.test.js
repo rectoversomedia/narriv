@@ -25,6 +25,8 @@ const sig = (id, sentiment, extra = {}) => ({
   analyses: sentiment ? [{ confidence: 0.9, analysis: { sentiment } }] : [],
   ...extra,
 });
+// Smallest qualifying spike: 3 negative of 5 (fewer is noise, not a pattern).
+const SPIKE = [sig('s1', 'negative'), sig('s2', 'negative'), sig('s3', 'negative'), sig('s4', 'positive'), sig('s5', 'neutral')];
 
 function db({ signals = [], existingAlerts = [], dedupError = null, language = null } = {}) {
   return (q) => {
@@ -52,24 +54,24 @@ describe('alert rule evaluation', () => {
   });
 
   it('raises a workspace-scoped alert with evidence links for a qualifying negative spike', async () => {
-    respond = db({ signals: [sig('s1', 'negative'), sig('s2', 'negative'), sig('s3', 'negative'), sig('s4', 'positive')] });
+    respond = db({ signals: SPIKE });
     const created = await detectAlerts(WS);
     expect(created).toHaveLength(1);
     const [{ payload }] = inserts();
     // Stored text follows the workspace content language (default Indonesian).
-    expect(payload).toMatchObject({ workspace_id: WS, type: 'risk', severity: 'critical', status: 'open', title: 'Lonjakan Sentimen Negatif: Bank A' });
-    expect(payload.description).toBe('3 dari 4 percakapan terbaru (75%) bernada negatif untuk Bank A.');
+    expect(payload).toMatchObject({ workspace_id: WS, type: 'risk', severity: 'medium', status: 'open', title: 'Lonjakan Sentimen Negatif: Bank A' });
+    expect(payload.description).toBe('3 dari 5 percakapan terbaru (60%) bernada negatif untuk Bank A.');
     expect(payload.metadata.signal_ids).toEqual(['s1', 's2', 's3']);
     const signalQuery = fake.calls.find((c) => c.table === 'signals');
     expect(signalQuery.filters).toContainEqual({ name: 'eq', args: ['workspace_id', WS] });
   });
 
   it('writes the alert in English for a workspace whose content language is English', async () => {
-    respond = db({ language: 'en', signals: [sig('s1', 'negative'), sig('s2', 'negative'), sig('s3', 'negative'), sig('s4', 'positive')] });
+    respond = db({ language: 'en', signals: SPIKE });
     await detectAlerts(WS);
     const [{ payload }] = inserts();
     expect(payload.title).toBe('Negative Sentiment Spike: Bank A');
-    expect(payload.description).toBe('3 of 4 recent signals (75%) are negative for Bank A.');
+    expect(payload.description).toBe('3 of 5 recent signals (60%) are negative for Bank A.');
   });
 
   it('does not alert on non-qualifying (all positive/neutral) signals', async () => {
@@ -78,13 +80,24 @@ describe('alert rule evaluation', () => {
     expect(inserts()).toHaveLength(0);
   });
 
+  it('does not alert on two negative articles (noise, not a pattern)', async () => {
+    respond = db({ signals: [sig('s1', 'negative'), sig('s2', 'negative'), sig('s3', 'positive'), sig('s4', 'neutral'), sig('s5', 'neutral')] });
+    expect(await detectAlerts(WS)).toEqual([]);
+  });
+
+  it('judges the window by publication time, not fetch time (a new keyword brings in old articles)', async () => {
+    const old = new Date(now - 20 * 24 * 3600 * 1000).toISOString();
+    respond = db({ signals: SPIKE.map((s) => ({ ...s, published_at: old })) });
+    expect(await detectAlerts(WS)).toEqual([]);
+  });
+
   it('does not alert on a single signal', async () => {
     respond = db({ signals: [sig('s1', 'negative')] });
     expect(await detectAlerts(WS)).toEqual([]);
   });
 
   it('does not recreate an existing unresolved alert on repeated runs', async () => {
-    respond = db({ signals: [sig('s1', 'negative'), sig('s2', 'negative')], existingAlerts: [{ id: 'open-1', status: 'open' }] });
+    respond = db({ signals: SPIKE, existingAlerts: [{ id: 'open-1', status: 'open' }] });
     expect(await detectAlerts(WS)).toEqual([]);
     const dedup = fake.calls.find((c) => c.table === 'alerts' && c.op === 'select');
     expect(dedup.filters).toContainEqual({ name: 'neq', args: ['status', 'resolved'] });
@@ -92,7 +105,7 @@ describe('alert rule evaluation', () => {
   });
 
   it('runs the rules for one workspace one pass at a time (no twin alerts from parallel keywords)', async () => {
-    respond = db({ signals: [sig('s1', 'negative'), sig('s2', 'negative')] });
+    respond = db({ signals: SPIKE });
     await Promise.all([detectAlerts(WS), detectAlerts(WS)]);
     const alertCalls = fake.calls.map((c, i) => ({ ...c, i })).filter((c) => c.table === 'alerts');
     const firstInsert = alertCalls.find((c) => c.op === 'insert');
@@ -105,12 +118,12 @@ describe('alert rule evaluation', () => {
 
   it('raises a new alert when the previous one for the topic was resolved', async () => {
     // Resolved alerts are excluded by the dedup query, so the engine sees none.
-    respond = db({ signals: [sig('s1', 'negative'), sig('s2', 'negative')], existingAlerts: [] });
+    respond = db({ signals: SPIKE, existingAlerts: [] });
     expect(await detectAlerts(WS)).toHaveLength(1);
   });
 
   it('skips creation when the dedup lookup fails (no duplicate on DB errors)', async () => {
-    respond = db({ signals: [sig('s1', 'negative'), sig('s2', 'negative')], dedupError: { message: 'timeout' } });
+    respond = db({ signals: SPIKE, dedupError: { message: 'timeout' } });
     expect(await detectAlerts(WS)).toEqual([]);
     expect(inserts()).toHaveLength(0);
   });
