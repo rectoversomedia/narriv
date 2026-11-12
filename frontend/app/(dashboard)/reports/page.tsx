@@ -5,10 +5,11 @@ import Link from "next/link";
 import { type ComponentPropsWithoutRef, type ReactNode, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Calendar, CalendarClock, ChevronDown, Clock, Download, FileText, Mail, Plus, RefreshCcw, Search, Share2, Trash2, Edit2, type LucideIcon } from "lucide-react";
+import { ArrowRight, Calendar, CalendarClock, ChevronDown, Clock, Download, FileText, Mail, Plus, RefreshCcw, Search, Share2, Trash2, Edit2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
+import { StatStrip } from "@/components/ui/stamp";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
 import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, downloadReportFile, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
@@ -131,19 +132,6 @@ function Panel({ children, className, ...props }: ComponentPropsWithoutRef<"sect
   );
 }
 
-function MetricCard({ label, value, helper, tone }: { label: string; value: string; helper: string; icon?: LucideIcon; tone: Tone }) {
-  const style = toneStyles[tone];
-  return (
-    <div className="min-h-[120px] flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
-      <p className="text-[11px] font-black" style={{ color: style.color }}>{label}</p>
-      <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
-      <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{helper}</p>
-    </div>
-  );
-}
-
-
-
 function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeRecord[] | null, dashboard?: DashboardSummary | null }) {
   const L = (en: string, id: string) => pickL(en, id);
   const k = dashboard?.kpis;
@@ -187,20 +175,20 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
 
           {top ? (
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
+              <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#3B52F5]">{Math.round((top.signalCount / totalInIssues) * 100)}%</p>
-                <p className="mt-2 text-[13px] font-bold text-[#101334]">{L("Main Issue", "Isu Utama")}</p>
-                <p className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{top.title}</p>
+                <p className="mt-2 font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Main Issue", "Isu Utama")}</p>
+                <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{top.title}</p>
               </div>
-              <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
+              <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#C81E1E]">{risk ? risk.signalCount : 0}</p>
-                <p className="mt-2 text-[13px] font-bold text-[#101334]">{L("Biggest Risk", "Risiko Terbesar")}</p>
-                <p className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{risk ? risk.title : L("No negative issue", "Tidak ada isu negatif")}</p>
+                <p className="mt-2 font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Biggest Risk", "Risiko Terbesar")}</p>
+                <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{risk ? risk.title : L("No negative issue", "Tidak ada isu negatif")}</p>
               </div>
-              <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
+              <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#A04606]">{fastest?.velocity || "—"}</p>
-                <p className="mt-2 text-[13px] font-bold text-[#101334]">{L("Fastest Rising", "Naik Paling Cepat")}</p>
-                <p className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{fastest?.title}</p>
+                <p className="mt-2 font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Fastest Rising", "Naik Paling Cepat")}</p>
+                <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{fastest?.title}</p>
               </div>
             </div>
           ) : (
@@ -382,6 +370,7 @@ function ReportsTable({
   onExport: (reportId: string) => void;
   onExportFile?: (reportId: string, format: "csv" | "xlsx") => void;
 }) {
+  const router = useRouter();
   const tr = useTranslations("Reports");
   type TabValue = "all" | ReportStatus;
   const [activeTab, setActiveTab] = useState<TabValue>("all");
@@ -510,7 +499,7 @@ function ReportsTable({
       <div className="mt-4 hidden overflow-x-auto md:block">
         <table className="w-full min-w-[780px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-[#E6EAF2] text-[9.5px] font-black text-[#5F6B94]">
+            <tr className="border-b border-[#EEF0F6] font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
               <th className="px-3 py-3 w-[280px]">{tr("table.report")}</th>
               <th className="px-3 py-3">{tr("table.type")}</th>
               <th className="px-3 py-3">{tr("table.period")}</th>
@@ -521,54 +510,48 @@ function ReportsTable({
           </thead>
           <tbody className="divide-y divide-[#EDF1F7]">
             {visibleRows.length > 0 ? visibleRows.map((report) => (
-              <tr key={report.id} className="transition hover:bg-[#F8FAFF]">
+              <tr
+                key={report.id}
+                // The row opens the report; the download buttons keep their own clicks.
+                onClick={(e) => { if (!(e.target as HTMLElement).closest("button,a")) router.push(`/reports/${report.id}`); }}
+                className="cursor-pointer transition hover:bg-[#F7F8FC]"
+              >
                 <td className="min-w-[220px] px-3 py-3.5">
                   <div className="flex items-start gap-3">
                     <div className="min-w-0">
-                      <Link href={`/reports/${report.id}`} className="text-[12.5px] font-black leading-snug text-[#101334] hover:text-[#3B52F5] transition-colors">
+                      <Link href={`/reports/${report.id}`} className="text-[14.5px] font-black leading-snug text-[#101334] hover:text-[#3B52F5] transition-colors">
                         {report.title}
                       </Link>
-                      <p className="mt-0.5 text-[11px] font-bold leading-snug text-[#5F6B94]">{report.description}</p>
+                      <p className="mt-1 line-clamp-2 text-[12.5px] font-medium leading-snug text-[#5F6B94]">{report.description}</p>
                     </div>
                   </div>
                 </td>
-                <td className="px-3 py-3.5 align-middle text-[11px] font-black text-[#31406B]">{report.type}</td>
-                <td className="px-3 py-3.5 align-middle text-[11px] font-bold text-[#5F6B94]">{report.period}</td>
+                <td className="px-3 py-3.5 align-middle text-[12.5px] font-bold text-[#31406B]">{report.type}</td>
+                <td className="px-3 py-3.5 align-middle font-mono text-[11px] font-medium text-[#5F6B94]">{report.period}</td>
                 <td className="px-3 py-3.5 align-middle"><StatusBadge status={report.status} /></td>
                 <td className="px-3 py-3.5 align-middle">
-                  <span className="block text-[11px] font-black text-[#31406B]">{report.created}</span>
-                  <span className="mt-0.5 block text-[9.5px] font-bold text-[#647099]">{report.createdTime}</span>
+                  <span className="block font-mono text-[11.5px] font-bold text-[#31406B]">{report.created}</span>
+                  <span className="mt-0.5 block font-mono text-[10.5px] font-medium text-[#647099]">{report.createdTime}</span>
                 </td>
                 <td className="px-3 py-3.5 text-right align-middle">
-                  <div className="inline-flex items-center justify-end gap-1 whitespace-nowrap">
-                    <button
-                      type="button"
-                      onClick={() => onExportFile?.(String(report.id), "csv")}
-                      disabled={isFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
-                      title={`${tr("downloadReady")} CSV`}
-                    >
-                      CSV
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onExportFile?.(String(report.id), "xlsx")}
-                      disabled={isFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
-                      title={`${tr("downloadReady")} Excel`}
-                    >
-                      Excel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onExport(String(report.id))}
-                      disabled={isFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label={tr("exportAria", { title: report.title })}
-                      title={`${tr("downloadReady")} PDF`}
-                    >
-                      PDF
-                    </button>
+                  <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
+                    <Link href={`/reports/${report.id}`} className="inline-flex h-9 items-center rounded-[10px] bg-[#465FFF] px-3.5 text-[12.5px] font-black text-white transition hover:bg-[#3B52F5]">{pickL("Open", "Buka")}</Link>
+                    {/* Downloads as quiet text buttons: one primary action per row. */}
+                    <span className="inline-flex items-center rounded-[10px] bg-[#F3F5FA] p-0.5">
+                      {([["pdf", "PDF"], ["xlsx", "Excel"], ["csv", "CSV"]] as const).map(([format, label]) => (
+                        <button
+                          key={format}
+                          type="button"
+                          onClick={() => (format === "pdf" ? onExport(String(report.id)) : onExportFile?.(String(report.id), format))}
+                          disabled={isFetching}
+                          className="rounded-[8px] px-2 py-1.5 font-mono text-[10.5px] font-bold text-[#5F6B94] transition hover:bg-white hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label={format === "pdf" ? tr("exportAria", { title: report.title }) : undefined}
+                          title={`${tr("downloadReady")} ${label}`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -1116,22 +1099,15 @@ export default function ReportsPage() {
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-4">
           <AIReportSummary narratives={narrativesQuery.data?.data} dashboard={dashboardQuery.data} />
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {liveMetricCards.map((metric) => {
-              const labelKey = `liveMetrics.${metric.key}`;
-              const helperKey = `liveMetrics.${metric.key}Helper`;
-              return (
-                <MetricCard
-                  key={metric.key}
-                  label={tr(labelKey)}
-                  helper={tr(helperKey)}
-                  value={metric.value}
-                  icon={metric.icon}
-                  tone={metric.tone}
-                />
-              );
-            })}
-          </div>
+          <StatStrip
+            stats={liveMetricCards.map((metric) => ({
+              key: metric.key,
+              value: metric.value,
+              label: tr(`liveMetrics.${metric.key}`),
+              helper: tr(`liveMetrics.${metric.key}Helper`),
+              tone: toneStyles[metric.tone].text,
+            }))}
+          />
           {reportsQuery.isPending ? (
             <TableSkeleton rows={6} columns={7} />
           ) : reportsQuery.data && rows.length === 0 ? (
