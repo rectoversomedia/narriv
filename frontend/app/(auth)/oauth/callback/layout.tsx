@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Authenticating...",
+  title: "Signing In",
   description: "OAuth callback page for Narriv.",
 };
 

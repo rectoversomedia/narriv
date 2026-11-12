@@ -13,6 +13,8 @@ import {
 import { ArrowRight, BarChart3, Bell, Check, ChevronDown, Headphones, Lightbulb, Mail, Shield, Users, X, type LucideIcon } from "lucide-react";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { useToast } from "@/components/ui/toast";
+import { launchDashboard, signalDashboardReady } from "@/lib/launch";
+import { OnboardingAside, OnboardingProgress } from "./onboarding-chrome";
 import {
   createOnboardingWorkspace,
   createOnboardingSources,
@@ -280,9 +282,7 @@ export default function OnboardingPage() {
       const result = await completeOnboarding({ workspaceId: workspace.id, triggerIngestion: false });
       if (result?.success) {
         toast.success(pickL("Welcome to Narriv! You can configure more settings later.", "Selamat datang di Narriv! Pengaturan lain bisa diubah nanti."));
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 500);
+        launchDashboard(() => { window.location.href = "/"; });
       } else {
         throw new Error(pickL("Failed to complete onboarding.", "Onboarding gagal diselesaikan."));
       }
@@ -333,9 +333,7 @@ export default function OnboardingPage() {
       setProcessingProgress(100);
 
       if (result?.success) {
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 800);
+        setTimeout(() => launchDashboard(() => { window.location.href = "/"; }), 400);
       } else {
         throw new Error(pickL("Setup incomplete.", "Pengaturan belum selesai."));
       }
@@ -355,147 +353,106 @@ export default function OnboardingPage() {
     }
   }, [step, isSubmitting, handleSubmit]);
 
-  return (
-    <div className="min-h-dvh bg-[#F8F9FF] text-[#111536]">
-      {/* Top bar */}
-      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#E8EAF6] bg-white/80 px-4 backdrop-blur-md sm:px-6 lg:px-10">
-        <div className="flex items-center gap-3">
-          <img src="/brand/logo-h.webp" alt="Narriv" width={120} height={80} className="w-[96px] object-contain sm:w-[120px]" />
-        </div>
+  // A new Google account lands here straight from sign-in; let the welcome screen lift onto the first step.
+  useEffect(() => {
+    signalDashboardReady();
+  }, []);
 
-        <div className="flex items-center gap-3 sm:gap-4">
-          <span className="whitespace-nowrap text-sm font-semibold text-[#5F6B94]">
-            {step === "processing" ? 5 : step} {pickL("of", "dari")} 5
-          </span>
-          <div className="h-6 w-px bg-[#D6DDEC]" />
+  const current = step === "processing" ? 6 : (step as number);
+
+  return (
+    <div className="min-h-dvh bg-[#F4F6FD] text-[#111536] lg:grid lg:grid-cols-[minmax(360px,420px)_1fr]">
+      <OnboardingAside current={current} />
+
+      <div className="relative min-w-0 overflow-hidden">
+        {/* Soft light canvas: two colour washes and a faint dot grid, so the form never sits on flat grey. */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,rgba(70,95,255,0.12),transparent_40%),radial-gradient(circle_at_0%_100%,rgba(192,132,252,0.12),transparent_40%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(70,95,255,0.10)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:linear-gradient(180deg,black,transparent_70%)]" />
+
+        <header className="relative z-20 flex h-16 items-center justify-between px-4 sm:px-6 lg:h-20 lg:justify-end lg:px-10">
+          <img src="/brand/logo-h.webp" alt="Narriv" width={120} height={80} className="w-[96px] object-contain lg:hidden" />
           {/* Opens the help page in a new tab so the onboarding progress stays here. */}
           <a
             href="/help#contact"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-9 items-center gap-2 whitespace-nowrap rounded-full border border-[#D6DDEC] bg-white px-3.5 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5] sm:px-4"
+            className="flex h-9 items-center gap-2 whitespace-nowrap rounded-full bg-white/80 px-4 text-sm font-semibold text-[#3E4975] shadow-[0_0_0_1px_#E3E7F3] backdrop-blur transition-colors hover:text-[#3B52F5]"
           >
+            <Headphones size={15} />
             <span className="sm:hidden">{pickL("Help", "Bantuan")}</span>
-            <span className="hidden sm:inline">{pickL("Need help?", "Butuh bantuan?")}</span>
+            <span className="hidden sm:inline">{pickL("Need Help?", "Butuh Bantuan?")}</span>
           </a>
-        </div>
-      </header>
+        </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
-        {step !== "processing" && <StepIndicator current={step as Step} />}
+        <main className="relative z-10 mx-auto max-w-[860px] px-4 pb-10 sm:px-6 lg:px-10">
+          <OnboardingProgress current={current} />
 
-        <div className="mt-8">
-          {step === "processing" ? (
-            <ProcessingStep
-              progress={processingProgress}
-              submitError={submitError}
-              onRetry={handleSubmit}
-            />
-          ) : (
-            <div className="rounded-2xl border border-[#E8EAF6] bg-white shadow-sm">
-              <div className="p-5 sm:p-8 lg:p-10">
-                {step === 1 && (
-                  <ProfileStep data={data.profile} onChange={updateProfile} />
-                )}
-                {step === 2 && (
-                  <KeywordsStep keywords={data.keywords} onChange={updateKeywords} brand={data.profile.company} />
-                )}
-                {step === 3 && (
-                  <SourcesStep sources={data.sources} onChange={updateSources} />
-                )}
-                {step === 4 && (
-                  <NotificationsStep
-                    data={data.notifications}
-                    onChange={updateNotifications}
-                  />
-                )}
-                {step === 5 && <PreviewStep data={data} />}
-              </div>
+          <div key={step} className="onb-step-in mt-6 lg:mt-2">
+            {step === "processing" ? (
+              <ProcessingStep
+                progress={processingProgress}
+                submitError={submitError}
+                onRetry={handleSubmit}
+              />
+            ) : (
+              <div className="overflow-hidden rounded-[24px] bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_24px_48px_-24px_rgba(16,19,52,0.28)]">
+                <div className="p-5 sm:p-8 lg:p-10">
+                  {step === 1 && (
+                    <ProfileStep data={data.profile} onChange={updateProfile} />
+                  )}
+                  {step === 2 && (
+                    <KeywordsStep keywords={data.keywords} onChange={updateKeywords} brand={data.profile.company} />
+                  )}
+                  {step === 3 && (
+                    <SourcesStep sources={data.sources} onChange={updateSources} />
+                  )}
+                  {step === 4 && (
+                    <NotificationsStep
+                      data={data.notifications}
+                      onChange={updateNotifications}
+                    />
+                  )}
+                  {step === 5 && <PreviewStep data={data} />}
+                </div>
 
-              <div className="flex items-center justify-between border-t border-[#F0F2FA] px-5 py-5 sm:px-8 sm:py-6 lg:px-10">
-                {step === 1 ? (
+                <div className="sticky bottom-0 flex items-center justify-between border-t border-[#EEF0F8] bg-white/95 px-5 py-4 backdrop-blur sm:px-8 sm:py-5 lg:px-10">
+                  {step === 1 ? (
+                    <button
+                      type="button"
+                      className="text-sm font-semibold text-[#5F6B94] transition-colors hover:text-[#3B52F5] disabled:opacity-50"
+                      onClick={handleSkip}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? pickL("Skipping…", "Melewati…") : pickL("Skip for Now", "Lewati Dulu")}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={back}
+                      className="flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold text-[#3E4975] shadow-[0_0_0_1px_#DDE3EF] transition-colors hover:text-[#3B52F5] hover:shadow-[0_0_0_1px_#465FFF]"
+                    >
+                      {pickL("Back", "Kembali")}
+                    </button>
+                  )}
+
                   <button
                     type="button"
-                    className="text-sm font-semibold text-[#5F6B94] transition-colors hover:text-[#3B52F5] disabled:opacity-50"
-                    onClick={handleSkip}
-                    disabled={isSubmitting}
+                    onClick={next}
+                    className="group flex h-11 items-center gap-2.5 rounded-xl bg-gradient-to-r from-[#465FFF] to-[#6D4DFF] px-7 text-sm font-bold text-white shadow-[0_10px_24px_-10px_rgba(70,95,255,0.8)] transition-all hover:shadow-[0_14px_28px_-10px_rgba(70,95,255,0.95)] active:scale-[0.98]"
                   >
-                    {isSubmitting ? pickL("Skipping…", "Melewati…") : pickL("Skip for now", "Lewati dulu")}
+                    {step === 5 ? pickL("Finish Setup", "Selesaikan") : pickL("Continue", "Lanjut")}
+                    <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
                   </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={back}
-                    className="flex h-11 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-6 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5]"
-                  >
-                    {pickL("Back", "Kembali")}
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={next}
-                  className="flex h-11 items-center gap-3 rounded-xl bg-[#465FFF] hover:bg-[#3B52F5] px-8 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-sm active:scale-[0.98]"
-                >
-                  {step === 5 ? pickL("Finish setup", "Selesaikan") : pickL("Continue", "Lanjut")}
-                  <ArrowRight size={16} />
-                </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-
-        <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm font-medium text-[#647099]">
-          {pickL("Your data is safe with Narriv. We protect your privacy and information security.", "Data Anda aman di Narriv. Kami menjaga privasi dan keamanan informasi Anda.")}
-        </p>
-      </main>
-    </div>
-  );
-}
-
-// ─── Step Indicator ────────────────────────────────────────────────────────────
-
-function StepIndicator({ current }: { current: Step }) {
-  const t = useTranslations("OnboardingDesign.steps");
-  const steps = [
-    { label: t("profile"), num: 1 },
-    { label: t("keywords"), num: 2 },
-    { label: t("sources"), num: 3 },
-    { label: t("notifications"), num: 4 },
-    { label: t("preview"), num: 5 },
-  ];
-
-  return (
-    <div className="flex items-center">
-      {steps.map((s, i) => (
-        <div key={s.num} className="flex items-center">
-          <div className="flex flex-col items-center gap-1.5">
-            <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all ${
-                s.num < current
-                  ? "bg-[#465FFF] text-white"
-                  : s.num === current
-                  ? "border-2 border-[#465FFF] bg-white text-[#3B52F5]"
-                  : "border-2 border-[#D6DDEC] bg-white text-[#647099]"
-              }`}
-            >
-              {s.num < current ? <Check size={14} strokeWidth={3} /> : s.num}
-            </div>
-            <span
-              className={`text-xs font-semibold whitespace-nowrap hidden lg:block ${
-                s.num === current ? "text-[#3B52F5]" : s.num < current ? "text-[#3E4975]" : "text-[#647099]"
-              }`}
-            >
-              {s.label}
-            </span>
+            )}
           </div>
-          {i < steps.length - 1 && (
-            <div
-              className={`h-px w-8 sm:w-16 lg:mb-5 ${s.num < current ? "bg-[#465FFF]" : "bg-[#E8EAF6]"}`}
-            />
-          )}
-        </div>
-      ))}
+
+          <p className="mt-6 text-center text-[13px] font-medium text-[#7A84A6] lg:hidden">
+            {pickL("Your data is encrypted and private to your workspace.", "Data Anda terenkripsi dan hanya untuk workspace Anda.")}
+          </p>
+        </main>
+      </div>
     </div>
   );
 }
