@@ -882,7 +882,7 @@ export default function IntelligencePage() {
                     return (
                       <li key={phase.key} className="relative flex min-w-0 flex-col rounded-[16px] bg-[#F6F7FC] p-4" style={{ boxShadow: `inset 0 4px 0 ${toneStyle.color}` }}>
                         {i < lifecycleCards.length - 1 ? (
-                          <span aria-hidden="true" className="absolute -right-[13px] top-1/2 z-10 hidden size-6 -translate-y-1/2 place-items-center rounded-full border-[1.5px] border-[#101334] bg-white text-[#101334] lg:grid"><ChevronRight size={13} /></span>
+                          <span aria-hidden="true" className="absolute -right-[13px] top-[62px] z-10 hidden size-6 place-items-center rounded-full border-[1.5px] border-[#101334] bg-white text-[#101334] lg:grid"><ChevronRight size={13} /></span>
                         ) : null}
                         <div className="flex items-center justify-between gap-2 pt-1">
                           <p className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em]" style={{ color: readableTone(toneStyle.color) }}>{String(i + 1).padStart(2, "0")} · {ti(`lifecycle.phases.${phase.key}.title`)}</p>
