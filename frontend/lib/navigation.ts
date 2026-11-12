@@ -3,8 +3,10 @@ import { BarChart3, Bell, BellRing, CalendarClock, Briefcase, Database, FileText
 
 // Four menus, each answering one question a director has:
 //   Hari Ini — what is happening and what do I decide today?
-//   Isu — what are people saying, and which of it is dangerous?
-//   Peringatan & Tugas — what needs handling, who owns it, how far along is it?
+//   Isu — what are people saying (online and in AI answers), and which of it is dangerous?
+//   Tindak Lanjut — what needs handling, who owns it, how far along is it? (its open count shows beside it)
+//     Its tabs are the three steps of handling an issue in order (alert, plan, case), so they carry step numbers.
+//     Recommendations are suggestions still waiting on a decision, so they live under Hari Ini.
 //   Laporan — what do I send to the board or the client?
 // Pengaturan (what is monitored, where notifications go) is not a menu: it opens from the account menu at the top
 // right, and its pages still get their tabs.
@@ -14,19 +16,23 @@ export const navGroups: Array<{ key: string; items: Array<{ key: string; href: s
   {
     key: "main",
     items: [
-      { key: "today", href: "/", icon: Home, match: ["/brief", "/insights"] },
-      { key: "issues", href: "/signals", icon: MessagesSquare, match: ["/intelligence", "/opportunities", "/timeline"] },
-      { key: "tasks", href: "/alerts", icon: Bell, match: ["/alert-center", "/action-center", "/action-plans", "/actions", "/workspace/cases"] },
-      { key: "reports", href: "/reports", icon: FileText, match: ["/visibility"] },
+      { key: "today", href: "/", icon: Home, match: ["/brief", "/insights", "/action-center"] },
+      { key: "issues", href: "/signals", icon: MessagesSquare, match: ["/intelligence", "/opportunities", "/timeline", "/visibility"] },
+      { key: "tasks", href: "/alerts", icon: Bell, match: ["/alert-center", "/action-plans", "/actions", "/workspace/cases"] },
+      { key: "reports", href: "/reports", icon: FileText },
     ],
   },
 ];
+
+/** Menus whose tabs are ordered steps of one flow; their tabs show a step number. */
+export const STEPPED_SECTIONS: ReadonlyArray<string> = ["tasks"];
 
 // The pages inside each menu, shown as tabs at the top of those pages (existing routes unchanged).
 // `satisfies` keeps the literal keys for the translation lookups while checking every tab has an icon.
 export const SECTION_TABS = {
   today: [
     { key: "todayTab", href: "/", icon: LayoutDashboard },
+    { key: "actionsTab", href: "/action-center", icon: Lightbulb },
     { key: "brief", href: "/brief", icon: Newspaper },
     { key: "analysis", href: "/insights", icon: BarChart3 },
   ],
@@ -35,16 +41,15 @@ export const SECTION_TABS = {
     { key: "issueMap", href: "/intelligence", icon: Network },
     { key: "opportunities", href: "/opportunities", icon: Sparkle },
     { key: "timeline", href: "/timeline", icon: CalendarClock },
+    { key: "visibility", href: "/visibility", icon: Sparkles },
   ],
   tasks: [
     { key: "alertsTab", href: "/alerts", icon: BellRing },
-    { key: "actionsTab", href: "/action-center", icon: Lightbulb },
     { key: "actionCenter", href: "/action-plans", icon: ListChecks },
     { key: "cases", href: "/workspace/cases", icon: Briefcase },
   ],
   reports: [
     { key: "reportsTab", href: "/reports", icon: FileText },
-    { key: "visibility", href: "/visibility", icon: Sparkles },
   ],
   settings: [
     { key: "settingsTab", href: "/workspace/settings", icon: SlidersHorizontal },

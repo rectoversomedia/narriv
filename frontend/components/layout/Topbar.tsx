@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import { isPageHidden, useWorkspaceUseCase } from "@/lib/use-case";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
 import { Bell, ChevronDown, CircleHelp, Inbox, LogOut, Search, Settings, ShieldCheck, WifiOff, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -49,12 +50,12 @@ const navLinks = [
   { href: "/intelligence", title: { en: "Issue map", id: "Peta isu" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/opportunities", title: { en: "Opportunities", id: "Peluang" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/timeline", title: { en: "Timeline", id: "Kronologi" }, subtitle: { en: "Issues", id: "Isu" } },
-  { href: "/alerts", title: { en: "Alerts", id: "Peringatan" }, subtitle: { en: "Alerts & Tasks", id: "Peringatan & Tugas" } },
-  { href: "/action-center", title: { en: "Recommendations", id: "Rekomendasi" }, subtitle: { en: "Alerts & Tasks", id: "Peringatan & Tugas" } },
-  { href: "/action-plans", title: { en: "Action plans", id: "Rencana aksi" }, subtitle: { en: "Alerts & Tasks", id: "Peringatan & Tugas" } },
-  { href: "/workspace/cases", title: { en: "Cases", id: "Kasus" }, subtitle: { en: "Alerts & Tasks", id: "Peringatan & Tugas" } },
+  { href: "/alerts", title: { en: "Alerts", id: "Peringatan" }, subtitle: { en: "Follow-up", id: "Tindak Lanjut" } },
+  { href: "/action-center", title: { en: "Recommendations", id: "Rekomendasi" }, subtitle: { en: "Today", id: "Hari Ini" } },
+  { href: "/action-plans", title: { en: "Action plans", id: "Rencana aksi" }, subtitle: { en: "Follow-up", id: "Tindak Lanjut" } },
+  { href: "/workspace/cases", title: { en: "Cases", id: "Kasus" }, subtitle: { en: "Follow-up", id: "Tindak Lanjut" } },
   { href: "/reports", title: { en: "Reports", id: "Laporan" }, subtitle: { en: "Reports", id: "Laporan" } },
-  { href: "/visibility", title: { en: "AI answers", id: "Jawaban AI" }, subtitle: { en: "Reports", id: "Laporan" } },
+  { href: "/visibility", title: { en: "AI answers", id: "Jawaban AI" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/workspace/settings", title: { en: "Settings", id: "Pengaturan" }, subtitle: { en: "Keywords, team, notifications", id: "Kata kunci, tim, notifikasi" } },
   { href: "/workspace/sources", title: { en: "Data sources", id: "Sumber data" }, subtitle: { en: "Settings", id: "Pengaturan" } },
   { href: "/workspace/integrations", title: { en: "Notification channels", id: "Saluran notifikasi" }, subtitle: { en: "Settings", id: "Pengaturan" } },
@@ -174,8 +175,10 @@ function AccountMenu({ name, email, onLogout }: { name: string; email: string; o
 }
 
 export function Topbar() {
+  const { useCase } = useWorkspaceUseCase();
   const L = useL();
   const router = useRouter();
+  const pathname = usePathname();
   const t = useTranslations("DemoApp.topbar");
   const language = useUiStore((state) => state.language);
   const toggleLanguage = useUiStore((state) => state.toggleLanguage);
@@ -306,6 +309,7 @@ export function Topbar() {
           }
         });
         navLinks.forEach((nav) => {
+          if (isPageHidden(nav.href, useCase)) return; // pages that do not apply to this workspace
           const lang = language === "id" ? "id" : "en";
           const words = [nav.title.en, nav.title.id, nav.subtitle.en, nav.subtitle.id].join(" ").toLowerCase();
           if (words.includes(q)) {
@@ -320,7 +324,7 @@ export function Topbar() {
       }
     }, 200);
     return () => clearTimeout(timer);
-  }, [searchQuery, language, searchAlertsQuery.data, searchNarrativesQuery.data]);
+  }, [searchQuery, language, searchAlertsQuery.data, searchNarrativesQuery.data, useCase]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -429,6 +433,16 @@ export function Topbar() {
         {/* Live connection status indicator */}
         {/* Only claim live updates while the event stream is actually connected. */}
         {sseStatus === "connected" ? <LiveIndicator status={sseStatus} /> : null}
+        {/* Ask Narriv sits here rather than floating over the page, so it never covers a table or a button. */}
+        <Link
+          href="/ask"
+          aria-label="Ask Narriv"
+          aria-current={pathname?.startsWith("/ask") ? "page" : undefined}
+          className="hidden h-10 shrink-0 items-center gap-2 rounded-[10px] bg-[#101334] pl-1.5 pr-3.5 text-[12.5px] font-black text-white transition hover:bg-[#2B2F9E] lg:inline-flex"
+        >
+          <Image src="/brand/logo-bulat.webp" alt="" width={28} height={28} unoptimized className="size-7 rounded-full object-cover" />
+          <span>Ask Narriv</span>
+        </Link>
         {/* Both languages visible; the active one is filled, a click switches. */}
         <div role="group" aria-label="Language" className="hidden h-10 items-center rounded-[10px] bg-[#EEF1F7] p-1 sm:flex">
           {(["id", "en"] as const).map((code) => (

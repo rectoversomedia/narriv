@@ -19,7 +19,9 @@ test("a page belongs to the menu whose tabs list it", () => {
   assert.equal(sectionForPath("/brief"), "today");
   assert.equal(sectionForPath("/intelligence"), "issues");
   assert.equal(sectionForPath("/workspace/cases"), "tasks");
-  assert.equal(sectionForPath("/visibility"), "reports");
+  assert.equal(sectionForPath("/visibility"), "issues");
+  assert.equal(sectionForPath("/action-center"), "today");
+  assert.deepEqual(SECTION_TABS.tasks.map((tab) => tab.href), ["/alerts", "/action-plans", "/workspace/cases"]);
   assert.equal(sectionForPath("/workspace/activity"), "settings");
   assert.equal(sectionForPath("/alerts/123"), null);
 });
@@ -34,8 +36,9 @@ test("every linked route exists, and consolidated pages stay reachable", () => {
   const topbar = readFileSync("components/layout/Topbar.tsx", "utf8");
   assert.match(topbar, /href="\/workspace\/settings"/);
   assert.match(topbar, /href="\/help"/);
-  // Ask Narriv is the floating button in the shell, not a menu.
-  assert.match(readFileSync("components/layout/dashboard-shell.tsx", "utf8"), /href="\/ask"/);
+  // Ask Narriv: in the top bar on desktop and the bottom bar on phones.
+  assert.match(readFileSync("components/layout/Topbar.tsx", "utf8"), /href="\/ask"/);
+  assert.match(readFileSync("components/layout/Sidebar.tsx", "utf8"), /href="\/ask"/);
 });
 
 test("every navigation and tab label is translated in English and Indonesian", () => {
@@ -53,7 +56,7 @@ test("every navigation and tab label is translated in English and Indonesian", (
     }
   }
   assert.equal(messages("id").nav.today, "Hari Ini");
-  assert.equal(messages("id").nav.tasks, "Peringatan & Tugas");
+  assert.equal(messages("id").nav.tasks, "Tindak Lanjut");
 });
 
 test("the analysis, opportunities and timeline pages are tabs again, and none of them ships sample content", () => {
