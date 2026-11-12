@@ -735,64 +735,47 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
 
 const PLATFORM_NAMES: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", youtube: "YouTube", twitter: "X", x: "X", threads: "Threads", reddit: "Reddit", news: "Berita online", linkedin: "LinkedIn" };
 
+/** Where the mentions come from, as ranked bars; each row filters the table to that platform. */
 function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistribution"]; totalSignals?: number }) {
   const t = useTranslations("Signals.sourceDonut");
-  const hasData = data && data.length > 0;
-
-  const total = totalSignals ?? 0;
-  const items = hasData ? data : [];
-
-  const conicGradient = (() => {
-    if (items.length === 0) return '#E5E7EB 0% 100%';
-    let acc = 0;
-    return items.map((item) => {
-      const match = item.value.match(/^(\d+)%/);
-      const pct = match ? parseInt(match[1], 10) : 0;
-      const end = acc + pct;
-      const segment = `${item.color} ${acc}% ${end}%`;
-      acc = end;
-      return segment;
-    }).join(', ');
-  })();
+  const items = [...(data ?? [])]
+    .map((item) => ({ ...item, pct: Number(/^(\d+)%/.exec(item.value)?.[1] ?? 0), count: Number(/\((\d+)\)/.exec(item.value)?.[1] ?? NaN) }))
+    .sort((x, y) => y.pct - x.pct);
+  const max = Math.max(1, ...items.map((i) => i.pct));
 
   return (
-    <Panel className="p-4">
-      <div className="flex items-start justify-between gap-3">
+    <Panel className="flex h-full flex-col">
+      <div className="flex items-end justify-between gap-3">
         <div>
-          <h3 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("timeframe")}</p>
+          <h3 className="mt-1.5 !text-[19px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
         </div>
-        <span className="inline-flex h-7 shrink-0 whitespace-nowrap items-center rounded-full bg-[#F1F4FA] px-3 text-[10px] font-black text-[#53608C]">
-          {t("timeframe")}
-        </span>
+        {totalSignals ? <p className="shrink-0 text-right"><b className="block text-[24px] font-black leading-none text-[#101334]">{totalSignals.toLocaleString()}</b><span className="font-mono text-[10.5px] font-bold text-[#5F6B94]">{t("totalLabel")}</span></p> : null}
       </div>
-
-      {!hasData ? (
-        <div className="mt-5 flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
-          <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
+      {items.length === 0 ? (
+        <div className="mt-5 flex flex-col items-center justify-center gap-1 py-6 text-center">
+          <p className="text-[13px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
+          <p className="text-[12px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
       ) : (
-        <div className="mt-5 grid gap-5 sm:grid-cols-1 md:grid-cols-1 xl:grid-cols-1">
-          <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full" style={{ background: `conic-gradient(${conicGradient})` }}>
-            <span className="absolute h-[88px] w-[88px] rounded-full bg-white" />
-            <span className="relative text-center">
-              <b className="block text-[22px] font-black text-[#101334]">{total.toLocaleString()}</b>
-              <span className="text-[10px] font-bold text-[#5F6B94]">{t("totalLabel")}</span>
-            </span>
-          </div>
-          <div className="space-y-2.5 self-center">
-            {items.map((item) => (
-              <div key={item.name} className="flex items-center justify-between gap-3 text-[12px] font-bold">
-                <span className="flex min-w-0 items-center gap-2 text-[#101334]">
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
-                  <PlatformIcon platform={item.name} className="size-4" />
-                  <span className="truncate">{PLATFORM_NAMES[item.name.toLowerCase()] ?? item.name}</span>
+        <ul className="mt-4 space-y-1">
+          {items.map((item) => (
+            <li key={item.name}>
+              <Link href={monitoringHref({ platform: item.name.toLowerCase() })} className="group -mx-2 block rounded-[10px] px-2 py-2 transition hover:bg-[#F7F8FC]">
+                <span className="flex items-center justify-between gap-3">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <PlatformIcon platform={item.name} className="size-4" />
+                    <span className="truncate text-[14px] font-bold text-[#101334] group-hover:text-[#3B52F5]">{PLATFORM_NAMES[item.name.toLowerCase()] ?? item.name}</span>
+                  </span>
+                  <span className="shrink-0 font-mono text-[12px] font-bold text-[#101334]">{item.pct}%{Number.isFinite(item.count) ? <span className="text-[#5F6B94]"> · {item.count}</span> : null}</span>
                 </span>
-                <span className="shrink-0 font-black text-[#101334]">{item.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+                <span className="mt-1.5 block h-2 overflow-hidden rounded-full bg-[#EEF0F6]">
+                  <span className="block h-full rounded-full" style={{ width: `${(item.pct / max) * 100}%`, backgroundColor: item.color }} />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       )}
     </Panel>
   );
@@ -810,10 +793,13 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
   const every = Math.max(1, Math.ceil(values.length / 6));
 
   return (
-    <Panel className="p-4">
-      <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-[16px] font-black text-[#101334]">{t("title")} <span className="text-[11px] font-bold text-[#5F6B94]">{t("period")}</span></h3>
-        {hasNonZero ? <span className="text-[12px] font-black text-[#101334]">{total.toLocaleString(uiLanguage)} <span className="font-bold text-[#5F6B94]">{t("signalsLabel")}</span></span> : null}
+    <Panel className="flex h-full flex-col">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("period").replace(/[()]/g, "")}</p>
+          <h3 className="mt-1.5 !text-[19px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
+        </div>
+        {hasNonZero ? <p className="shrink-0 text-right"><b className="block text-[24px] font-black leading-none text-[#101334]">{total.toLocaleString(uiLanguage)}</b><span className="font-mono text-[10.5px] font-bold text-[#5F6B94]">{t("signalsLabel")}</span></p> : null}
       </div>
 
       {isLoading ? (
@@ -824,13 +810,13 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
           <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
       ) : (
-        <div className="mt-4">
+        <div className="mt-4 flex flex-1 flex-col">
           {peakIndex >= 0 ? (
-            <p className="mb-2 text-[11px] font-bold text-[#5F6B94]">
-              {pickL("Busiest hour", "Jam tersibuk")} <b className="font-black text-[#101334]">{labels?.[peakIndex] ?? ""}</b> · {values[peakIndex].toLocaleString(uiLanguage)} {t("signalsLabel")}
+            <p className="mb-3 inline-flex w-fit items-center gap-2 rounded-[8px] bg-[#EEF1FF] px-2.5 py-1 text-[12.5px] font-bold text-[#31406B]">
+              {pickL("Busiest hour", "Jam tersibuk")} <b className="font-mono font-bold text-[#3B52F5]">{labels?.[peakIndex] ?? ""}</b> · {values[peakIndex].toLocaleString(uiLanguage)} {t("signalsLabel")}
             </p>
           ) : null}
-          <div className="flex h-[140px] items-end gap-[3px] rounded-[12px] bg-[#F7F8FC] px-2 pt-3">
+          <div className="flex min-h-[160px] flex-1 items-end gap-[3px] rounded-[12px] bg-[#F7F8FC] px-2 pt-3">
             {values.map((v, i) => (
               <div key={i} className="group relative flex h-full flex-1 items-end" title={`${labels?.[i] ?? ""} · ${v} ${t("signalsLabel")}`}>
                 <div
@@ -840,7 +826,7 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
               </div>
             ))}
           </div>
-          <div className="mt-1.5 flex gap-[3px] px-2 text-[10px] font-bold text-[#5F6B94]">
+          <div className="mt-1.5 flex gap-[3px] px-2 font-mono text-[10px] font-bold text-[#5F6B94]">
             {values.map((_, i) => <span key={i} className="flex-1 text-center">{i % every === 0 ? labels?.[i] ?? "" : ""}</span>)}
           </div>
         </div>
@@ -851,36 +837,41 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
 
 function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"] }) {
   const t = useTranslations("Signals.investigationQueue");
-  const hasData = data && data.length > 0;
+  const items = data ?? [];
 
   return (
-    <Panel className="p-4">
-      <div className="flex items-start justify-between gap-3">
+    <Panel className="flex h-full flex-col">
+      <div className="flex items-end justify-between gap-3">
         <div>
-          <h3 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{pickL("Being Investigated", "Sedang Diselidiki")}</p>
+          <h3 className="mt-1.5 !text-[19px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
         </div>
-        <Link href="/workspace/cases" className="inline-flex h-9 shrink-0 items-center rounded-full bg-[#101334] px-4 text-[12.5px] font-bold text-white hover:bg-[#2B2F9E]">{t("viewAll")}</Link>
+        <Link href="/workspace/cases" className="shrink-0 text-[13px] font-bold text-[#3B52F5] hover:underline">{t("viewAll")} →</Link>
       </div>
 
-      {!hasData ? (
-        <div className="mt-4 flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
-          <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
+      {items.length === 0 ? (
+        <div className="mt-4 flex flex-col items-center justify-center gap-1 py-6 text-center">
+          <p className="text-[13px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
+          <p className="text-[12px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
       ) : (
-        <div className="mt-4 space-y-3">
-          {data.map((item, keyIdx) => {
+        <ul className="mt-3 divide-y divide-[#EEF0F6]">
+          {items.map((item, keyIdx) => {
+            const open = item.badge === "Investigating" || item.badge === "open";
             return (
-              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-1 gap-3 border-b border-[#E6EAF2] py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto]">
-                <span className="min-w-0">
-                  <span className="line-clamp-2 block text-[12px] font-black leading-snug text-[#101334]" title={item.title}>{item.title}</span>
-                  <span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.meta}</span>
-                </span>
-                <span className={cn("h-fit w-fit rounded-full px-2 py-1 text-[9px] font-black", item.badge === "Investigating" || item.badge === "open" ? "bg-[#465FFF]/10 text-[#3B52F5]" : "bg-[#F59E0B]/12 text-[#A04606]")}>{codeLabel(item.badge)}</span>
-              </div>
+              <li key={`${item.title}:${keyIdx}`}>
+                <Link href="/workspace/cases" className="group -mx-2 flex items-start gap-3 rounded-[10px] px-2 py-3 transition hover:bg-[#F7F8FC]">
+                  <span className={cn("mt-1.5 size-2.5 shrink-0 rounded-full", open ? "bg-[#465FFF]" : "bg-[#F59E0B]")} />
+                  <span className="min-w-0 flex-1">
+                    <span className="line-clamp-2 block text-[14px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]" title={item.title}>{item.title}</span>
+                    <span className="mt-0.5 block font-mono text-[11px] font-medium text-[#5F6B94]">{item.meta}</span>
+                  </span>
+                  <span className={cn("shrink-0 rounded-[6px] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.06em]", open ? "bg-[#EEF1FF] text-[#3B52F5]" : "bg-[#FFF4E5] text-[#A04606]")}>{codeLabel(item.badge)}</span>
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </Panel>
   );
@@ -889,25 +880,28 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
 function RelatedNarrativeCard({ n }: { n: { id: string; title: string; signalCount: number; sentiment: string; velocity: string; confidence: number | null } }) {
   const tone = n.sentiment.toLowerCase();
   const look = tone.includes("neg")
-    ? { bg: "#FDECEC", chip: "bg-[#C81E1E] text-white", word: pickL("Negative", "Negatif") }
+    ? { edge: "#EF4444", chip: "bg-[#B42318] text-white", word: pickL("Negative", "Negatif") }
     : tone.includes("pos")
-      ? { bg: "#E5F6EE", chip: "bg-[#047857] text-white", word: pickL("Positive", "Positif") }
+      ? { edge: "#10B981", chip: "bg-[#047857] text-white", word: pickL("Positive", "Positif") }
       : tone.includes("mix")
-        ? { bg: "#F1ECFF", chip: "bg-[#6E44E8] text-white", word: pickL("Mixed", "Campuran") }
-        : { bg: "#EEF1F8", chip: "bg-[#5A6478] text-white", word: pickL("Neutral", "Netral") };
+        ? { edge: "#8B5CF6", chip: "bg-[#6E44E8] text-white", word: pickL("Mixed", "Campuran") }
+        : { edge: "#94A3B8", chip: "bg-[#5A6478] text-white", word: pickL("Neutral", "Netral") };
   const rising = /^\+/.test(n.velocity) && n.velocity !== "+0%";
   return (
-    <Link href={issueHref(n.id)} className="group flex flex-col justify-between rounded-[12px] py-2 transition">
-      <p className="line-clamp-2 text-[15px] font-black leading-snug text-[#101334] group-hover:text-[#3B52F5]">{n.title}</p>
-      <div className="mt-3 flex items-end justify-between gap-2">
+    <Link href={issueHref(n.id)} className="group flex flex-col justify-between rounded-[16px] bg-[#F6F7FC] p-4 transition hover:bg-[#EEF1FF]" style={{ boxShadow: `inset 4px 0 0 ${look.edge}` }}>
+      <div className="pl-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.06em]", look.chip)}>{look.word}</span>
+          {n.velocity ? <span className={cn("rounded-[6px] bg-white px-2 py-0.5 font-mono text-[10px] font-bold", rising ? "text-[#B45309]" : "text-[#5F6B94]")}>{n.velocity} / 24{pickL("h", " jam")}</span> : null}
+        </div>
+        <p className="mt-2.5 line-clamp-2 text-[16px] font-black leading-snug text-[#101334] group-hover:text-[#3B52F5]">{n.title}</p>
+      </div>
+      <div className="mt-4 flex items-end justify-between gap-2 pl-1">
         <span>
-          <b className="block text-[32px] font-black leading-none tracking-[-0.04em] text-[#101334]">{n.signalCount}</b>
-          <span className="text-[12px] font-bold text-[#5A6478]">{pickL("Mentions", "Percakapan")}</span>
+          <b className="block text-[30px] font-black leading-none tracking-[-0.03em] text-[#101334]">{n.signalCount}</b>
+          <span className="font-mono text-[10.5px] font-bold text-[#5F6B94]">{pickL("mentions", "percakapan")}</span>
         </span>
-        <span className="flex flex-wrap justify-end gap-1.5 text-[11px] font-black">
-          <span className={cn("rounded-full px-2.5 py-1", look.chip)}>{look.word}</span>
-          {n.velocity ? <span className={cn("rounded-full bg-white px-2.5 py-1", rising ? "text-[#B45309]" : "text-[#31406B]")}>{n.velocity} {pickL("24 H", "24 Jam")}</span> : null}
-        </span>
+        <span className="text-[13px] font-bold text-[#3B52F5]">{pickL("Open Issue →", "Buka Isu →")}</span>
       </div>
     </Link>
   );
@@ -920,8 +914,12 @@ function LiveRelatedNarratives() {
   const items = q.data?.data ?? [];
   return (
     <div className={cn("mt-6", BOX)}>
-      <div className="mb-4 flex items-center gap-2">
-        <h3 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{t("relatedNarratives")}</h3>
+      <div className="mb-4 flex items-end justify-between gap-2">
+        <div>
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{pickL("Issues Behind These Mentions", "Isu di Balik Percakapan Ini")}</p>
+          <h3 className="mt-1.5 text-[19px] font-black tracking-[-0.02em] text-[#101334]">{t("relatedNarratives")}</h3>
+        </div>
+        <Link href="/intelligence" className="shrink-0 text-[13px] font-bold text-[#3B52F5] hover:underline">{pickL("Issue Map →", "Peta Isu →")}</Link>
       </div>
       {q.isLoading ? (
         <p className="text-[12px] font-bold text-[#5A6478]">{pickL("Loading narratives…", "Memuat narasi…")}</p>
@@ -1410,7 +1408,7 @@ export default function SignalsPage() {
         </div>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-3">
+      <div className="grid items-stretch gap-5 xl:grid-cols-3">
         <SourceDonut data={meta?.sourceDistribution} totalSignals={meta?.totalSignals} />
         <TimelineChart data={meta?.timeline} labels={meta?.timelineLabels} />
         <InvestigationQueue data={meta?.investigationQueue} />
