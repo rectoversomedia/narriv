@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { Check, ChevronRight, Clock3, Flag, MoreVertical, Search, Sparkles, Target, Timer, TrendingDown, TrendingUp, type LucideIcon } from "lucide-react";
+import { ChevronRight, MoreVertical, Search, Timer, TrendingDown, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
@@ -18,6 +18,7 @@ import { PlanWorkflowControls } from "./components/plan-workflow-controls";
 import { RejectActionPlanModal } from "./components/reject-action-plan-modal";
 import { readableTone } from "@/lib/readable-tone";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { StatStrip } from "@/components/ui/stamp";
 import { pickL } from "@/lib/use-l";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
@@ -121,32 +122,16 @@ function hasActionPlanData(plan: ActionPlanResponse | null | undefined) {
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <Card className={cn("!border-0 text-[#101334]", BOX, className)}>
+    <Card className={cn("text-[#101334]", BOX, "!border-[1.5px] !border-[#101334]", className)}>
       {children}
     </Card>
-  );
-}
-
-function MetricCard({ label, value, helper, trend, tone, negative = false }: { label: string; value: string; helper?: string; trend?: number | null; icon?: LucideIcon; tone: Tone; negative?: boolean }) {
-  const style = toneStyles[tone];
-  const isNegativeDisplay = negative || (trend != null && trend < 0);
-  // "No earlier period to compare" carries no information; show it nowhere rather than five times.
-  const showHelper = helper && !/sebelumnya untuk dibandingkan|previous period to compare/i.test(helper);
-  return (
-    <div className="min-h-[120px] flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
-      <p className="text-[11px] font-black" style={{ color: style.color }}>{label}</p>
-      <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
-      {trend != null && trend !== 0 ? (
-        <p className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", isNegativeDisplay ? "text-[#C81E1E]" : "text-[#047857]")}><span aria-hidden="true">{trend > 0 ? "▲" : "▼"}</span> {helper}</p>
-      ) : showHelper ? <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{helper}</p> : null}
-    </div>
   );
 }
 
 function StatusPill({ status, t }: { status: ActionStatus; t: (key: string) => string }) {
   const style = status === "done" ? "bg-[#10B981]/12 text-[#047857]" : status === "in-progress" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#EF4444]/10 text-[#C81E1E]";
   const label = status === "done" ? t("statusDone") : status === "in-progress" ? t("statusInProgress") : t("statusActive");
-  return <span className={cn("rounded-full px-3 py-1 text-[9px] font-black", style)}>{label}</span>;
+  return <span className={cn("shrink-0 rounded-[6px] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.06em]", style)}>{label}</span>;
 }
 
 function Avatar({ name }: { name: string }) {
@@ -188,24 +173,23 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
       type="button"
       onClick={() => onSelect(action)}
       className={cn(
-        // A task is a flat white sheet: the status pill and title carry it, no tint or shadow.
-        "w-full rounded-[14px] bg-white p-4 text-left transition hover:ring-2 hover:ring-[#DDE3EF]",
-        selected && "ring-2 ring-[#465FFF] hover:ring-[#465FFF]",
+        // A plan is a sheet with its priority as a band on the left; the picked one is inked (its details show below).
+        "relative w-full overflow-hidden rounded-[14px] border-[1.5px] border-[#E3E7F1] bg-white p-4 pl-5 text-left transition hover:border-[#101334]",
+        selected && "border-[#101334] shadow-[0_4px_0_#465FFF]",
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-[14px] font-black leading-snug text-[#101334]">{action.title}</h3>
-        <StatusPill status={action.status} t={t} />
-      </div>
+      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1.5" style={{ backgroundColor: style.color }} />
+      <StatusPill status={action.status} t={t} />
+      <h3 className="mt-2 text-[15px] font-black leading-snug text-[#101334]">{action.title}</h3>
       {/* The issue in one line, impact as a chip; owner by name only (the role lives on the plan). */}
-      <p className="mt-2 line-clamp-1 text-[12px] font-semibold text-[#3A4566]" title={action.issue}>{action.issue}</p>
+      <p className="mt-1.5 line-clamp-2 text-[13px] font-medium text-[#3A4566]" title={action.issue}>{action.issue}</p>
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black" style={{ color: readableTone(style.color) }}>{action.impact}</span>
-        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#31406B]">{action.due}</span>
+        <span className="font-mono text-[11px] font-bold uppercase tracking-[0.04em]" style={{ color: readableTone(style.color) }}>{action.impact}</span>
+        <span className="font-mono text-[11px] font-medium text-[#5F6B94]">· {action.due}</span>
       </div>
       <div className="mt-3 flex items-center gap-2">
         <Avatar name={action.owner} />
-        <span className="truncate text-[12px] font-black text-[#101334]">{action.owner.split(" · ")[0]}</span>
+        <span className={cn("truncate text-[12.5px] font-black", action.owner === t("unassignedOwner") ? "text-[#B42318]" : "text-[#101334]")}>{action.owner.split(" · ")[0]}</span>
       </div>
       <div className="mt-4">
         <ProgressLine value={action.progress} tone={action.tone} />
@@ -402,6 +386,12 @@ export default function ActionPlansPage() {
   const inProgressCount = actionItems.filter((a) => a.status === "in-progress").length;
   const completedCount = actionItems.filter((a) => a.status === "done").length;
   const needsAttentionCount = highActions.length;
+  type MetricKey = "active" | "inProgress" | "done" | "needsAttention" | "resolution";
+  const m = (key: Exclude<MetricKey, "resolution">, fallback: number) => (metricsQuery.data ? String(metricsQuery.data[key].value) : String(fallback));
+  const trendText = (key: MetricKey) => {
+    const trend = metricsQuery.data?.[key].trend;
+    return trend != null && trend !== 0 ? `${trend > 0 ? "▲" : "▼"} ${trendHelper(trend)}` : undefined;
+  };
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
@@ -411,6 +401,7 @@ export default function ActionPlansPage() {
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
+          <p className="mt-1 text-[14px] text-[#5F6B94]">{pickL("Pick a plan to see its steps and approve it below.", "Pilih rencana untuk melihat langkahnya dan menyetujuinya di bawah.")}</p>
         </div>
         <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[8px] bg-[#465FFF] px-4 text-[13px] font-black text-white shadow-sm transition hover:brightness-105">
           {t("newAction")}
@@ -438,13 +429,16 @@ export default function ActionPlansPage() {
         }}
       />
 
-      <section className="grid grid-cols-2 gap-3.5 xl:grid-cols-5">
-        <MetricCard label={t("metricActiveActions")} value={metricsQuery.data ? String(metricsQuery.data.active.value) : String(activeCount)} trend={metricsQuery.data?.active.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.active.trend) : t("metricActiveHelper", { count: activeCount })} icon={Target} tone="blue" />
-        <MetricCard label={t("metricInProgress")} value={metricsQuery.data ? String(metricsQuery.data.inProgress.value) : String(inProgressCount)} trend={metricsQuery.data?.inProgress.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.inProgress.trend) : t("metricInProgressHelper", { count: inProgressCount })} icon={Sparkles} tone="amber" />
-        <MetricCard label={t("metricCompleted")} value={metricsQuery.data ? String(metricsQuery.data.done.value) : String(completedCount)} trend={metricsQuery.data?.done.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.done.trend) : t("metricCompletedHelper", { count: completedCount })} icon={Check} tone="green" />
-        <MetricCard label={t("metricNeedsAttention")} value={metricsQuery.data ? String(metricsQuery.data.needsAttention.value) : String(needsAttentionCount)} trend={metricsQuery.data?.needsAttention.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.needsAttention.trend) : t("metricNeedsAttentionHelper", { count: needsAttentionCount })} icon={Flag} tone="red" negative={needsAttentionCount > 0} />
-        <MetricCard label={t("metricAvgResolution")} value={metricsQuery.data ? String(metricsQuery.data.resolution.value) : (actionItems.length > 0 ? String(actionItems.length) : "—")} trend={metricsQuery.data?.resolution.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.resolution.trend) : t("metricAvgResolutionHelper", { count: actionItems.length })} icon={Clock3} tone="blue" />
-      </section>
+      {/* One strip of numbers; a trend shows only when there is an earlier period to compare against. */}
+      <StatStrip
+        stats={[
+          { key: "active", value: m("active", activeCount), label: t("metricActiveActions"), helper: trendText("active"), tone: "text-[#3B52F5]" },
+          { key: "progress", value: m("inProgress", inProgressCount), label: t("metricInProgress"), helper: trendText("inProgress"), tone: "text-[#B45309]" },
+          { key: "done", value: m("done", completedCount), label: t("metricCompleted"), helper: trendText("done"), tone: "text-[#047857]" },
+          { key: "attention", value: m("needsAttention", needsAttentionCount), label: t("metricNeedsAttention"), helper: needsAttentionCount > 0 ? pickL("high priority, not done", "prioritas tinggi, belum selesai") : trendText("needsAttention"), tone: needsAttentionCount > 0 ? "text-[#B42318]" : "text-[#101334]" },
+          { key: "resolution", value: metricsQuery.data ? String(metricsQuery.data.resolution.value) : "—", label: t("metricAvgResolution"), helper: trendText("resolution") },
+        ]}
+      />
 
       {isQueueUnavailable ? <DashboardErrorState title={t("queueErrorTitle")} description={t("queueErrorDesc")} onRetry={() => void actionQueueQuery.refetch()} minHeight="min-h-[150px]" /> : null}
       {isPlanUnavailable ? <DashboardErrorState title={t("planErrorTitle")} description={t("planErrorDesc")} onRetry={() => void actionPlanQuery.refetch()} minHeight="min-h-[150px]" /> : null}

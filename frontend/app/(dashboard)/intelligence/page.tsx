@@ -254,7 +254,7 @@ function buildDonutGradient(items: DonutDatum[]) {
 
 function Panel({ children, className, onClick }: { children: ReactNode; className?: string; onClick?: (e: React.MouseEvent) => void }) {
   return (
-    <Card className={cn("!border-0 text-[#101334]", BOX, className)} onClick={onClick}>
+    <Card className={cn("text-[#101334]", BOX, "!border-[1.5px] !border-[#101334]", className)} onClick={onClick}>
       {children}
     </Card>
   );

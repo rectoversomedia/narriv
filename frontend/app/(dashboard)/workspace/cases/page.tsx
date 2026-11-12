@@ -23,6 +23,7 @@ import { useToast } from "@/components/ui/toast";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
+import { StatStrip } from "@/components/ui/stamp";
 import { createPortal } from "react-dom";
 import { useUiStore } from "@/store/useUiStore";
 import { assigneeName, memberName } from "@/lib/member-name";
@@ -104,40 +105,6 @@ function formatDeadline(value: string | null, locale: string) {
     { day: "2-digit", month: "short", year: "numeric" },
   ).format(date);
   return { formatted, isPast };
-}
-
-/* ─── Metric Card ─── */
-
-function MetricCard({
-  label,
-  value,
-  helper,
-  icon: _Icon,
-  tone: _tone,
-}: {
-  label: string;
-  value: number;
-  helper: string;
-  icon: typeof FolderOpen;
-  tone: Tone;
-}) {
-  const locale = useUiStore((state) => state.language);
-
-  return (
-    <div className="overflow-hidden flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
-      <div className="flex items-center gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-black text-[#5A6478]">
-            {label}
-          </p>
-          <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">
-            {value.toLocaleString(locale === "id" ? "id-ID" : "en-US")}
-          </p>
-        </div>
-      </div>
-      <p className="mt-3 text-[11px] font-bold text-[#5A6478]">{helper}</p>
-    </div>
-  );
 }
 
 /* ─── Case Detail Sidebar ─── */
@@ -694,15 +661,24 @@ export default function CasesPage() {
         </div>
       </header>
 
-      {/* ─── KPI Metric Cards ─── */}
+      {/* ─── KPI strip: each number is also the status filter ─── */}
       {metricsLoading ? (
         <MetricRowSkeleton count={4} />
       ) : (
-        <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-          {metrics.map((metric) => (
-            <MetricCard key={metric.label} {...metric} />
-          ))}
-        </section>
+        <StatStrip
+          stats={metrics.map((metric, i) => {
+            const status = ["", "open", "in_progress", "resolved"][i];
+            return {
+              key: metric.label,
+              value: metric.value.toLocaleString(locale === "id" ? "id-ID" : "en-US"),
+              label: metric.label,
+              helper: statusFilter === status ? pickL("showing these", "sedang ditampilkan") : metric.helper,
+              tone: ["text-[#101334]", metric.value > 0 ? "text-[#B45309]" : "text-[#101334]", "text-[#3B52F5]", "text-[#047857]"][i],
+              onClick: () => { setStatusFilter(status); setPage(1); },
+              active: statusFilter === status,
+            };
+          })}
+        />
       )}
 
       {/* ─── Filter Row ─── */}
@@ -844,27 +820,27 @@ export default function CasesPage() {
           </div>
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[960px] text-left text-sm">
-              <thead className="border-b border-slate-100 bg-slate-50">
+              <thead className="border-b border-[#EEF0F6]">
                 <tr>
-                  <th className="px-6 py-4 text-[11px] font-black text-[#5A6478]">
+                  <th className="px-6 py-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.case")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black text-[#5A6478]">
+                  <th className="px-4 py-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.status")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black text-[#5A6478]">
+                  <th className="px-4 py-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.priority")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black text-[#5A6478]">
+                  <th className="px-4 py-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.assignee")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black text-[#5A6478]">
+                  <th className="px-4 py-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.deadline")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black text-[#5A6478]">
+                  <th className="px-4 py-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.created")}
                   </th>
-                  <th className="px-4 py-4 text-right text-[11px] font-black text-[#5A6478]">
+                  <th className="px-4 py-4 text-right font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.action")}
                   </th>
                 </tr>
@@ -876,17 +852,19 @@ export default function CasesPage() {
                   return (
                     <tr
                       key={item.id}
-                      className="transition hover:bg-slate-50/70"
+                      // The row opens the case; its status and priority selects and buttons keep their own clicks.
+                      onClick={(e) => { if (!(e.target as HTMLElement).closest("button,a,select,input")) setDetailCaseId(item.id); }}
+                      className={cn("cursor-pointer transition hover:bg-[#F7F8FC]", item.priority === "critical" ? "shadow-[inset_4px_0_0_#B42318]" : item.priority === "high" ? "shadow-[inset_4px_0_0_#F59E0B]" : "")}
                     >
                       {/* Case */}
                       <td className="px-6 py-4 align-top">
                         <div className="flex items-center gap-3">
                           <div className="min-w-0">
-                            <p className="text-[12px] font-black text-[#101334]">
+                            <p className="text-[14.5px] font-black leading-snug text-[#101334]">
                               {item.title}
                             </p>
                             {item.description && (
-                              <p className="mt-0.5 text-[10px] font-bold text-[#5F6B94] line-clamp-1">
+                              <p className="mt-1 text-[12.5px] font-medium text-[#5F6B94] line-clamp-2">
                                 {item.description}
                               </p>
                             )}
@@ -954,7 +932,7 @@ export default function CasesPage() {
                               item.assignedTeam ||
                               "?")[0].toUpperCase()}
                           </span>
-                          <p className="text-[11px] font-bold text-[#31406B]">
+                          <p className={cn("text-[12px] font-bold", assigneeName(item.assignedTo, members) || item.assignedTeam ? "text-[#31406B]" : "text-[#B42318]")}>
                             {assigneeName(item.assignedTo, members) ||
                               item.assignedTeam ||
                               t("table.unassigned")}
@@ -966,16 +944,14 @@ export default function CasesPage() {
                       <td className="px-4 py-4 align-top">
                         {deadlineInfo ? (
                           <div className="flex items-center gap-1.5">
-                            <span
-                              className={cn(
-                                "text-[11px] font-bold",
-                                deadlineInfo.isPast
-                                  ? "text-[#C81E1E]"
-                                  : "text-[#31406B]",
-                              )}
-                            >
-                              {deadlineInfo.formatted}
-                            </span>
+                            {deadlineInfo.isPast && item.status !== "resolved" && item.status !== "closed" ? (
+                              <span className="inline-block rounded-[6px] bg-[#B42318] px-2 py-1 font-mono text-[10.5px] font-bold leading-tight text-white">
+                                <span className="block text-[9.5px] uppercase tracking-[0.06em] text-white/80">{pickL("Overdue", "Lewat tenggat")}</span>
+                                {deadlineInfo.formatted}
+                              </span>
+                            ) : (
+                              <span className="font-mono text-[12px] font-bold text-[#31406B]">{deadlineInfo.formatted}</span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-[11px] font-bold text-[#647099]">
@@ -986,10 +962,10 @@ export default function CasesPage() {
 
                       {/* Created */}
                       <td className="px-4 py-4 align-top">
-                        <p className="text-[11px] font-black text-slate-900">
+                        <p className="text-[12px] font-black text-slate-900">
                           {formatRelativeTime(item.createdAt, locale)}
                         </p>
-                        <p className="mt-1 text-[10px] font-semibold text-[#5A6478]">
+                        <p className="mt-1 font-mono text-[10.5px] font-medium text-[#5A6478]">
                           {formatDateTime(item.createdAt, locale)}
                         </p>
                       </td>
