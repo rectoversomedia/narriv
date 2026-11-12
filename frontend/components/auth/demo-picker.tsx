@@ -98,7 +98,7 @@ export function DemoPicker({ open, onClose }: { open: boolean; onClose: () => vo
             >
               <span className="relative block aspect-[600/340] w-full overflow-hidden border-b-[1.5px] border-[#101334]">
                 <Image src={s.image} alt="" fill sizes="(min-width: 768px) 340px, 100vw" className="object-cover transition duration-500 group-hover:scale-[1.04]" />
-                <span aria-hidden="true" className="absolute left-3 top-3 rounded-[8px] border-[1.5px] border-[#101334] bg-white px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#101334]">0{SCENARIOS.indexOf(s) + 1}</span>
+                <span aria-hidden="true" className="absolute bottom-3 left-3 rounded-[8px] border-[1.5px] border-[#101334] bg-white px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#101334]">0{SCENARIOS.indexOf(s) + 1}</span>
               </span>
               <span className="flex flex-1 flex-col items-center px-5 pb-5 pt-5">
                 <span className="max-w-full truncate whitespace-nowrap text-[18px] font-black leading-tight md:text-[15.5px] lg:text-[18px] xl:text-[19px]">{L(s.title[0], s.title[1])}</span>
