@@ -1,5 +1,6 @@
 import express from "express";
 import { register, login, me, refresh, logout, changePassword, forgotPassword, verifyResetCode, resetPassword, verifyEmail, resendVerification, googleAuth, googleCallback, exchangeOAuthCode, demo } from "./auth.controller.js";
+import { deleteAccount } from "./account-deletion.controller.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { wrapAsync } from "../../lib/sentry.js";
@@ -29,6 +30,8 @@ router.post("/verify-email", validateRequest({ body: verifyEmailBodySchema }), w
 router.post("/resend-verification", validateRequest({ body: resendVerificationBodySchema }), wrapAsync(resendVerification));
 router.post("/change-password", verifyToken, validateRequest({ body: changePasswordBodySchema }), wrapAsync(changePassword));
 router.get("/me", verifyToken, wrapAsync(me));
+// Permanently deletes the signed-in account and the workspaces it alone owns.
+router.delete("/me", verifyToken, wrapAsync(deleteAccount));
 
 // Demo endpoint for demo mode - creates a temporary demo session
 router.post("/demo", wrapAsync(demo));

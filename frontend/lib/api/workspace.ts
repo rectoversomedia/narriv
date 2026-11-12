@@ -192,7 +192,13 @@ export interface WorkspaceSettingsResponse {
   planStatus: PlanStatus;
   /** Narriv's WhatsApp sender is set up, so WhatsApp alerts can be switched on. */
   whatsappSenderReady: boolean;
+  /** What the workspace monitors for: brand reputation, a government body, or preventing violent extremism (CVE). */
+  useCase: WorkspaceUseCase;
+  /** Account names, handles and post links are hidden wherever records are shown. */
+  privacyMode: boolean;
 }
+
+export type WorkspaceUseCase = "brand" | "gov" | "cve";
 
 export type WorkspacePlanKey = "trial" | "pilot" | "intelligence" | "decision" | "command";
 export interface PlanStatus {
@@ -259,6 +265,8 @@ export async function getWorkspaceSettings(): Promise<WorkspaceSettingsResponse 
       monitoringPaused: raw.monitoring_paused === true,
       planStatus: (raw.plan_status as PlanStatus | undefined) ?? { plan: null, trialEndsAt: null, trialDaysLeft: null, trialExpired: false },
       whatsappSenderReady: raw.whatsapp_sender_ready === true,
+      useCase: raw.use_case === "cve" || raw.use_case === "gov" ? raw.use_case : "brand",
+      privacyMode: raw.privacy_mode === true,
     };
   } catch {
     return null;
@@ -273,11 +281,24 @@ export async function setMonitoringPaused(paused: boolean): Promise<boolean> {
   return res.monitoring_paused;
 }
 
+/** Sets what the workspace monitors for and privacy mode; choosing "cve" turns privacy mode on unless set here. */
+export function setWorkspaceProfile(input: { useCase?: WorkspaceUseCase; privacyMode?: boolean }) {
+  return apiClient<{ use_case: WorkspaceUseCase; privacy_mode: boolean }>("/api/workspace/profile", { method: "POST", body: JSON.stringify(input) });
+}
+
 /** Deletes the current workspace. Rejects with code WORKSPACE_DELETE_RESTRICTED (409) while it still holds data. */
 export async function deleteCurrentWorkspace(reason: string): Promise<void> {
   await apiClient<{ success: boolean }>("/api/workspace", {
     method: "DELETE",
     body: JSON.stringify({ reason, confirmText: "DELETE_WORKSPACE" }),
+  });
+}
+
+/** Permanently deletes the signed-in account and the workspaces it alone owns. */
+export async function deleteMyAccount(): Promise<void> {
+  await apiClient<{ success: boolean }>("/api/auth/me", {
+    method: "DELETE",
+    body: JSON.stringify({ confirmText: "DELETE_ACCOUNT" }),
   });
 }
 

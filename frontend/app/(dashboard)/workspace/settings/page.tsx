@@ -10,7 +10,10 @@ import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/compo
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
 import { deleteCurrentWorkspace, setMonitoringPaused, getNotificationSettings, updateNotificationSettings, getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, createWorkspaceMember, deleteWorkspaceMember, changePassword, uploadWorkspaceLogo, type CreateWorkspaceMemberInput, type UpdateWorkspaceSettingsInput, type WorkspaceMemberRecord } from "@/lib/api-service";
+import { MonitoringProfileCard } from "@/components/settings/monitoring-profile-card";
+import { DeleteAccountRow } from "@/components/settings/delete-account";
 import { cn } from "@/lib/utils";
+import { BOX } from "@/lib/surface";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { MonitoringKeywordsPanel } from "@/components/dashboard/monitoring-keywords-panel";
 import { resolveBackendAssetUrl } from "@/lib/asset-url";
@@ -34,7 +37,7 @@ function initialsFromName(name: string, fallback: string) {
 }
 
 const LOGO_MAX_SIZE_BYTES = 2 * 1024 * 1024;
-const LOGO_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"]);
+const LOGO_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp"]);
 
 function readFileAsBase64(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -80,7 +83,7 @@ function buildMemberRows(records: WorkspaceMemberRecord[], labels: { defaultName
 // Custom Panel Component
 function Panel({ children, className, id }: { children: ReactNode; className?: string; id?: string }) {
   return (
-    <section id={id} className={cn("scroll-mt-24 rounded-[16px] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.05)]", className)}>
+    <section id={id} className={cn("scroll-mt-24", BOX, className)}>
       {children}
     </section>
   );
@@ -465,7 +468,7 @@ export default function SettingsPage() {
       {/* Subscription Card */}
 
       {workspaceSettingsQuery.data === null ? (
-        <div className="rounded-[12px] border border-dashed border-transparent bg-[#FBFAFF] px-5 py-4 flex items-center justify-between gap-4">
+        <div className="px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div>
               <p className="text-[13px] font-bold text-slate-900">{ts("loadFailedTitle")}</p>
@@ -505,6 +508,9 @@ export default function SettingsPage() {
       {/* What the workspace watches comes first: it decides everything else on Narriv. */}
       <MonitoringKeywordsPanel />
 
+      {/* What it monitors for (brand reputation or CVE) and privacy mode. */}
+      <MonitoringProfileCard settings={workspaceSettingsQuery.data} />
+
       {/* Row 1: Workspace & User Management */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.45fr)]">
         
@@ -528,7 +534,7 @@ export default function SettingsPage() {
                 <input
                   ref={logoInputRef}
                   type="file"
-                  accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                  accept="image/png,image/jpeg,image/webp"
                   className="sr-only"
                   aria-label={ts("logo.changeLogo")}
                   onChange={handleLogoFileChange}
@@ -550,7 +556,7 @@ export default function SettingsPage() {
 
               <div className="space-y-3.5">
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
+                  <label className="mb-1.5 block text-[10px] font-extrabold text-[#5F6B94]">
                     {ts("workspaceInfo.labelName")}
                   </label>
                   <input
@@ -564,7 +570,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
+                  <label className="mb-1.5 block text-[10px] font-extrabold text-[#5F6B94]">
                     {ts("workspaceInfo.labelIndustry")}
                   </label>
                   <div className="relative">
@@ -590,7 +596,7 @@ export default function SettingsPage() {
 
             <div className="grid gap-3.5 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
+                <label className="mb-1.5 block text-[10px] font-extrabold text-[#5F6B94]">
                   {ts("workspaceInfo.labelTimezone")}
                 </label>
                 <div className="relative">
@@ -609,7 +615,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
+                <label className="mb-1.5 block text-[10px] font-extrabold text-[#5F6B94]">
                   {ts("workspaceInfo.labelLanguage")}
                 </label>
                 <div className="relative">
@@ -882,7 +888,7 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 gap-6">
         
         {/* Card B: Danger Zone */}
-        <Panel className="flex flex-col gap-6 border-transparent bg-rose-50/10">
+        <Panel className="flex flex-col gap-6">
           <div className="flex items-start gap-4">
             <div>
               <h2 className="text-base font-black text-rose-600">{ts("danger.title")}</h2>
@@ -926,6 +932,8 @@ export default function SettingsPage() {
                 {ts("danger.deleteButton")}
               </button>
             </div>
+
+            <DeleteAccountRow />
           </div>
         </Panel>
       </div>
