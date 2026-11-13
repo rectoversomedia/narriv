@@ -74,9 +74,11 @@ export function proxy(request: NextRequest) {
   // Website and app live on their own hosts: each sends the other's pages across, keeping the path and query.
   const host = request.headers.get("host") ?? "";
   const search = request.nextUrl.search;
-  // A client-side prefetch or navigation (an RSC request) cannot follow a redirect to the other host: answer it
-  // with an empty response so the router skips the prefetch, or falls back to a full page load that redirects.
-  const crossHost = (url: string) => (request.headers.get("rsc") ? new NextResponse(null, { status: 204 }) : NextResponse.redirect(url));
+  // A client-side prefetch or navigation (a fetch, not a document load) cannot follow a redirect to the other host:
+  // answer it with an empty response so the router skips the prefetch, or falls back to a full page load that
+  // redirects. Next.js strips its own RSC headers before this runs, so the browser's fetch destination decides.
+  const fetchDest = request.headers.get("sec-fetch-dest");
+  const crossHost = (url: string) => (fetchDest && fetchDest !== "document" ? new NextResponse(null, { status: 204 }) : NextResponse.redirect(url));
   if (host === APP_HOST && isMarketingPath(pathname)) {
     return crossHost(`${MARKETING_ORIGIN}${pathname}${search}`);
   }
