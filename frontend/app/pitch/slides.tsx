@@ -1,7 +1,8 @@
 // The /pitch slides, one component per slide, each in both languages (`en`). Product facts follow what Narriv does
 // today and the pricing page; sample screens use the fictional demo brand (Bank Arunika) and are labelled as such.
 import type { ReactNode } from "react";
-import { AMBER, Arrow, BLUE, Brush, Card, Check, Cross, Dark, Dot, GRADIENT, INK, INKED, Light, MONO, MUTED, NEG, NEU, Num, Platform, POS, Point, Ribbon, SampleTag, Stamp, Head } from "./kit";
+import { BellRing, Briefcase, Building2, CalendarClock, CalendarRange, Clock, FileText, Landmark, Languages, Layers, ListChecks, Megaphone, Shuffle, TrendingUp, UserX, Workflow } from "lucide-react";
+import { AMBER, Arrow, Icon, BLUE, Brush, Card, Check, Cross, Dark, Dot, GRADIENT, INK, INKED, Light, MONO, MUTED, NEG, NEU, Num, Platform, POS, Point, Ribbon, SampleTag, Stamp, Head } from "./kit";
 
 type P = { en: boolean };
 // The assistants Narriv's AI visibility queries (backend/src/modules/geo/geo-engines.js).
@@ -42,9 +43,9 @@ export function Cover({ en }: P) {
 export function Problem({ en }: P) {
   const t = tr(en);
   const items = [
-    { n: 1, title: t("Percakapan tersebar", "The conversation is scattered"), text: t("Berita online, YouTube, TikTok, X, Instagram, dan kini jawaban AI. Tidak ada tim yang sempat membuka semuanya setiap jam.", "Online news, YouTube, TikTok, X, Instagram and now AI answers. No team can check all of them every hour."), c: NEG },
-    { n: 2, title: t("Tahunya terlambat", "You hear about it too late"), text: t("Isu sering diketahui dari tangkapan layar di grup WhatsApp atau telepon atasan, saat sudah ramai.", "Teams often learn about an issue from a WhatsApp screenshot or a call from the boss, once it is already loud."), c: AMBER },
-    { n: 3, title: t("Tidak ada yang bertindak", "Nobody owns the response"), text: t("Dashboard penuh grafik tidak bilang siapa harus melakukan apa. Isu dibahas, lalu menggantung.", "Dashboards full of charts do not say who should do what. Issues get discussed, then left hanging."), c: BLUE },
+    { n: 1, icon: Shuffle, title: t("Percakapan tersebar", "The conversation is scattered"), text: t("Berita online, YouTube, TikTok, X, Instagram, dan kini jawaban AI. Tidak ada tim yang sempat membuka semuanya setiap jam.", "Online news, YouTube, TikTok, X, Instagram and now AI answers. No team can check all of them every hour."), c: NEG },
+    { n: 2, icon: Clock, title: t("Tahunya terlambat", "You hear about it too late"), text: t("Isu sering diketahui dari tangkapan layar di grup WhatsApp atau telepon atasan, saat sudah ramai.", "Teams often learn about an issue from a WhatsApp screenshot or a call from the boss, once it is already loud."), c: AMBER },
+    { n: 3, icon: UserX, title: t("Tidak ada yang bertindak", "Nobody owns the response"), text: t("Dashboard penuh grafik tidak bilang siapa harus melakukan apa. Isu dibahas, lalu menggantung.", "Dashboards full of charts do not say who should do what. Issues get discussed, then left hanging."), c: BLUE },
   ];
   return (
     <Light tag={t("Masalahnya", "The problem")}>
@@ -53,7 +54,7 @@ export function Problem({ en }: P) {
         {items.map((it) => (
           <Card key={it.n} style={{ padding: 48, minHeight: 440, position: "relative", overflow: "hidden" }}>
             <span aria-hidden style={{ position: "absolute", left: 0, top: 0, right: 0, height: 14, background: it.c }} />
-            <Num n={it.n} c={it.c} />
+            <Icon icon={it.icon} c={it.c} />
             <p style={{ margin: "36px 0 0", fontSize: 40, fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.02em" }}>{it.title}</p>
             <p style={{ margin: "20px 0 0", fontSize: 27, lineHeight: 1.5, color: MUTED }}>{it.text}</p>
           </Card>
@@ -164,9 +165,9 @@ export function RiskMap({ en }: P) {
     <Light tag={t("Fitur · Risiko", "Feature · Risk")}>
       <Head top={170} width={760} kicker={t("Skor risiko & peta isu", "Risk score & issue map")} title={t(<>Satu angka, <Brush>alasannya jelas.</Brush></>, <>One score, <Brush>clear reasons.</Brush></>)} />
       <div style={{ position: "absolute", left: 96, top: 520, width: 760, display: "grid", gap: 40 }}>
-        <Point n={1} title={t("Mention jadi isu", "Mentions become issues")} text={t("Ratusan unggahan dikelompokkan menjadi beberapa narasi yang bisa ditangani.", "Hundreds of posts grouped into a few narratives you can act on.")} />
-        <Point n={2} title={t("Risiko dengan pemicunya", "Risk with its drivers")} text={t("Terlihat isu mana yang mendorong skor naik, dan seberapa cepat.", "See which issue pushes the score up, and how fast.")} />
-        <Point n={3} title={t("Dibanding periode lalu", "Against last period")} text={t("Setiap angka menunjukkan arah: naik, turun, atau stabil.", "Every number shows direction: up, down or steady.")} />
+        <Point icon={Layers} title={t("Mention jadi isu", "Mentions become issues")} text={t("Ratusan unggahan dikelompokkan menjadi beberapa narasi yang bisa ditangani.", "Hundreds of posts grouped into a few narratives you can act on.")} />
+        <Point icon={TrendingUp} title={t("Risiko dengan pemicunya", "Risk with its drivers")} text={t("Terlihat isu mana yang mendorong skor naik, dan seberapa cepat.", "See which issue pushes the score up, and how fast.")} />
+        <Point icon={CalendarRange} title={t("Dibanding periode lalu", "Against last period")} text={t("Setiap angka menunjukkan arah: naik, turun, atau stabil.", "Every number shows direction: up, down or steady.")} />
       </div>
       <Card style={{ position: "absolute", left: 960, top: 190, width: 864, padding: 0, overflow: "hidden" }}>
         <div style={{ height: 14, background: NEG }} />
@@ -202,9 +203,9 @@ export function Alerts({ en }: P) {
     <Dark tag={t("Fitur · Peringatan", "Feature · Alerts")} glow="left">
       <Head dark top={170} width={820} kicker={t("Peringatan dengan PIC", "Alerts with an owner")} title={t(<>Setiap isu punya <Brush>pemilik & tenggat.</Brush></>, <>Every issue gets an <Brush>owner & deadline.</Brush></>)} />
       <div style={{ position: "absolute", left: 96, top: 560, width: 820, display: "grid", gap: 40 }}>
-        <Point dark n={1} title={t("Dikirim ke orang yang tepat", "Sent to the right person")} text={t("Lewat email, dan Slack, Teams, atau webhook di paket Decision.", "By email, plus Slack, Teams or webhooks on Decision.")} />
-        <Point dark n={2} title={t("Langkah berikutnya sudah ditulis", "The next step is written for you")} text={t("Apa yang terjadi, apa yang harus dilakukan, sampai kapan.", "What happened, what to do, and by when.")} />
-        <Point dark n={3} title={t("Matriks eskalasi", "An escalation matrix")} text={t("Siapa diberi tahu dan siapa memutuskan, sesuai tingkat keparahan (paket Decision).", "Who is told and who decides, by severity (Decision plan).")} />
+        <Point dark icon={BellRing} title={t("Dikirim ke orang yang tepat", "Sent to the right person")} text={t("Lewat email, dan Slack, Teams, atau webhook di paket Decision.", "By email, plus Slack, Teams or webhooks on Decision.")} />
+        <Point dark icon={ListChecks} title={t("Langkah berikutnya sudah ditulis", "The next step is written for you")} text={t("Apa yang terjadi, apa yang harus dilakukan, sampai kapan.", "What happened, what to do, and by when.")} />
+        <Point dark icon={Workflow} title={t("Matriks eskalasi", "An escalation matrix")} text={t("Siapa diberi tahu dan siapa memutuskan, sesuai tingkat keparahan (paket Decision).", "Who is told and who decides, by severity (Decision plan).")} />
       </div>
       <div className="pc" style={{ position: "absolute", left: 1010, top: 220, width: 814, borderRadius: 30, background: "#fff", color: INK, overflow: "hidden", ...INKED }}>
         <div style={{ height: 14, background: NEG }} />
@@ -313,9 +314,9 @@ export function Reports({ en }: P) {
     <Dark tag={t("Fitur · Laporan", "Feature · Reports")} glow="right">
       <Head dark top={170} width={860} kicker={t("Laporan siap direksi", "Board-ready reports")} title={t(<>Satu halaman yang <Brush>dibaca direksi.</Brush></>, <>One page the <Brush>board reads.</Brush></>)} />
       <div style={{ position: "absolute", left: 96, top: 520, width: 860, display: "grid", gap: 36 }}>
-        <Point dark n={1} title={t("Yang perlu diputuskan, di atas", "Decisions first")} text={t("Nada keseluruhan, angka utama vs periode lalu, lalu isu yang butuh keputusan.", "Overall tone, headline numbers against last period, then what needs a decision.")} />
-        <Point dark n={2} title={t("Terkirim terjadwal, misalnya tiap Senin", "Scheduled, e.g. every Monday")} text={t("PDF, Excel, dan CSV ke email direksi (laporan terjadwal mulai paket Intelligence).", "PDF, Excel and CSV to leadership by email (scheduled reports from Intelligence).")} />
-        <Point dark n={3} title={t("Bahasa Indonesia atau English", "Bahasa Indonesia or English")} text={t("Pilih bahasa sebelum laporan dibuat.", "Pick the language before the report is generated.")} />
+        <Point dark icon={FileText} title={t("Yang perlu diputuskan, di atas", "Decisions first")} text={t("Nada keseluruhan, angka utama vs periode lalu, lalu isu yang butuh keputusan.", "Overall tone, headline numbers against last period, then what needs a decision.")} />
+        <Point dark icon={CalendarClock} title={t("Terkirim terjadwal, misalnya tiap Senin", "Scheduled, e.g. every Monday")} text={t("PDF, Excel, dan CSV ke email direksi (laporan terjadwal mulai paket Intelligence).", "PDF, Excel and CSV to leadership by email (scheduled reports from Intelligence).")} />
+        <Point dark icon={Languages} title={t("Bahasa Indonesia atau English", "Bahasa Indonesia or English")} text={t("Pilih bahasa sebelum laporan dibuat.", "Pick the language before the report is generated.")} />
       </div>
       <img src={`/pitch/report-${en ? "en" : "id"}.webp`} alt="" className="pc" style={{ position: "absolute", left: 1140, top: 150, width: 640, height: "auto", borderRadius: 18, border: `3px solid ${INK}`, boxShadow: "0 30px 80px rgba(0,0,0,.45), 0 10px 0 #465FFF", transform: "rotate(2.5deg)" }} />
     </Dark>
@@ -365,10 +366,10 @@ export function Compare({ en }: P) {
 export function Audience({ en }: P) {
   const t = tr(en);
   const items = [
-    { title: t("Corporate communication & PR", "Corporate communications & PR"), text: t("Peringatan dini, briefing harian, dan laporan untuk direksi.", "Early warning, a daily brief and reports for the board.") },
-    { title: t("Bank, telko & BUMN", "Banks, telcos & SOEs"), text: t("Isu layanan dan keluhan nasabah terpantau sebelum menjadi berita.", "Service issues and customer complaints caught before they make the news.") },
-    { title: t("Kementerian & instansi", "Ministries & public agencies"), text: t("Memantau narasi kebijakan publik dan merespons dengan data.", "Track narratives around public policy and respond with evidence.") },
-    { title: t("Agensi PR & digital", "PR & digital agencies"), text: t("Beberapa klien dalam satu akun, laporan siap kirim ke klien.", "Several clients in one account, reports ready to send.") },
+    { icon: Megaphone, title: t("Corporate communication & PR", "Corporate communications & PR"), text: t("Peringatan dini, briefing harian, dan laporan untuk direksi.", "Early warning, a daily brief and reports for the board.") },
+    { icon: Building2, title: t("Bank, telko & BUMN", "Banks, telcos & SOEs"), text: t("Isu layanan dan keluhan nasabah terpantau sebelum menjadi berita.", "Service issues and customer complaints caught before they make the news.") },
+    { icon: Landmark, title: t("Kementerian & instansi", "Ministries & public agencies"), text: t("Memantau narasi kebijakan publik dan merespons dengan data.", "Track narratives around public policy and respond with evidence.") },
+    { icon: Briefcase, title: t("Agensi PR & digital", "PR & digital agencies"), text: t("Beberapa klien dalam satu akun, laporan siap kirim ke klien.", "Several clients in one account, reports ready to send.") },
   ];
   return (
     <Dark tag={t("Untuk siapa", "Who it is for")}>
@@ -376,7 +377,7 @@ export function Audience({ en }: P) {
       <div style={{ position: "absolute", left: 96, right: 96, top: 500, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 30 }}>
         {items.map((it, k) => (
           <Card key={it.title} dark style={{ minHeight: 400, padding: 40 }}>
-            <Num n={k + 1} c={[BLUE, "#8B5CF6", "#C04BD8", "#EC4899"][k]} />
+            <Icon icon={it.icon} c={[BLUE, "#8B5CF6", "#C04BD8", "#EC4899"][k]} />
             <p style={{ margin: "34px 0 0", fontSize: 36, fontWeight: 800, lineHeight: 1.2 }}>{it.title}</p>
             <p style={{ margin: "18px 0 0", fontSize: 25, lineHeight: 1.5, color: "rgba(255,255,255,.66)" }}>{it.text}</p>
           </Card>

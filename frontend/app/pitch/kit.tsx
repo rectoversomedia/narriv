@@ -2,6 +2,7 @@
 // ink-outlined cards on a solid shadow, mono stamps for the machine's voice, the blue→pink brush behind key words.
 // Server components only (no client JS).
 import type { CSSProperties, ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 
 export const INK = "#101334";
 export const BLUE = "#465FFF";
@@ -94,20 +95,23 @@ export function Card({ children, style, dark = false }: { children: ReactNode; s
   );
 }
 
-/** A numbered step badge in the ink style. */
+const BADGE = (c: string, s: number): CSSProperties => ({ flexShrink: 0, width: s, height: s, borderRadius: 18, background: c, color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", border: `3px solid ${INK}`, boxShadow: `0 5px 0 ${INK}` });
+
+/** A step number in the ink style, for things that happen in order. */
 export function Num({ n, c = BLUE, s = 64 }: { n: number | string; c?: string; s?: number }) {
-  return (
-    <span style={{ flexShrink: 0, width: s, height: s, borderRadius: 18, background: c, color: "#fff", fontFamily: MONO, fontSize: s * 0.42, fontWeight: 700, display: "inline-flex", alignItems: "center", justifyContent: "center", border: `3px solid ${INK}`, boxShadow: `0 5px 0 ${INK}` }}>
-      {typeof n === "number" ? String(n).padStart(2, "0") : n}
-    </span>
-  );
+  return <span style={{ ...BADGE(c, s), fontSize: s * 0.46, fontWeight: 800 }}>{n}</span>;
 }
 
-/** A labelled point: title + one line. */
-export function Point({ n, title, text, dark = false }: { n?: number; title: string; text: string; dark?: boolean }) {
+/** An icon in the same badge, for items that are not a sequence. */
+export function Icon({ icon: I, c = BLUE, s = 64 }: { icon: LucideIcon; c?: string; s?: number }) {
+  return <span style={BADGE(c, s)}><I size={s * 0.5} strokeWidth={2.4} aria-hidden /></span>;
+}
+
+/** A labelled point: title + one line, led by an icon (or a step number). */
+export function Point({ n, icon, title, text, dark = false }: { n?: number; icon?: LucideIcon; title: string; text: string; dark?: boolean }) {
   return (
     <div className="pc" style={{ display: "flex", gap: 26, alignItems: "flex-start" }}>
-      {n !== undefined ? <Num n={n} /> : <Dot c={BLUE} s={18} />}
+      {icon ? <Icon icon={icon} /> : n !== undefined ? <Num n={n} /> : <Dot c={BLUE} s={18} />}
       <span>
         <span style={{ display: "block", fontSize: 32, fontWeight: 800, lineHeight: 1.2 }}>{title}</span>
         <span style={{ display: "block", marginTop: 8, fontSize: 25, lineHeight: 1.45, color: dark ? "rgba(255,255,255,.68)" : MUTED }}>{text}</span>
