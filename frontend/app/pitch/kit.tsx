@@ -119,8 +119,14 @@ export function Point({ n, title, text, dark = false }: { n?: number; title: str
 /** The tilted gradient band of what Narriv does. */
 export function Ribbon({ items, y = 960, rot = -2 }: { items: string[]; y?: number; rot?: number }) {
   return (
-    <div aria-hidden style={{ position: "absolute", left: -60, right: -60, top: y, transform: `rotate(${rot}deg)`, background: GRADIENT, borderBlock: `3px solid ${INK}`, display: "flex", justifyContent: "center", gap: 40, padding: "18px 0", fontFamily: MONO, fontSize: 24, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#fff", whiteSpace: "nowrap" }}>
-      {items.map((t) => <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 40 }}>{t}<Dot c="#fff" s={12} /></span>)}
+    <div aria-hidden style={{ position: "absolute", left: -60, right: -60, top: y, transform: `rotate(${rot}deg)`, background: GRADIENT, borderTop: `3px solid ${INK}`, borderBottom: `3px solid ${INK}`, padding: "18px 0", textAlign: "center", fontFamily: MONO, fontSize: 24, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#fff", whiteSpace: "nowrap" }}>
+      {/* Margins, not flex gaps, so the print/PDF layout spaces the items the same way. */}
+      {items.map((t, k) => (
+        <span key={t}>
+          {k > 0 && <span style={{ display: "inline-block", width: 12, height: 12, margin: "0 36px", borderRadius: 999, background: "#fff", verticalAlign: "middle" }} />}
+          {t}
+        </span>
+      ))}
     </div>
   );
 }

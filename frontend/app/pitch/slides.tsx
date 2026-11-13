@@ -415,16 +415,16 @@ export function Pricing({ en }: P) {
   return (
     <Light tag={t("Harga", "Pricing")}>
       <Head center kicker={t("Paket per bulan · belum termasuk PPN 11%", "Per month · excluding 11% VAT")} title={t(<>Mulai kecil, <Brush>tumbuh bersama.</Brush></>, <>Start small, <Brush>grow with it.</Brush></>)} sub={t("Tagihan tahunan hemat 20% · Coba gratis 14 hari, tanpa kartu kredit", "Annual billing saves 20% · Free 14-day trial, no card needed")} top={130} />
-      <div style={{ position: "absolute", left: 96, right: 96, top: 470, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 28, alignItems: "stretch" }}>
+      <div style={{ position: "absolute", left: 96, right: 96, top: 420, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 28, alignItems: "stretch" }}>
         {PLANS.map((p) => (
-          <div key={p.name} className="pc" style={{ position: "relative", padding: "40px 36px 38px", borderRadius: 30, background: p.popular ? INK : "#fff", color: p.popular ? "#fff" : INK, border: `3px solid ${INK}`, boxShadow: p.popular ? `0 12px 0 ${BLUE}` : `0 8px 0 ${INK}`, transform: p.popular ? "translateY(-24px)" : undefined }}>
+          <div key={p.name} className="pc" style={{ position: "relative", padding: "34px 34px 32px", borderRadius: 30, background: p.popular ? INK : "#fff", color: p.popular ? "#fff" : INK, border: `3px solid ${INK}`, boxShadow: p.popular ? `0 12px 0 ${BLUE}` : `0 8px 0 ${INK}`, transform: p.popular ? "translateY(-24px)" : undefined }}>
             {p.popular && <span style={{ position: "absolute", top: -26, left: 36, padding: "8px 18px", borderRadius: 12, background: "#FDE047", color: INK, border: `3px solid ${INK}`, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>{t("Paling dipilih", "Most popular")}</span>}
             <p style={{ margin: 0, fontSize: 36, fontWeight: 800 }}>{p.name}</p>
             <p style={{ margin: "6px 0 0", fontSize: 23, fontWeight: 700, color: p.popular ? "#A5B4FF" : BLUE }}>{t(p.tag[0], p.tag[1])}</p>
-            <p style={{ margin: "26px 0 0", fontSize: 50, fontWeight: 800, letterSpacing: "-0.03em" }}>{en ? p.priceEn : p.price}</p>
+            <p style={{ margin: "18px 0 0", fontSize: 46, fontWeight: 800, letterSpacing: "-0.03em" }}>{en ? p.priceEn : p.price}</p>
             <p style={{ margin: "2px 0 0", fontSize: 21, fontWeight: 600, color: p.popular ? "rgba(255,255,255,.6)" : MUTED }}>{t("per bulan", "per month")}</p>
-            <div style={{ marginTop: 26, display: "grid", gap: 14 }}>
-              {p.rows.map(([i, e]) => <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", fontSize: 22, fontWeight: 600, lineHeight: 1.35 }}><span style={{ marginTop: 2 }}><Check c={p.popular ? BLUE : POS} s={26} /></span>{t(i, e)}</div>)}
+            <div style={{ marginTop: 20, display: "grid", gap: 11 }}>
+              {p.rows.map(([i, e]) => <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", fontSize: 21, fontWeight: 600, lineHeight: 1.3 }}><span style={{ marginTop: 2 }}><Check c={p.popular ? BLUE : POS} s={26} /></span>{t(i, e)}</div>)}
             </div>
           </div>
         ))}
