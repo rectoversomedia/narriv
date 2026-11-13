@@ -414,8 +414,8 @@ export function Pricing({ en }: P) {
   const t = tr(en);
   return (
     <Light tag={t("Harga", "Pricing")}>
-      <Head center kicker={t("Paket per bulan · belum termasuk PPN 11%", "Per month · excluding 11% VAT")} title={t(<>Mulai kecil, <Brush>tumbuh bersama.</Brush></>, <>Start small, <Brush>grow with it.</Brush></>)} top={150} />
-      <div style={{ position: "absolute", left: 96, right: 96, top: 400, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 28, alignItems: "stretch" }}>
+      <Head center kicker={t("Paket per bulan · belum termasuk PPN 11%", "Per month · excluding 11% VAT")} title={t(<>Mulai kecil, <Brush>tumbuh bersama.</Brush></>, <>Start small, <Brush>grow with it.</Brush></>)} sub={t("Tagihan tahunan hemat 20% · Coba gratis 14 hari, tanpa kartu kredit", "Annual billing saves 20% · Free 14-day trial, no card needed")} top={130} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 470, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 28, alignItems: "stretch" }}>
         {PLANS.map((p) => (
           <div key={p.name} className="pc" style={{ position: "relative", padding: "40px 36px 38px", borderRadius: 30, background: p.popular ? INK : "#fff", color: p.popular ? "#fff" : INK, border: `3px solid ${INK}`, boxShadow: p.popular ? `0 12px 0 ${BLUE}` : `0 8px 0 ${INK}`, transform: p.popular ? "translateY(-24px)" : undefined }}>
             {p.popular && <span style={{ position: "absolute", top: -26, left: 36, padding: "8px 18px", borderRadius: 12, background: "#FDE047", color: INK, border: `3px solid ${INK}`, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>{t("Paling dipilih", "Most popular")}</span>}
@@ -429,7 +429,6 @@ export function Pricing({ en }: P) {
           </div>
         ))}
       </div>
-      <p className="pc" style={{ position: "absolute", left: 96, right: 96, top: 1000, margin: 0, textAlign: "center", fontSize: 25, fontWeight: 700, color: MUTED }}>{t("Tagihan tahunan hemat 20% · Coba gratis 14 hari, tanpa kartu kredit", "Annual billing saves 20% · Free 14-day trial, no card needed")}</p>
     </Light>
   );
 }
