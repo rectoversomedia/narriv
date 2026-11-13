@@ -74,8 +74,8 @@ export function DemoPicker({ open, onClose }: { open: boolean; onClose: () => vo
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[330] flex items-end justify-center bg-[#070A1F]/75 p-0 backdrop-blur-md sm:items-center sm:p-6" onMouseDown={(e) => e.target === e.currentTarget && !loading && onClose()}>
-      <div role="dialog" aria-modal="true" aria-labelledby="demo-picker-title" className="nv-paper mk-pop relative max-h-[94dvh] w-full max-w-[1060px] overflow-y-auto rounded-t-[28px] border-[1.5px] border-[#101334] px-4 pb-5 pt-6 text-center text-[#101334] shadow-[0_8px_0_#465FFF,0_40px_120px_rgba(0,0,0,0.5)] sm:rounded-[28px] sm:px-8 sm:pb-8 sm:pt-10">
+    <div className="fixed inset-0 z-[330] flex items-center justify-center bg-[#070A1F]/75 p-3 backdrop-blur-md sm:p-6" onMouseDown={(e) => e.target === e.currentTarget && !loading && onClose()}>
+      <div role="dialog" aria-modal="true" aria-labelledby="demo-picker-title" className="nv-paper mk-pop relative max-h-[94dvh] w-full max-w-[1060px] overflow-y-auto rounded-[24px] border-[1.5px] border-[#101334] px-4 pb-5 pt-6 text-center text-[#101334] shadow-[0_8px_0_#465FFF,0_40px_120px_rgba(0,0,0,0.5)] sm:rounded-[28px] sm:px-8 sm:pb-8 sm:pt-10">
         <button type="button" onClick={onClose} disabled={Boolean(loading)} aria-label={L("Close", "Tutup")} className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full border-[1.5px] border-[#101334] bg-white text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#EEF1FF] disabled:opacity-50 sm:right-5 sm:top-5">
           <X size={18} aria-hidden="true" />
         </button>
