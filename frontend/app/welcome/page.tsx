@@ -139,8 +139,8 @@ function ProductStage() {
                   ))}
                 </div>
 
-                {/* The spike, named */}
-                <div className="relative mt-4">
+                {/* The spike, named (from small tablets up: on a phone the card stays short so the first screen is whole) */}
+                <div className="relative mt-4 hidden sm:block">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-left">
                     <p className="text-[11px] font-bold text-[#6B7080]">{L("Mentions per Day", "Percakapan per Hari")}</p>
                     <span className="mk-fill-in rounded-full bg-[#101334] px-2.5 py-1 text-[10px] font-black text-white">{L("3× in 24 Hours · App Outage", "Naik 3× dalam 24 Jam · Gangguan Aplikasi")}</span>
@@ -167,7 +167,7 @@ function ProductStage() {
                 </div>
               </div>
 
-              <div className="text-left">
+              <div className="hidden text-left sm:block">
                 {/* Where it came from */}
                 <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-[#ECEAE3] pt-3 lg:mt-4 lg:border-t-0 lg:pt-0">
                   {sources.map((src) => (
@@ -431,7 +431,7 @@ export default function WelcomePage() {
         <NarrativeField />
         <SiteHeader />
 
-        <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-12 px-4 pb-12 pt-10 text-center sm:px-6 lg:gap-14 lg:pb-16 lg:pt-16">
+        <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-7 px-4 pb-12 pt-6 text-center sm:gap-12 sm:px-6 sm:pt-10 lg:gap-14 lg:pb-16 lg:pt-16">
           <div className="flex max-w-4xl flex-col items-center">
             <h1 className="text-balance text-[36px] font-black leading-[1.04] tracking-[-0.035em] sm:text-[60px] lg:text-[68px]">
               <Typewriter
@@ -443,15 +443,19 @@ export default function WelcomePage() {
                 ]}
               />
             </h1>
-            <p className="mk-pop mx-auto mt-5 max-w-xl text-balance text-[16px] font-medium leading-relaxed text-white/65 sm:text-[18px]" style={{ "--mk-delay": "1500ms" } as CSSProperties}>
+            <p className="mk-pop mx-auto mt-4 sm:mt-5 max-w-xl text-balance text-[16px] font-medium leading-relaxed text-white/65 sm:text-[18px]" style={{ "--mk-delay": "1500ms" } as CSSProperties}>
+              {/* Phones get the one-line version so the first screen holds the headline, the buttons and the product. */}
+              <span className="sm:hidden">{L("News, social, YouTube and AI answers, checked every hour, with the risk scored and the next step assigned.", "Berita, media sosial, YouTube, dan jawaban AI dipantau tiap jam, risikonya dinilai, dan langkah berikutnya ditugaskan.")}</span>
+              <span className="hidden sm:inline">
               {L("Narriv is a ", "Narriv adalah platform ")}
               <NarrativeIntelligence className="mx-0.5" />
               {L(
                 " platform that goes beyond social listening. It monitors news, YouTube, social media and AI-generated answers every hour, assesses the risk, and assigns clear actions to the right people.",
                 " yang melampaui social listening. Narriv memantau berita, YouTube, media sosial, dan jawaban AI setiap jam, menilai tingkat risikonya, lalu menetapkan tindakan yang jelas bagi tim yang tepat.",
               )}
+            </span>
             </p>
-            <div className="mk-pop mt-8 flex w-full max-w-[320px] flex-col items-center gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-start sm:justify-center" style={{ "--mk-delay": "1700ms" } as CSSProperties}>
+            <div className="mk-pop mt-6 flex w-full max-w-[320px] flex-col items-center gap-2.5 sm:mt-8 sm:w-auto sm:max-w-none sm:flex-row sm:items-start sm:justify-center" style={{ "--mk-delay": "1700ms" } as CSSProperties}>
               <DemoButton className="border-[1.5px] border-[#101334] bg-white text-[#070A1F] shadow-[0_4px_0_#465FFF] hover:bg-[#EEF1FF] active:translate-y-[2px] active:shadow-[0_2px_0_#465FFF]">
                 {L("Explore the Live Demo", "Lihat Demo Langsung")}
                 <ArrowRight size={17} aria-hidden="true" className="transition group-hover:translate-x-0.5" />
