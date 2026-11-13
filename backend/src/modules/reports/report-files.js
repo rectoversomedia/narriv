@@ -224,8 +224,23 @@ const C = {
 const SEV_COLOR = { critical: [C.redDark, C.redSoft], high: [C.red, C.redSoft], medium: [C.amberDark, C.amberSoft], low: [C.greenDark, C.greenSoft] };
 const SENT_COLOR = { negative: C.red, positive: C.green, neutral: C.grey, mixed: "#8B5CFF" };
 
-/** A4 PDF buffer of the report. */
+/**
+ * A4 PDF buffer of the report. Notable mentions are the last section; when only a few of them would spill onto a
+ * page of their own, they are trimmed so the report ends on the page before (a long report still gets its pages).
+ */
 export function buildReportPdf(data, lang = data.language) {
+    const MAX_MENTIONS = 10;
+    const ORPHAN_ROWS = 5;
+    const first = renderReportPdf(data, lang, MAX_MENTIONS);
+    const { pages, mentionsOnLastPage, lastPageHasOtherContent } = first.layout;
+    if (pages > 1 && !lastPageHasOtherContent && mentionsOnLastPage > 0 && mentionsOnLastPage <= ORPHAN_ROWS) {
+        first.done.catch(() => {});
+        return renderReportPdf(data, lang, MAX_MENTIONS - mentionsOnLastPage).done;
+    }
+    return first.done;
+}
+
+function renderReportPdf(data, lang, mentionLimit) {
     const W = words(lang);
     const doc = new PDFDocument({ size: "A4", margins: { top: 48, bottom: 56, left: 48, right: 48 }, bufferPages: true, info: { Title: data.title, Author: "Narriv" } });
     const chunks = [];
@@ -466,10 +481,13 @@ export function buildReportPdf(data, lang = data.language) {
         });
     }
 
-    // Signals
+    // Signals (notable mentions): each row's page is noted so an orphan page can be avoided (see buildReportPdf).
+    const pageNow = () => doc.bufferedPageRange().start + doc.bufferedPageRange().count - 1;
+    const pageBeforeMentions = pageNow();
+    const mentionPages = [];
     if (data.signals.length) {
         heading(W.signalsTitle);
-        for (const s of data.signals.slice(0, 10)) {
+        for (const s of data.signals.slice(0, mentionLimit)) {
             doc.font(F.bold).fontSize(10);
             const h = doc.heightOfString(s.title, { width: width - 120 });
             ensure(h + 18);
@@ -485,8 +503,17 @@ export function buildReportPdf(data, lang = data.language) {
             // The date sits beside the title; drawing it moves doc.y back up, so the row's end is restored after.
             doc.fillColor(C.muted).font(F.sans).fontSize(8.5).text(fmtDate(s.capturedAt, W.locale), left + width - 100, y, { width: 100, align: "right" });
             doc.y = rowEnd + 8;
+            mentionPages.push(pageNow());
         }
     }
+
+    const lastPage = pageNow();
+    const layout = {
+        pages: lastPage + 1,
+        mentionsOnLastPage: mentionPages.filter((pg) => pg === lastPage).length,
+        // The section heading or anything before the mentions on the last page means it is not an orphan page.
+        lastPageHasOtherContent: pageBeforeMentions === lastPage || mentionPages[0] === lastPage,
+    };
 
     // Footer on every page
     const range = doc.bufferedPageRange();
@@ -500,7 +527,7 @@ export function buildReportPdf(data, lang = data.language) {
         doc.font(F.mono).fontSize(7.5).text(`${W.page} ${i + 1} / ${range.count}`, left + width - 80, fy + 0.5, { width: 80, align: "right", lineBreak: false });
     }
     doc.end();
-    return done;
+    return { done, layout };
 }
 
 // ---------------------------------------------------------------------------
