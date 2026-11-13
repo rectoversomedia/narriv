@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { track } from "@/lib/analytics";
 import { APP_ORIGIN, onMarketingHost } from "@/lib/hosts";
 import { SUPPORT_EMAIL } from "@/lib/support";
 import { useTranslations } from "next-intl";
@@ -286,6 +287,7 @@ export function SocialButtons() {
 export type DemoScenario = "brand" | "gov" | "cve";
 
 export async function startDemoLogin(scenario: DemoScenario = "brand") {
+  track("start_demo", { scenario });
   // On the website the demo opens on the app, where its session cookie belongs.
   if (onMarketingHost()) {
     window.location.href = `${APP_ORIGIN}/demo?case=${scenario}`;

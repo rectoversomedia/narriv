@@ -9,6 +9,8 @@ const publicPaths = [
   "/help",
   "/terms",
   "/privacy",
+  "/blog",
+  "/id",
   "/pasang",
   "/onboarding",
   "/login",

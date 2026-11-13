@@ -1,11 +1,4 @@
-import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/legal-page";
-
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description: "How Narriv collects, uses and protects personal data, in line with Indonesia's Personal Data Protection Law (UU PDP).",
-  alternates: { canonical: "/privacy" },
-};
 
 // Written against Indonesia's Personal Data Protection Law (UU No. 27 Tahun 2022) and what Narriv actually does
 // today. Approved and in effect.

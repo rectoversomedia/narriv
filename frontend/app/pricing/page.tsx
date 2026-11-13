@@ -7,6 +7,7 @@ import { GRID, INK, PAPER, RULE, SERIF, SiteFooter, SiteHeader } from "@/compone
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 import { SITE_URL, faqJsonLd, jsonLd } from "@/lib/seo";
+import { useSiteHref } from "@/lib/site-lang";
 
 // Plans are agreed with the Narriv team; the app does not gate features by plan. Every line on this page is a
 // feature that works today. Keywords checked every hour per brand follow the plan (backend lib/workspace-plan.js
@@ -140,6 +141,7 @@ const rupiah = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency"
 export default function PricingPage() {
   const L = useL();
   const P = (c: Copy) => L(c[0], c[1]);
+  const href = useSiteHref();
   const [annual, setAnnual] = useState(false);
   const discount = annual ? 0.8 : 1;
 
@@ -152,20 +154,20 @@ export default function PricingPage() {
     [["Why Is Social Media Not in Every Plan?", "Mengapa Media Sosial Tidak Tersedia di Semua Paket?"], ["Collecting data from Instagram, TikTok, X and Facebook carries a direct cost per run, so it is included from the Decision plan and activated by the Narriv team.", "Pengambilan data dari Instagram, TikTok, X, dan Facebook memiliki biaya langsung setiap kali dijalankan, sehingga tersedia mulai paket Decision dan diaktifkan oleh tim Narriv."]],
   ];
 
-  // Plans and answers as structured data, in English (the language search engines get), for search and AI answers.
+  // Plans and answers as structured data in the page's language, for search results and AI answers.
   const structured = [
     {
       "@context": "https://schema.org",
       "@type": "Product",
       name: "Narriv",
-      description: "Media monitoring and narrative intelligence for brands in Indonesia.",
+      description: L("Media monitoring and narrative intelligence for brands in Indonesia.", "Media monitoring dan narrative intelligence untuk brand di Indonesia."),
       brand: { "@type": "Brand", name: "Narriv" },
-      url: `${SITE_URL}/pricing`,
+      url: SITE_URL + href("/pricing"),
       offers: PLANS.map((plan) => ({
         "@type": "Offer",
         name: `Narriv ${plan.name}`,
-        description: `${plan.tagline[0]} ${plan.audience[0]}.`,
-        url: `${SITE_URL}/pricing`,
+        description: `${P(plan.tagline)} ${P(plan.audience)}.`,
+        url: SITE_URL + href("/pricing"),
         priceCurrency: "IDR",
         price: plan.price ?? plan.from ?? 0,
         priceSpecification: {
@@ -179,7 +181,7 @@ export default function PricingPage() {
         availability: "https://schema.org/InStock",
       })),
     },
-    faqJsonLd(faqs.map(([q, a]) => ({ q: q[0], a: a[0] }))),
+    faqJsonLd(faqs.map(([q, a]) => ({ q: P(q), a: P(a) }))),
   ];
 
   return (
@@ -282,7 +284,7 @@ export default function PricingPage() {
               </ul>
 
               <Link
-                href={plan.price ? `/signup?plan=${plan.id}` : "/help#contact"}
+                href={plan.price ? `/signup?plan=${plan.id}` : href("/help#contact")}
                 className={cn(
                   "flex h-12 items-center justify-center gap-2 self-end rounded-xl text-[15px] font-bold transition",
                   plan.popular ? "bg-[#465FFF] text-white hover:bg-[#3B52F5]" : "bg-[#101334] text-white hover:bg-[#1B2155]",
@@ -372,7 +374,7 @@ export default function PricingPage() {
               {L("Start Your Trial", "Mulai Uji Coba")}
               <ArrowRight size={17} aria-hidden="true" />
             </Link>
-            <Link href="/help#contact" className="inline-flex h-12 items-center justify-center rounded-full px-6 text-[15px] font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] hover:bg-white/[0.06]">{L("Contact Sales", "Hubungi Tim Kami")}</Link>
+            <Link href={href("/help#contact")} className="inline-flex h-12 items-center justify-center rounded-full px-6 text-[15px] font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] hover:bg-white/[0.06]">{L("Contact Sales", "Hubungi Tim Kami")}</Link>
           </div>
           <SampleReportLink />
         </div>

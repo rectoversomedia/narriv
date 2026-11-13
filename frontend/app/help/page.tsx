@@ -176,8 +176,8 @@ export default function HelpCenterPage() {
 
   return (
     <div className={cn("min-h-dvh text-[#101334]", PAPER)}>
-      {/* Every answer as structured data (English), so search and AI assistants can quote it. */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqJsonLd(groups.flatMap((g) => g.faqs.map((f) => ({ q: f.q[0], a: f.a[0] }))))) }} />
+      {/* Every answer as structured data in the page's language, so search and AI assistants can quote it. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqJsonLd(groups.flatMap((g) => g.faqs.map((f) => ({ q: pick(f.q), a: pick(f.a) }))))) }} />
       <header className={cn("relative overflow-hidden pb-16 text-white", INK)}>
         <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
         <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.35),transparent)]" />

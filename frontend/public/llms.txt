@@ -34,10 +34,19 @@ Corporate communications, PR, brand and reputation teams; agencies managing seve
 - [Home](https://www.narriv.digital/): product overview and live demo
 - [Pricing](https://www.narriv.digital/pricing): plans, comparison and billing FAQ
 - [Help Center](https://www.narriv.digital/help): how monitoring, alerts, reports and team access work
+- [Blog](https://www.narriv.digital/blog): guides on media monitoring, social listening, crisis response and AI visibility
+- [What is media monitoring?](https://www.narriv.digital/blog/what-is-media-monitoring)
+- [Social listening vs media monitoring vs narrative intelligence](https://www.narriv.digital/blog/social-listening-vs-media-monitoring)
+- [How to handle a reputation crisis in the first 24 hours](https://www.narriv.digital/blog/reputation-crisis-first-24-hours)
+- [AI visibility: how AI assistants describe your brand](https://www.narriv.digital/blog/ai-visibility)
 - [Sample board report (English, PDF)](https://www.narriv.digital/contoh-laporan-narriv.pdf)
 - [Sample board report (Bahasa Indonesia, PDF)](https://www.narriv.digital/contoh-laporan-narriv-id.pdf)
 - [Privacy Policy](https://www.narriv.digital/privacy)
 - [Terms of Service](https://www.narriv.digital/terms)
+
+## Bahasa Indonesia
+
+Every public page also exists in Indonesian: [Beranda](https://www.narriv.digital/id), [Harga](https://www.narriv.digital/id/harga), [Bantuan](https://www.narriv.digital/id/bantuan), [Blog](https://www.narriv.digital/id/blog), [Kebijakan Privasi](https://www.narriv.digital/id/privasi), [Ketentuan Layanan](https://www.narriv.digital/id/ketentuan).
 
 ## Contact
 

@@ -63,7 +63,7 @@ const nextConfig: NextConfig = {
               // Script sources — 'unsafe-eval' is required in development for Next.js dev server/webpack/source-maps
               process.env.NODE_ENV === "development"
                 ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com http://unpkg.com https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com"
-                : "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com",
+                : "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net",
               // Style sources
               `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com ${appUrl}`,
               // Font sources
@@ -71,7 +71,7 @@ const nextConfig: NextConfig = {
               // Image sources
               `img-src 'self' data: https: blob: ${appUrl}`,
               // Connect/API sources
-              `connect-src 'self' ${appUrl} https://*.supabase.co https://www.google-analytics.com https://analytics.google.com`,
+              `connect-src 'self' ${appUrl} https://*.supabase.co https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.google.com https://googleads.g.doubleclick.net https://www.googleadservices.com`,
               // Frame sources — deny all
               "frame-src 'none'",
               // Object sources — deny all

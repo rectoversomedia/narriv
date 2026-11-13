@@ -10,6 +10,7 @@ import { UseCases } from "@/components/marketing/use-cases";
 import { AI_ENGINES } from "@/components/ui/ai-engines";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { useL } from "@/lib/use-l";
+import { useSiteHref } from "@/lib/site-lang";
 import { cn } from "@/lib/utils";
 
 // The public landing page, served at "/" to visitors who are not signed in (see proxy.ts).
@@ -371,6 +372,7 @@ function SectionHead({ title, accent, lead, dark = false, stacked = false }: { t
 
 export default function WelcomePage() {
   const L = useL();
+  const href = useSiteHref();
 
   const steps = [
     {
@@ -631,7 +633,7 @@ export default function WelcomePage() {
             ))}
           </Reveal>
           <p className="mt-6 text-center text-[15px] font-medium text-[#5B6070]">
-            {L("Find more answers on our ", "Temukan jawaban lainnya di halaman ")}<Link href="/help" className="font-bold text-[#465FFF] underline-offset-4 hover:underline">{L("Help", "Bantuan")}</Link>.
+            {L("Find more answers on our ", "Temukan jawaban lainnya di halaman ")}<Link href={href("/help")} className="font-bold text-[#465FFF] underline-offset-4 hover:underline">{L("Help", "Bantuan")}</Link>.
           </p>
         </div>
       </section>

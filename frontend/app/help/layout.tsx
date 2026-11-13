@@ -1,12 +1,9 @@
 import type { ReactNode } from "react";
-import { createPageMetadata } from "@/lib/metadata";
+import { sitePageMetadata } from "@/lib/metadata";
+import { SiteLanguage } from "@/lib/site-lang";
 
-export const metadata = createPageMetadata(
-  "Help Center: How Narriv Monitoring, Alerts and Reports Work",
-  "Answers about Narriv: getting started, monitoring keywords and sources, risk scores, alerts, reports, team access and billing. Contact the Narriv team by email or WhatsApp.",
-  "/help"
-);
+export const metadata = sitePageMetadata("/help", "en");
 
 export default function HelpLayout({ children }: { children: ReactNode }) {
-  return children;
+  return <SiteLanguage lang="en">{children}</SiteLanguage>;
 }

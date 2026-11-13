@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { track } from "@/lib/analytics";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -64,6 +65,7 @@ export default function SignupPage() {
       sessionStorage.setItem("narriv_signup_company", data.company);
       if (data.role) sessionStorage.setItem("narriv_signup_role", data.role);
 
+      track("sign_up", { method: "email" });
       // Store email temporarily for verify page
       sessionStorage.setItem("narriv_verify_email", json.email);
       if (json.verificationCode) {

@@ -1,8 +1,13 @@
+import { useSiteLanguage } from "@/lib/site-lang";
 import { useUiStore } from "@/store/useUiStore";
 
-/** Inline bilingual copy for small, component-local strings: `L("English", "Indonesia")` follows the UI language. */
+/**
+ * Inline bilingual copy for small, component-local strings: `L("English", "Indonesia")` follows the UI language,
+ * or on the public website the language of the address.
+ */
 export function useL() {
-  const language = useUiStore((state) => state.language);
+  const saved = useUiStore((state) => state.language);
+  const language = useSiteLanguage() ?? saved;
   return <T = string>(en: T, id: T): T => (language === "id" ? id : en);
 }
 
