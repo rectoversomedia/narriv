@@ -145,7 +145,7 @@ export default function PricingPage() {
   const faqs: Array<[Copy, Copy]> = [
     [["Is There a Free Trial?", "Apakah Tersedia Uji Coba Gratis?"], ["Yes. Sign up and start right away: 14 days on your own brand with three keywords checked every hour across online news and YouTube, plus every feature of the Pilot plan. No card is needed. The live demo needs no sign-up at all.", "Ya. Daftar dan langsung mulai: 14 hari untuk brand Anda sendiri, dengan tiga kata kunci dipantau tiap jam di berita online dan YouTube, plus seluruh fitur paket Pilot. Tidak perlu kartu kredit. Demo langsung bahkan tidak perlu mendaftar."]],
     [["What Happens After the Trial?", "Apa yang Terjadi Setelah Uji Coba?"], ["Hourly monitoring pauses until your plan is active. Nothing is deleted: your keywords, alerts and reports stay, and monitoring resumes as soon as the plan starts.", "Pemantauan tiap jam berhenti sementara sampai paket Anda aktif. Tidak ada yang dihapus: kata kunci, peringatan, dan laporan tetap tersimpan, dan pemantauan langsung berjalan lagi begitu paket dimulai."]],
-    [["How Does Billing Work?", "Bagaimana Sistem Pembayarannya?"], ["Payment is by bank transfer against an invoice, billed monthly or annually. Annual billing saves 20%.", "Pembayaran melalui transfer bank berdasarkan invoice, ditagih bulanan atau tahunan. Tagihan tahunan lebih hemat 20%."]],
+    [["How Does Billing Work?", "Bagaimana Sistem Pembayarannya?"], ["Payment is by bank transfer against an invoice, billed monthly or annually. Annual billing saves 20%. Prices exclude 11% VAT, which is added to the invoice.", "Pembayaran melalui transfer bank berdasarkan invoice, ditagih bulanan atau tahunan. Tagihan tahunan lebih hemat 20%. Harga belum termasuk PPN 11%, yang ditambahkan pada invoice."]],
     [["Can We Change Plans Later?", "Apakah Paket Dapat Diubah?"], ["Yes. Contact the Narriv team and we will update your workspace plan.", "Ya. Hubungi tim Narriv dan kami akan menyesuaikan paket workspace Anda."]],
     [["What Counts as a Brand?", "Apa yang Dihitung sebagai Brand?"], ["One workspace: a brand, product or client with its own keywords, alerts and reports.", "Satu workspace: satu brand, produk, atau klien dengan kata kunci, peringatan, dan laporan tersendiri."]],
     [["Why Is Social Media Not in Every Plan?", "Mengapa Media Sosial Tidak Tersedia di Semua Paket?"], ["Collecting data from Instagram, TikTok, X and Facebook carries a direct cost per run, so it is included from the Decision plan and activated by the Narriv team.", "Pengambilan data dari Instagram, TikTok, X, dan Facebook memiliki biaya langsung setiap kali dijalankan, sehingga tersedia mulai paket Decision dan diaktifkan oleh tim Narriv."]],
@@ -214,13 +214,15 @@ export default function PricingPage() {
                     <p className="whitespace-nowrap text-[28px] font-black leading-none tracking-[-0.03em] tabular-nums">{rupiah(Math.round(plan.price * discount))}</p>
                     <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>
                       {annual ? L("per month, billed annually", "per bulan, ditagih tahunan") : L("per month", "per bulan")}
+                      <span className="block">{L("excl. 11% VAT", "belum termasuk PPN 11%")}</span>
                       {annual ? <span className={cn("mt-1 block font-bold", plan.popular ? "text-[#86EFAC]" : "text-[#047857]")}>{L("Save", "Hemat")} {rupiah((plan.price - Math.round(plan.price * discount)) * 12)} {L("a year", "per tahun")}</span> : null}
                     </p>
                   </>
                 ) : (
                   <>
                     <p className="text-[28px] font-black leading-none tracking-[-0.03em]">{L("Custom", "Kustom")}</p>
-                    <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{L(`from ${rupiah(plan.from ?? 0)} per month`, `mulai ${rupiah(plan.from ?? 0)} per bulan`)}</p>
+                    <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{L(`from ${rupiah(plan.from ?? 0)} per month`, `mulai ${rupiah(plan.from ?? 0)} per bulan`)}
+                      <span className="block">{L("excl. 11% VAT", "belum termasuk PPN 11%")}</span></p>
                   </>
                 )}
               </div>
