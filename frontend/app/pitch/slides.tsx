@@ -376,7 +376,7 @@ export function Audience({ en }: P) {
       <Head dark center kicker={t("Dipakai oleh tim yang bertanggung jawab atas reputasi", "Built for teams accountable for reputation")} title={t(<>Untuk tim yang <Brush>tidak boleh kecolongan.</Brush></>, <>For teams that <Brush>can't be caught out.</Brush></>)} />
       <div style={{ position: "absolute", left: 96, right: 96, top: 500, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 30 }}>
         {items.map((it, k) => (
-          <Card key={it.title} dark style={{ minHeight: 400, padding: 40 }}>
+          <Card key={it.title} dark style={{ minHeight: 400, padding: 40, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
             <Icon icon={it.icon} c={[BLUE, "#8B5CF6", "#C04BD8", "#EC4899"][k]} />
             <p style={{ margin: "34px 0 0", fontSize: 36, fontWeight: 800, lineHeight: 1.2 }}>{it.title}</p>
             <p style={{ margin: "18px 0 0", fontSize: 25, lineHeight: 1.5, color: "rgba(255,255,255,.66)" }}>{it.text}</p>
