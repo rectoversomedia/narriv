@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { AMBER, Arrow, BLUE, Brush, Card, Check, Cross, Dark, Dot, GRADIENT, INK, INKED, Light, MONO, MUTED, NEG, NEU, Num, Platform, POS, Point, Ribbon, SampleTag, Stamp, Head } from "./kit";
 
 type P = { en: boolean };
+// The assistants Narriv's AI visibility queries (backend/src/modules/geo/geo-engines.js).
+const AI_ENGINES = ["ChatGPT", "Claude", "Gemini", "Perplexity", "DeepSeek"];
 const tr = (en: boolean) => <T,>(id: T, e: T): T => (en ? e : id);
 
 const PLANS = [
@@ -137,7 +139,7 @@ export function Sources({ en }: P) {
       </div>
       <div className="pc" style={{ position: "absolute", left: 96, right: 96, top: 790, display: "flex", alignItems: "center", gap: 28, padding: "30px 40px", borderRadius: 26, background: INK, color: "#fff" }}>
         <Stamp dark tone="#fff" style={{ background: "rgba(255,255,255,.12)" }}>{t("+ Jawaban AI", "+ AI answers")}</Stamp>
-        <span style={{ fontSize: 30, fontWeight: 700 }}>ChatGPT · Gemini · Perplexity</span>
+        <span style={{ fontSize: 30, fontWeight: 700 }}>{AI_ENGINES.join(" · ")}</span>
         <span style={{ marginLeft: "auto", fontSize: 24, color: "rgba(255,255,255,.65)" }}>{t("Media sosial mulai paket Decision · AI mulai paket Intelligence", "Social media from the Decision plan · AI from Intelligence")}</span>
       </div>
     </Light>
@@ -274,9 +276,12 @@ export function AiVisibility({ en }: P) {
   const r = 150, c = 2 * Math.PI * r;
   return (
     <Light tag={t("Fitur · Visibilitas AI", "Feature · AI visibility")}>
-      <Head top={170} width={860} kicker={t("Tempat baru reputasi terbentuk", "A new place reputations form")} title={t(<>Apa kata <Brush>ChatGPT</Brush> tentang brand Anda?</>, <>What does <Brush>ChatGPT</Brush> say about you?</>)} sub={t("Orang kini bertanya ke asisten AI sebelum mencari. Narriv memeriksa bagaimana AI menggambarkan dan merekomendasikan brand Anda.", "People now ask AI assistants before they search. Narriv checks how AI describes and recommends your brand.")} />
-      <div style={{ position: "absolute", left: 96, top: 720, display: "flex", gap: 20 }}>
-        {["ChatGPT", "Gemini", "Perplexity"].map((e) => <Stamp key={e}>{e}</Stamp>)}
+      <Head top={170} width={860} kicker={t("Tempat baru reputasi terbentuk", "A new place reputations form")} title={t(<>Apa kata <Brush>AI</Brush> tentang brand Anda?</>, <>What does <Brush>AI</Brush> say about you?</>)} sub={t("Orang kini bertanya ke asisten AI sebelum mencari. Narriv memeriksa bagaimana AI menggambarkan dan merekomendasikan brand Anda.", "People now ask AI assistants before they search. Narriv checks how AI describes and recommends your brand.")} />
+      <div className="pc" style={{ position: "absolute", left: 96, top: 700, width: 900 }}>
+        <p style={{ margin: 0, fontFamily: MONO, fontSize: 22, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED }}>{t("Asisten AI yang diperiksa", "AI assistants checked")}</p>
+        <div style={{ marginTop: 22, display: "flex", flexWrap: "wrap", gap: 18 }}>
+          {AI_ENGINES.map((e) => <Stamp key={e}>{e}</Stamp>)}
+        </div>
       </div>
       <Card style={{ position: "absolute", left: 1100, top: 210, width: 724, padding: 48, display: "flex", flexDirection: "column", alignItems: "center" }}>
         <div style={{ position: "relative", width: 360, height: 360 }}>
