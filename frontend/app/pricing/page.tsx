@@ -159,7 +159,7 @@ export default function PricingPage() {
         <div className="relative mx-auto max-w-3xl px-4 pt-10 text-center sm:px-6">
           <h1 className="text-balance text-[34px] font-black leading-[1.06] tracking-[-0.03em] sm:text-[52px]">
             {L("The Right Plan", "Paket yang Tepat")}{" "}
-            <span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", SERIF)}>{L("for Every Stage of Your Team.", "untuk Setiap Tahap Tim Anda.")}</span>
+            <span className={cn("mk-brush", SERIF)}>{L("for Every Stage of Your Team.", "untuk Setiap Tahap Tim Anda.")}</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/60">{L("Every plan begins with a 14-day trial on your own brand.", "Setiap paket diawali uji coba 14 hari menggunakan brand Anda sendiri.")}</p>
           <div role="group" aria-label={L("Billing Period", "Periode Tagihan")} className="mt-8 inline-flex rounded-full bg-white/10 p-1">
@@ -191,17 +191,18 @@ export default function PricingPage() {
               key={plan.id}
               className={cn(
                 "relative grid grid-rows-subgrid gap-y-5 rounded-[22px] p-6 [grid-row:span_5]",
-                plan.popular ? "bg-[#101334] text-white shadow-[0_24px_60px_rgba(16,19,52,0.35)]" : "bg-white border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]",
+                plan.popular ? "border-[1.5px] border-[#101334] bg-[#101334] text-white shadow-[0_6px_0_#465FFF] lg:-translate-y-2" : "border-[1.5px] border-[#101334] bg-white shadow-[0_5px_0_#101334]",
               )}
             >
               {plan.popular ? (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#465FFF] px-3 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-white shadow-[0_6px_16px_rgba(70,95,255,0.4)]">
+                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[8px] border-[1.5px] border-[#101334] bg-[#FBBF24] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#101334] shadow-[0_2px_0_#101334]">
                   {L("Most Popular", "Paling Populer")}
                 </span>
               ) : null}
 
               <div className="text-center">
-                <h2 className="text-[20px] font-black">{plan.name}</h2>
+                <p className={cn("font-mono text-[10.5px] font-bold uppercase tracking-[0.1em]", plan.popular ? "text-[#A5B4FF]" : "text-[#5F6B94]")}>{L("Plan", "Paket")} 0{PLANS.indexOf(plan) + 1}</p>
+                <h2 className="mt-1 text-[22px] font-black tracking-[-0.02em]">{plan.name}</h2>
                 <p className={cn("mt-1 text-[14px] font-semibold", plan.popular ? "text-[#A5B4FF]" : "text-[#465FFF]")}>{P(plan.tagline)}</p>
                 <p className={cn("mt-1 text-[13px] font-medium", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{P(plan.audience)}</p>
               </div>
@@ -209,7 +210,7 @@ export default function PricingPage() {
               <div className="text-center">
                 {plan.price ? (
                   <>
-                    <p className="whitespace-nowrap text-[26px] font-black leading-none tracking-[-0.02em] tabular-nums">{rupiah(Math.round(plan.price * discount))}</p>
+                    <p className="whitespace-nowrap text-[28px] font-black leading-none tracking-[-0.03em] tabular-nums">{rupiah(Math.round(plan.price * discount))}</p>
                     <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>
                       {L("per month", "per bulan")}
                       {annual ? <span className="block">{L("Save", "Hemat")} {rupiah(plan.price - Math.round(plan.price * discount))}</span> : null}
@@ -217,13 +218,13 @@ export default function PricingPage() {
                   </>
                 ) : (
                   <>
-                    <p className="text-[26px] font-black leading-none tracking-[-0.02em]">{L("Custom", "Kustom")}</p>
+                    <p className="text-[28px] font-black leading-none tracking-[-0.03em]">{L("Custom", "Kustom")}</p>
                     <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{L(`from ${rupiah(plan.from ?? 0)} per month`, `mulai ${rupiah(plan.from ?? 0)} per bulan`)}</p>
                   </>
                 )}
               </div>
 
-              <dl className={cn("space-y-2 self-start rounded-2xl px-4 py-3.5", plan.popular ? "bg-white/[0.08]" : "bg-[#F5F7FF]")}>
+              <dl className={cn("space-y-2 self-start rounded-2xl px-4 py-3.5", plan.popular ? "bg-white/[0.08]" : "bg-[#F6F7FC]")}>
                 {[
                   { k: L("Brands", "Brand"), v: P(plan.limits.brands) },
                   { k: L("Users", "Pengguna"), v: P(plan.limits.users) },
@@ -263,7 +264,7 @@ export default function PricingPage() {
       {/* Comparison */}
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("What", "Isi")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("Each Plan Includes.", "Setiap Paket.")}</span></h2>
+          <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("What", "Isi")} <span className={cn("mk-brush", SERIF)}>{L("Each Plan Includes.", "Setiap Paket.")}</span></h2>
         </div>
         <div className="mt-10 overflow-hidden rounded-[22px] bg-white border-[1.5px] border-[#101334] shadow-[0_5px_0_#101334]">
           <div className="overflow-x-auto">
@@ -309,7 +310,7 @@ export default function PricingPage() {
       {/* Questions */}
       <section className="mx-auto grid max-w-6xl gap-10 px-4 pb-20 sm:px-6 lg:grid-cols-[0.8fr_1.4fr] lg:gap-20">
         <div>
-          <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("Plans", "Seputar Paket")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("and Billing.", "dan Pembayaran.")}</span></h2>
+          <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("Plans", "Seputar Paket")} <span className={cn("mk-brush", SERIF)}>{L("and Billing.", "dan Pembayaran.")}</span></h2>
         </div>
         <div className={cn("border-t", RULE)}>
           {faqs.map(([q, a]) => (
@@ -329,7 +330,7 @@ export default function PricingPage() {
         <div className={cn("relative mx-auto max-w-6xl overflow-hidden rounded-[32px] px-6 py-16 text-center text-white", INK)}>
           <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
           <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 h-[320px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.45),transparent)]" />
-          <h2 className="relative text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[44px]">{L("Not Sure", "Belum Yakin")} <span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", SERIF)}>{L("Which Plan Fits?", "Paket Mana yang Sesuai?")}</span></h2>
+          <h2 className="relative text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[44px]">{L("Not Sure", "Belum Yakin")} <span className={cn("mk-brush", SERIF)}>{L("Which Plan Fits?", "Paket Mana yang Sesuai?")}</span></h2>
           <p className="relative mx-auto mt-3 max-w-xl text-[16px] font-medium text-white/70">{L("Start with the trial. After 14 days, we will review the results with you.", "Mulai dengan uji coba. Setelah 14 hari, kami akan meninjau hasilnya bersama Anda.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/signup" className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-bold text-[#070A1F] shadow-[0_12px_40px_rgba(165,180,255,0.35)] hover:bg-[#EEF1FF]">
