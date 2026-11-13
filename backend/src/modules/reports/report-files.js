@@ -6,6 +6,8 @@
  *   XLSX — one sheet per section with sized columns and filters.
  */
 
+import { existsSync } from "fs";
+import { fileURLToPath } from "url";
 import PDFDocument from "pdfkit";
 import { buildXlsx } from "../../lib/spreadsheet.js";
 import supabase from "../../lib/supabase.js";
@@ -116,6 +118,7 @@ function words(lang) {
         lang,
         locale: id ? "id-ID" : "en-US",
         report: w("Report", "Laporan"),
+        reportStamp: w("Narrative Intelligence Report", "Laporan Narrative Intelligence"),
         period: w("Period", "Periode"),
         generated: w("Generated", "Dibuat"),
         brand: w("Brand", "Brand"),
@@ -179,6 +182,32 @@ function verdictOf(t) {
 // PDF
 // ---------------------------------------------------------------------------
 
+// The Narriv look in print: Plus Jakarta Sans for text, JetBrains Mono for labels and figures (both OFL, in
+// backend/assets/fonts), and the light wordmark on the navy header. Missing files fall back to Helvetica.
+const asset = (rel) => fileURLToPath(new URL(`../../../assets/${rel}`, import.meta.url));
+const FONT_FILES = {
+    "Narriv-Sans": "fonts/plus-jakarta-sans-latin-400-normal.woff",
+    "Narriv-Bold": "fonts/plus-jakarta-sans-latin-700-normal.woff",
+    "Narriv-Black": "fonts/plus-jakarta-sans-latin-800-normal.woff",
+    "Narriv-Mono": "fonts/jetbrains-mono-latin-700-normal.woff",
+};
+const WORDMARK = "brand/narriv-wordmark-light.png";
+
+/** Registers the Narriv fonts on a document and returns their names (Helvetica where a file is missing). */
+function useNarrivFonts(doc) {
+    const pick = (name, fallback) => {
+        try {
+            const file = asset(FONT_FILES[name]);
+            if (!existsSync(file)) return fallback;
+            doc.registerFont(name, file);
+            return name;
+        } catch {
+            return fallback;
+        }
+    };
+    return { sans: pick("Narriv-Sans", "Helvetica"), bold: pick("Narriv-Bold", "Helvetica-Bold"), black: pick("Narriv-Black", "Helvetica-Bold"), mono: pick("Narriv-Mono", "Courier-Bold") };
+}
+
 const C = {
     navy: "#101334", ink: "#1F2544", body: "#3A4566", muted: "#6B7591", line: "#E6EAF2", soft: "#F4F6FC",
     blue: "#465FFF", red: "#E5484D", redDark: "#B42318", redSoft: "#FDECEC", green: "#12A66A", greenDark: "#047857", greenSoft: "#E5F6EE",
@@ -194,6 +223,7 @@ export function buildReportPdf(data, lang = data.language) {
     const chunks = [];
     doc.on("data", (c) => chunks.push(c));
     const done = new Promise((resolve) => doc.on("end", () => resolve(Buffer.concat(chunks))));
+    const F = useNarrivFonts(doc);
 
     const left = doc.page.margins.left;
     const width = doc.page.width - left - doc.page.margins.right;
@@ -201,21 +231,53 @@ export function buildReportPdf(data, lang = data.language) {
     const ensure = (h) => { if (doc.y + h > bottomLimit()) doc.addPage(); };
     const t = data.totals;
 
-    // Header band
-    doc.rect(0, 0, doc.page.width, 150).fill(C.navy);
-    doc.fillColor("#A9B4FF").font("Helvetica-Bold").fontSize(10).text("NARRIV", left, 36, { characterSpacing: 2 });
-    doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(22).text(data.title, left, 54, { width: width - 10 });
-    const meta = [`${W.period}: ${fmtDate(data.periodStart, W.locale)} – ${fmtDate(data.periodEnd, W.locale)}`, `${W.generated}: ${fmtDate(data.generatedAt, W.locale, true)} WIB`];
-    if (data.brand) meta.unshift(`${W.brand}: ${data.brand}`);
-    doc.fillColor("#C9D0F5").font("Helvetica").fontSize(9.5).text(meta.join("   ·   "), left, 118, { width });
-    doc.y = 176;
+    // Header: navy band with a faint dot grid, the wordmark and a mono stamp, the title, the details as mono
+    // chips, and the Narriv brush gradient as the band's lower edge.
+    const HEAD_H = 178;
+    doc.rect(0, 0, doc.page.width, HEAD_H).fill(C.navy);
+    doc.save();
+    doc.fillOpacity(0.07).fillColor("#FFFFFF");
+    for (let gx = 14; gx < doc.page.width; gx += 16) for (let gy = 12; gy < HEAD_H - 8; gy += 16) doc.circle(gx, gy, 0.7).fill();
+    doc.restore();
+    const glow = doc.radialGradient(doc.page.width - 90, 10, 0, doc.page.width - 90, 10, 230);
+    glow.stop(0, "#6D7CFF", 0.45).stop(1, "#101334", 0);
+    doc.rect(0, 0, doc.page.width, HEAD_H).fill(glow);
+    const markFile = asset(WORDMARK);
+    if (existsSync(markFile)) doc.image(markFile, left, 30, { height: 24 });
+    else doc.fillColor("#FFFFFF").font(F.black).fontSize(18).text("Narriv.", left, 32);
+    const stamp = (W.reportStamp || "").toUpperCase();
+    doc.font(F.mono).fontSize(7.5);
+    const stW = doc.widthOfString(stamp, { characterSpacing: 1 }) + 18;
+    doc.roundedRect(left + width - stW, 33, stW, 18, 5).lineWidth(0.8).strokeColor("#A5B4FF").stroke();
+    doc.fillColor("#C7D0FF").text(stamp, left + width - stW + 9, 38.5, { characterSpacing: 1, lineBreak: false });
+    doc.fillColor("#FFFFFF").font(F.black).fontSize(24).text(data.title, left, 72, { width: width - 10, lineGap: -2 });
+    const chips = [data.brand ? [W.brand, data.brand] : null, [W.period, `${fmtDate(data.periodStart, W.locale)} – ${fmtDate(data.periodEnd, W.locale)}`], [W.generated, `${fmtDate(data.generatedAt, W.locale, true)} WIB`]].filter(Boolean);
+    let cx = left;
+    const cy = Math.max(doc.y + 10, 128);
+    for (const [k, v] of chips) {
+        const label = `${k.toUpperCase()}  `;
+        doc.font(F.mono).fontSize(7.5);
+        const lw = doc.widthOfString(label, { characterSpacing: 0.6 });
+        doc.font(F.bold).fontSize(9);
+        const vw2 = doc.widthOfString(v);
+        const w = lw + vw2 + 20;
+        if (cx + w > left + width) break;
+        doc.roundedRect(cx, cy, w, 22, 6).fillOpacity(0.1).fill("#FFFFFF").fillOpacity(1);
+        doc.fillColor("#A5B4FF").font(F.mono).fontSize(7.5).text(label, cx + 10, cy + 7.5, { characterSpacing: 0.6, lineBreak: false });
+        doc.fillColor("#FFFFFF").font(F.bold).fontSize(9).text(v, cx + 10 + lw, cy + 6, { lineBreak: false });
+        cx += w + 8;
+    }
+    const brush = doc.linearGradient(0, 0, doc.page.width, 0);
+    brush.stop(0, "#465FFF").stop(0.55, "#8B5CF6").stop(1, "#EC4899");
+    doc.rect(0, HEAD_H - 5, doc.page.width, 5).fill(brush);
+    doc.y = HEAD_H + 26;
 
     // Verdict + one-line summary
     const v = verdictOf(t);
     const vColor = { negative: [C.redDark, C.redSoft], positive: [C.greenDark, C.greenSoft], balanced: [C.ink, "#EEF1F8"], none: [C.muted, C.soft] }[v];
-    doc.fillColor(C.muted).font("Helvetica-Bold").fontSize(8.5).text(W.verdictTitle.toUpperCase(), left, doc.y, { characterSpacing: 1 });
+    doc.fillColor(C.muted).font(F.mono).fontSize(7.5).text(W.verdictTitle.toUpperCase(), left, doc.y, { characterSpacing: 1 });
     const vy = doc.y + 6;
-    doc.font("Helvetica-Bold").fontSize(18);
+    doc.font(F.black).fontSize(18);
     const vw = doc.widthOfString(W.verdict[v]) + 24;
     doc.roundedRect(left, vy, vw, 30, 8).fill(vColor[1]);
     doc.fillColor(vColor[0]).text(W.verdict[v], left + 12, vy + 7);
@@ -230,7 +292,7 @@ export function buildReportPdf(data, lang = data.language) {
             return d === 0 ? ` Porsi negatif sama dengan periode sebelumnya (${p.negative}%).` : ` Porsi negatif ${d > 0 ? "naik" : "turun"} ${Math.abs(d)} poin dari periode sebelumnya (${p.negative}% menjadi ${t.negative}%).`;
         })()
         : "";
-    doc.fillColor(C.body).font("Helvetica").fontSize(10.5).text(line + change, left + vw + 14, vy + 4, { width: width - vw - 14 });
+    doc.fillColor(C.body).font(F.sans).fontSize(10.5).text(line + change, left + vw + 14, vy + 4, { width: width - vw - 14 });
     doc.y = Math.max(vy + 46, doc.y + 12);
 
     // KPI tiles
@@ -253,18 +315,21 @@ export function buildReportPdf(data, lang = data.language) {
     const ty = doc.y;
     tiles.forEach((tile, i) => {
         const x = left + i * (tw + gap);
-        doc.roundedRect(x, ty, tw, 70, 10).fill(tile.bg);
-        doc.fillColor(tile.fg).font("Helvetica-Bold").fontSize(8).text(tile.label.toUpperCase(), x + 12, ty + 11, { width: tw - 24, characterSpacing: 0.8 });
-        doc.fillColor(C.navy).font("Helvetica-Bold").fontSize(22).text(tile.value, x + 12, ty + 25, { width: tw - 24 });
-        doc.fillColor(tile.sub.color).font("Helvetica-Bold").fontSize(8.5).text(tile.sub.text, x + 12, ty + 52, { width: tw - 24 });
+        doc.roundedRect(x, ty + 3, tw, 70, 10).fill(C.navy);
+        doc.roundedRect(x, ty, tw, 70, 10).fill("#FFFFFF");
+        doc.roundedRect(x, ty, tw, 70, 10).lineWidth(1.1).strokeColor(C.navy).stroke();
+        doc.fillColor(tile.fg).font(F.mono).fontSize(7.5).text(tile.label.toUpperCase(), x + 12, ty + 11, { width: tw - 24, characterSpacing: 0.8 });
+        doc.fillColor(C.navy).font(F.black).fontSize(22).text(tile.value, x + 12, ty + 24, { width: tw - 24 });
+        doc.fillColor(tile.sub.color).font(F.bold).fontSize(8).text(tile.sub.text, x + 12, ty + 52, { width: tw - 20, lineBreak: false, ellipsis: true });
     });
-    doc.y = ty + 88;
+    doc.y = ty + 92;
 
     const heading = (text) => {
         ensure(60);
         doc.moveDown(0.4);
-        doc.fillColor(C.navy).font("Helvetica-Bold").fontSize(13).text(text, left, doc.y);
-        doc.moveTo(left, doc.y + 4).lineTo(left + width, doc.y + 4).lineWidth(0.6).strokeColor(C.line).stroke();
+        doc.fillColor(C.navy).font(F.black).fontSize(14).text(text, left, doc.y);
+        doc.moveTo(left, doc.y + 4).lineTo(left + 28, doc.y + 4).lineWidth(2.5).strokeColor(C.blue).stroke();
+        doc.moveTo(left + 32, doc.y + 4).lineTo(left + width, doc.y + 4).lineWidth(0.6).strokeColor(C.line).stroke();
         doc.y += 12;
     };
 
@@ -273,7 +338,7 @@ export function buildReportPdf(data, lang = data.language) {
     const decide = open.slice(0, 3);
     const decideSet = new Set(decide);
     heading(W.decideTitle);
-    if (!decide.length) doc.fillColor(C.muted).font("Helvetica").fontSize(10).text(W.decideNone, left, doc.y);
+    if (!decide.length) doc.fillColor(C.muted).font(F.sans).fontSize(10).text(W.decideNone, left, doc.y);
     decide.forEach((a, i) => {
         const [fg] = SEV_COLOR[a.severity] || [C.ink];
         const textW = width - 44 - 90;
@@ -283,28 +348,28 @@ export function buildReportPdf(data, lang = data.language) {
             a.deadline ? `${W.due}: ${fmtDate(a.deadline, W.locale, true)}${overdue ? ` (${W.overdue})` : ""}` : null,
             W.status[a.status] || a.status,
         ].filter(Boolean).join("   ·   ");
-        doc.font("Helvetica-Bold").fontSize(11);
+        doc.font(F.bold).fontSize(11);
         const hTitle = doc.heightOfString(a.title, { width: textW });
-        doc.font("Helvetica-Bold").fontSize(9);
+        doc.font(F.bold).fontSize(9);
         const hMeta = doc.heightOfString(meta, { width: width - 44 });
-        doc.font("Helvetica").fontSize(9.5);
+        doc.font(F.sans).fontSize(9.5);
         const hTodo = a.whatToDo ? doc.heightOfString(`${W.whatToDo}: ${a.whatToDo}`, { width: width - 44 }) : 0;
         const h = 14 + hTitle + 4 + hMeta + (hTodo ? hTodo + 5 : 0) + 12;
         ensure(h + 8);
         const y = doc.y;
         doc.roundedRect(left, y, width, h, 10).fill(C.soft);
         doc.circle(left + 18, y + 20, 9).fill(fg);
-        doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(9).text(String(i + 1), left + 12, y + 16.5, { width: 12, align: "center" });
+        doc.fillColor("#FFFFFF").font(F.bold).fontSize(9).text(String(i + 1), left + 12, y + 16.5, { width: 12, align: "center" });
         const pill = (W.severity[a.severity] || a.severity || "").toUpperCase();
-        doc.font("Helvetica-Bold").fontSize(8);
+        doc.font(F.bold).fontSize(8);
         const pw = doc.widthOfString(pill) + 14;
         doc.roundedRect(left + width - pw - 12, y + 12, pw, 16, 8).fill(fg);
         doc.fillColor("#FFFFFF").text(pill, left + width - pw - 5, y + 16.5);
-        doc.fillColor(C.navy).font("Helvetica-Bold").fontSize(11).text(a.title, left + 34, y + 13, { width: textW });
+        doc.fillColor(C.navy).font(F.bold).fontSize(11).text(a.title, left + 34, y + 13, { width: textW });
         let cy = y + 13 + hTitle + 4;
-        doc.fillColor(a.owner && !overdue ? C.body : C.redDark).font("Helvetica-Bold").fontSize(9).text(meta, left + 34, cy, { width: width - 44 });
+        doc.fillColor(a.owner && !overdue ? C.body : C.redDark).font(F.bold).fontSize(9).text(meta, left + 34, cy, { width: width - 44 });
         cy += hMeta + 5;
-        if (a.whatToDo) doc.fillColor(fg).font("Helvetica-Bold").fontSize(9.5).text(`${W.whatToDo}: `, left + 34, cy, { continued: true, width: width - 44 }).fillColor(C.ink).font("Helvetica").text(a.whatToDo);
+        if (a.whatToDo) doc.fillColor(fg).font(F.bold).fontSize(9.5).text(`${W.whatToDo}: `, left + 34, cy, { continued: true, width: width - 44 }).fillColor(C.ink).font(F.sans).text(a.whatToDo);
         doc.y = y + h + 8;
     });
 
@@ -319,7 +384,7 @@ export function buildReportPdf(data, lang = data.language) {
     let lx = left;
     segs.forEach(([p, color, label]) => {
         doc.circle(lx + 4, by + 27, 3.5).fill(color);
-        doc.fillColor(C.body).font("Helvetica-Bold").fontSize(9.5).text(`${label} ${p}%`, lx + 12, by + 22);
+        doc.fillColor(C.body).font(F.bold).fontSize(9.5).text(`${label} ${p}%`, lx + 12, by + 22);
         lx += doc.widthOfString(`${label} ${p}%`) + 34;
     });
     doc.y = by + 44;
@@ -334,11 +399,11 @@ export function buildReportPdf(data, lang = data.language) {
         for (const p of data.platforms.slice(0, 7)) {
             ensure(22);
             const y = doc.y;
-            doc.fillColor(C.ink).font("Helvetica-Bold").fontSize(9.5).text(W.platformName(p.platform), left, y + 1, { width: 110 });
+            doc.fillColor(C.ink).font(F.bold).fontSize(9.5).text(W.platformName(p.platform), left, y + 1, { width: 110 });
             const bw = width - 110 - 70;
             doc.roundedRect(left + 110, y + 2, bw, 9, 4.5).fill(C.soft);
             doc.roundedRect(left + 110, y + 2, Math.max(4, (bw * p.count) / max), 9, 4.5).fill(C.blue);
-            doc.fillColor(C.navy).font("Helvetica-Bold").fontSize(9.5).text(`${p.count}  (${Math.round((p.count / total) * 100)}%)`, left + width - 64, y + 1, { width: 64, align: "right" });
+            doc.fillColor(C.navy).font(F.bold).fontSize(9.5).text(`${p.count}  (${Math.round((p.count / total) * 100)}%)`, left + width - 64, y + 1, { width: 64, align: "right" });
             doc.y = y + 20;
         }
     }
@@ -348,25 +413,25 @@ export function buildReportPdf(data, lang = data.language) {
     if (others.length) heading(W.otherAlertsTitle);
     for (const a of others.slice(0, 8)) {
         const [fg, bg] = SEV_COLOR[a.severity] || [C.ink, C.soft];
-        doc.font("Helvetica").fontSize(9.5);
+        doc.font(F.sans).fontSize(9.5);
         const textW = width - 28;
         const hWhat = a.whatHappened ? doc.heightOfString(a.whatHappened, { width: textW }) : 0;
         const hTodo = a.whatToDo ? doc.heightOfString(`${W.whatToDo}: ${a.whatToDo}`, { width: textW }) : 0;
-        doc.font("Helvetica-Bold").fontSize(11);
+        doc.font(F.bold).fontSize(11);
         const hTitle = doc.heightOfString(a.title, { width: textW - 90 });
         const h = 16 + hTitle + (hWhat ? hWhat + 4 : 0) + (hTodo ? hTodo + 4 : 0) + 10;
         ensure(h + 8);
         const y = doc.y;
         doc.roundedRect(left, y, width, h, 10).fill(bg);
         const pill = (W.severity[a.severity] || a.severity || "").toUpperCase();
-        doc.font("Helvetica-Bold").fontSize(8);
+        doc.font(F.bold).fontSize(8);
         const pw = doc.widthOfString(pill) + 14;
         doc.roundedRect(left + width - pw - 12, y + 12, pw, 16, 8).fill(fg);
         doc.fillColor("#FFFFFF").text(pill, left + width - pw - 5, y + 16.5);
-        doc.fillColor(C.navy).font("Helvetica-Bold").fontSize(11).text(a.title, left + 14, y + 12, { width: textW - 90 });
+        doc.fillColor(C.navy).font(F.bold).fontSize(11).text(a.title, left + 14, y + 12, { width: textW - 90 });
         let cy = y + 14 + hTitle + 2;
-        if (a.whatHappened) { doc.fillColor(C.body).font("Helvetica").fontSize(9.5).text(a.whatHappened, left + 14, cy, { width: textW }); cy += hWhat + 4; }
-        if (a.whatToDo) { doc.fillColor(fg).font("Helvetica-Bold").fontSize(9.5).text(`${W.whatToDo}: `, left + 14, cy, { continued: true, width: textW }).fillColor(C.ink).font("Helvetica").text(a.whatToDo); }
+        if (a.whatHappened) { doc.fillColor(C.body).font(F.sans).fontSize(9.5).text(a.whatHappened, left + 14, cy, { width: textW }); cy += hWhat + 4; }
+        if (a.whatToDo) { doc.fillColor(fg).font(F.bold).fontSize(9.5).text(`${W.whatToDo}: `, left + 14, cy, { continued: true, width: textW }).fillColor(C.ink).font(F.sans).text(a.whatToDo); }
         doc.y = y + h + 8;
     }
 
@@ -378,11 +443,11 @@ export function buildReportPdf(data, lang = data.language) {
             ensure(26);
             const y = doc.y;
             doc.circle(left + 9, y + 8, 9).fill(C.navy);
-            doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(9).text(String(i + 1), left + 3, y + 4.5, { width: 12, align: "center" });
-            doc.fillColor(C.ink).font("Helvetica-Bold").fontSize(10.5).text(issue.title, left + 26, y + 2, { width: width - 200 });
+            doc.fillColor("#FFFFFF").font(F.bold).fontSize(9).text(String(i + 1), left + 3, y + 4.5, { width: 12, align: "center" });
+            doc.fillColor(C.ink).font(F.bold).fontSize(10.5).text(issue.title, left + 26, y + 2, { width: width - 200 });
             const sColor = SENT_COLOR[String(issue.sentiment).toLowerCase()] || C.grey;
-            doc.fillColor(sColor).font("Helvetica-Bold").fontSize(9).text(W.sentiment[String(issue.sentiment).toLowerCase()] || issue.sentiment, left + width - 170, y + 3, { width: 70 });
-            doc.fillColor(C.navy).font("Helvetica-Bold").fontSize(10.5).text(`${issue.signals} · ${Math.round((issue.signals / total) * 100)}%`, left + width - 96, y + 2, { width: 96, align: "right" });
+            doc.fillColor(sColor).font(F.bold).fontSize(9).text(W.sentiment[String(issue.sentiment).toLowerCase()] || issue.sentiment, left + width - 170, y + 3, { width: 70 });
+            doc.fillColor(C.navy).font(F.bold).fontSize(10.5).text(`${issue.signals} · ${Math.round((issue.signals / total) * 100)}%`, left + width - 96, y + 2, { width: 96, align: "right" });
             doc.y = Math.max(doc.y, y + 18) + 8;
         });
     }
@@ -391,17 +456,17 @@ export function buildReportPdf(data, lang = data.language) {
     if (data.signals.length) {
         heading(W.signalsTitle);
         for (const s of data.signals.slice(0, 10)) {
-            doc.font("Helvetica-Bold").fontSize(10);
+            doc.font(F.bold).fontSize(10);
             const h = doc.heightOfString(s.title, { width: width - 120 });
             ensure(h + 18);
             const y = doc.y;
             const sColor = SENT_COLOR[s.sentiment] || C.grey;
             doc.circle(left + 4, y + 6, 4).fill(sColor);
-            doc.fillColor(C.ink).font("Helvetica-Bold").fontSize(10).text(s.title, left + 14, y, { width: width - 120 });
-            doc.fillColor(C.muted).font("Helvetica").fontSize(8.5).text(`${W.platformName(s.platform)} · ${W.sentiment[s.sentiment] || s.sentiment || "—"}`, left + 14, doc.y + 1, { width: width - 120 });
+            doc.fillColor(C.ink).font(F.bold).fontSize(10).text(s.title, left + 14, y, { width: width - 120 });
+            doc.fillColor(C.muted).font(F.sans).fontSize(8.5).text(`${W.platformName(s.platform)} · ${W.sentiment[s.sentiment] || s.sentiment || "—"}`, left + 14, doc.y + 1, { width: width - 120 });
             const rowEnd = doc.y;
             // The date sits beside the title; drawing it moves doc.y back up, so the row's end is restored after.
-            doc.fillColor(C.muted).font("Helvetica").fontSize(8.5).text(fmtDate(s.capturedAt, W.locale), left + width - 100, y, { width: 100, align: "right" });
+            doc.fillColor(C.muted).font(F.sans).fontSize(8.5).text(fmtDate(s.capturedAt, W.locale), left + width - 100, y, { width: 100, align: "right" });
             doc.y = rowEnd + 8;
         }
     }
@@ -414,8 +479,8 @@ export function buildReportPdf(data, lang = data.language) {
         doc.page.margins.bottom = 0;
         const fy = doc.page.height - 36;
         doc.moveTo(left, fy - 8).lineTo(left + width, fy - 8).lineWidth(0.5).strokeColor(C.line).stroke();
-        doc.fillColor(C.muted).font("Helvetica").fontSize(8).text(W.footer, left, fy, { width: width - 80, lineBreak: false });
-        doc.text(`${W.page} ${i + 1} / ${range.count}`, left + width - 80, fy, { width: 80, align: "right", lineBreak: false });
+        doc.fillColor(C.muted).font(F.sans).fontSize(8).text(W.footer, left, fy, { width: width - 80, lineBreak: false });
+        doc.font(F.mono).fontSize(7.5).text(`${W.page} ${i + 1} / ${range.count}`, left + width - 80, fy + 0.5, { width: 80, align: "right", lineBreak: false });
     }
     doc.end();
     return done;

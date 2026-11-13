@@ -37,7 +37,8 @@
   ],
   "functions": {
     "api/index.js": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "includeFiles": "assets/**"
     }
   },
   "buildCommand": "npm install --ignore-scripts --include=dev && npm run build",
