@@ -192,6 +192,14 @@ const FONT_FILES = {
     "Narriv-Mono": "fonts/jetbrains-mono-latin-700-normal.woff",
 };
 const WORDMARK = "brand/narriv-wordmark-light.png";
+/** Official platform logos (rendered from the same SVGs as the app's PlatformIcon); news gets a newspaper mark. */
+const PLATFORM_LOGO = { instagram: "instagram", facebook: "facebook", tiktok: "tiktok", youtube: "youtube", x: "x", twitter: "x", threads: "threads", reddit: "reddit", news: "news", rss: "news", web: "news" };
+function platformLogo(platform) {
+    const key = PLATFORM_LOGO[String(platform || "").toLowerCase()];
+    if (!key) return null;
+    const file = asset(`platforms/${key}.png`);
+    return existsSync(file) ? file : null;
+}
 
 /** Registers the Narriv fonts on a document and returns their names (Helvetica where a file is missing). */
 function useNarrivFonts(doc) {
@@ -280,7 +288,7 @@ export function buildReportPdf(data, lang = data.language) {
     doc.font(F.black).fontSize(18);
     const vw = doc.widthOfString(W.verdict[v]) + 24;
     doc.roundedRect(left, vy, vw, 30, 8).fill(vColor[1]);
-    doc.fillColor(vColor[0]).text(W.verdict[v], left + 12, vy + 7);
+    doc.fillColor(vColor[0]).text(W.verdict[v], left, vy + 15, { width: vw, align: "center", baseline: "middle", lineBreak: false });
     const line = lang === "en"
         ? `${t.signals} signals, ${t.negative}% negative and ${t.positive}% positive. ${t.alerts} alerts, ${t.criticalAlerts} of them critical or high.`
         : `${t.signals} percakapan, ${t.negative}% negatif dan ${t.positive}% positif. ${t.alerts} peringatan, ${t.criticalAlerts} di antaranya kritis atau tinggi.`;
@@ -341,7 +349,7 @@ export function buildReportPdf(data, lang = data.language) {
     const decide = open.slice(0, 3);
     const decideSet = new Set(decide);
     heading(W.decideTitle);
-    if (!decide.length) doc.fillColor(C.muted).font(F.sans).fontSize(10).text(W.decideNone, left, doc.y);
+    if (!decide.length) { doc.fillColor(C.muted).font(F.sans).fontSize(10).text(W.decideNone, left, doc.y); doc.y += 12; }
     decide.forEach((a, i) => {
         const [fg] = SEV_COLOR[a.severity] || [C.ink];
         const textW = width - 44 - 90;
@@ -362,12 +370,13 @@ export function buildReportPdf(data, lang = data.language) {
         const y = doc.y;
         doc.roundedRect(left, y, width, h, 10).fill(C.soft);
         doc.circle(left + 18, y + 20, 9).fill(fg);
-        doc.fillColor("#FFFFFF").font(F.bold).fontSize(9).text(String(i + 1), left + 12, y + 16.5, { width: 12, align: "center" });
+        // baseline "middle" centres on the circle whatever the font's ascent (Plus Jakarta Sans sits lower than Helvetica).
+        doc.fillColor("#FFFFFF").font(F.bold).fontSize(9).text(String(i + 1), left + 9, y + 20, { width: 18, align: "center", baseline: "middle", lineBreak: false });
         const pill = (W.severity[a.severity] || a.severity || "").toUpperCase();
         doc.font(F.bold).fontSize(8);
         const pw = doc.widthOfString(pill) + 14;
         doc.roundedRect(left + width - pw - 12, y + 12, pw, 16, 8).fill(fg);
-        doc.fillColor("#FFFFFF").text(pill, left + width - pw - 5, y + 16.5);
+        doc.fillColor("#FFFFFF").text(pill, left + width - pw - 12, y + 20, { width: pw, align: "center", baseline: "middle", lineBreak: false });
         doc.fillColor(C.navy).font(F.bold).fontSize(11).text(a.title, left + 34, y + 13, { width: textW });
         let cy = y + 13 + hTitle + 4;
         doc.fillColor(a.owner && !overdue ? C.body : C.redDark).font(F.bold).fontSize(9).text(meta, left + 34, cy, { width: width - 44 });
@@ -402,7 +411,9 @@ export function buildReportPdf(data, lang = data.language) {
         for (const p of data.platforms.slice(0, 7)) {
             ensure(22);
             const y = doc.y;
-            doc.fillColor(C.ink).font(F.bold).fontSize(9.5).text(W.platformName(p.platform), left, y + 1, { width: 110 });
+            const logo = platformLogo(p.platform);
+            if (logo) doc.image(logo, left, y - 0.5, { width: 13, height: 13 });
+            doc.fillColor(C.ink).font(F.bold).fontSize(9.5).text(W.platformName(p.platform), left + (logo ? 19 : 0), y + 1, { width: logo ? 91 : 110 });
             const bw = width - 110 - 70;
             doc.roundedRect(left + 110, y + 2, bw, 9, 4.5).fill(C.soft);
             doc.roundedRect(left + 110, y + 2, Math.max(4, (bw * p.count) / max), 9, 4.5).fill(C.blue);
@@ -430,7 +441,7 @@ export function buildReportPdf(data, lang = data.language) {
         doc.font(F.bold).fontSize(8);
         const pw = doc.widthOfString(pill) + 14;
         doc.roundedRect(left + width - pw - 12, y + 12, pw, 16, 8).fill(fg);
-        doc.fillColor("#FFFFFF").text(pill, left + width - pw - 5, y + 16.5);
+        doc.fillColor("#FFFFFF").text(pill, left + width - pw - 12, y + 20, { width: pw, align: "center", baseline: "middle", lineBreak: false });
         doc.fillColor(C.navy).font(F.bold).fontSize(11).text(a.title, left + 14, y + 12, { width: textW - 90 });
         let cy = y + 14 + hTitle + 2;
         if (a.whatHappened) { doc.fillColor(C.body).font(F.sans).fontSize(9.5).text(a.whatHappened, left + 14, cy, { width: textW }); cy += hWhat + 4; }
@@ -446,7 +457,7 @@ export function buildReportPdf(data, lang = data.language) {
             ensure(26);
             const y = doc.y;
             doc.circle(left + 9, y + 8, 9).fill(C.navy);
-            doc.fillColor("#FFFFFF").font(F.bold).fontSize(9).text(String(i + 1), left + 3, y + 4.5, { width: 12, align: "center" });
+            doc.fillColor("#FFFFFF").font(F.bold).fontSize(9).text(String(i + 1), left, y + 8, { width: 18, align: "center", baseline: "middle", lineBreak: false });
             doc.fillColor(C.ink).font(F.bold).fontSize(10.5).text(issue.title, left + 26, y + 2, { width: width - 200 });
             const sColor = SENT_COLOR[String(issue.sentiment).toLowerCase()] || C.grey;
             doc.fillColor(sColor).font(F.bold).fontSize(9).text(W.sentiment[String(issue.sentiment).toLowerCase()] || issue.sentiment, left + width - 170, y + 3, { width: 70 });
@@ -466,7 +477,10 @@ export function buildReportPdf(data, lang = data.language) {
             const sColor = SENT_COLOR[s.sentiment] || C.grey;
             doc.circle(left + 4, y + 6, 4).fill(sColor);
             doc.fillColor(C.ink).font(F.bold).fontSize(10).text(s.title, left + 14, y, { width: width - 120 });
-            doc.fillColor(C.muted).font(F.sans).fontSize(8.5).text(`${W.platformName(s.platform)} · ${W.sentiment[s.sentiment] || s.sentiment || "—"}`, left + 14, doc.y + 1, { width: width - 120 });
+            const sLogo = platformLogo(s.platform);
+            const metaY = doc.y + 1;
+            if (sLogo) doc.image(sLogo, left + 14, metaY + 0.5, { width: 9, height: 9 });
+            doc.fillColor(C.muted).font(F.sans).fontSize(8.5).text(`${W.platformName(s.platform)} · ${W.sentiment[s.sentiment] || s.sentiment || "—"}`, left + 14 + (sLogo ? 13 : 0), metaY, { width: width - 120 });
             const rowEnd = doc.y;
             // The date sits beside the title; drawing it moves doc.y back up, so the row's end is restored after.
             doc.fillColor(C.muted).font(F.sans).fontSize(8.5).text(fmtDate(s.capturedAt, W.locale), left + width - 100, y, { width: 100, align: "right" });
