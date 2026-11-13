@@ -153,11 +153,13 @@ const CSS = `
 .pitch-slide[data-active="true"] .pc:nth-child(4) { animation-delay: .6s; }
 .pitch-slide[data-active="true"] .pc:nth-child(5) { animation-delay: .7s; }
 .pitch-slide[data-active="true"] .pc:nth-child(6) { animation-delay: .8s; }
+.pitch-slide[data-active="true"] .pitch-orb { animation-name: orb-drift; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-direction: alternate; }
+@keyframes orb-drift { 0% { transform: translate(0, 0) scale(1) } 50% { transform: translate(70px, -50px) scale(1.08) } 100% { transform: translate(-60px, 40px) scale(.95) } }
 @keyframes b-in { from { opacity: 0; transform: translateY(34px) } to { opacity: 1; transform: none } }
 .pitch-lang { position: absolute; right: 96px; top: 58px; display: flex; gap: 6px; padding: 7px; border-radius: 18px; background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.28); z-index: 10; }
 .pitch-lang button { min-width: 84px; padding: 12px 22px; border-radius: 12px; font: 700 24px/1 var(--font-mono), monospace; letter-spacing: .12em; color: #fff; cursor: pointer; }
 .pitch-lang button[aria-pressed="true"] { background: #fff; color: #101334; box-shadow: 0 5px 0 #465FFF; }
-@media (prefers-reduced-motion: reduce) { .pitch-slide[data-active="true"], .pitch-slide[data-active="true"] .ph, .pitch-slide[data-active="true"] .pc { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .pitch-slide[data-active="true"], .pitch-slide[data-active="true"] .ph, .pitch-slide[data-active="true"] .pc, .pitch-slide .pitch-orb { animation: none !important; } }
 @media print {
   @page { size: 1920px 1080px; margin: 0; }
   html, body { background: #fff !important; height: auto !important; min-height: 0 !important; overflow: visible !important; display: block !important; }

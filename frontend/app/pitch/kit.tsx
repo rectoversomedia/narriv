@@ -51,13 +51,42 @@ export function Logo({ dark, x = 96, y = 64, h = 52 }: { dark: boolean; x?: numb
   return <img src={dark ? "/brand/logo-p.webp" : "/brand/logo-h.webp"} alt="Narriv" style={{ position: "absolute", left: x, top: y, height: h, width: "auto" }} />;
 }
 
-/** Navy slide: the landing page's hero surface, a blue light from the top and a faint dot field. */
-export function Dark({ children, tag, glow = "top" }: { children: ReactNode; tag?: string; glow?: "top" | "left" | "right" }) {
+// Soft gradient orbs drifting behind the content (the deck CSS animates .pitch-orb); the layout shifts with `v` so
+// neighbouring slides differ.
+const ORB_LAYOUTS: Array<Array<[number, number, number, string]>> = [
+  [[-180, -220, 760, "#465FFF"], [1380, 520, 680, "#EC4899"], [880, -300, 520, "#8B5CF6"]],
+  [[1320, -260, 780, "#8B5CF6"], [-240, 560, 700, "#465FFF"], [760, 760, 460, "#EC4899"]],
+  [[600, -360, 820, "#465FFF"], [1500, 300, 560, "#EC4899"], [-260, 360, 600, "#8B5CF6"]],
+  [[-200, 620, 720, "#EC4899"], [1240, -280, 760, "#465FFF"], [700, 300, 420, "#8B5CF6"]],
+];
+
+function Orbs({ v = 0, dark }: { v?: number; dark: boolean }) {
+  const layout = ORB_LAYOUTS[Math.abs(v) % ORB_LAYOUTS.length];
+  return (
+    <>
+      {layout.map(([x, y, size, c], k) => (
+        <span
+          key={k}
+          aria-hidden
+          className="pitch-orb"
+          style={{
+            position: "absolute", left: x, top: y, width: size, height: size, borderRadius: 999,
+            background: `radial-gradient(circle at 35% 35%, ${c}, transparent 68%)`,
+            opacity: dark ? 0.55 : 0.22, filter: "blur(30px)", animationDelay: `${k * -4}s`, animationDuration: `${16 + k * 5}s`,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+/** Navy slide: the landing page's hero surface with drifting orbs. */
+export function Dark({ children, tag, glow = "top", v }: { children: ReactNode; tag?: string; glow?: "top" | "left" | "right"; v?: number }) {
   const at = glow === "left" ? "15% 20%" : glow === "right" ? "85% 25%" : "50% 0%";
   return (
     <section style={{ position: "absolute", inset: 0, overflow: "hidden", color: "#fff", background: NAVY, fontFamily: "var(--font-sans), sans-serif" }}>
       <span aria-hidden style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse 70% 60% at ${at}, rgba(70,95,255,.38), transparent 70%)` }} />
-      <span aria-hidden style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(rgba(255,255,255,.07) 2px, transparent 2.4px)", backgroundSize: "44px 44px", WebkitMaskImage: "linear-gradient(to bottom, #000, transparent 85%)", maskImage: "linear-gradient(to bottom, #000, transparent 85%)" }} />
+      <Orbs dark v={v ?? (tag?.length ?? 0)} />
       <Logo dark />
       {tag && <Stamp dark style={{ position: "absolute", right: 96, top: 66 }}>{tag}</Stamp>}
       {children}
@@ -65,10 +94,11 @@ export function Dark({ children, tag, glow = "top" }: { children: ReactNode; tag
   );
 }
 
-/** Paper slide: the app's dotted canvas. */
-export function Light({ children, tag }: { children: ReactNode; tag?: string }) {
+/** Light slide: soft paper with drifting colour orbs. */
+export function Light({ children, tag, v }: { children: ReactNode; tag?: string; v?: number }) {
   return (
-    <section style={{ position: "absolute", inset: 0, overflow: "hidden", color: INK, background: PAPER, backgroundImage: "radial-gradient(rgba(16,19,52,.10) 2px, transparent 2.4px)", backgroundSize: "44px 44px", fontFamily: "var(--font-sans), sans-serif" }}>
+    <section style={{ position: "absolute", inset: 0, overflow: "hidden", color: INK, background: PAPER, fontFamily: "var(--font-sans), sans-serif" }}>
+      <Orbs dark={false} v={v ?? (tag?.length ?? 0)} />
       <Logo dark={false} />
       {tag && <Stamp style={{ position: "absolute", right: 96, top: 62 }}>{tag}</Stamp>}
       {children}
