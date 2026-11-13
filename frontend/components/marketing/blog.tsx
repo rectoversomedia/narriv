@@ -68,7 +68,7 @@ export function BlogIndex({ lang }: { lang: Lang }) {
         title={w(lang, "Guides on Media Monitoring, Reputation and Crisis Response", "Panduan Media Monitoring, Reputasi, dan Penanganan Krisis")}
         lead={w(lang, "Practical, no-nonsense guides for communications teams in Indonesia.", "Panduan praktis dan langsung ke inti untuk tim komunikasi di Indonesia.")}
       />
-      <main className="mx-auto -mt-10 max-w-4xl px-4 pb-16 sm:px-6">
+      <main className="relative mx-auto -mt-10 max-w-4xl px-4 pb-16 sm:px-6">
         <ul className="grid gap-5 sm:grid-cols-2">
           {ARTICLES.map((a) => (
             <li key={a.slug}>
@@ -126,7 +126,7 @@ export function ArticlePage({ article, lang }: { article: Article; lang: Lang })
     <div className={cn("min-h-dvh text-[#101334]", PAPER)}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(structured) }} />
       <Hero lang={lang} kicker={`${date(article.published, lang)} · ${article.minutes} ${w(lang, "min read", "menit baca")}`} title={body.title} lead={body.description} />
-      <main className="mx-auto -mt-10 max-w-3xl px-4 pb-16 sm:px-6">
+      <main className="relative mx-auto -mt-10 max-w-3xl px-4 pb-16 sm:px-6">
         <article className="rounded-[22px] border-[1.5px] border-[#101334] bg-white p-6 shadow-[0_5px_0_#101334] sm:p-10">
           <Link href={localizedPath("/blog", lang)} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-[#465FFF] hover:underline">
             <ArrowLeft size={15} aria-hidden="true" />

@@ -94,9 +94,20 @@ export function organizationJsonLd(lang: "en" | "id" = "en") {
         "@id": `${SITE_URL}/#organization`,
         name: SITE_NAME,
         url: SITE_URL,
+        legalName: "PT Primer Rectoverso Media",
         logo: `${SITE_URL}/logo-bulat-narriv-2026.png`,
         description,
         areaServed: "ID",
+        // As published in the privacy policy.
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: "Cibis Nine Building, 11th floor, Jl. TB Simatupang No. 2, Cilandak Timur, Pasar Minggu",
+          addressLocality: "Jakarta Selatan",
+          addressRegion: "DKI Jakarta",
+          postalCode: "12560",
+          addressCountry: "ID",
+        },
+        contactPoint: { "@type": "ContactPoint", contactType: "sales", telephone: "+62-811-190-692", availableLanguage: ["en", "id"] },
       },
       {
         "@type": "WebSite",
