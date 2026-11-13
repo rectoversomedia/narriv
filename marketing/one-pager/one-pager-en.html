@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Narriv for Brands and Institutions</title>
+<!-- One A4 page in the Narriv DNA (navy ink, blue→pink brush, mono stamps, ink-outlined cards, the orb).
+     Rendered to Narriv-One-Pager-EN.pdf by render.mjs. Facts follow the product and the pricing page. -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+@page { size: A4; margin: 0 }
+* { box-sizing: border-box; margin: 0; padding: 0 }
+:root { --ink: #101334; --blue: #465FFF; --violet: #8B5CF6; --magenta: #C04BD8; --pink: #EC4899; --muted: #4A5578; --paper: #F6F7FC; --navy: #070A1F; --neg: #E5484D; --pos: #12A150 }
+html, body { width: 210mm; height: 297mm; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact }
+body { font: 500 9.4pt/1.42 'Plus Jakarta Sans', Arial, sans-serif; color: var(--ink) }
+.page { position: relative; width: 210mm; height: 297mm; overflow: hidden; padding: 9mm 12mm 0; background: var(--paper) }
+.orb-bg { position: absolute; border-radius: 50%; filter: blur(22px); pointer-events: none }
+.mono { font-family: 'JetBrains Mono', monospace; font-weight: 700; text-transform: uppercase; letter-spacing: .14em }
+h1, h2, h3 { font-weight: 800; letter-spacing: -.025em }
+.kick { display: inline-block; background: var(--ink); color: #C7D0FF; font-size: 7pt; padding: 3px 8px; border-radius: 6px }
+.card { position: relative; background: #fff; border: 2px solid var(--ink); border-radius: 13px; box-shadow: 0 3.5px 0 var(--ink) }
+.brush {  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 60' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23465FFF'/%3E%3Cstop offset='.55' stop-color='%239B4DDB'/%3E%3Cstop offset='1' stop-color='%23EC4899'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23g)' d='M7 13C42 6 92 9 141 7S241 3 291 9C297 11 299 17 294 21C299 27 296 33 292 37C298 43 294 50 287 52C229 57 169 53 109 55S31 58 9 52C2 48 4 42 8 38C1 33 3 26 7 22C1 18 2 15 7 13Z'/%3E%3Cpath fill='%23fff' fill-opacity='.13' d='M20 18C90 14 180 15 280 16L280 19C180 18 90 18 20 21Z M35 44C110 41 200 42 270 43L268 46C200 45 110 45 35 47Z'/%3E%3C/svg%3E"); background-size: 100% 100%; background-repeat: no-repeat; padding: 0.02em 0.22em 0.08em; margin: 0 -0.04em; color: #fff; -webkit-box-decoration-break: clone; box-decoration-break: clone;  }
+
+.top { position: relative; display: flex; align-items: center; justify-content: space-between }
+.logo { height: 24px }
+.chip { border: 2px solid var(--ink); border-radius: 8px; background: #fff; padding: 3px 9px; font-size: 6.8pt; box-shadow: 0 2px 0 var(--ink) }
+
+.hero { position: relative; margin-top: 3.4mm; display: grid; grid-template-columns: 1fr 44mm; gap: 4mm; align-items: center }
+.hero h1 { font-size: 29pt; line-height: 1.03; margin-top: 2.6mm }
+.hero p { margin-top: 3mm; font-size: 10pt; color: #31406B; max-width: 130mm }
+.hero p b { color: var(--ink) }
+.orb { position: relative; justify-self: end; width: 42mm; height: 42mm }
+.orb img { width: 100%; height: 100%; filter: drop-shadow(0 0 18px rgba(70,95,255,.55)) }
+.orb::before { content: ''; position: absolute; inset: -5mm; border-radius: 50%; border: 1.5px dashed rgba(70,95,255,.35) }
+
+.steps { position: relative; margin-top: 4.6mm; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm }
+.step { padding: 2.8mm 3mm 3mm }
+.step .n { float: left; margin-right: 2mm; width: 22px; height: 22px; border: 2px solid var(--ink); border-radius: 7px; display: grid; place-items: center; font-weight: 800; font-size: 9.5pt; color: #fff; background: var(--blue); box-shadow: 0 2px 0 var(--ink) }
+.step:nth-child(2) .n { background: var(--violet) } .step:nth-child(3) .n { background: var(--magenta) } .step:nth-child(4) .n { background: var(--pink) }
+.step b { display: block; min-height: 22px; padding-top: 2px; font-size: 9.6pt; font-weight: 800; line-height: 1.2 }
+.step span { display: block; clear: both; margin-top: 1.6mm; font-size: 7.9pt; line-height: 1.38; color: var(--muted) }
+
+.sec { position: relative; margin-top: 4.4mm; display: flex; align-items: baseline; justify-content: space-between }
+.sec h2 { font-size: 13.5pt }
+.sec .mono { font-size: 6.6pt; color: var(--blue) }
+.feats { position: relative; margin-top: 2.6mm; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm }
+.feat { padding: 2.6mm 3mm 2.8mm; border-top-width: 5px }
+.feat h3 { font-size: 9.8pt }
+.feat p { margin-top: .7mm; font-size: 7.8pt; line-height: 1.37; color: var(--muted) }
+.feat:nth-child(1) { border-top-color: var(--blue) } .feat:nth-child(2) { border-top-color: var(--neg) } .feat:nth-child(3) { border-top-color: var(--violet) }
+.feat:nth-child(4) { border-top-color: var(--magenta) } .feat:nth-child(5) { border-top-color: var(--pink) } .feat:nth-child(6) { border-top-color: var(--pos) }
+
+.duo { position: relative; margin-top: 4.4mm; display: grid; grid-template-columns: 1.12fr 1fr; gap: 4mm }
+.cover { padding: 3.6mm 4mm }
+.cover h2, .trial h2 { font-size: 13pt; line-height: 1.12; margin-top: 2.4mm }
+.plats { margin-top: 3mm; display: grid; grid-template-columns: repeat(6, 1fr); gap: 1.8mm }
+.plat { display: flex; flex-direction: column; align-items: center; gap: 1.2mm; padding: 2mm 1mm 1.6mm; border: 1.5px solid #DDE3EF; border-radius: 9px; background: #fff; font-size: 6.6pt; font-weight: 700; text-align: center }
+.plat img { width: 18px; height: 18px; object-fit: contain }
+.ai { margin-top: 2.6mm; display: flex; align-items: center; flex-wrap: nowrap; gap: 1.1mm }
+.ai .mono { font-size: 6pt; color: var(--muted); margin-right: .4mm; white-space: nowrap }
+.ai span.e { border: 1.5px solid var(--ink); border-radius: 6px; padding: 1px 4.5px; font-size: 6.7pt; font-weight: 700; background: #fff }
+.ticks { margin-top: 2.8mm; padding-top: 2.4mm; border-top: 1.5px dashed #C9D0E3; display: flex; flex-wrap: wrap; gap: 1.6mm }
+.ticks span { display: inline-flex; align-items: center; gap: 4px; font-size: 7.4pt; font-weight: 700 }
+.ticks span::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--pos); box-shadow: inset 0 0 0 2px #fff, 0 0 0 1.5px var(--pos) }
+
+.trial { padding: 3.6mm 4mm; background: var(--navy); color: #fff; overflow: hidden; box-shadow: 0 3.5px 0 var(--blue) }
+.trial .glow { position: absolute; width: 60mm; height: 60mm; right: -18mm; top: -22mm; border-radius: 50%; background: radial-gradient(circle, rgba(70,95,255,.6), transparent 70%) }
+.trial .kick { position: relative; background: rgba(255,255,255,.12); color: #fff }
+.trial h2 { position: relative; color: #fff }
+.trial p { position: relative; margin-top: 1.6mm; font-size: 8.4pt; color: rgba(255,255,255,.75) }
+.stats { position: relative; margin-top: 2.8mm; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2mm }
+.stat { background: #fff; color: var(--ink); border: 2px solid var(--ink); border-radius: 10px; padding: 2.2mm 1mm; text-align: center; box-shadow: 0 2.5px 0 var(--blue) }
+.stat .num { font-size: 15pt; font-weight: 800; line-height: 1; letter-spacing: -.03em }
+.stat small { display: block; margin-top: 1mm; font-size: 6.8pt; font-weight: 700; color: var(--muted) }
+.plans { position: relative; margin-top: 2.8mm; font-size: 7.6pt; line-height: 1.4; background: rgba(255,255,255,.07); border: 1.5px dashed rgba(165,180,255,.5); border-radius: 8px; padding: 2mm 2.6mm; color: rgba(255,255,255,.85) }
+.plans b { color: #fff }
+
+.who { position: relative; margin-top: 4mm; padding: 2.8mm 4mm; display: flex; align-items: center; gap: 4mm }
+.who h2 { font-size: 11pt; white-space: nowrap }
+.who .list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; flex: 1 }
+.who .list span { display: flex; align-items: center; justify-content: center; text-align: center; min-height: 11mm; padding: 1.4mm 2mm; border-radius: 9px; background: var(--paper); border: 1.5px solid #DDE3EF; font-size: 7.4pt; font-weight: 700; line-height: 1.25 }
+
+.foot { position: absolute; left: 0; right: 0; bottom: 0; height: 35mm; background: var(--navy); color: #fff; padding: 6mm 12mm 0; display: grid; grid-template-columns: 1fr auto; gap: 6mm; overflow: hidden }
+.foot .glow { position: absolute; left: 30%; top: -30mm; width: 90mm; height: 70mm; border-radius: 50%; background: radial-gradient(circle, rgba(70,95,255,.45), transparent 70%) }
+.foot h2 { position: relative; font-size: 18pt; line-height: 1.1 }
+.foot p { position: relative; margin-top: 2mm; font-size: 8.4pt; color: rgba(255,255,255,.7) }
+.foot .member { position: relative; margin-top: 3mm; display: flex; align-items: center; gap: 6px; font-size: 6.8pt; color: rgba(255,255,255,.55) }
+.foot .member img { height: 11px; opacity: .85 }
+.contact { position: relative; display: grid; gap: 2mm; align-content: start; padding-top: .5mm }
+.contact div { display: flex; align-items: center; gap: 2.4mm; font-size: 9.6pt; font-weight: 800 }
+.contact i { font-style: normal; width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 6.4pt; font-weight: 700; color: #fff; background: var(--blue); border: 1.5px solid rgba(255,255,255,.4) }
+.contact div:nth-child(2) i { background: var(--violet) } .contact div:nth-child(3) i { background: var(--pink) }
+.contact small { display: block; font-family: 'JetBrains Mono', monospace; font-size: 5.8pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #A5B4FF }
+</style>
+</head>
+<body>
+<div class="page">
+  <span class="orb-bg" style="left:-30mm;top:-30mm;width:90mm;height:90mm;background:radial-gradient(circle,rgba(70,95,255,.22),transparent 70%)"></span>
+  <span class="orb-bg" style="right:-35mm;top:60mm;width:95mm;height:95mm;background:radial-gradient(circle,rgba(236,72,153,.16),transparent 70%)"></span>
+  <span class="orb-bg" style="left:40mm;top:150mm;width:110mm;height:90mm;background:radial-gradient(circle,rgba(139,92,246,.14),transparent 70%)"></span>
+
+  <div class="top">
+    <img class="logo" src="../../frontend/public/brand/logo-h.webp" alt="Narriv">
+    <span class="chip mono">For brands, agencies &amp; institutions</span>
+  </div>
+
+  <div class="hero">
+    <div>
+      <span class="kick mono">Narrative intelligence</span>
+      <h1>Know the issue<br><span class="brush">before it spreads.</span></h1>
+      <p>Narriv monitors <b>online news, YouTube, social media and AI answers</b> about your brand every hour, scores the reputational risk, and tells the <b>right person what to do and by when</b>, with a board-ready report every week.</p>
+    </div>
+    <div class="orb"><img src="../../frontend/public/brand/logo-bulat.webp" alt=""></div>
+  </div>
+
+  <div class="steps">
+    <div class="card step"><span class="n">1</span><b>Monitor hourly</b><span>News, YouTube, social media and AI answers, collected automatically.</span></div>
+    <div class="card step"><span class="n">2</span><b>Detect the risk</b><span>Mentions grouped into issues, with sentiment and risk scored.</span></div>
+    <div class="card step"><span class="n">3</span><b>Alert the owner</b><span>Each alert has an owner, the next step and a deadline.</span></div>
+    <div class="card step"><span class="n">4</span><b>Report weekly</b><span>A daily brief and a weekly PDF report, ready to send.</span></div>
+  </div>
+
+  <div class="sec"><h2>What your team gets</h2><span class="mono">More than social listening</span></div>
+  <div class="feats">
+    <div class="card feat"><h3>Hourly monitoring</h3><p>Indonesian and international media, checked every hour, not once a day.</p></div>
+    <div class="card feat"><h3>Risk score &amp; issue map</h3><p>One score with the issues driving it, and how fast each one grows.</p></div>
+    <div class="card feat"><h3>Alerts with an owner</h3><p>Email, plus Slack, Teams or webhooks, with an escalation matrix.</p></div>
+    <div class="card feat"><h3>Daily brief &amp; Ask Narriv</h3><p>What changed overnight, and answers from your own data with sources.</p></div>
+    <div class="card feat"><h3>AI visibility</h3><p>How ChatGPT, Claude, Gemini and others describe and recommend you.</p></div>
+    <div class="card feat"><h3>Board-ready reports</h3><p>PDF, Excel and CSV in English or Bahasa Indonesia, sent on schedule.</p></div>
+  </div>
+
+  <div class="duo">
+    <div class="card cover">
+      <span class="kick mono">Coverage</span>
+      <h2>Every channel your audience uses.</h2>
+      <div class="plats">
+        <div class="plat"><img src="../../frontend/public/pitch/platforms/news.png" alt="">Online news</div>
+        <div class="plat"><img src="../../frontend/public/pitch/platforms/youtube.png" alt="">YouTube</div>
+        <div class="plat"><img src="../../frontend/public/pitch/platforms/tiktok.png" alt="">TikTok</div>
+        <div class="plat"><img src="../../frontend/public/pitch/platforms/instagram.png" alt="">Instagram</div>
+        <div class="plat"><img src="../../frontend/public/pitch/platforms/x.png" alt="">X</div>
+        <div class="plat"><img src="../../frontend/public/pitch/platforms/facebook.png" alt="">Facebook</div>
+      </div>
+      <div class="ai"><span class="mono">+ AI answers</span><span class="e">ChatGPT</span><span class="e">Claude</span><span class="e">Gemini</span><span class="e">Perplexity</span><span class="e">DeepSeek</span></div>
+      <div class="ticks"><span>Indonesian-language media</span><span>Public sources only</span><span>Aligned with UU PDP</span></div>
+    </div>
+    <div class="card trial">
+      <span class="glow"></span>
+      <span class="kick mono">Free trial</span>
+      <h2>See your own brand in Narriv.</h2>
+      <p>Sign up and start the same day. Before the trial ends, we review the results with you and recommend a plan.</p>
+      <div class="stats">
+        <div class="stat"><div class="num">14</div><small>days free</small></div>
+        <div class="stat"><div class="num">3</div><small>keywords, hourly</small></div>
+        <div class="stat"><div class="num">Rp 0</div><small>no card needed</small></div>
+      </div>
+      <div class="plans">Plans from <b>Rp 5M a month</b> (Pilot) to <b>Rp 25M</b> (Intelligence), <b>Rp 50M</b> (Decision) and Command from Rp 100M. Prices exclude 11% VAT; annual billing saves 20%.</div>
+    </div>
+  </div>
+
+  <div class="card who">
+    <h2>Built for</h2>
+    <div class="list">
+      <span>Corporate communications &amp; PR</span>
+      <span>Banks, telcos &amp; SOEs</span>
+      <span>Ministries &amp; public agencies</span>
+      <span>PR &amp; digital agencies</span>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="glow"></span>
+    <div>
+      <h2>See your brand <span class="brush">in Narriv.</span></h2>
+      <p>Open the live demo without signing up, or start a free trial today.</p>
+      <div class="member">Member of <img src="../../frontend/public/pitch/rectoverso-white.png" alt="Rectoverso"></div>
+    </div>
+    <div class="contact">
+      <div><i>WA</i><span><small>WhatsApp</small>0811-190-692</span></div>
+      <div><i>&#9654;</i><span><small>Live demo</small>app.narriv.digital</span></div>
+      <div><i>&#8599;</i><span><small>Pitch deck</small>narriv.digital/pitch</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
