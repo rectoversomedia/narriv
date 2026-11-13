@@ -93,7 +93,7 @@ const COMPARE: Array<{ group: Copy; rows: Array<{ label: Copy; plans: PlanId[] |
     group: ["Capacity", "Kapasitas"],
     rows: [
       { label: ["Brands Monitored", "Brand yang Dipantau"], plans: { pilot: ["1", "1"], intelligence: ["1", "1"], decision: ["3", "3"], command: ["As Needed", "Sesuai Kebutuhan"] } },
-      { label: ["Hourly Keywords per Brand", "Kata Kunci Dipantau Tiap Jam per Brand"], plans: { pilot: ["3", "3"], intelligence: ["10", "10"], decision: ["25", "25"], command: ["50", "50"] } },
+      { label: ["Keywords Checked Every Hour, per Brand", "Kata Kunci Dipantau Tiap Jam, per Brand"], plans: { pilot: ["3", "3"], intelligence: ["10", "10"], decision: ["25", "25"], command: ["50", "50"] } },
       { label: ["Users", "Pengguna"], plans: { pilot: ["1", "1"], intelligence: ["10", "10"], decision: ["50", "50"], command: ["Unlimited", "Tanpa Batas"] } },
       { label: ["Data Retention", "Masa Simpan Data"], plans: { pilot: ["30 Days", "30 Hari"], intelligence: ["12 Months", "12 Bulan"], decision: ["12 Months", "12 Bulan"], command: ["Custom", "Kustom"] } },
     ],
@@ -143,7 +143,8 @@ export default function PricingPage() {
   const discount = annual ? 0.8 : 1;
 
   const faqs: Array<[Copy, Copy]> = [
-    [["Is There a Free Trial?", "Apakah Tersedia Uji Coba Gratis?"], ["Yes. A 14-day trial with full access, set up together with the Narriv team. The live demo requires no registration.", "Ya. Uji coba 14 hari dengan akses penuh, disiapkan bersama tim Narriv. Demo langsung dapat diakses tanpa registrasi."]],
+    [["Is There a Free Trial?", "Apakah Tersedia Uji Coba Gratis?"], ["Yes. Sign up and start right away: 14 days on your own brand with three keywords checked every hour across online news and YouTube, plus every feature of the Pilot plan. No card is needed. The live demo needs no sign-up at all.", "Ya. Daftar dan langsung mulai: 14 hari untuk brand Anda sendiri, dengan tiga kata kunci dipantau tiap jam di berita online dan YouTube, plus seluruh fitur paket Pilot. Tidak perlu kartu kredit. Demo langsung bahkan tidak perlu mendaftar."]],
+    [["What Happens After the Trial?", "Apa yang Terjadi Setelah Uji Coba?"], ["Hourly monitoring pauses until your plan is active. Nothing is deleted: your keywords, alerts and reports stay, and monitoring resumes as soon as the plan starts.", "Pemantauan tiap jam berhenti sementara sampai paket Anda aktif. Tidak ada yang dihapus: kata kunci, peringatan, dan laporan tetap tersimpan, dan pemantauan langsung berjalan lagi begitu paket dimulai."]],
     [["How Does Billing Work?", "Bagaimana Sistem Pembayarannya?"], ["Payment is by bank transfer against an invoice, billed monthly or annually. Annual billing saves 20%.", "Pembayaran melalui transfer bank berdasarkan invoice, ditagih bulanan atau tahunan. Tagihan tahunan lebih hemat 20%."]],
     [["Can We Change Plans Later?", "Apakah Paket Dapat Diubah?"], ["Yes. Contact the Narriv team and we will update your workspace plan.", "Ya. Hubungi tim Narriv dan kami akan menyesuaikan paket workspace Anda."]],
     [["What Counts as a Brand?", "Apa yang Dihitung sebagai Brand?"], ["One workspace: a brand, product or client with its own keywords, alerts and reports.", "Satu workspace: satu brand, produk, atau klien dengan kata kunci, peringatan, dan laporan tersendiri."]],
@@ -161,7 +162,7 @@ export default function PricingPage() {
             {L("The Right Plan", "Paket yang Tepat")}{" "}
             <span className={cn("mk-brush", SERIF)}>{L("for Every Stage of Your Team.", "untuk Setiap Tahap Tim Anda.")}</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/60">{L("Every plan begins with a 14-day trial on your own brand.", "Setiap paket diawali uji coba 14 hari menggunakan brand Anda sendiri.")}</p>
+          <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/60">{L("Start with a free 14-day trial on your own brand. No card needed.", "Mulai dengan uji coba gratis 14 hari untuk brand Anda sendiri. Tanpa kartu kredit.")}</p>
           <div role="group" aria-label={L("Billing Period", "Periode Tagihan")} className="mt-8 inline-flex rounded-full bg-white/10 p-1">
             {[
               { v: false, label: L("Monthly", "Bulanan") },
@@ -212,8 +213,8 @@ export default function PricingPage() {
                   <>
                     <p className="whitespace-nowrap text-[28px] font-black leading-none tracking-[-0.03em] tabular-nums">{rupiah(Math.round(plan.price * discount))}</p>
                     <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>
-                      {L("per month", "per bulan")}
-                      {annual ? <span className="block">{L("Save", "Hemat")} {rupiah(plan.price - Math.round(plan.price * discount))}</span> : null}
+                      {annual ? L("per month, billed annually", "per bulan, ditagih tahunan") : L("per month", "per bulan")}
+                      {annual ? <span className={cn("mt-1 block font-bold", plan.popular ? "text-[#86EFAC]" : "text-[#047857]")}>{L("Save", "Hemat")} {rupiah((plan.price - Math.round(plan.price * discount)) * 12)} {L("a year", "per tahun")}</span> : null}
                     </p>
                   </>
                 ) : (
@@ -331,7 +332,7 @@ export default function PricingPage() {
           <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
           <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 h-[320px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.45),transparent)]" />
           <h2 className="relative text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[44px]">{L("Not Sure", "Belum Yakin")} <span className={cn("mk-brush", SERIF)}>{L("Which Plan Fits?", "Paket Mana yang Sesuai?")}</span></h2>
-          <p className="relative mx-auto mt-3 max-w-xl text-[16px] font-medium text-white/70">{L("Start with the trial. After 14 days, we will review the results with you.", "Mulai dengan uji coba. Setelah 14 hari, kami akan meninjau hasilnya bersama Anda.")}</p>
+          <p className="relative mx-auto mt-3 max-w-xl text-[16px] font-medium text-white/70">{L("Start with the free trial. Before it ends, we will review the results with you and recommend the plan that fits.", "Mulai dengan uji coba gratis. Sebelum berakhir, kami meninjau hasilnya bersama Anda dan menyarankan paket yang paling sesuai.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/signup" className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-bold text-[#070A1F] shadow-[0_12px_40px_rgba(165,180,255,0.35)] hover:bg-[#EEF1FF]">
               {L("Start Your Trial", "Mulai Uji Coba")}
