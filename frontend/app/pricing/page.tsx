@@ -342,14 +342,42 @@ export default function PricingPage() {
             </Link>
             <Link href="/help#contact" className="inline-flex h-12 items-center justify-center rounded-full px-6 text-[15px] font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] hover:bg-white/[0.06]">{L("Contact Sales", "Hubungi Tim Kami")}</Link>
           </div>
-          <a href="/contoh-laporan-narriv.pdf" target="_blank" rel="noopener" className="relative mt-6 inline-flex items-center gap-2 text-[14px] font-bold text-white/80 underline-offset-4 hover:text-white hover:underline">
-            <FileText size={16} aria-hidden="true" />
-            {L("View a Sample Board Report (PDF)", "Lihat Contoh Laporan Direksi (PDF)")}
-          </a>
+          <SampleReportLink />
         </div>
       </section>
 
       <SiteFooter />
+    </div>
+  );
+}
+
+// The sample board report comes in both languages: the link asks which one before opening it.
+function SampleReportLink() {
+  const L = useL();
+  const [open, setOpen] = useState(false);
+  const files = [
+    { href: "/contoh-laporan-narriv.pdf", label: "English" },
+    { href: "/contoh-laporan-narriv-id.pdf", label: "Bahasa Indonesia" },
+  ];
+  return (
+    <div className="relative mt-6 flex flex-col items-center gap-3">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="inline-flex items-center gap-2 text-[14px] font-bold text-white/80 underline-offset-4 hover:text-white hover:underline">
+        <FileText size={16} aria-hidden="true" />
+        {L("View a Sample Board Report (PDF)", "Lihat Contoh Laporan Direksi (PDF)")}
+        <ChevronDown size={15} aria-hidden="true" className={cn("transition", open && "rotate-180")} />
+      </button>
+      {open ? (
+        <div className="flex flex-col items-center gap-2">
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-white/50">{L("Choose a Language", "Pilih Bahasa")}</p>
+          <div className="flex gap-2">
+            {files.map((f) => (
+              <a key={f.href} href={f.href} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className="inline-flex h-10 items-center rounded-full px-5 text-[13px] font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.25)] hover:bg-white/[0.08]">
+                {f.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
