@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { GRID, INK, PAPER, SERIF, SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
+import { SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
+import { GRID, INK, PAPER, SERIF } from "@/components/marketing/tokens";
 import { ARTICLES, type Article } from "@/lib/articles";
 import { SITE_NAME, SITE_URL, jsonLd } from "@/lib/seo";
 import { localizedPath } from "@/lib/site-paths";
