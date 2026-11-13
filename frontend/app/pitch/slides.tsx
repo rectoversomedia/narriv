@@ -449,10 +449,10 @@ export function GetStarted({ en }: P) {
   ];
   return (
     <Light tag={t("Mulai", "Getting started")}>
-      <Head kicker={t("Tanpa proyek implementasi", "No implementation project")} title={t(<>Aktif dalam <Brush>satu hari.</Brush></>, <>Live in <Brush>one day.</Brush></>)} />
+      <Head center kicker={t("Tanpa proyek implementasi", "No implementation project")} title={t(<>Aktif dalam <Brush>satu hari.</Brush></>, <>Live in <Brush>one day.</Brush></>)} />
       <div style={{ position: "absolute", left: 96, right: 96, top: 470, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 30 }}>
         {steps.map(([title, text], k) => (
-          <Card key={title} style={{ minHeight: 380, padding: 42 }}>
+          <Card key={title} style={{ minHeight: 380, padding: 42, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
             <Num n={k + 1} c={k === 3 ? INK : BLUE} />
             <p style={{ margin: "32px 0 0", fontSize: 38, fontWeight: 800 }}>{title}</p>
             <p style={{ margin: "16px 0 0", fontSize: 25, lineHeight: 1.5, color: MUTED }}>{text}</p>
