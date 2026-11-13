@@ -1,0 +1,44 @@
+# Narriv
+
+> Narriv is a media monitoring and narrative intelligence platform for brands, agencies and public institutions in Indonesia. It monitors online news, YouTube, social media (Instagram, TikTok, X, Facebook) and AI assistant answers about a brand every hour, scores the reputational risk, sends alerts to a named owner with a deadline, and produces board-ready reports. The interface is available in English and Bahasa Indonesia.
+
+Narriv goes beyond social listening: instead of only collecting mentions, it groups them into narratives (issues), measures sentiment and how fast each issue grows, and turns that into decisions: who should act, what to do next, and by when.
+
+## What Narriv does
+
+- Hourly monitoring of online news and YouTube for every plan; Instagram, TikTok, X and Facebook from the Decision plan.
+- Automatic sentiment analysis and issue (narrative) detection, including Indonesian-language content.
+- Reputational risk score with the drivers behind it.
+- Alerts with an owner and a deadline, sent by email; Slack, Microsoft Teams, webhooks and an escalation matrix on Decision and above.
+- Daily brief and recommendations: what changed, what matters and the next step.
+- Cases and response plans to track handling from detection to resolution.
+- AI visibility: how AI assistants describe and recommend the brand.
+- Ask Narriv: questions answered only from the workspace's own data, with the records cited.
+- Reports in PDF, Excel, CSV and email, including scheduled weekly board reports, in English or Bahasa Indonesia.
+
+## Who it is for
+
+Corporate communications, PR, brand and reputation teams; agencies managing several clients; banks, telcos, ministries and public agencies that need early warning on issues and crises.
+
+## Plans and pricing (IDR per month, excluding 11% VAT)
+
+- Pilot: Rp 5,000,000. 1 brand, 3 keywords checked every hour, 1 user, 30-day data retention. News and YouTube, alerts, daily brief, Ask Narriv, PDF/Excel/email reports.
+- Intelligence: Rp 25,000,000. 1 brand, 10 keywords, 10 users, 12-month retention. Adds AI visibility, scheduled board reports, cases and response plans.
+- Decision: Rp 50,000,000. 3 brands, 25 keywords per brand, 50 users, 12-month retention. Adds Instagram, TikTok, X and Facebook, Slack/Teams/webhooks and an escalation matrix.
+- Command: from Rp 100,000,000. Brands as needed, 50 keywords per brand, unlimited users, custom retention. Adds a dedicated success manager, quarterly strategy review and an SLA.
+- Annual billing saves 20%. Payment is by bank transfer against an invoice.
+- Free trial: 14 days on your own brand, 3 keywords checked hourly across online news and YouTube, every Pilot feature, no card needed. A live demo with sample data needs no sign-up.
+
+## Links
+
+- [Home](https://www.narriv.digital/): product overview and live demo
+- [Pricing](https://www.narriv.digital/pricing): plans, comparison and billing FAQ
+- [Help Center](https://www.narriv.digital/help): how monitoring, alerts, reports and team access work
+- [Sample board report (English, PDF)](https://www.narriv.digital/contoh-laporan-narriv.pdf)
+- [Sample board report (Bahasa Indonesia, PDF)](https://www.narriv.digital/contoh-laporan-narriv-id.pdf)
+- [Privacy Policy](https://www.narriv.digital/privacy)
+- [Terms of Service](https://www.narriv.digital/terms)
+
+## Contact
+
+WhatsApp: +62 811-190-692 (Narriv team, sales and support)

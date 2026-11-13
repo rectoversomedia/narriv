@@ -8,6 +8,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { LaunchOverlay } from "@/components/launch/launch-overlay";
 import { LAUNCH_BOOT_SCRIPT } from "@/lib/launch";
 import { cn } from "@/lib/utils";
+import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/seo";
 
 // Narriv's type: Plus Jakarta Sans for everything people read, JetBrains Mono for the machine's voice (timestamps,
 // counts, status stamps), so data reads as data.
@@ -25,16 +26,27 @@ const mono = JetBrains_Mono({
 });
 
 // The picture shown when a Narriv link is shared (WhatsApp, LinkedIn, X).
-const OG_IMAGE = { url: "/og-image.jpg", width: 1200, height: 630, alt: "Narriv: tahu isu brand Anda sebelum jadi viral" };
+const OG_IMAGE = { url: "/og-image.jpg", width: 1200, height: 630, alt: "Narriv: detect reputational risk before it escalates" };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.narriv.digital"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Narriv | Narrative Intelligence",
+    default: SITE_TITLE,
     template: "%s | Narriv",
   },
-  description: "Narriv membantu tim memantau percakapan publik, memahami narasi, dan menentukan aksi yang tepat.",
-  applicationName: "Narriv",
+  description: SITE_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "Business Software",
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
+  // Search Console and Bing Webmaster Tools ownership, set as Vercel env vars once the sites are added there.
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+    other: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } : undefined,
+  },
   // The round Narriv orb (public/logo-bulat-narriv-2026.png, cropped square); new file names so browsers drop cached icons.
   icons: {
     icon: [
@@ -48,16 +60,18 @@ export const metadata: Metadata = {
   // Opened from the home screen, iOS shows Narriv full screen without the browser bars.
   appleWebApp: { capable: true, title: "Narriv", statusBarStyle: "default" },
   openGraph: {
-    title: "Narriv | Narrative Intelligence",
-    description: "Pantau percakapan publik, alert, laporan, dan rencana aksi dari satu command center.",
-    siteName: "Narriv",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    siteName: SITE_NAME,
     type: "website",
+    locale: "en_US",
+    alternateLocale: ["id_ID"],
     images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Narriv | Narrative Intelligence",
-    description: "Pantau percakapan publik, alert, laporan, dan rencana aksi dari satu command center.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     images: [OG_IMAGE.url],
   },
 };

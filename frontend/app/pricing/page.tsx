@@ -6,6 +6,7 @@ import { ArrowRight, Check, ChevronDown, FileText, Minus } from "lucide-react";
 import { GRID, INK, PAPER, RULE, SERIF, SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
+import { SITE_URL, faqJsonLd, jsonLd } from "@/lib/seo";
 
 // Plans are agreed with the Narriv team; the app does not gate features by plan. Every line on this page is a
 // feature that works today. Keywords checked every hour per brand follow the plan (backend lib/workspace-plan.js
@@ -151,8 +152,39 @@ export default function PricingPage() {
     [["Why Is Social Media Not in Every Plan?", "Mengapa Media Sosial Tidak Tersedia di Semua Paket?"], ["Collecting data from Instagram, TikTok, X and Facebook carries a direct cost per run, so it is included from the Decision plan and activated by the Narriv team.", "Pengambilan data dari Instagram, TikTok, X, dan Facebook memiliki biaya langsung setiap kali dijalankan, sehingga tersedia mulai paket Decision dan diaktifkan oleh tim Narriv."]],
   ];
 
+  // Plans and answers as structured data, in English (the language search engines get), for search and AI answers.
+  const structured = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: "Narriv",
+      description: "Media monitoring and narrative intelligence for brands in Indonesia.",
+      brand: { "@type": "Brand", name: "Narriv" },
+      url: `${SITE_URL}/pricing`,
+      offers: PLANS.map((plan) => ({
+        "@type": "Offer",
+        name: `Narriv ${plan.name}`,
+        description: `${plan.tagline[0]} ${plan.audience[0]}.`,
+        url: `${SITE_URL}/pricing`,
+        priceCurrency: "IDR",
+        price: plan.price ?? plan.from ?? 0,
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          price: plan.price ?? plan.from ?? 0,
+          priceCurrency: "IDR",
+          unitText: "MONTH",
+          valueAddedTaxIncluded: false,
+          ...(plan.price ? {} : { minPrice: plan.from }),
+        },
+        availability: "https://schema.org/InStock",
+      })),
+    },
+    faqJsonLd(faqs.map(([q, a]) => ({ q: q[0], a: a[0] }))),
+  ];
+
   return (
     <div className={cn("min-h-dvh text-[#101334]", PAPER)}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(structured) }} />
       <section className={cn("relative overflow-hidden pb-28 text-white", INK)}>
         <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
         <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.35),transparent)]" />

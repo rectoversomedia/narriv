@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/legal-page";
 
-export const metadata: Metadata = { title: "Ketentuan Layanan" };
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "The terms for using Narriv: plans, the free trial, AI-generated output and public data sources.",
+  alternates: { canonical: "/terms" },
+};
 
 // Describes the service as it works today (plans, trial, AI output, public sources). Approved and in effect.
 

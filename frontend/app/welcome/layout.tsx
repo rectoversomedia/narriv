@@ -1,11 +1,18 @@
 import type { ReactNode } from "react";
 import { createPageMetadata } from "@/lib/metadata";
+import { SITE_DESCRIPTION, jsonLd, organizationJsonLd } from "@/lib/seo";
 
-export const metadata = createPageMetadata(
-  "Pemantauan reputasi brand",
-  "Narriv memantau berita, YouTube, dan media sosial setiap jam, menilai risikonya, dan memberi tahu siapa yang harus bertindak."
-);
+// The landing page is served at "/" on the website, so that is its canonical address.
+export const metadata = {
+  ...createPageMetadata("Media Monitoring and Narrative Intelligence for Brands in Indonesia", SITE_DESCRIPTION, "/"),
+  title: { absolute: "Narriv | Media Monitoring and Narrative Intelligence for Brands in Indonesia" },
+};
 
 export default function WelcomeLayout({ children }: { children: ReactNode }) {
-  return children;
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organizationJsonLd()) }} />
+      {children}
+    </>
+  );
 }

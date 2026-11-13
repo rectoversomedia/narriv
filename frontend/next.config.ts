@@ -41,6 +41,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       // Brand images and icons change rarely: cache a day, then refresh in the background.
+      // The product host is never listed in search results; the website (www.narriv.digital) is.
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "app.narriv.digital" }],
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
       {
         source: "/:dir(brand|icons|icon)/:file*",
         headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
