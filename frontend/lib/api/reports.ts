@@ -146,7 +146,7 @@ export interface GeneratedReportResponse {
   createdAt: string;
 }
 
-export async function generateReportFromTemplate(input: { templateKey: string; dateRange?: { start: string; end: string } }): Promise<GeneratedReportResponse> {
+export async function generateReportFromTemplate(input: { templateKey: string; dateRange?: { start: string; end: string }; language?: "en" | "id" }): Promise<GeneratedReportResponse> {
   return await apiClient<GeneratedReportResponse>("/api/reports/generate", {
     method: "POST",
     body: JSON.stringify(input),

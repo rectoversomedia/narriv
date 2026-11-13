@@ -729,6 +729,8 @@ export default function ReportsPage() {
   const [page, setPage] = useState(1);
   const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  // Reports are written in English unless Indonesian is picked before generating.
+  const [reportLanguage, setReportLanguage] = useState<"en" | "id">("en");
   const [mounted, setMounted] = useState(false);
 
   const user = useAuthStore((state) => state.user);
@@ -963,8 +965,8 @@ export default function ReportsPage() {
 
   // Generate Report Mutation
   const generateReportMutation = useMutation({
-    mutationFn: (data: { templateKey: string; dateRange?: { start: string; end: string } }) =>
-      generateReportFromTemplate({ templateKey: data.templateKey, dateRange: data.dateRange }),
+    mutationFn: (data: { templateKey: string; dateRange?: { start: string; end: string }; language: "en" | "id" }) =>
+      generateReportFromTemplate({ templateKey: data.templateKey, dateRange: data.dateRange, language: data.language }),
     onSuccess: () => {
       showToast(tr("createModal.success"));
       setIsCreateModalOpen(false);
@@ -995,7 +997,7 @@ export default function ReportsPage() {
       return;
     }
 
-    generateReportMutation.mutate({ templateKey, dateRange });
+    generateReportMutation.mutate({ templateKey, dateRange, language: reportLanguage });
   };
 
   // Share Report Mutation
@@ -1529,6 +1531,24 @@ export default function ReportsPage() {
                       <input name="endDate" type="date" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                     </div>
                   </div>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{pickL("Report Language", "Bahasa Laporan")}</label>
+                  <div role="radiogroup" className="grid grid-cols-2 gap-1 rounded-[10px] border border-[#DDE3EF] bg-[#F8FAFF] p-1">
+                    {([["en", "English"], ["id", "Bahasa Indonesia"]] as const).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        role="radio"
+                        aria-checked={reportLanguage === value}
+                        onClick={() => setReportLanguage(value)}
+                        className={cn("h-8 rounded-[8px] text-[12px] font-black transition", reportLanguage === value ? "bg-[#101334] text-white shadow-sm" : "text-[#58648C] hover:bg-white")}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[10px] font-bold text-[#647099]">{pickL("The report and its PDF, Excel and CSV files are written in this language.", "Laporan beserta file PDF, Excel, dan CSV-nya ditulis dalam bahasa ini.")}</p>
                 </div>
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EEF1F7]">
                   <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">

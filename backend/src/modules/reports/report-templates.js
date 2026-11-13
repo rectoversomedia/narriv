@@ -185,6 +185,13 @@ const TEMPLATE_NAMES_ID = {
     weekly_digest: "Rangkuman Mingguan",
 };
 
+/** A template's name in the given language ("en" or "id"). */
+export function templateName(templateKey, lang) {
+    const template = REPORT_TEMPLATES[templateKey];
+    if (!template) return templateKey;
+    return lang === "id" ? TEMPLATE_NAMES_ID[templateKey] || template.name : template.name;
+}
+
 export function getAllReportTemplates() {
     return Object.entries(REPORT_TEMPLATES).map(([key, template]) => ({
         key,

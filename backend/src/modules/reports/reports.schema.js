@@ -18,6 +18,7 @@ export const generateReportBodySchema = z.object({
         start: z.string().datetime("dateRange.start must be a valid ISO datetime."),
         end: z.string().datetime("dateRange.end must be a valid ISO datetime."),
     }).optional(),
+    language: z.enum(["en", "id"]).optional(),
 }).strict();
 
 export const sendReportEmailBodySchema = z.object({

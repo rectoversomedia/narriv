@@ -62,7 +62,7 @@ export async function deliverScheduledReport(reportId) {
         const to = await recipients(report.workspace_id);
         if (!to.length) return { sent: false, reason: "no_recipient" };
 
-        const lang = await workspaceLanguage(report.workspace_id);
+        const lang = report.content?.language || await workspaceLanguage(report.workspace_id);
         const data = await collectReportData(report);
         const pdf = await buildReportPdf(data, lang);
         const appUrl = (process.env.FRONTEND_URL || process.env.APP_URL || "https://www.narriv.digital").replace(/\/$/, "");

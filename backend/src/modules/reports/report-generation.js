@@ -113,7 +113,7 @@ export async function sendReportEmail({ workspaceId, reportId, recipientEmail, s
  */
 export async function generateReport({ workspaceId, templateKey, options = {} }) {
     try {
-        const { getReportTemplate, getTemplateSections } = await import("./report-templates.js");
+        const { getReportTemplate, getTemplateSections, templateName } = await import("./report-templates.js");
         const template = getReportTemplate(templateKey);
         if (!template) {
             throw new Error(`Unknown template: ${templateKey}`);
@@ -122,7 +122,10 @@ export async function generateReport({ workspaceId, templateKey, options = {} })
         const sections = getTemplateSections(templateKey);
         const periodStart = options.dateRange?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
         const periodEnd = options.dateRange?.end || new Date().toISOString();
-        const id = (await workspaceLanguage(workspaceId)) === "id";
+        // The language picked before generating; otherwise the workspace's.
+        const language = options.language === "id" || options.language === "en" ? options.language : await workspaceLanguage(workspaceId);
+        const id = language === "id";
+        const name = templateName(templateKey, language);
 
         // Every section reads real records of this workspace inside the chosen period (earlier versions ignored the
         // period and filled several sections with placeholders such as "Dashboard summary data").
@@ -230,8 +233,8 @@ export async function generateReport({ workspaceId, templateKey, options = {} })
 
         // Create report record
         const day = new Date().toLocaleDateString(id ? "id-ID" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
-        const summary = id ? `Disusun dari templat ${template.name} untuk periode yang dipilih.` : `Generated from the ${template.name} template for the selected period.`;
-        const reportTitle = `${template.name} - ${day}`;
+        const summary = id ? `Disusun dari templat ${name} untuk periode yang dipilih.` : `Generated from the ${name} template for the selected period.`;
+        const reportTitle = `${name} - ${day}`;
 
         const { data: report, error: reportError } = await supabase
             .from("reports")
@@ -241,6 +244,7 @@ export async function generateReport({ workspaceId, templateKey, options = {} })
                 type: templateKey || "executive_brief",
                 status: "ready",
                 content: {
+                    language,
                     summary,
                     period_start: periodStart,
                     period_end: periodEnd,
@@ -263,7 +267,7 @@ export async function generateReport({ workspaceId, templateKey, options = {} })
         return {
             id: report.id,
             title: report.title,
-            template: template.name,
+            template: name,
             summary,
             periodStart,
             periodEnd,

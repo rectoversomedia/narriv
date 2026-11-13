@@ -736,7 +736,7 @@ router.get("/analytics", async (req, res) => {
 // POST /api/reports/generate — Generate a report from a template
 router.post("/generate", validateRequest({ body: generateReportBodySchema }), async (req, res) => {
     try {
-        const { templateKey, dateRange } = req.body;
+        const { templateKey, dateRange, language } = req.body;
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.body.workspaceId);
         if (!scopedWorkspaceId) {
             return res.status(403).json({ error: "Workspace access denied" });
@@ -745,7 +745,7 @@ router.post("/generate", validateRequest({ body: generateReportBodySchema }), as
         const report = await generateFromTemplate({
             workspaceId: scopedWorkspaceId,
             templateKey,
-            options: { dateRange },
+            options: { dateRange, language },
         });
         await recordAuditLog({
             userId: req.user.id,
@@ -1040,7 +1040,8 @@ router.get("/:id/export/file", rateLimiters.export(), async (req, res) => {
         const requested = String(format).toLowerCase();
         const normalizedFormat = ["pdf", "xlsx", "csv"].includes(requested) ? requested : "csv";
         const data = await collectReportData(report);
-        const lang = requestLang() === "en" ? "en" : "id";
+        // A report written in a chosen language downloads in it; older reports follow the reader's language.
+        const lang = report.content?.language || (requestLang() === "en" ? "en" : "id");
 
         if (normalizedFormat === "pdf") {
             const buffer = await buildReportPdf(data, lang);

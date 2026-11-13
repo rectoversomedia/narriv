@@ -75,7 +75,7 @@ export async function collectReportData(report) {
         type: report.type || null,
         status: report.status || null,
         brand: settings?.brand_name || null,
-        language: settings?.language === "en" ? "en" : "id",
+        language: report.content?.language || (settings?.language === "id" ? "id" : "en"),
         periodStart,
         periodEnd,
         generatedAt: new Date().toISOString(),
