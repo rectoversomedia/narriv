@@ -139,9 +139,9 @@ export function Sources({ en }: P) {
         {platforms.map(([id, e, f]) => <Platform key={f} name={t(id, e)} src={`/pitch/platforms/${f}.png`} />)}
       </div>
       <div className="pc" style={{ position: "absolute", left: 96, right: 96, top: 790, display: "flex", alignItems: "center", gap: 28, padding: "30px 40px", borderRadius: 26, background: INK, color: "#fff" }}>
-        <Stamp dark tone="#fff" style={{ background: "rgba(255,255,255,.12)" }}>{t("+ Jawaban AI", "+ AI answers")}</Stamp>
-        <span style={{ fontSize: 30, fontWeight: 700 }}>{AI_ENGINES.join(" · ")}</span>
-        <span style={{ marginLeft: "auto", fontSize: 24, color: "rgba(255,255,255,.65)" }}>{t("Media sosial mulai paket Decision · AI mulai paket Intelligence", "Social media from the Decision plan · AI from Intelligence")}</span>
+        <Stamp dark tone="#fff" style={{ background: "rgba(255,255,255,.12)", whiteSpace: "nowrap", flexShrink: 0 }}>{t("+ Jawaban AI", "+ AI answers")}</Stamp>
+        <span style={{ fontSize: 28, fontWeight: 700, whiteSpace: "nowrap" }}>{AI_ENGINES.join(" · ")}</span>
+        <span style={{ marginLeft: "auto", fontSize: 22, color: "rgba(255,255,255,.65)", whiteSpace: "nowrap" }}>{t("Medsos: paket Decision · AI: paket Intelligence", "Social: Decision plan · AI: Intelligence plan")}</span>
       </div>
     </Light>
   );
@@ -442,7 +442,7 @@ export function Pricing({ en }: P) {
 export function GetStarted({ en }: P) {
   const t = tr(en);
   const steps = [
-    [t("Daftar", "Sign up"), t("Buat akun di narriv.digital, gratis 14 hari.", "Create an account at narriv.digital, free for 14 days.")],
+    [t("Daftar", "Sign up"), t("Buat akun di app.narriv.digital, gratis 14 hari.", "Create an account at app.narriv.digital, free for 14 days.")],
     [t("Isi kata kunci", "Add keywords"), t("Nama brand, produk, atau eksekutif yang ingin dipantau.", "Your brand, products or executives to monitor.")],
     [t("Data pertama masuk", "First data arrives"), t("Pemantauan berjalan setiap jam sejak hari pertama.", "Hourly monitoring runs from day one.")],
     [t("Review bersama", "Review together"), t("Sebelum uji coba selesai, kami tinjau hasilnya dan rekomendasikan paket.", "Before the trial ends, we review results and recommend a plan.")],
@@ -492,7 +492,7 @@ export function Trust({ en }: P) {
 export function Closing({ en }: P) {
   const t = tr(en);
   const contact: Array<[string, ReactNode]> = [
-    [t("Demo langsung", "Live demo"), "narriv.digital"],
+    [t("Demo langsung", "Live demo"), "app.narriv.digital"],
     ["WhatsApp", "0811-190-692"],
     [t("Uji coba", "Trial"), t("14 hari gratis", "14 days free")],
   ];
@@ -512,9 +512,8 @@ export function Closing({ en }: P) {
         ))}
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, top: 980, display: "flex", alignItems: "center", justifyContent: "center", gap: 18, color: "rgba(255,255,255,.55)", fontSize: 22, fontWeight: 600 }}>
-        <span>Narriv by</span>
+        <span>Member of</span>
         <img src="/pitch/rectoverso-white.png" alt="Rectoverso" style={{ height: 28, width: "auto", opacity: 0.85 }} />
-        <span>· PT Primer Rectoverso Media, Jakarta</span>
       </div>
     </Dark>
   );
