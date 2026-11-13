@@ -103,15 +103,15 @@ export function Solution({ en }: P) {
   return (
     <Light tag={t("Solusinya", "The solution")}>
       <Head kicker="Narriv" title={t(<>Dari percakapan jadi <Brush>keputusan.</Brush></>, <>From conversation to <Brush>decision.</Brush></>)} sub={t("Bukan sekadar social listening: Narriv menutup jarak antara melihat isu dan menanganinya.", "More than social listening: Narriv closes the gap between seeing an issue and handling it.")} />
-      <div style={{ position: "absolute", left: 96, right: 96, top: 540, display: "flex", alignItems: "stretch", gap: 18 }}>
+      <div style={{ position: "absolute", left: 96, right: 96, top: 520, display: "flex", alignItems: "stretch", gap: 14 }}>
         {steps.map((s, k) => (
           <div key={s.title} style={{ display: "flex", alignItems: "center", gap: 18, flex: 1 }}>
-            <Card style={{ flex: 1, height: 360, padding: 40 }}>
+            <Card style={{ flex: 1, minHeight: 380, padding: 38 }}>
               <Num n={k + 1} c={s.c} />
               <p style={{ margin: "30px 0 0", fontSize: 44, fontWeight: 800, letterSpacing: "-0.02em" }}>{s.title}</p>
-              <p style={{ margin: "16px 0 0", fontSize: 25, lineHeight: 1.45, color: MUTED }}>{s.text}</p>
+              <p style={{ margin: "16px 0 0", fontSize: 24, lineHeight: 1.45, color: MUTED }}>{s.text}</p>
             </Card>
-            {k < steps.length - 1 && <Arrow />}
+            {k < steps.length - 1 && <Arrow w={52} />}
           </div>
         ))}
       </div>
@@ -332,7 +332,7 @@ export function Compare({ en }: P) {
   return (
     <Light tag={t("Perbandingan", "Comparison")}>
       <Head kicker={t("Bedanya apa?", "What is different?")} title={t(<>Bukan sekadar <Brush>social listening.</Brush></>, <>More than <Brush>social listening.</Brush></>)} />
-      <div className="pc" style={{ position: "absolute", left: 96, right: 96, top: 420, background: "#fff", borderRadius: 30, padding: "18px 40px 26px", ...INKED }}>
+      <div className="pc" style={{ position: "absolute", left: 96, right: 96, top: 390, background: "#fff", borderRadius: 30, padding: "14px 40px 22px", ...INKED }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
@@ -345,7 +345,7 @@ export function Compare({ en }: P) {
           <tbody>
             {rows.map(([label, a, b], k) => (
               <tr key={label} style={{ borderTop: k ? "2px solid #EEF0F6" : `3px solid ${INK}` }}>
-                <td style={{ padding: "18px 10px", fontSize: 27, fontWeight: 700 }}>{label}</td>
+                <td style={{ padding: "15px 10px", fontSize: 27, fontWeight: 700 }}>{label}</td>
                 {[a, b].map((v, j) => <td key={j} style={{ textAlign: "center" }}><span style={{ display: "inline-flex" }}>{v ? <Check c={NEU} /> : <Cross />}</span></td>)}
                 <td style={{ textAlign: "center", background: "#EEF1FF" }}><span style={{ display: "inline-flex" }}><Check c={BLUE} /></span></td>
               </tr>
@@ -392,8 +392,8 @@ export function ADay({ en }: P) {
   ];
   return (
     <Light tag={t("Alur kerja", "Workflow")}>
-      <Head kicker={t("Satu hari bersama Narriv", "A day with Narriv")} title={t(<>Dari peringatan ke <Brush>penyelesaian.</Brush></>, <>From alert to <Brush>resolution.</Brush></>)} />
-      <div style={{ position: "absolute", left: 96, right: 96, top: 480 }}>
+      <Head kicker={t("Satu hari bersama Narriv", "A day with Narriv")} title={t(<>Dari peringatan ke <Brush>penyelesaian.</Brush></>, <>From alert to <Brush>resolution.</Brush></>)} sub={t("Satu isu ditangani dalam hitungan jam, dan tercatat sampai laporan direksi.", "One issue, handled within hours and recorded all the way to the board report.")} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 520 }}>
         <div aria-hidden style={{ position: "absolute", left: 60, right: 60, top: 52, height: 6, background: GRADIENT, borderRadius: 6 }} />
         <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 26 }}>
           {steps.map(([time, title, text, c]) => (
@@ -405,7 +405,7 @@ export function ADay({ en }: P) {
           ))}
         </div>
       </div>
-      <p className="pc" style={{ position: "absolute", left: 96, top: 930, margin: 0 }}><SampleTag text={t("Ilustrasi alur kerja", "Illustrative workflow")} /></p>
+      <p className="pc" style={{ position: "absolute", left: 96, top: 960, margin: 0 }}><SampleTag text={t("Ilustrasi alur kerja", "Illustrative workflow")} /></p>
     </Light>
   );
 }
@@ -415,7 +415,7 @@ export function Pricing({ en }: P) {
   return (
     <Light tag={t("Harga", "Pricing")}>
       <Head center kicker={t("Paket per bulan · belum termasuk PPN 11%", "Per month · excluding 11% VAT")} title={t(<>Mulai kecil, <Brush>tumbuh bersama.</Brush></>, <>Start small, <Brush>grow with it.</Brush></>)} top={150} />
-      <div style={{ position: "absolute", left: 96, right: 96, top: 420, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 28, alignItems: "end" }}>
+      <div style={{ position: "absolute", left: 96, right: 96, top: 400, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 28, alignItems: "stretch" }}>
         {PLANS.map((p) => (
           <div key={p.name} className="pc" style={{ position: "relative", padding: "40px 36px 38px", borderRadius: 30, background: p.popular ? INK : "#fff", color: p.popular ? "#fff" : INK, border: `3px solid ${INK}`, boxShadow: p.popular ? `0 12px 0 ${BLUE}` : `0 8px 0 ${INK}`, transform: p.popular ? "translateY(-24px)" : undefined }}>
             {p.popular && <span style={{ position: "absolute", top: -26, left: 36, padding: "8px 18px", borderRadius: 12, background: "#FDE047", color: INK, border: `3px solid ${INK}`, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>{t("Paling dipilih", "Most popular")}</span>}
@@ -429,7 +429,7 @@ export function Pricing({ en }: P) {
           </div>
         ))}
       </div>
-      <p className="pc" style={{ position: "absolute", left: 96, right: 96, top: 990, margin: 0, textAlign: "center", fontSize: 25, fontWeight: 700, color: MUTED }}>{t("Tagihan tahunan hemat 20% · Coba gratis 14 hari, tanpa kartu kredit", "Annual billing saves 20% · Free 14-day trial, no card needed")}</p>
+      <p className="pc" style={{ position: "absolute", left: 96, right: 96, top: 1000, margin: 0, textAlign: "center", fontSize: 25, fontWeight: 700, color: MUTED }}>{t("Tagihan tahunan hemat 20% · Coba gratis 14 hari, tanpa kartu kredit", "Annual billing saves 20% · Free 14-day trial, no card needed")}</p>
     </Light>
   );
 }
