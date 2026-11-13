@@ -93,7 +93,7 @@ function ProductStage() {
     { key: "x", n: 19 },
   ];
   return (
-    <div className="relative mx-auto w-full max-w-[880px]">
+    <div className="relative mx-auto w-full max-w-[880px] lg:mx-0">
       {/* A slow turning halo behind the window, after the Narriv orb */}
       <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[130%] max-w-[1000px] -translate-x-1/2 -translate-y-1/2">
         <div className="mk-ring size-full rounded-full bg-[conic-gradient(from_0deg,transparent_0deg,rgba(109,124,255,0.35)_70deg,transparent_140deg,rgba(216,180,254,0.3)_220deg,transparent_300deg)] blur-3xl" />
@@ -124,7 +124,8 @@ function ProductStage() {
               <span className="rounded-full bg-[#FDECEC] px-2.5 py-1 text-[11px] font-black text-[#B42318]">{L("High Risk", "Risiko Tinggi")}</span>
             </div>
 
-            <div className="lg:mt-2 lg:grid lg:grid-cols-[1.25fr_1fr] lg:gap-8">
+            {/* Stacked: the card sits in the hero's right column on desktop, too narrow for two inner columns. */}
+            <div>
               <div>
                 <div className="mt-4 grid grid-cols-3 divide-x divide-[#ECEAE3] text-left">
                   {[
@@ -147,7 +148,7 @@ function ProductStage() {
                   </div>
                   <div className="relative mt-1">
                     <div className="mk-wipe">
-                    <svg viewBox="0 0 300 82" preserveAspectRatio="none" className="h-[72px] w-full overflow-visible lg:h-[132px]" aria-hidden="true">
+                    <svg viewBox="0 0 300 82" preserveAspectRatio="none" className="h-[72px] w-full overflow-visible lg:h-[96px]" aria-hidden="true">
                       <defs>
                         <linearGradient id="sparkfill" x1="0" x2="0" y1="0" y2="1">
                           <stop offset="0" stopColor="#E5484D" stopOpacity="0.22" />
@@ -169,7 +170,7 @@ function ProductStage() {
 
               <div className="hidden text-left sm:block">
                 {/* Where it came from */}
-                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-[#ECEAE3] pt-3 lg:mt-4 lg:border-t-0 lg:pt-0">
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-[#ECEAE3] pt-3">
                   {sources.map((src) => (
                     <span key={src.key} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#31406B]">
                       <PlatformIcon platform={src.key} className="size-3.5" />
@@ -431,9 +432,10 @@ export default function WelcomePage() {
         <NarrativeField />
         <SiteHeader />
 
-        <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-7 px-4 pb-12 pt-6 text-center sm:gap-12 sm:px-6 sm:pt-10 lg:gap-14 lg:pb-16 lg:pt-16">
-          <div className="flex max-w-4xl flex-col items-center">
-            <h1 className="text-balance text-[36px] font-black leading-[1.04] tracking-[-0.035em] sm:text-[60px] lg:text-[68px]">
+        {/* Phones and tablets: centred and stacked. Desktop: words left, the product right, both inside the first screen. */}
+        <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-7 px-4 pb-12 pt-6 text-center sm:gap-12 sm:px-6 sm:pt-10 lg:grid lg:min-h-[calc(100dvh-88px)] lg:max-w-7xl lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:items-center lg:gap-12 lg:pb-14 lg:pt-4 lg:text-left xl:gap-16">
+          <div className="flex max-w-4xl flex-col items-center lg:items-start">
+            <h1 className="text-balance text-[36px] font-black leading-[1.04] tracking-[-0.035em] sm:text-[60px] lg:text-[52px] xl:text-[60px]">
               <Typewriter
                 speed={45}
                 delay={200}
@@ -443,7 +445,7 @@ export default function WelcomePage() {
                 ]}
               />
             </h1>
-            <p className="mk-pop mx-auto mt-4 sm:mt-5 max-w-xl text-balance text-[16px] font-medium leading-relaxed text-white/65 sm:text-[18px]" style={{ "--mk-delay": "1500ms" } as CSSProperties}>
+            <p className="mk-pop mx-auto mt-4 sm:mt-5 lg:mx-0 max-w-xl text-balance text-[16px] font-medium leading-relaxed text-white/65 sm:text-[18px]" style={{ "--mk-delay": "1500ms" } as CSSProperties}>
               {/* Phones get the one-line version so the first screen holds the headline, the buttons and the product. */}
               <span className="sm:hidden">{L("News, social, YouTube and AI answers, checked every hour, with the risk scored and the next step assigned.", "Berita, media sosial, YouTube, dan jawaban AI dipantau tiap jam, risikonya dinilai, dan langkah berikutnya ditugaskan.")}</span>
               <span className="hidden sm:inline">
@@ -455,7 +457,7 @@ export default function WelcomePage() {
               )}
             </span>
             </p>
-            <div className="mk-pop mt-6 flex w-full max-w-[320px] flex-col items-center gap-2.5 sm:mt-8 sm:w-auto sm:max-w-none sm:flex-row sm:items-start sm:justify-center" style={{ "--mk-delay": "1700ms" } as CSSProperties}>
+            <div className="mk-pop mt-6 flex w-full max-w-[320px] flex-col items-center gap-2.5 sm:mt-8 sm:w-auto sm:max-w-none sm:flex-row sm:items-start sm:justify-center lg:justify-start" style={{ "--mk-delay": "1700ms" } as CSSProperties}>
               <DemoButton className="border-[1.5px] border-[#101334] bg-white text-[#070A1F] shadow-[0_4px_0_#465FFF] hover:bg-[#EEF1FF] active:translate-y-[2px] active:shadow-[0_2px_0_#465FFF]">
                 {L("Explore the Live Demo", "Lihat Demo Langsung")}
                 <ArrowRight size={17} aria-hidden="true" className="transition group-hover:translate-x-0.5" />
