@@ -320,7 +320,10 @@ export function buildReportPdf(data, lang = data.language) {
         doc.roundedRect(x, ty, tw, 70, 10).lineWidth(1.1).strokeColor(C.navy).stroke();
         doc.fillColor(tile.fg).font(F.mono).fontSize(7.5).text(tile.label.toUpperCase(), x + 12, ty + 11, { width: tw - 24, characterSpacing: 0.8 });
         doc.fillColor(C.navy).font(F.black).fontSize(22).text(tile.value, x + 12, ty + 24, { width: tw - 24 });
-        doc.fillColor(tile.sub.color).font(F.bold).fontSize(8).text(tile.sub.text, x + 12, ty + 52, { width: tw - 20, lineBreak: false, ellipsis: true });
+        // The change line must fit on one line: without room for "vs previous period", the figure alone is shown.
+        doc.font(F.bold).fontSize(8);
+        const subText = doc.widthOfString(tile.sub.text) <= tw - 22 ? tile.sub.text : tile.sub.text.replace(` ${W.vsPrev}`, "");
+        doc.fillColor(tile.sub.color).text(subText, x + 12, ty + 52, { width: tw - 20, lineBreak: false });
     });
     doc.y = ty + 92;
 
