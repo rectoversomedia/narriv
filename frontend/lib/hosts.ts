@@ -10,7 +10,7 @@ export const MARKETING_ORIGIN = "https://www.narriv.digital";
 export const SPLIT_LIVE = true;
 
 /** Pages that belong to the website, not the product. */
-export const MARKETING_PATHS = ["/welcome", "/pricing", "/help", "/terms", "/privacy", "/blog", "/id"];
+export const MARKETING_PATHS = ["/welcome", "/pricing", "/help", "/terms", "/privacy", "/blog", "/id", "/pitch"];
 
 export function isMarketingPath(pathname: string) {
   return MARKETING_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

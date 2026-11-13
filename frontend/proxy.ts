@@ -11,6 +11,7 @@ const publicPaths = [
   "/privacy",
   "/blog",
   "/id",
+  "/pitch",
   "/pasang",
   "/onboarding",
   "/login",
