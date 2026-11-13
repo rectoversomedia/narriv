@@ -216,7 +216,7 @@ function ProductStage() {
         </div>
 
         {/* AI visibility score, over the window's top corner */}
-        <div className="mk-pop absolute right-2 -top-3 sm:-right-8 sm:-top-2" style={{ "--mk-delay": "900ms" } as CSSProperties}>
+        <div className="mk-pop absolute right-2 -top-3 sm:-right-8 sm:-top-2 lg:right-2 xl:-right-6" style={{ "--mk-delay": "900ms" } as CSSProperties}>
           <div className="mk-float flex items-center gap-3 rounded-[18px] bg-white py-2.5 pl-3 pr-4 text-left text-[#101334] shadow-[0_24px_60px_rgba(5,8,30,0.5)]">
             <EngineStack />
             <div>
@@ -435,7 +435,7 @@ export default function WelcomePage() {
         {/* Phones and tablets: centred and stacked. Desktop: words left, the product right, both inside the first screen. */}
         <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-7 px-4 pb-12 pt-6 text-center sm:gap-12 sm:px-6 sm:pt-10 lg:grid lg:min-h-[calc(100dvh-88px)] lg:max-w-7xl lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:items-center lg:gap-12 lg:pb-14 lg:pt-4 lg:text-left xl:gap-16">
           <div className="flex max-w-4xl flex-col items-center lg:items-start">
-            <h1 className="text-balance text-[36px] font-black leading-[1.04] tracking-[-0.035em] sm:text-[60px] lg:text-[52px] xl:text-[60px]">
+            <h1 className="text-balance text-[36px] font-black leading-[1.04] tracking-[-0.035em] sm:text-[60px] lg:text-[44px] xl:text-[54px] 2xl:text-[60px]">
               <Typewriter
                 speed={45}
                 delay={200}
