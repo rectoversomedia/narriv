@@ -235,7 +235,9 @@ export function buildReportPdf(data, lang = data.language) {
     const { pages, mentionsOnLastPage, lastPageHasOtherContent } = first.layout;
     if (pages > 1 && !lastPageHasOtherContent && mentionsOnLastPage > 0 && mentionsOnLastPage <= ORPHAN_ROWS) {
         first.done.catch(() => {});
-        return renderReportPdf(data, lang, MAX_MENTIONS - mentionsOnLastPage).done;
+        // Trim from the mentions actually drawn (a report may have fewer than the maximum).
+        const drawn = Math.min(MAX_MENTIONS, data.signals.length);
+        return renderReportPdf(data, lang, drawn - mentionsOnLastPage).done;
     }
     return first.done;
 }

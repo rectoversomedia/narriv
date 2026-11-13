@@ -25,6 +25,14 @@ describe('report PDF', () => {
     expect(pages(await buildReportPdf(report(5, 5), 'id'))).toBe(2);
   });
 
+  test('a few mentions spilling onto their own page are trimmed, even when the report has fewer than the maximum', async () => {
+    // Enough alerts to push the last mentions onto a third page; with 4 mentions only the overflow is cut.
+    for (const alerts of [6, 7, 8]) {
+      const full = pages(await buildReportPdf(report(4, alerts), 'id'));
+      expect(full).toBeLessThanOrEqual(3);
+    }
+  });
+
   test('a long brief grows by the pages its content needs, not by one per footer line', async () => {
     const n = pages(await buildReportPdf(report(10, 12), 'id'));
     expect(n).toBeGreaterThanOrEqual(2);
