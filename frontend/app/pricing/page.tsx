@@ -356,8 +356,8 @@ function SampleReportLink() {
   const L = useL();
   const [open, setOpen] = useState(false);
   const files = [
-    { href: "/contoh-laporan-narriv.pdf", label: "English" },
-    { href: "/contoh-laporan-narriv-id.pdf", label: "Bahasa Indonesia" },
+    { href: "/contoh-laporan-narriv.pdf?v=2", label: "English" },
+    { href: "/contoh-laporan-narriv-id.pdf?v=2", label: "Bahasa Indonesia" },
   ];
   return (
     <div className="relative mt-6 flex flex-col items-center gap-3">
