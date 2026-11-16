@@ -6,6 +6,7 @@ import { useState, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { NarrativeSpreadPanel } from "@/components/intelligence/narrative-spread";
 import { ArrowLeft, ArrowUpRight, Briefcase, CheckCircle2, Clock3, FileText, Hand, Sparkles, UserX } from "lucide-react";
 import { assigneeName } from "@/lib/member-name";
 import { teamOptions } from "@/lib/teams";
@@ -435,6 +436,11 @@ export default function AlertDetailPage() {
                 </div>
               </section>
               <Evidence items={liveData.evidence ?? []} missing={liveData.evidenceMissing} auto={Boolean(liveData.triggeredBy)} L={L} />
+              {liveData.spread ? (
+                <section className={BOX}>
+                  <NarrativeSpreadPanel spread={liveData.spread} />
+                </section>
+              ) : null}
             </div>
 
             <HandlingDesk

@@ -10,6 +10,7 @@ import { alertIdParamsSchema, updateAlertStatusBodySchema } from "./alerts.schem
 import { logStructured } from "../../lib/logger.js";
 import { wrapAsync } from "../../lib/sentry.js";
 import { notifyAndRecord } from "./alerts.service.js";
+import { buildSpread } from "../../lib/narrative-spread.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -362,13 +363,16 @@ router.get("/:id", async (req, res) => {
         // Evidence: the signals the alert was raised on, limited to the alert's own workspace.
         const evidenceIds = Array.isArray(alert.metadata?.signal_ids) ? alert.metadata.signal_ids.filter((x) => typeof x === "string").slice(0, 50) : [];
         let evidence = [];
+        let spread = null;
         if (evidenceIds.length) {
             const { data: evidenceRows } = await supabase
                 .from("signals")
-                .select("id, title, url, platform, author, sentiment, captured_at, published_at")
+                .select("id, title, content, url, platform, author, sentiment, metadata, captured_at, published_at")
                 .eq("workspace_id", alert.workspace_id)
                 .in("id", evidenceIds);
             const { privacyMode } = await getWorkspaceProfile(alert.workspace_id);
+            // Who started it and how it spread, from the records the alert was raised on (narrative-spread.js).
+            spread = (evidenceRows || []).length >= 2 ? buildSpread(evidenceRows, { privacy: privacyMode }) : null;
             evidence = (evidenceRows || []).map((s) => (privacyMode ? maskSignal(s) : s)).map((s) => ({
                 id: s.id,
                 title: s.title,
@@ -385,6 +389,7 @@ router.get("/:id", async (req, res) => {
             ...alert,
             evidence,
             evidenceMissing: Math.max(0, evidenceIds.length - evidence.length),
+            spread,
             triggeredBy: alert.metadata?.triggered_by || null,
             whatHappened: alert.what_happened || alert.description || null,
             whyItMatters: alert.why_it_matters || null,

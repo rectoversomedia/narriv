@@ -6,7 +6,9 @@
  * - a risk check before joining: "avoid" when the conversation is largely negative, "careful" when it touches a
  *   sensitive subject (grief, disaster, religion, ethnicity, politics, violence) or shows near-identical posts from
  *   several accounts, "go" otherwise. The reasons are listed so a person can judge;
- * - a time window: how long this workspace's past narratives typically stayed active, against this one's age.
+ * - a time window: when the current burst began (records with no gap over a day, counting back from the latest),
+ *   against how many hours after starting this workspace's past narratives usually peaked. Joining before the
+ *   peak is the point of riding a wave.
  *
  * Content ideas are generated separately, on request (ai.service.js suggestContentAngles).
  */
@@ -47,26 +49,49 @@ export function waveRisk({ negativeShare, topics, coordination }) {
     return { level, reasons };
 }
 
+const BURST_GAP_H = 24;
+const MIN_LAST_24H = 4;
+const MIN_GROWTH = 1.3;
+
+/** When the current burst began: walking back from the latest record until a gap longer than a day. */
+export function burstStart(times) {
+    const t = [...times].sort((a, b) => b - a);
+    if (!t.length) return null;
+    let start = t[0];
+    for (let i = 1; i < t.length; i++) {
+        if (start - t[i] > BURST_GAP_H * 3600000) break;
+        start = t[i];
+    }
+    return start;
+}
+
+/** Growing now: enough records in the last 24 hours and clearly more than the 24 hours before. */
+export function isRising(momentum) {
+    if (!momentum || momentum.last24h < MIN_LAST_24H) return false;
+    return isEmerging(momentum) || momentum.prior24h === 0 || momentum.last24h >= momentum.prior24h * MIN_GROWTH;
+}
+
 /**
  * @param clusters narratives of the workspace with `signals` (title, content, platform, sentiment, author, metadata,
  *                 published_at, captured_at)
  */
 export function buildWaves(clusters, now = Date.now()) {
-    const lives = (clusters || []).map((c) => lifecycle(c.signals)).filter(Boolean).map((l) => l.activeHours).filter((h) => h > 0);
-    const typicalLifeHours = median(lives);
+    // Hours from start to peak of past narratives (the middle of the 6-hour peak bucket).
+    const peaks = (clusters || []).map((c) => lifecycle(c.signals)).filter((l) => l && l.records >= 5).map((l) => l.hoursToPeak + 3);
+    const typicalPeakHours = median(peaks);
     const waves = [];
     for (const c of clusters || []) {
         const signals = c.signals || [];
         const momentum = narrativeMomentum(signals, now);
-        const rising = isEmerging(momentum) || (momentum.last24h >= 3 && momentum.last24h > momentum.prior24h);
-        if (!rising) continue;
+        if (!isRising(momentum)) continue;
         const sentiments = signals.map((s) => String(s.sentiment || "").toLowerCase()).filter((v) => ["positive", "negative", "neutral", "mixed"].includes(v));
         const share = (v) => (sentiments.length ? Math.round((sentiments.filter((x) => x === v).length / sentiments.length) * 100) : null);
         const negativeShare = share("negative");
         const topics = sensitiveTopics([c.title, c.description, ...signals.slice(0, 30).map((s) => `${s.title || ""} ${s.content || ""}`)].join(" "));
         const coordination = findTextClusters(signals).filter((g) => g.kind === "coordination").length;
         const times = signals.map((s) => new Date(recordTime(s)).getTime()).filter(Number.isFinite);
-        const ageHours = times.length ? Math.round((now - Math.min(...times)) / 3600000) : null;
+        const start = burstStart(times.filter((t) => t <= now));
+        const burstAgeHours = start === null ? null : Math.max(0, Math.round((now - start) / 3600000));
         const platforms = [...new Set(signals.map((s) => s.platform).filter(Boolean))];
         waves.push({
             id: c.id,
@@ -80,10 +105,11 @@ export function buildWaves(clusters, now = Date.now()) {
             platforms,
             risk: waveRisk({ negativeShare, topics, coordination }),
             window: {
-                ageHours,
-                typicalLifeHours,
-                hoursLeft: typicalLifeHours === null || ageHours === null ? null : Math.round(typicalLifeHours - ageHours),
-                basedOn: lives.length,
+                burstAgeHours,
+                typicalPeakHours,
+                // Positive: hours left before the usual peak (the window to join); zero or less: past it.
+                hoursToTypicalPeak: typicalPeakHours === null || burstAgeHours === null ? null : Math.round(typicalPeakHours - burstAgeHours),
+                basedOn: peaks.length,
             },
             samples: signals
                 .slice()

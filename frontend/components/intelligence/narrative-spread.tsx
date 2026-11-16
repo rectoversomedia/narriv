@@ -29,7 +29,7 @@ export function afterOrigin(hours: number) {
   if (hours < 0.05) return pickL("start", "awal");
   if (hours < 1) return `+${Math.max(1, Math.round(hours * 60))} ${pickL("min", "mnt")}`;
   if (hours < 48) return `+${Math.round(hours)} ${pickL("h", "jam")}`;
-  return `+${Math.round(hours / 24)} ${pickL("d", "hr")}`;
+  return `+${Math.round(hours / 24)} ${pickL("d", "hari")}`;
 }
 
 /** A duration in words: "about 6 hours", "about 3 days". */
@@ -102,7 +102,8 @@ function Path({ path }: { path: NarrativeSpread["path"] }) {
 }
 
 function Amplifiers({ spread }: { spread: NarrativeSpread }) {
-  const max = Math.max(1, ...spread.amplifiers.map((a) => a.interactions || a.posts));
+  // Bars compare interactions; outlets (news has no interaction counts) show their article count instead of a bar.
+  const max = Math.max(1, ...spread.amplifiers.map((a) => a.interactions));
   if (!spread.amplifiers.length) {
     return <p className="text-[12.5px] font-medium text-[#5A6478]">{spread.hiddenAccounts ? pickL(`${spread.hiddenAccounts} accounts took part; their names are hidden by privacy mode.`, `${spread.hiddenAccounts} akun ikut membahas; namanya disembunyikan oleh mode privasi.`) : pickL("No author names were recorded for this narrative.", "Belum ada nama penulis yang tercatat untuk narasi ini.")}</p>;
   }
@@ -120,13 +121,17 @@ function Amplifiers({ spread }: { spread: NarrativeSpread }) {
               {a.isOrigin ? <span className="rounded-[6px] bg-[#101334] px-1.5 py-0.5 font-mono text-[9.5px] font-bold uppercase tracking-[0.08em] text-white">{pickL("Started it", "Pemicu")}</span> : null}
               {a.platforms.slice(0, 3).map((p) => <PlatformIcon key={p} platform={p} className="size-3.5" />)}
             </div>
-            <span className="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-[#EEF1F7]">
-              <span className="h-full rounded-full bg-gradient-to-r from-[#465FFF] to-[#8B5CF6]" style={{ width: `${Math.max(4, ((a.interactions || a.posts) / max) * 100)}%` }} />
-            </span>
+            {a.interactions ? (
+              <span className="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-[#EEF1F7]">
+                <span className="h-full rounded-full bg-gradient-to-r from-[#465FFF] to-[#8B5CF6]" style={{ width: `${Math.max(4, (a.interactions / max) * 100)}%` }} />
+              </span>
+            ) : (
+              <span className="mt-1 block text-[11px] font-medium text-[#5A6478]">{a.kind === "outlet" ? pickL("News outlet", "Media berita") : pickL("No interaction counts", "Tanpa data interaksi")}</span>
+            )}
           </div>
           <div className="shrink-0 text-right">
             <p className="text-[13px] font-black tabular-nums text-[#101334]">{a.interactions ? compact(a.interactions) : a.posts}</p>
-            <p className="text-[10.5px] font-medium text-[#5A6478]">{a.interactions ? pickL("interactions", "interaksi") : pickL(a.posts === 1 ? "post" : "posts", "postingan")} · {afterOrigin(a.hoursAfterOrigin)}</p>
+            <p className="text-[10.5px] font-medium text-[#5A6478]">{a.interactions ? pickL("interactions", "interaksi") : a.kind === "outlet" ? pickL(a.posts === 1 ? "article" : "articles", "artikel") : pickL(a.posts === 1 ? "post" : "posts", "postingan")} · {afterOrigin(a.hoursAfterOrigin)}</p>
           </div>
         </li>
       ))}

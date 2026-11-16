@@ -113,11 +113,16 @@ export function createMemoryDb(seed = {}) {
     b.match = (obj) => addFilter((row) => Object.entries(obj || {}).every(([c, v]) => compare('eq', row[c], v)));
     b.setHeader = () => b;
     b.filter = (col, op, val) => addFilter((row) => compare(op, valueAt(row, col), val));
-    b.or = (expr) => addFilter((row) => parseOr(expr).some(([c, o, v]) => {
+    const term = (row, [c, o, v]) => {
       if (o !== 'not') return compare(o, valueAt(row, c), v);
       // "col.not.ilike.%x%": like PostgREST, a NULL column never matches a negation.
       const [op2, ...rest] = v.split('.');
       return valueAt(row, c) != null && !compare(op2, valueAt(row, c), rest.join('.'));
+    };
+    // Top-level terms are OR-ed; "and(a.gte.x,b.is.null)" groups terms that must all hold.
+    b.or = (expr) => addFilter((row) => splitTopLevel(expr).some((part) => {
+      const group = part.match(/^and\((.*)\)$/s);
+      return group ? parseOr(group[1]).every((t) => term(row, t)) : term(row, parseOr(part)[0]);
     }));
     b.order = (col, { ascending = true } = {}) => { state.order.push([col, ascending]); return b; };
     b.limit = (n) => { state.limit = n; return b; };

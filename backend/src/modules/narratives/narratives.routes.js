@@ -13,6 +13,7 @@ import { getWorkspaceProfile } from "../../lib/workspace-profile.js";
 import { maskSignal } from "../../lib/privacy.js";
 import { buildWaves } from "../../lib/content-waves.js";
 import { rateLimiters } from "../../middlewares/rate-limit.js";
+import { checkBudgetAllowance } from "../../lib/cost-management.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -229,6 +230,9 @@ router.post("/:id/content-ideas", rateLimiters.aiGeneration(), async (req, res) 
         const { data: cluster } = await supabase.from("narrative_clusters").select(WAVE_SELECT + ", workspace_id").eq("id", id).maybeSingle();
         const workspaceId = cluster ? await resolveWorkspaceIdForUser(req.user.id, cluster.workspace_id) : null;
         if (!cluster || !workspaceId) return res.status(404).json({ error: "Narrative cluster not found" });
+        // Same AI budget rule as every other on-demand model call.
+        const budget = await checkBudgetAllowance(workspaceId).catch(() => ({ allowed: true }));
+        if (budget?.allowed === false) return res.status(402).json({ error: tr("This workspace has reached its AI usage budget for the month.", "Workspace ini sudah mencapai batas anggaran AI bulan ini."), code: "BUDGET_EXCEEDED" });
         const signals = (cluster.narrative_cluster_signals || []).map((n) => n.signal).filter(Boolean);
         const [wave] = buildWaves([{ ...cluster, signals }], Date.now());
         const { data: settings } = await supabase.from("workspace_settings").select("brand_name").eq("workspace_id", workspaceId).maybeSingle();

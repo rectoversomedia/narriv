@@ -1,6 +1,6 @@
-import { buildSpread, findTextClusters, interactions } from '../src/lib/narrative-spread.js';
+import { buildSpread, findTextClusters, interactions, topicTokens } from '../src/lib/narrative-spread.js';
 import { buildPrecedents, lifecycle } from '../src/lib/narrative-precedents.js';
-import { buildWaves, sensitiveTopics, waveRisk } from '../src/lib/content-waves.js';
+import { buildWaves, burstStart, isRising, sensitiveTopics, waveRisk } from '../src/lib/content-waves.js';
 import { inReportWindow, platformLatency, recordTime } from '../src/lib/report-window.js';
 
 const H = 3600 * 1000;
@@ -64,6 +64,16 @@ describe('narrative spread', () => {
     expect(masked.sample).toBeNull();
   });
 
+  it('does not count reposts as coordination', () => {
+    const text = 'RT @sumber: Jangan beli produk ini kemasannya bocor semua dan pelayanannya buruk sekali tolong sebarkan';
+    const reposts = ['@a', '@b', '@c', '@d'].map((author, i) => row({ author, content: text, title: '', published_at: at(i * 0.1) }));
+    expect(findTextClusters(reposts)).toEqual([]);
+  });
+
+  it('compares topics without function words', () => {
+    expect([...topicTokens('Yang ini sudah viral dan ramai di TikTok 2026')].sort()).toEqual(['ramai', 'tiktok', 'viral']);
+  });
+
   it('sums interactions without views and treats missing counts as zero', () => {
     expect(interactions({ engagement: { likes: 2, replies: 1, views: 1000 } })).toBe(3);
     expect(interactions(null)).toBe(0);
@@ -111,6 +121,19 @@ describe('content waves', () => {
     expect(waveRisk({ negativeShare: 10, topics: ['disaster'], coordination: 0 })).toEqual({ level: 'careful', reasons: [{ code: 'sensitive', value: 'disaster' }] });
     expect(sensitiveTopics('Donasi untuk korban banjir di Bekasi')).toEqual(['grief', 'disaster']);
     expect(sensitiveTopics('Bocoran menu baru')).toEqual([]);
+  });
+
+  it('dates the window from the current burst, not the first record of the narrative', () => {
+    const old = { id: 'old', title: 'x', captured_at: new Date(now - 300 * H).toISOString(), sentiment: 'positive', metadata: {} };
+    const [wave] = buildWaves([{ id: 'w', title: 'Tren lari pagi', signals: [old, ...recent(5)] }], now);
+    expect(wave.window.burstAgeHours).toBe(5);
+    expect(burstStart([now, now - 10 * H, now - 50 * H])).toBe(now - 10 * H);
+  });
+
+  it('needs at least four records and clear growth to call it rising', () => {
+    expect(isRising({ last24h: 3, prior24h: 0, changePct: null })).toBe(false);
+    expect(isRising({ last24h: 5, prior24h: 4, changePct: 25 })).toBe(false);
+    expect(isRising({ last24h: 8, prior24h: 4, changePct: 100 })).toBe(true);
   });
 
   it('skips conversations that are not growing', () => {

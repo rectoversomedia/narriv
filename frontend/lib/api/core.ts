@@ -2,6 +2,7 @@
 
 import { apiClient } from "@/lib/apiClient";
 import { type AuthUser } from "@/store/useAuthStore";
+import type { NarrativeSpread } from "./reports";
 
 // ---------------------------------------------------------------------------
 // Types — shaped to match actual backend responses
@@ -267,6 +268,8 @@ export interface AlertEvidence {
 export interface Alert {
   evidence?: AlertEvidence[];
   evidenceMissing?: number;
+  /** Who started it and how it spread, from the records the alert was raised on (detail only). */
+  spread?: NarrativeSpread | null;
   triggeredBy?: string | null;
   id: string;
   title: string;

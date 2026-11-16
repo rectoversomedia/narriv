@@ -358,7 +358,8 @@ export interface ContentWave {
   interactions: number;
   platforms: string[];
   risk: { level: "go" | "careful" | "avoid"; reasons: Array<{ code: "negative" | "sensitive" | "coordination"; value: string | number }> };
-  window: { ageHours: number | null; typicalLifeHours: number | null; hoursLeft: number | null; basedOn: number };
+  /** When the current burst began, when narratives here usually peak, and the hours left before that peak. */
+  window: { burstAgeHours: number | null; typicalPeakHours: number | null; hoursToTypicalPeak: number | null; basedOn: number };
   samples: Array<{ title: string; platform: string | null; url: string | null }>;
 }
 

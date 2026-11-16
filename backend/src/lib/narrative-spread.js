@@ -10,8 +10,8 @@
  * - regions: provinces the records are ABOUT (read from their text) apart from where accounts SAY they are (the
  *   location label a platform gives). Neither is an IP address; platforms do not share those.
  * - clusters of near-identical text: several social accounts posting the same words within a short window
- *   (possible coordination), or several outlets running the same text (a shared press release). These are cues for
- *   a person to check, not findings.
+ *   (possible coordination), or several outlets running the same text (a shared press release). Reposts ("RT @")
+ *   are amplification and never count. These are cues for a person to check, not findings.
  */
 import { recordTime } from "./report-window.js";
 
@@ -32,6 +32,16 @@ export function interactions(meta) {
 
 const views = (meta) => num(meta?.engagement?.views);
 
+// Function words (Indonesian, informal Indonesian and English) that say nothing about what a text is about.
+const STOPWORDS = new Set((
+    "yang dan di ke dari untuk pada dengan ini itu ada tidak akan juga sudah belum bisa dalam oleh atau saat karena " +
+    "agar supaya jika kalau lagi masih hanya lebih sangat para bagi antara tentang setelah sebelum seperti serta " +
+    "telah sedang harus dapat kami kita mereka saya anda dia nya pun lah kah gak ga nggak engga udah aja banget sih " +
+    "dong deh kok kan tuh nih yg dgn utk jg krn tdk sdh blm bgt the and for are was were with this that from have has " +
+    "had not but you your they their our its into about will would can could been being than then them what when " +
+    "who how all any just more most some such only also very via per amp https http www com"
+).split(" "));
+
 /** Words of a post without links, handles, hashtags' marks and punctuation, for near-duplicate checks. */
 export function textTokens(text) {
     return new Set(String(text || "")
@@ -42,6 +52,14 @@ export function textTokens(text) {
         .split(/\s+/)
         .filter((w) => w.length > 2));
 }
+
+/** The words that carry meaning (function words removed), for comparing what two narratives are about. */
+export function topicTokens(text) {
+    return new Set([...textTokens(text)].filter((w) => !STOPWORDS.has(w) && !/^\d+$/.test(w)));
+}
+
+/** A repost ("RT @account: ...") repeats someone else's words; it is amplification, not a separate voice. */
+export const isRepost = (r) => /^\s*RT\s+@/i.test(String(r?.content || r?.title || ""));
 
 function jaccard(a, b) {
     if (!a.size || !b.size) return 0;
@@ -56,7 +74,7 @@ function jaccard(a, b) {
  */
 export function findTextClusters(rows) {
     const items = rows
-        .filter((r) => r.author)
+        .filter((r) => r.author && !isRepost(r))
         .map((r) => ({ r, t: ms(recordTime(r)), tokens: textTokens(`${r.title || ""} ${r.content || ""}`) }))
         .filter((x) => Number.isFinite(x.t) && x.tokens.size >= 6)
         .sort((a, b) => a.t - b.t)

@@ -5,7 +5,7 @@ import { supabaseModuleFor } from './helpers/fake-supabase.js';
 const db = createMemoryDb();
 jest.unstable_mockModule('../src/lib/supabase.js', () => supabaseModuleFor(db));
 await import('./setup.js');
-const { buildReportPdf } = await import('../src/modules/reports/report-files.js');
+const { buildReportPdf, collectReportData } = await import('../src/modules/reports/report-files.js');
 
 const report = (signals, alerts) => ({
   id: 'r1', title: 'Ringkasan Eksekutif', type: 'executive_brief', status: 'ready', brand: 'Bank Arunika', language: 'id',
@@ -37,5 +37,22 @@ describe('report PDF', () => {
     const n = pages(await buildReportPdf(report(10, 12), 'id'));
     expect(n).toBeGreaterThanOrEqual(2);
     expect(n).toBeLessThanOrEqual(4);
+  });
+});
+
+describe('report data', () => {
+  test('counts records by publication date and reports freshness and late arrivals', async () => {
+    db.tables.signals = [
+      // Published inside the period, collected the day after it ended: counted, and a late arrival.
+      { id: 's1', workspace_id: 'w1', platform: 'x', sentiment: 'negative', published_at: '2026-11-07T10:00:00Z', captured_at: '2026-11-09T02:00:00Z' },
+      // Published before the period, collected inside it: not counted.
+      { id: 's2', workspace_id: 'w1', platform: 'news', sentiment: 'positive', published_at: '2026-10-20T10:00:00Z', captured_at: '2026-11-05T02:00:00Z' },
+      // No publication date: counted by collection time.
+      { id: 's3', workspace_id: 'w1', platform: 'news', sentiment: 'neutral', published_at: null, captured_at: '2026-11-04T02:00:00Z' },
+    ];
+    const data = await collectReportData({ id: 'r1', workspace_id: 'w1', title: 'Mingguan', created_at: '2026-11-08T23:00:00Z', content: { period_start: '2026-11-01T00:00:00Z', period_end: '2026-11-08T00:00:00Z' } });
+    expect(data.totals.signals).toBe(2);
+    expect(data.freshness.dataAsOf).toBe('2026-11-09T02:00:00Z');
+    expect(data.freshness.lateArrivals).toBe(1);
   });
 });

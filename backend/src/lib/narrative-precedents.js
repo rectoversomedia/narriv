@@ -8,7 +8,7 @@
  * precedent is a pointer for a person to judge, and the response says how many precedents the numbers rest on.
  */
 import { recordTime } from "./report-window.js";
-import { textTokens } from "./narrative-spread.js";
+import { topicTokens } from "./narrative-spread.js";
 
 const BUCKET_H = 6;
 const MIN_SIMILARITY = 0.12;
@@ -21,7 +21,7 @@ const median = (xs) => {
     return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 };
 
-const clusterTokens = (c) => textTokens([c.title, c.description, c.main_narrative, ...(c.keywords || [])].filter(Boolean).join(" "));
+const clusterTokens = (c) => topicTokens([c.title, c.description, c.main_narrative, ...(c.keywords || [])].filter(Boolean).join(" "));
 
 function overlap(a, b) {
     if (!a.size || !b.size) return { score: 0, shared: [] };

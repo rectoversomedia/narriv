@@ -12,7 +12,7 @@ import PDFDocument from "pdfkit";
 import { buildXlsx } from "../../lib/spreadsheet.js";
 import supabase from "../../lib/supabase.js";
 import { generateReport } from "./reports.service.js";
-import { reportFreshness } from "../../lib/report-window.js";
+import { inReportWindow, reportFreshness } from "../../lib/report-window.js";
 
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
