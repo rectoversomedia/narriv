@@ -47,7 +47,7 @@ export function emailLayout({ lang = "en", title, preheader, kicker, body, reaso
 <tr><td align="center" style="padding:32px 12px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:20px;overflow:hidden;border:1px solid ${LINE}">
 <tr><td align="center" style="background:${INK};padding:30px 28px 26px;text-align:center">
-<a href="${SITE_URL}" style="text-decoration:none"><img src="${LOGO_URL}" width="132" height="32" alt="Narriv" style="display:block;margin:0 auto;border:0;width:132px;height:auto;color:#ffffff;font:800 24px ${FONT}"></a>
+<a href="${SITE_URL}" style="text-decoration:none"><img src="${LOGO_URL}" width="132" height="36" alt="Narriv" style="display:block;margin:0 auto;border:0;width:132px;height:auto;color:#ffffff;font:800 24px ${FONT}"></a>
 ${kicker ? `<div style="margin-top:14px;font:700 11px/1.4 ${FONT};letter-spacing:2px;text-transform:uppercase;color:#A5B4FF">${esc(kicker)}</div>` : ""}
 </td></tr>
 <tr><td style="height:4px;line-height:4px;font-size:0;background:#8B5CF6;background-image:linear-gradient(90deg,#465FFF,#8B5CF6 55%,#EC4899)">&nbsp;</td></tr>

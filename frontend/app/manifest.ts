@@ -18,16 +18,16 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#F8FAFC",
     icons: [
       // Round orb with transparent corners; launchers that mask icons use the full-bleed maskable one below.
-      { src: "/brand/app-orb-round-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/brand/app-orb-round-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/brand/app-orb-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/brand/app-nv-round-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/brand/app-nv-round-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/brand/app-nv-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     // Long-press the home-screen icon to jump straight to these.
     shortcuts: [
-      { name: "Hari Ini", short_name: "Hari Ini", description: "Ringkasan hari ini", url: "/", icons: [{ src: "/brand/app-orb-round-192.png", sizes: "192x192", type: "image/png" }] },
-      { name: "Isu", short_name: "Isu", description: "Peta isu dan narasi", url: "/intelligence", icons: [{ src: "/brand/app-orb-round-192.png", sizes: "192x192", type: "image/png" }] },
-      { name: "Peringatan", short_name: "Peringatan", description: "Peringatan yang perlu ditindaklanjuti", url: "/alerts", icons: [{ src: "/brand/app-orb-round-192.png", sizes: "192x192", type: "image/png" }] },
-      { name: "Laporan", short_name: "Laporan", description: "Laporan brand", url: "/reports", icons: [{ src: "/brand/app-orb-round-192.png", sizes: "192x192", type: "image/png" }] },
+      { name: "Hari Ini", short_name: "Hari Ini", description: "Ringkasan hari ini", url: "/", icons: [{ src: "/brand/app-nv-round-192.png", sizes: "192x192", type: "image/png" }] },
+      { name: "Isu", short_name: "Isu", description: "Peta isu dan narasi", url: "/intelligence", icons: [{ src: "/brand/app-nv-round-192.png", sizes: "192x192", type: "image/png" }] },
+      { name: "Peringatan", short_name: "Peringatan", description: "Peringatan yang perlu ditindaklanjuti", url: "/alerts", icons: [{ src: "/brand/app-nv-round-192.png", sizes: "192x192", type: "image/png" }] },
+      { name: "Laporan", short_name: "Laporan", description: "Laporan brand", url: "/reports", icons: [{ src: "/brand/app-nv-round-192.png", sizes: "192x192", type: "image/png" }] },
     ],
     prefer_related_applications: false,
   };

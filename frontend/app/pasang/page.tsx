@@ -73,7 +73,7 @@ export default function InstallPage() {
         <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.35),transparent)]" />
         <SiteHeader />
         <div className="relative mx-auto mt-8 flex max-w-xl flex-col items-center px-4 text-center sm:px-6">
-          <Image src="/brand/app-orb-192.png" alt="" width={88} height={88} priority className="size-[88px] rounded-[24px] shadow-[0_20px_50px_rgba(70,95,255,0.45)]" />
+          <Image src="/brand/app-nv-192.png" alt="" width={88} height={88} priority className="size-[88px] rounded-[24px] shadow-[0_20px_50px_rgba(70,95,255,0.45)]" />
           <h1 className={cn("mt-6 text-[34px] leading-tight sm:text-[44px]", SERIF)}>{L("Install Narriv on your phone", "Pasang Narriv di HP")}</h1>
           <p className="mt-3 max-w-md text-[16px] font-medium leading-7 text-white/65">
             {L("Open it straight from your home screen, full screen like an app.", "Buka langsung dari layar utama HP, tampil penuh seperti aplikasi.")}

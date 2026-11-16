@@ -328,7 +328,7 @@ function Comparison() {
       <div className="relative grid grid-cols-2 gap-x-6 gap-y-3 px-3 py-6 sm:gap-x-16 sm:px-8 sm:py-8">
         <p className="pb-2 text-center text-[13px] font-bold text-[#8A8F9E] sm:text-[15px]">{L("Conventional Monitoring", "Monitoring Konvensional")}</p>
         <p className="flex items-center justify-center gap-2 pb-2 text-[13px] font-black text-white sm:text-[15px]">
-          <img src="/brand/favicon-orb-48.png" alt="" width={22} height={22} className="size-[22px] rounded-full" />
+          <img src="/brand/favicon-nv-48.png" alt="" width={22} height={22} className="size-[22px] rounded-full" />
           Narriv
         </p>
         {rows.map(([plain, narriv], i) => (

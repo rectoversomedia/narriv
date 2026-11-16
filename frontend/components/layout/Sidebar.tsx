@@ -70,7 +70,7 @@ export function Sidebar() {
         {/* Same height and divider as the top bar, so the logo sits on the same line as the search box. */}
         <div className="relative flex h-[88px] shrink-0 items-center border-b border-white/10 px-4">
           <Link href="/" aria-label="Narriv" className="relative block h-10 w-full">
-            <Image src="/brand/favicon-orb-96.png" alt="" width={40} height={40} priority className={cn("absolute left-0 top-0 size-10 transition-opacity duration-200", collapsed ? "opacity-100" : "opacity-0")} />
+            <Image src="/brand/favicon-nv-96.png" alt="" width={40} height={40} priority className={cn("absolute left-0 top-0 size-10 transition-opacity duration-200", collapsed ? "opacity-100" : "opacity-0")} />
             <Image src="/brand/logo-p.webp" alt="Narriv" width={128} height={48} priority className={cn("absolute left-1 top-1 h-8 w-auto transition-opacity duration-200", collapsed ? "opacity-0" : "opacity-100")} />
           </Link>
         </div>
@@ -197,7 +197,7 @@ export function Sidebar() {
           aria-current={pathname?.startsWith("/ask") ? "page" : undefined}
           className={`flex h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 transition ${pathname?.startsWith("/ask") ? "bg-[#465FFF] text-white" : "text-white/60 hover:text-white"}`}
         >
-          <Image src="/brand/app-orb-round-192.png" alt="" width={20} height={20} unoptimized className="size-5 rounded-full" />
+          <Image src="/brand/app-nv-round-192.png" alt="" width={20} height={20} unoptimized className="size-5 rounded-full" />
           <span className="w-full truncate text-center text-[10px] font-bold leading-none">Ask</span>
         </Link>
       </nav>

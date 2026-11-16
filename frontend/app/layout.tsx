@@ -53,12 +53,12 @@ export const metadata: Metadata = {
   // The round Narriv orb (public/logo-bulat-narriv-2026.png, cropped square); new file names so browsers drop cached icons.
   icons: {
     icon: [
-      { url: "/brand/favicon-orb-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/brand/favicon-orb-48.png", sizes: "48x48", type: "image/png" },
-      { url: "/brand/favicon-orb-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/brand/favicon-nv-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/favicon-nv-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/brand/favicon-nv-192.png", sizes: "192x192", type: "image/png" },
     ],
-    shortcut: "/brand/favicon-orb-48.png",
-    apple: "/brand/apple-orb-round-180.png",
+    shortcut: "/brand/favicon-nv-48.png",
+    apple: "/brand/apple-nv-round-180.png",
   },
   // Opened from the home screen, iOS shows Narriv full screen without the browser bars.
   appleWebApp: { capable: true, title: "Narriv", statusBarStyle: "default" },
