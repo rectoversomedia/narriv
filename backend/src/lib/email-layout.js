@@ -5,7 +5,7 @@
  */
 
 const SITE_URL = (process.env.MARKETING_URL || "https://www.narriv.digital").replace(/\/$/, "");
-const LOGO_URL = `${SITE_URL}/email/narriv-logo-white.png`;
+const LOGO_URL = `${SITE_URL}/email/narriv-logo-white-nv.png`;
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const INK = "#101334";
 const BODY = "#31406B";

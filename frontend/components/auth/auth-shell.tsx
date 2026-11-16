@@ -112,7 +112,7 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
 function NarrivLogo() {
   return (
     <img
-      src="/brand/logo-bulat.webp"
+      src="/brand/logo-bulat-nv.webp"
       alt="Narriv"
       width={320}
       height={304}

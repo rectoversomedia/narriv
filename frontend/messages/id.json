@@ -2265,7 +2265,7 @@
       "visibility": "Jawaban AI",
       "reports": "Laporan",
       "action": "Rencana Aksi",
-      "askNarriv": "Tanya Narriv",
+      "askNarriv": "Tanya narriv",
       "opportunities": "Peluang",
       "actions": "Rekomendasi",
       "sources": "Sumber Data",
@@ -3058,7 +3058,7 @@
       "visibility": "Jawaban AI",
       "intelligence": "Isu & Narasi",
       "reports": "Laporan",
-      "askNarriv": "Tanya Narriv",
+      "askNarriv": "Tanya narriv",
       "opportunities": "Peluang",
       "brief": "Briefing Harian",
       "timeline": "Kronologi",
@@ -3863,7 +3863,7 @@
     }
   },
   "askNarriv": {
-    "title": "Tanya Narriv",
+    "title": "Tanya narriv",
     "subtitle": "Tanya apa saja soal data Anda",
     "placeholder": "Tanya tentang narasi, percakapan, kompetitor, visibilitas AI...",
     "send": "Kirim",

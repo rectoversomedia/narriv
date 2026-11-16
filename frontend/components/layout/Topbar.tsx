@@ -371,7 +371,7 @@ export function Topbar() {
         {mobileSearch ? <X size={18} aria-hidden="true" /> : <Search size={18} aria-hidden="true" />}
       </button>
       <Link href="/" className="flex shrink-0 items-center justify-self-center lg:hidden" aria-label="Narriv dashboard">
-        <Image src="/brand/logo-h.webp" alt="Narriv" width={96} height={36} priority unoptimized className="h-8 w-auto object-contain" />
+        <Image src="/brand/logo-h-nv.webp" alt="Narriv" width={96} height={36} priority unoptimized className="h-8 w-auto object-contain" />
       </Link>
       <div ref={searchRef} className={`lg:relative lg:block lg:w-full lg:max-w-[530px] ${mobileSearch ? "fixed inset-x-4 top-[96px] z-[110] block rounded-[12px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)]" : "hidden"}`}>
         <label className="flex h-[48px] items-center gap-4 rounded-[8px] border border-border bg-slate-50 px-5 text-[var(--text-soft)] focus-within:border-[#465FFF]/50 focus-within: transition-all">
@@ -433,15 +433,15 @@ export function Topbar() {
         {/* Live connection status indicator */}
         {/* Only claim live updates while the event stream is actually connected. */}
         {sseStatus === "connected" ? <LiveIndicator status={sseStatus} /> : null}
-        {/* Ask Narriv sits here rather than floating over the page, so it never covers a table or a button. */}
+        {/* Ask narriv sits here rather than floating over the page, so it never covers a table or a button. */}
         <Link
           href="/ask"
-          aria-label="Ask Narriv"
+          aria-label="Ask narriv"
           aria-current={pathname?.startsWith("/ask") ? "page" : undefined}
           className="hidden h-10 shrink-0 items-center gap-2 rounded-[10px] bg-[#101334] pl-1.5 pr-3.5 text-[12.5px] font-black text-white transition hover:bg-[#2B2F9E] lg:inline-flex"
         >
           <Image src="/brand/app-nv-round-192.png" alt="" width={28} height={28} unoptimized className="size-7 rounded-full" />
-          <span>Ask Narriv</span>
+          <span>Ask narriv</span>
         </Link>
         {/* Both languages visible; the active one is filled, a click switches. */}
         <div role="group" aria-label="Language" className="hidden h-10 items-center rounded-[10px] bg-[#EEF1F7] p-1 sm:flex">

@@ -71,7 +71,7 @@ export function Sidebar() {
         <div className="relative flex h-[88px] shrink-0 items-center border-b border-white/10 px-4">
           <Link href="/" aria-label="Narriv" className="relative block h-10 w-full">
             <Image src="/brand/favicon-nv-96.png" alt="" width={40} height={40} priority className={cn("absolute left-0 top-0 size-10 transition-opacity duration-200", collapsed ? "opacity-100" : "opacity-0")} />
-            <Image src="/brand/logo-p.webp" alt="Narriv" width={128} height={48} priority className={cn("absolute left-1 top-1 h-8 w-auto transition-opacity duration-200", collapsed ? "opacity-0" : "opacity-100")} />
+            <Image src="/brand/logo-p-nv.webp" alt="Narriv" width={128} height={48} priority className={cn("absolute left-1 top-1 h-8 w-auto transition-opacity duration-200", collapsed ? "opacity-0" : "opacity-100")} />
           </Link>
         </div>
 
@@ -191,7 +191,7 @@ export function Sidebar() {
             </Link>
           );
         })}
-        {/* Ask Narriv: in the top bar on desktop, here on phones where the top bar has no room. */}
+        {/* Ask narriv: in the top bar on desktop, here on phones where the top bar has no room. */}
         <Link
           href="/ask"
           aria-current={pathname?.startsWith("/ask") ? "page" : undefined}

@@ -2265,7 +2265,7 @@
       "visibility": "AI Visibility",
       "reports": "Reports",
       "action": "Action Plans",
-      "askNarriv": "Ask Narriv",
+      "askNarriv": "Ask narriv",
       "opportunities": "Opportunities",
       "actions": "Recommendations",
       "sources": "Data Sources",
@@ -3058,7 +3058,7 @@
       "visibility": "AI Answers",
       "intelligence": "Issues & Narratives",
       "reports": "Reports",
-      "askNarriv": "Ask Narriv",
+      "askNarriv": "Ask narriv",
       "opportunities": "Opportunities",
       "brief": "Daily Brief",
       "timeline": "Timeline",
@@ -3767,7 +3767,7 @@
     "event_workspace_monitoring_resumed": "Monitoring Resumed"
   },
   "askNarriv": {
-    "title": "Ask Narriv",
+    "title": "Ask narriv",
     "subtitle": "Your AI intelligence copilot",
     "placeholder": "Ask about narratives, mentions, competitors, AI visibility...",
     "send": "Send",

@@ -194,7 +194,7 @@ export default function SettingsPage() {
   const [timezone, setTimezone] = useState<string | null>(null);
   const [language, setLanguage] = useState<"id" | "en" | null>(null);
   const [workspaceLogo, setWorkspaceLogo] = useState<string | null>(null);
-  const activeLogo = workspaceLogo || (workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "/brand/logo-h.webp");
+  const activeLogo = workspaceLogo || (workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "/brand/logo-h-nv.webp");
   const [logoError, setLogoError] = useState("");
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const isSavingInfo = updateSettingsMutation.isPending;

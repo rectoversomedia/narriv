@@ -75,11 +75,12 @@ export function LaunchOverlay() {
         <div className="narriv-launch__glow" />
         <div className="narriv-launch__ring" />
         <div className="narriv-launch__ring narriv-launch__ring--late" />
-        <img src="/brand/logo-bulat.webp" alt="" width={168} height={168} className="narriv-launch__orb" />
+        <img src="/brand/logo-bulat-nv.webp" alt="" width={168} height={168} className="narriv-launch__orb" />
       </div>
       <p className="narriv-launch__title">
         {L("Welcome to ", "Selamat Datang di ")}
-        <span>Narriv</span>
+        {/* The wordmark as the logo writes it: lowercase, with its pink dot. */}
+        <span>narriv</span><b className="narriv-launch__dot">.</b>
       </p>
       <p className="narriv-launch__text">
         {firstName

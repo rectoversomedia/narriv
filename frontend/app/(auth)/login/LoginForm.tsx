@@ -107,7 +107,7 @@ export function LoginForm() {
   return (
     <AuthShell visual="dashboard" topAction={<LanguageSelector />}>
       <div className="mb-5 flex justify-center lg:hidden">
-        <img src="/brand/logo-bulat.webp" alt="Narriv" width={192} height={182} fetchPriority="high" className="h-[160px] w-[160px] object-contain" />
+        <img src="/brand/logo-bulat-nv.webp" alt="Narriv" width={192} height={182} fetchPriority="high" className="h-[160px] w-[160px] object-contain" />
       </div>
 
       <div className="mb-7 text-center">

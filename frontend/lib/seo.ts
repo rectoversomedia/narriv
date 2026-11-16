@@ -95,7 +95,7 @@ export function organizationJsonLd(lang: "en" | "id" = "en") {
         name: SITE_NAME,
         url: SITE_URL,
         legalName: "PT Primer Rectoverso Media",
-        logo: `${SITE_URL}/logo-bulat-narriv-2026.png`,
+        logo: `${SITE_URL}/logo-bulat-nv.png`,
         description,
         areaServed: "ID",
         // As published in the privacy policy.
@@ -136,7 +136,7 @@ export function organizationJsonLd(lang: "en" | "id" = "en") {
           "Narrative and issue mapping",
           "AI visibility: how AI assistants describe your brand",
           "Board-ready PDF, Excel and email reports",
-          "Ask Narriv: questions answered from your own data",
+          "Ask narriv: questions answered from your own data",
         ],
         offers: {
           "@type": "AggregateOffer",

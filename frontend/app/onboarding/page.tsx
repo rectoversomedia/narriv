@@ -370,7 +370,7 @@ export default function OnboardingPage() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(70,95,255,0.10)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:linear-gradient(180deg,black,transparent_70%)]" />
 
         <header className="relative z-20 flex h-16 items-center justify-between px-4 sm:px-6 lg:h-20 lg:justify-end lg:px-10">
-          <img src="/brand/logo-h.webp" alt="Narriv" width={120} height={80} className="w-[96px] object-contain lg:hidden" />
+          <img src="/brand/logo-h-nv.webp" alt="Narriv" width={120} height={80} className="w-[96px] object-contain lg:hidden" />
           {/* Opens the help page in a new tab so the onboarding progress stays here. */}
           <a
             href="/help#contact"
@@ -1005,7 +1005,7 @@ function ProcessingStep({
     <div className="flex flex-col items-center py-16 text-center">
       <div className="relative">
         <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-[#E6EAF2] bg-white shadow-sm">
-          <img src="/brand/logo-h.webp" alt="Narriv" width={144} height={96} className="object-contain" />
+          <img src="/brand/logo-h-nv.webp" alt="Narriv" width={144} height={96} className="object-contain" />
         </div>
       </div>
 

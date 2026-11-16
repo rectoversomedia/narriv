@@ -68,7 +68,7 @@ const SUGGESTED_CATEGORIES: SuggestedCategory[] = [
 // Response templates
 // ---------------------------------------------------------------------------
 
-// Canned keyword-matched answers were removed: Ask Narriv only shows answers
+// Canned keyword-matched answers were removed: Ask narriv only shows answers
 // returned by the grounded backend, or an explicit error.
 
 // ---------------------------------------------------------------------------
@@ -392,7 +392,7 @@ export default function AskPage() {
                     {/* Demo badge */}
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-[12px] font-black text-slate-900">Narriv</span>
+                        <span className="text-[12px] font-black text-slate-900">narriv</span>
                         {msg.confidence && <ConfidenceChip confidence={msg.confidence} t={tAsk} />}
                       </div>
                       {msg.isDemo && (

@@ -74,7 +74,7 @@ export function OnboardingAside({ current }: { current: number }) {
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,7,51,0.92)_0%,rgba(2,7,51,0.55)_60%,rgba(2,7,51,0.2)_100%)]" />
 
       <div className="relative z-10 flex h-full flex-col">
-        <img src="/brand/logo-p.webp" alt="Narriv" width={128} height={48} className="h-8 w-auto self-start" />
+        <img src="/brand/logo-p-nv.webp" alt="Narriv" width={128} height={48} className="h-8 w-auto self-start" />
 
         <div className="mt-[7dvh]">
           <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#A5B4FF]">

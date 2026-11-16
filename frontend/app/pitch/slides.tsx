@@ -20,7 +20,7 @@ export function Cover({ en }: P) {
   const t = tr(en);
   return (
     <Dark glow="right">
-      <img src="/brand/logo-bulat.webp" alt="" style={{ position: "absolute", left: 1270, top: 250, width: 520, height: 520, filter: "drop-shadow(0 0 120px rgba(70,95,255,.55))" }} />
+      <img src="/brand/logo-bulat-nv.webp" alt="" style={{ position: "absolute", left: 1270, top: 250, width: 520, height: 520, filter: "drop-shadow(0 0 120px rgba(70,95,255,.55))" }} />
       <span aria-hidden style={{ position: "absolute", left: 1170, top: 150, width: 720, height: 720, borderRadius: 999, border: "2px solid rgba(165,180,255,.22)" }} />
       <span aria-hidden style={{ position: "absolute", left: 1090, top: 70, width: 880, height: 880, borderRadius: 999, border: "2px dashed rgba(165,180,255,.14)" }} />
       <div className="ph" style={{ position: "absolute", left: 96, top: 250, width: 1120 }}>
@@ -239,7 +239,7 @@ export function BriefAsk({ en }: P) {
   const t = tr(en);
   return (
     <Light tag={t("Fitur · Briefing", "Feature · Briefing")}>
-      <Head kicker={t("Briefing harian & Ask Narriv", "Daily brief & Ask Narriv")} title={t(<>Pagi hari, <Brush>sudah tahu</Brush> harus apa.</>, <>Every morning, <Brush>know</Brush> what to do.</>)} />
+      <Head kicker={t("Briefing harian & Ask narriv", "Daily brief & Ask narriv")} title={t(<>Pagi hari, <Brush>sudah tahu</Brush> harus apa.</>, <>Every morning, <Brush>know</Brush> what to do.</>)} />
       <Card style={{ position: "absolute", left: 96, top: 440, width: 840, padding: 44 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Stamp>{t("Briefing · 07.00 WIB", "Brief · 07:00 WIB")}</Stamp>
@@ -257,7 +257,7 @@ export function BriefAsk({ en }: P) {
           {t("Kenapa sentimen negatif naik minggu ini?", "Why did negative sentiment rise this week?")}
         </div>
         <div className="pc" style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
-          <img src="/brand/logo-bulat.webp" alt="" style={{ width: 64, height: 64, flexShrink: 0 }} />
+          <img src="/brand/logo-bulat-nv.webp" alt="" style={{ width: 64, height: 64, flexShrink: 0 }} />
           <div style={{ padding: "26px 30px", borderRadius: "8px 28px 28px 28px", background: "#fff", fontSize: 25, lineHeight: 1.5, ...INKED }}>
             {t("Sebagian besar dari isu gangguan Arunika Mobile di jam sibuk (46 percakapan), terutama di X dan Facebook. Dua artikel berita mengangkatnya sejak Selasa.", "Mostly from the Arunika Mobile peak-hour outage (46 conversations), mainly on X and Facebook. Two news articles picked it up on Tuesday.")}
             <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
@@ -265,7 +265,7 @@ export function BriefAsk({ en }: P) {
             </div>
           </div>
         </div>
-        <p className="pc" style={{ margin: "8px 0 0", fontSize: 24, lineHeight: 1.45, color: MUTED }}>{t("Ask Narriv menjawab hanya dari data workspace Anda dan menyebut sumbernya. Kalau datanya kurang, ia bilang.", "Ask Narriv answers only from your workspace data and cites it. When the data is thin, it says so.")}</p>
+        <p className="pc" style={{ margin: "8px 0 0", fontSize: 24, lineHeight: 1.45, color: MUTED }}>{t("Ask narriv menjawab hanya dari data workspace Anda dan menyebut sumbernya. Kalau datanya kurang, ia bilang.", "Ask narriv answers only from your workspace data and cites it. When the data is thin, it says so.")}</p>
       </div>
     </Light>
   );
@@ -498,7 +498,7 @@ export function Closing({ en }: P) {
   ];
   return (
     <Dark glow="top">
-      <img src="/brand/logo-bulat.webp" alt="" className="ph" style={{ position: "absolute", left: 870, top: 150, width: 180, height: 180, filter: "drop-shadow(0 0 80px rgba(70,95,255,.6))" }} />
+      <img src="/brand/logo-bulat-nv.webp" alt="" className="ph" style={{ position: "absolute", left: 870, top: 150, width: 180, height: 180, filter: "drop-shadow(0 0 80px rgba(70,95,255,.6))" }} />
       <div className="ph" style={{ position: "absolute", left: 160, right: 160, top: 380, textAlign: "center" }}>
         <h2 style={{ margin: 0, fontSize: 104, lineHeight: 1.04, fontWeight: 800, letterSpacing: "-0.045em" }}>{t(<>Lihat brand Anda <Brush>di Narriv.</Brush></>, <>See your brand <Brush>in Narriv.</Brush></>)}</h2>
         <p style={{ margin: "30px auto 0", maxWidth: 1200, fontSize: 32, lineHeight: 1.45, color: "rgba(255,255,255,.7)" }}>{t("Buka demo tanpa mendaftar, atau mulai uji coba gratis untuk brand Anda sendiri hari ini.", "Open the demo without signing up, or start a free trial on your own brand today.")}</p>

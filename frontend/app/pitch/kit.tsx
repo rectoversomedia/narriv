@@ -48,7 +48,7 @@ export function Dot({ c, s = 16 }: { c: string; s?: number }) {
 
 /** Narriv wordmark: white on navy, ink on paper. */
 export function Logo({ dark, x = 96, y = 64, h = 52 }: { dark: boolean; x?: number; y?: number; h?: number }) {
-  return <img src={dark ? "/brand/logo-p.webp" : "/brand/logo-h.webp"} alt="Narriv" style={{ position: "absolute", left: x, top: y, height: h, width: "auto" }} />;
+  return <img src={dark ? "/brand/logo-p-nv.webp" : "/brand/logo-h-nv.webp"} alt="Narriv" style={{ position: "absolute", left: x, top: y, height: h, width: "auto" }} />;
 }
 
 // Soft gradient orbs drifting behind the content (the deck CSS animates .pitch-orb); the layout shifts with `v` so

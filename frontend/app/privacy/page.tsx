@@ -35,7 +35,7 @@ const ID = (
     <ul>
       <li>Vercel: hosting aplikasi.</li>
       <li>Supabase: database.</li>
-      <li>OpenAI: analisis sentimen dan isu, ringkasan, serta Ask Narriv.</li>
+      <li>OpenAI: analisis sentimen dan isu, ringkasan, serta Ask narriv.</li>
       <li>Anthropic: pengujian visibilitas brand di jawaban AI.</li>
       <li>Google: pencarian YouTube dan masuk dengan Google.</li>
       <li>Resend: pengiriman email.</li>
@@ -118,7 +118,7 @@ const EN = (
     <ul>
       <li>Vercel: hosting.</li>
       <li>Supabase: database.</li>
-      <li>OpenAI: sentiment and issue analysis, summaries and Ask Narriv.</li>
+      <li>OpenAI: sentiment and issue analysis, summaries and Ask narriv.</li>
       <li>Anthropic: AI-answer visibility tests.</li>
       <li>Google: YouTube search and Google sign-in.</li>
       <li>Resend: email delivery.</li>

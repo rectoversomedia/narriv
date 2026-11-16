@@ -28,7 +28,7 @@ function DemoStart() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#070A1F] px-6 text-center text-white">
-      <Image src="/brand/logo-bulat.webp" alt="Narriv" width={96} height={96} unoptimized className="size-24 rounded-full" />
+      <Image src="/brand/logo-bulat-nv.webp" alt="Narriv" width={96} height={96} unoptimized className="size-24 rounded-full" />
       {error ? (
         <>
           <p className="mt-6 text-[18px] font-black">{L("The demo could not open.", "Demo gagal dibuka.")}</p>

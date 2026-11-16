@@ -37,7 +37,7 @@ const PLANS: Array<{
     adds: [
       ["News and YouTube, Monitored Hourly", "Berita dan YouTube, Dipantau Tiap Jam"],
       ["Alerts With Owner and Deadline", "Peringatan dengan Penanggung Jawab dan Tenggat"],
-      ["Daily Briefing and Ask Narriv", "Briefing Harian dan Ask Narriv"],
+      ["Daily Briefing and Ask narriv", "Briefing Harian dan Ask narriv"],
       ["Reports in PDF, Excel and Email", "Laporan PDF, Excel, dan Email"],
     ],
   },
@@ -122,7 +122,7 @@ const COMPARE: Array<{ group: Copy; rows: Array<{ label: Copy; plans: PlanId[] |
   {
     group: ["Reports", "Laporan"],
     rows: [
-      { label: ["Daily Briefing and Ask Narriv", "Briefing Harian dan Ask Narriv"], plans: from("pilot") },
+      { label: ["Daily Briefing and Ask narriv", "Briefing Harian dan Ask narriv"], plans: from("pilot") },
       { label: ["Export to PDF, Excel and Email", "Ekspor ke PDF, Excel, dan Email"], plans: from("pilot") },
       { label: ["Scheduled Reports", "Laporan Terjadwal"], plans: from("intelligence") },
     ],

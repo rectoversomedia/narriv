@@ -27,10 +27,10 @@ const groups: Group[] = [
         ],
       },
       {
-        q: ["Can I Ask Narriv Questions About My Data?", "Apakah Saya Dapat Bertanya ke Narriv tentang Data Saya?"],
+        q: ["Can I Ask narriv Questions About My Data?", "Apakah Saya Dapat Bertanya ke Narriv tentang Data Saya?"],
         a: [
-          "Yes. Ask Narriv answers using only your workspace's mentions, alerts and narratives, and cites the records it used. When the data is insufficient, it states so clearly.",
-          "Ya. Tanya Narriv menjawab hanya berdasarkan percakapan, peringatan, dan narasi di workspace Anda, serta mencantumkan data yang digunakan. Jika data belum memadai, Narriv akan menyampaikannya dengan jelas.",
+          "Yes. Ask narriv answers using only your workspace's mentions, alerts and narratives, and cites the records it used. When the data is insufficient, it states so clearly.",
+          "Ya. Tanya narriv menjawab hanya berdasarkan percakapan, peringatan, dan narasi di workspace Anda, serta mencantumkan data yang digunakan. Jika data belum memadai, Narriv akan menyampaikannya dengan jelas.",
         ],
       },
     ],

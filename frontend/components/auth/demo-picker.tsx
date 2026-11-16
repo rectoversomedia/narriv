@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 const SCENARIOS: Array<{ key: DemoScenario; image: string; title: [string, string]; who: [string, string]; body: [string, string]; tone: string; accent: string }> = [
   {
     key: "brand",
-    image: "/brand/demo-brand-v2.webp",
+    image: "/brand/demo-brand-v3.webp",
     title: ["Brand & Company", "Brand & Perusahaan"],
     who: ["Bank Arunika · Fictional", "Bank Arunika · Fiktif"],
     body: ["An app outage, a data-leak rumour and a positive SME programme: crisis, sentiment and competitors.", "Gangguan aplikasi, isu kebocoran data, dan program UMKM positif: krisis, sentimen, dan kompetitor."],
@@ -25,7 +25,7 @@ const SCENARIOS: Array<{ key: DemoScenario; image: string; title: [string, strin
   },
   {
     key: "gov",
-    image: "/brand/demo-gov-v2.webp",
+    image: "/brand/demo-gov-v3.webp",
     title: ["Government", "Pemerintahan"],
     who: ["Lestari City Government · Fictional", "Pemkot Lestari · Fiktif"],
     body: ["A social-aid hoax, tidal flooding and a well-received scholarship: public services and citizen sentiment.", "Hoaks bansos, banjir rob, dan beasiswa yang diapresiasi: layanan publik dan suara warga."],
@@ -34,7 +34,7 @@ const SCENARIOS: Array<{ key: DemoScenario; image: string; title: [string, strin
   },
   {
     key: "cve",
-    image: "/brand/demo-cve-v2.webp",
+    image: "/brand/demo-cve-v3.webp",
     title: ["Countering Extremism", "Pencegahan Ekstremisme"],
     who: ["Simpul Damai · Fictional", "Simpul Damai · Fiktif"],
     body: ["'Thogut government' narratives, praise for bombers, recruitment and counter-narratives by province, with accounts hidden.", "Narasi 'pemerintah thogut', glorifikasi pelaku teror, perekrutan, dan kontra-narasi per provinsi, dengan identitas akun disamarkan."],

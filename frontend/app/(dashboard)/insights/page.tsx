@@ -212,7 +212,7 @@ export default function InsightsPage() {
                 {L("Read Negative Mentions", "Baca Percakapan Negatif")}
               </Link>
               <Link href="/ask" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-4 text-[14px] font-bold text-white/80 transition hover:bg-white/10 hover:text-white sm:ml-auto">
-                <MessageCircleQuestion size={16} /> {L("Ask Narriv Why", "Tanya Narriv")}
+                <MessageCircleQuestion size={16} /> {L("Ask narriv Why", "Tanya narriv")}
               </Link>
             </div>
           </div>

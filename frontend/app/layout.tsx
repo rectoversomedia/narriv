@@ -29,7 +29,7 @@ const mono = JetBrains_Mono({
 });
 
 // The picture shown when a Narriv link is shared (WhatsApp, LinkedIn, X).
-const OG_IMAGE = { url: "/og-image.jpg", width: 1200, height: 630, alt: "Narriv: detect reputational risk before it escalates" };
+const OG_IMAGE = { url: "/og-image-nv.jpg", width: 1200, height: 630, alt: "Narriv: detect reputational risk before it escalates" };
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
     other: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } : undefined,
   },
-  // The round Narriv orb (public/logo-bulat-narriv-2026.png, cropped square); new file names so browsers drop cached icons.
+  // The round Narriv orb (public/logo-bulat-nv.png, cropped square); new file names so browsers drop cached icons.
   icons: {
     icon: [
       { url: "/brand/favicon-nv-32.png", sizes: "32x32", type: "image/png" },

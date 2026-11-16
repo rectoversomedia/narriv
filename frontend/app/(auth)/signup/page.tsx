@@ -106,7 +106,7 @@ export default function SignupPage() {
       }
     >
       <div className="mb-6 flex justify-center lg:hidden">
-        <img src="/brand/logo-bulat.webp" alt="Narriv" width={88} height={84} fetchPriority="high" className="h-[88px] w-[88px] object-contain" />
+        <img src="/brand/logo-bulat-nv.webp" alt="Narriv" width={88} height={84} fetchPriority="high" className="h-[88px] w-[88px] object-contain" />
       </div>
 
       <div className="mb-5 text-center lg:text-left">

@@ -384,6 +384,7 @@ html.narriv-launching body { overflow: hidden; }
   background-clip: text;
   color: transparent;
 }
+.narriv-launch__dot { color: #FC87EA; font-weight: 800; }
 .narriv-launch__text {
   --d: 900ms;
   position: relative;
