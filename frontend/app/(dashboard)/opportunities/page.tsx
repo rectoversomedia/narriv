@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, ExternalLink, FileText, Megaphone, Sparkles } from "lucide-react";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
+import { ContentWavesSection } from "@/components/opportunities/content-waves";
 import { MonoLabel, StatStrip } from "@/components/ui/stamp";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-states";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -153,7 +154,7 @@ export default function OpportunitiesPage() {
     <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Opportunities", "Peluang")}</h1>
-        <p className="mt-1 text-[14px] text-[#5F6B94]">{L("Good news worth using.", "Kabar baik yang bisa dimanfaatkan.")}</p>
+        <p className="mt-1 text-[14px] text-[#5F6B94]">{L("Good news worth using, and trends worth joining.", "Kabar baik yang bisa dimanfaatkan, dan tren yang layak diikuti.")}</p>
       </div>
 
       {loading ? (
@@ -182,6 +183,8 @@ export default function OpportunitiesPage() {
           />
         </section>
       )}
+
+      <ContentWavesSection />
 
       <div className={cn("grid items-start gap-5", rest.length ? "xl:grid-cols-2" : "")}>
         {rest.length ? (

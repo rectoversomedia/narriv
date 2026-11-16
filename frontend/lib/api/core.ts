@@ -204,6 +204,10 @@ export interface Signal {
   relevance?: "direct" | "indirect" | "competitor" | "unconfirmed" | null;
   /** The province the record is about ("Jawa Timur"); older records may hold a city or "ID". */
   region?: string | null;
+  /** How the region was found: named in the text, or only from the platform's location label. */
+  regionBasis?: "text" | "location" | null;
+  /** Where the account says it is (platform label, never an IP address). */
+  accountLocation?: { label: string; province: string | null } | null;
   metadata?: { geo?: { provinces?: string[]; cities?: string[] } | null } & Record<string, unknown>;
   /** The CVE narrative category suggested for review, in CVE workspaces. */
   cve?: CveTag | null;

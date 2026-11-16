@@ -60,6 +60,10 @@ export function toSignalListItem(row, workspaceIds = []) {
         analysisConfidence: Number.isFinite(rawConf) && rawConf >= 0 && rawConf <= 1 ? rawConf : null,
         // The CVE narrative category and its review, in CVE workspaces (cve-categories.js).
         cve: signal.metadata?.cve ?? null,
+        // How the region was found: "text" (the record is about the place), "location" (only the platform's
+        // location label), or null. accountLocation is where the account says it is, kept apart.
+        regionBasis: signal.metadata?.geo?.source ?? null,
+        accountLocation: signal.metadata?.account_location ?? null,
     };
 }
 
@@ -501,8 +505,11 @@ router.get("/regions", async (req, res) => {
             const province = provinceFromLabel(row.region);
             if (!province) continue;
             located++;
-            const entry = byCode.get(province.code) || { code: province.code, name: province.name, total: 0, negative: 0, cities: new Map() };
+            const entry = byCode.get(province.code) || { code: province.code, name: province.name, total: 0, negative: 0, fromText: 0, fromLabel: 0, cities: new Map() };
             entry.total++;
+            // About the place (named in the text) vs. only placed there by a platform's location label.
+            if (row.metadata?.geo?.source === "location") entry.fromLabel++;
+            else entry.fromText++;
             if (String(row.sentiment || "").toUpperCase() === "NEGATIVE") entry.negative++;
             const cities = Array.isArray(row.metadata?.geo?.cities) ? row.metadata.geo.cities : detectRegions({ title: row.region }, { lenient: true }).cities;
             for (const city of cities) {
@@ -514,8 +521,15 @@ router.get("/regions", async (req, res) => {
         const provinces = [...byCode.values()]
             .map((p) => ({ ...p, cities: [...p.cities.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, total]) => ({ name, total })) }))
             .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+        // Where accounts say they are (platform location labels), counted apart from what records are about.
+        const accounts = new Map();
+        for (const row of data || []) {
+            const name = row.metadata?.account_location?.province;
+            if (name) accounts.set(name, (accounts.get(name) || 0) + 1);
+        }
+        const accountProvinces = [...accounts.entries()].map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total).slice(0, 10);
         const total = (data || []).length;
-        res.json({ days, total, located, unlocated: total - located, provinces });
+        res.json({ days, total, located, unlocated: total - located, provinces, accountProvinces, basis: "text_and_platform_labels" });
     } catch (error) {
         logStructured("error", "Error fetching signal regions:", { error: error?.message || error });
         res.status(500).json({ error: "Internal server error" });

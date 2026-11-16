@@ -1,6 +1,7 @@
 import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { workspaceLanguage } from "../../lib/workspace-language.js";
+import { inReportWindow } from "../../lib/report-window.js";
 import { signalSentiment } from "../alerts/alerts.service.js";
 import { appUrl, emailButton, emailHero, emailLayout, esc } from "../../lib/email-layout.js";
 
@@ -135,10 +136,11 @@ export async function generateReport({ workspaceId, templateKey, options = {} })
         // period and filled several sections with placeholders such as "Dashboard summary data").
         const inPeriod = (q, col = "created_at") => q.gte(col, periodStart).lte(col, periodEnd);
         const cache = {};
-        const signalsInPeriod = async () => cache.signals ??= ((await inPeriod(supabase
+        // Records count in the period they were published in (see report-window.js).
+        const signalsInPeriod = async () => cache.signals ??= ((await inReportWindow(supabase
             .from("signals")
-            .select("id, title, platform, severity, sentiment, captured_at, analyses:signal_analyses (confidence, analysis)")
-            .eq("workspace_id", workspaceId), "captured_at").limit(2000)).data || []);
+            .select("id, title, platform, severity, sentiment, captured_at, published_at, analyses:signal_analyses (confidence, analysis)")
+            .eq("workspace_id", workspaceId), periodStart, periodEnd).limit(2000)).data || []);
         const alertsInPeriod = async () => cache.alerts ??= ((await inPeriod(supabase
             .from("alerts").select("*").eq("workspace_id", workspaceId)).order("created_at", { ascending: false }).limit(500)).data || []);
         const sentimentCounts = (signals) => {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Download, ExternalLink, RefreshCcw } from "lucide-react";
+import { ArrowLeft, Clock, Download, ExternalLink, Info, RefreshCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { useToast } from "@/components/ui/toast";
@@ -46,6 +46,51 @@ const fmtDate = (iso: string | null | undefined, withTime = false) => {
   if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleString(intlLocale(), { day: "numeric", month: "short", year: "numeric", ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}) });
 };
+
+const hoursLabel = (h: number | null, L: ReturnType<typeof useL>) =>
+  h === null ? "—" : h < 1 ? L("under 1 h", "< 1 jam") : h < 48 ? L(`~${Math.round(h)} h`, `~${Math.round(h)} jam`) : L(`~${Math.round(h / 24)} d`, `~${Math.round(h / 24)} hari`);
+
+/**
+ * When the data was last updated, that the period counts by publication date, how late each platform usually
+ * delivers, and how many records of the period arrived after the report was created (the page includes them; a PDF
+ * that was already sent does not).
+ */
+function Freshness({ data }: { data: ReportView }) {
+  const L = useL();
+  const f = data.freshness;
+  if (!f) return null;
+  const names: Record<string, string> = { news: L("News", "Berita"), ...PLATFORM_NAMES };
+  return (
+    <div className="grid gap-2.5">
+      {f.lateArrivals ? (
+        <div className="flex items-start gap-2.5 rounded-[14px] border-[1.5px] border-[#C7D0FF] bg-[#F5F7FF] px-4 py-3">
+          <Info size={17} className="mt-0.5 shrink-0 text-[#3B52F5]" aria-hidden="true" />
+          <p className="text-[13px] font-semibold leading-relaxed text-[#1F2B6B]">
+            {L(
+              `${f.lateArrivals} mention${f.lateArrivals === 1 ? "" : "s"} from this period arrived after the report was created. The numbers on this page already include them; the PDF sent earlier does not. Download the PDF again for the latest version.`,
+              `${f.lateArrivals} percakapan dari periode ini baru masuk setelah laporan dibuat. Angka di halaman ini sudah termasuk data tersebut, sedangkan PDF yang terkirim sebelumnya belum. Unduh ulang PDF untuk versi terbaru.`,
+            )}
+          </p>
+        </div>
+      ) : null}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[14px] bg-white px-4 py-3 text-[12px] font-semibold text-[#5A6478] shadow-sm">
+        <span className="inline-flex items-center gap-1.5 text-[#101334]"><Clock size={14} className="text-[#465FFF]" aria-hidden="true" /> {L("Data as of", "Data per")} <b className="font-black">{f.dataAsOf ? `${new Date(f.dataAsOf).toLocaleString(intlLocale(), { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })} WIB` : "—"}</b></span>
+        <span>{L("Counted by publication date", "Dihitung berdasarkan tanggal terbit")}</span>
+        {f.latency.length ? (
+          <span className="flex flex-wrap items-center gap-1.5">
+            <span>{L("Typical delay:", "Jeda umum:")}</span>
+            {f.latency.slice(0, 5).map((p) => (
+              <span key={p.platform} title={L(`Median over ${p.sample} posts; 9 in 10 within ${hoursLabel(p.p90Hours, L)}`, `Median dari ${p.sample} postingan; 9 dari 10 dalam ${hoursLabel(p.p90Hours, L)}`)} className="inline-flex items-center gap-1 rounded-full bg-[#F1F4FA] px-2 py-0.5 text-[11px] font-bold text-[#31406B]">
+                <PlatformIcon platform={p.platform} className="size-3.5" />
+                {names[p.platform] ?? p.platform} {hoursLabel(p.medianHours, L)}
+              </span>
+            ))}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 // Same rule as the PDF: net = positive − negative; ≤ −15 negative, ≥ 15 positive, otherwise balanced.
 function verdict(t: ReportView["totals"]) {
@@ -225,7 +270,7 @@ function ReportBody({ data }: { data: ReportView }) {
                       <p className="line-clamp-2 text-[13px] font-bold leading-snug text-[#101334]">{sig.title}</p>
                       <p className="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-bold text-[#5A6478]">
                         <span className="rounded-full px-2 py-0.5 text-[10px] font-black" style={{ background: s.soft, color: s.text }}>{sentLabel(sig.sentiment)}</span>
-                        {platformName(sig.platform)} · {fmtDate(sig.capturedAt)}
+                        {platformName(sig.platform)} · {fmtDate(sig.publishedAt || sig.capturedAt)}
                       </p>
                     </div>
                     {sig.url ? <ExternalLink size={14} className="mt-1 shrink-0 text-[#8A93AD]" /> : null}
@@ -308,6 +353,7 @@ export default function ReportDetailPage() {
         </div>
       </header>
 
+      <Freshness data={data} />
       <ReportBody data={data} />
     </div>
   );

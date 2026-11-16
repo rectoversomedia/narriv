@@ -1,5 +1,5 @@
 import express from "express";
-import { tr } from "../../lib/request-context.js";
+import { requestLang, tr } from "../../lib/request-context.js";
 import supabase from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
@@ -7,6 +7,12 @@ import { compareClusterPeriods, runClustering } from "../clustering/clustering.s
 import { logStructured } from "../../lib/logger.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { wrapAsync } from "../../lib/sentry.js";
+import { buildSpread } from "../../lib/narrative-spread.js";
+import { buildPrecedents } from "../../lib/narrative-precedents.js";
+import { getWorkspaceProfile } from "../../lib/workspace-profile.js";
+import { maskSignal } from "../../lib/privacy.js";
+import { buildWaves } from "../../lib/content-waves.js";
+import { rateLimiters } from "../../middlewares/rate-limit.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -180,6 +186,71 @@ router.post("/cluster", async (req, res) => {
 });
 
 // GET /api/narratives/:id - Detailed narrative for topic detail panel
+const WAVE_SELECT = "id, title, description, main_narrative, sentiment, updated_at, narrative_cluster_signals(signal:signals(id, title, content, platform, url, author, sentiment, metadata, captured_at, published_at))";
+
+/** Narratives of one workspace touched in the last `days`, with their records (for waves). */
+async function recentClusters(workspaceId, days = 14) {
+    const since = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString();
+    const { data, error } = await supabase
+        .from("narrative_clusters")
+        .select(WAVE_SELECT)
+        .eq("workspace_id", workspaceId)
+        .gte("updated_at", since)
+        .order("updated_at", { ascending: false })
+        .limit(60);
+    if (error) throw error;
+    return (data || []).map((c) => ({ ...c, signals: (c.narrative_cluster_signals || []).map((n) => n.signal).filter(Boolean) }));
+}
+
+// GET /api/narratives/waves - Conversations growing right now that a brand could join, each with a risk check and
+// the time window it typically lasts (content-waves.js). Social accounts and links are hidden in privacy mode.
+router.get("/waves", async (req, res) => {
+    try {
+        const workspaceId = await resolveWorkspaceIdForUser(req.user.id, req.query.workspaceId);
+        if (!workspaceId) return res.json({ waves: [] });
+        const [clusters, profile] = await Promise.all([recentClusters(workspaceId), getWorkspaceProfile(workspaceId)]);
+        const waves = buildWaves(clusters).map((w) => ({
+            ...w,
+            samples: profile.privacyMode ? w.samples.map((s) => maskSignal(s, requestLang())) : w.samples,
+        }));
+        res.json({ waves, generatedAt: new Date().toISOString() });
+    } catch (error) {
+        logStructured("error", "narrative_waves_failed", { error: error?.message || error });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /api/narratives/:id/content-ideas - Three content angles for joining this conversation, in the request
+// language, with a caution line. Generated on request only (one model call).
+router.post("/:id/content-ideas", rateLimiters.aiGeneration(), async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(404).json({ error: "Narrative cluster not found" });
+        const { data: cluster } = await supabase.from("narrative_clusters").select(WAVE_SELECT + ", workspace_id").eq("id", id).maybeSingle();
+        const workspaceId = cluster ? await resolveWorkspaceIdForUser(req.user.id, cluster.workspace_id) : null;
+        if (!cluster || !workspaceId) return res.status(404).json({ error: "Narrative cluster not found" });
+        const signals = (cluster.narrative_cluster_signals || []).map((n) => n.signal).filter(Boolean);
+        const [wave] = buildWaves([{ ...cluster, signals }], Date.now());
+        const { data: settings } = await supabase.from("workspace_settings").select("brand_name").eq("workspace_id", workspaceId).maybeSingle();
+        const lang = requestLang() === "id" ? "id" : "en";
+        const riskText = wave ? `${wave.risk.level}${wave.risk.reasons.length ? ` (${wave.risk.reasons.map((r) => `${r.code}: ${r.value}`).join(", ")})` : ""}` : null;
+        const { suggestContentAngles } = await import("../ai/ai.service.js");
+        const ideas = await suggestContentAngles({
+            brand: settings?.brand_name || null,
+            title: cluster.title,
+            description: cluster.description || cluster.main_narrative || "",
+            samples: signals.slice(0, 6).map((s) => s.title || s.content || ""),
+            risk: riskText,
+            lang,
+        }, { workspaceId, operation: "content_ideas" });
+        if (!ideas) return res.status(503).json({ error: tr("Content ideas are unavailable right now. Please try again.", "Ide konten belum bisa dibuat saat ini. Silakan coba lagi.") });
+        res.json(ideas);
+    } catch (error) {
+        logStructured("error", "content_ideas_failed", { error: error?.message || error });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
@@ -202,6 +273,9 @@ router.get("/:id", async (req, res) => {
                         content,
                         platform,
                         url,
+                        author,
+                        region,
+                        metadata,
                         sentiment,
                         captured_at,
                         published_at,
@@ -226,6 +300,8 @@ router.get("/:id", async (req, res) => {
 
         // Evidence = only the signals actually linked to this narrative. Never
         // substitute other workspace signals, and never default missing sentiment.
+        const { privacyMode } = await getWorkspaceProfile(cluster.workspace_id);
+        const memberRows = (cluster.narrative_cluster_signals || []).map((ncs) => ncs.signal).filter(Boolean);
         const relatedSignals = (cluster.narrative_cluster_signals || [])
             .filter((ncs) => ncs.signal)
             .map((ncs) => {
@@ -244,6 +320,7 @@ router.get("/:id", async (req, res) => {
                     publishedAt: ncs.signal.published_at
                 };
             })
+            .map((item) => (privacyMode ? maskSignal(item, requestLang()) : item))
             .sort((a, b) => String(b.capturedAt || "").localeCompare(String(a.capturedAt || "")));
 
         const sentimentBreakdown = { positive: 0, neutral: 0, negative: 0, mixed: 0, unanalyzed: 0 };
@@ -263,8 +340,17 @@ router.get("/:id", async (req, res) => {
             .map(([date, count]) => ({ date, count }))
             .sort((a, b) => a.date.localeCompare(b.date));
 
+        const item = toNarrativeItem(cluster);
+        const spread = buildSpread(memberRows, { privacy: privacyMode });
+        const history = await narrativeHistory(cluster, item.firstSeen).catch((err) => {
+            logStructured("warn", "narrative_precedents_failed", { error: err?.message });
+            return { precedents: [], expectation: null };
+        });
+
         return res.json({
-            ...toNarrativeItem(cluster),
+            ...item,
+            spread,
+            ...history,
             trends,
             sentimentBreakdown,
             relatedSignals,
@@ -275,6 +361,23 @@ router.get("/:id", async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
     }
 });
+
+/** Earlier narratives of the same workspace that resemble this one, and what they suggest (narrative-precedents.js). */
+async function narrativeHistory(cluster, firstSeen) {
+    const { data: candidates } = await supabase
+        .from("narrative_clusters")
+        .select("id, title, description, main_narrative, keywords, sentiment, narrative_cluster_signals(signal:signals(captured_at, published_at, sentiment))")
+        .eq("workspace_id", cluster.workspace_id)
+        .neq("id", cluster.id)
+        .order("updated_at", { ascending: false })
+        .limit(80);
+    const rows = (candidates || []).map((c) => ({ ...c, signals: (c.narrative_cluster_signals || []).map((n) => n.signal).filter(Boolean) }));
+    const ids = rows.map((c) => c.id);
+    const { data: plans } = ids.length
+        ? await supabase.from("action_plans").select("cluster_id, title, status, type, created_at").eq("workspace_id", cluster.workspace_id).in("cluster_id", ids).order("created_at", { ascending: true })
+        : { data: [] };
+    return buildPrecedents({ ...cluster, firstSeen }, rows, plans || []);
+}
 
 // POST /api/narratives - Create a new narrative cluster
 router.post("/", async (req, res) => {

@@ -53,6 +53,10 @@ type SignalRow = {
   platform: string | null;
   /** The province (or, on older records, the city) the record is about; null when it names no place. */
   place: string | null;
+  /** "text" when the place is named in the record, "location" when only the platform's location label gave it. */
+  placeBasis: "text" | "location" | null;
+  /** Where the account says it is (a platform label, not an IP address), when that differs from `place`. */
+  accountPlace: string | null;
   /** The CVE category suggested for review, in CVE workspaces. */
   cve: CveTag | null;
 };
@@ -147,6 +151,8 @@ function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): S
       relevance: signal.relevance ?? null,
       platform: signal.platform ?? null,
       place: signal.region && !NATIONAL_REGIONS.has(signal.region.toLowerCase()) ? signal.region : null,
+      placeBasis: signal.regionBasis === "text" || signal.regionBasis === "location" ? signal.regionBasis : null,
+      accountPlace: signal.accountLocation?.province && signal.accountLocation.province !== signal.region ? signal.accountLocation.province : null,
       cve: signal.cve && signal.cve.category !== "none" ? signal.cve : null,
     };
   });
@@ -165,13 +171,32 @@ function RelevanceBadge({ relevance }: { relevance: SignalRow["relevance"] }) {
   return <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", RELEVANCE_TONE[relevance])}>{t(`rel_${relevance}`)}</span>;
 }
 
-function PlaceChip({ place }: { place: string | null }) {
-  if (!place) return null;
+/**
+ * Where a record is placed: the province it is about (named in its text), or, when only the platform's location
+ * label placed it, that label marked as the account's location. A second chip shows the account's own location when
+ * it differs. Neither comes from an IP address.
+ */
+function PlaceChip({ place, basis, account }: { place: string | null; basis?: SignalRow["placeBasis"]; account?: string | null }) {
+  if (!place && !account) return null;
+  const fromLabel = basis === "location";
   return (
-    <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#F1F4FA] px-2 py-0.5 text-[10px] font-bold text-[#31406B]">
-      <MapPin size={10} aria-hidden="true" className="shrink-0 text-[#465FFF]" />
-      <span className="truncate">{place}</span>
-    </span>
+    <>
+      {place ? (
+        <span
+          title={fromLabel ? pickL("From the platform's location label for this account or upload", "Dari label lokasi platform untuk akun atau unggahan ini") : pickL("Named in the text of this mention", "Disebut dalam isi percakapan ini")}
+          className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#F1F4FA] px-2 py-0.5 text-[10px] font-bold text-[#31406B]"
+        >
+          <MapPin size={10} aria-hidden="true" className="shrink-0 text-[#465FFF]" />
+          <span className="truncate">{fromLabel ? `${pickL("Account", "Akun")}: ${place}` : place}</span>
+        </span>
+      ) : null}
+      {account ? (
+        <span title={pickL("From the platform's location label for this account or upload", "Dari label lokasi platform untuk akun atau unggahan ini")} className="inline-flex max-w-full items-center gap-1 rounded-full border border-dashed border-[#C9D1E6] px-2 py-0.5 text-[10px] font-bold text-[#5A6478]">
+          <MapPin size={10} aria-hidden="true" className="shrink-0 text-[#8A93AD]" />
+          <span className="truncate">{pickL("Account", "Akun")}: {account}</span>
+        </span>
+      ) : null}
+    </>
   );
 }
 
@@ -566,7 +591,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     <SentimentCorrector id={row.id} sentiment={row.sentiment} />
                     <RelevanceBadge relevance={row.relevance} />
-                    <PlaceChip place={row.place} />
+                    <PlaceChip place={row.place} basis={row.placeBasis} account={row.accountPlace} />
                     <CveChip id={row.id} cve={row.cve} />
                   </div>
                   <p className="mt-1 text-[11px] text-[#5A6478]">
@@ -647,7 +672,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     ) : (
                       <span title={row.title} className="line-clamp-2 break-words text-[14px] font-bold leading-snug text-navy">{row.title}</span>
                     )}
-                    {row.place || row.cve ? <div className="mt-1 flex flex-wrap items-center gap-1.5"><PlaceChip place={row.place} /><CveChip id={row.id} cve={row.cve} /></div> : null}
+                    {row.place || row.accountPlace || row.cve ? <div className="mt-1 flex flex-wrap items-center gap-1.5"><PlaceChip place={row.place} basis={row.placeBasis} account={row.accountPlace} /><CveChip id={row.id} cve={row.cve} /></div> : null}
                   </td>
                   <td className="px-2.5 py-3 align-middle"><span className="line-clamp-2 break-words text-[12px] font-bold leading-snug text-[#31406B]" title={row.publisher}>{row.publisher}</span></td>
                   <td className="px-2.5 py-3 align-middle"><SentimentCorrector id={row.id} sentiment={row.sentiment} /></td>

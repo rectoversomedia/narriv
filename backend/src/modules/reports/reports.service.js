@@ -1,5 +1,6 @@
 import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
+import { inReportWindow } from "../../lib/report-window.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REPORT GENERATION ENGINE
@@ -23,12 +24,11 @@ export async function generateReport({ workspaceId, title, periodStart, periodEn
     logStructured("info", "report_generating", { workspaceId, periodStart: start.toISOString(), periodEnd: end.toISOString() });
 
     // ── 1. Dashboard Metrics ─────────────────────────────────────────────────
-    const { data: signals } = await supabase
+    // A record counts in the period it was published in (collection time only when the source gave no date).
+    const { data: signals } = await inReportWindow(supabase
         .from("signals")
         .select("*, analyses:signal_analyses(*)")
-        .eq("workspace_id", workspaceId)
-        .gte("captured_at", start.toISOString())
-        .lte("captured_at", end.toISOString())
+        .eq("workspace_id", workspaceId), start, end)
         .order("captured_at", { ascending: false });
 
     const signalsList = signals || [];
@@ -80,7 +80,8 @@ export async function generateReport({ workspaceId, title, periodStart, periodEn
                 platform: s.platform || "unknown",
                 sentiment: latestAnalysis?.sentiment || s.sentiment || "unanalyzed",
                 url: s.url,
-                capturedAt: s.captured_at
+                capturedAt: s.captured_at,
+                publishedAt: s.published_at || null
             };
         })
     };

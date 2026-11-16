@@ -131,7 +131,9 @@ export function toCollectedRecords(items, { platform, presetKey, actorId, apifyR
                 // Only a date the platform reported; collection time is captured_at.
                 publishedAt: published ? published.toISOString() : null,
                 language: typeof item.language === "string" ? item.language.slice(0, 10) : null,
-                region: null,
+                // Where the account or upload says it is (a platform label, never an IP); the province the post is
+                // about is read from its text in signal-persistence.js.
+                region: typeof item.region === "string" && item.region.trim() ? item.region.trim().slice(0, 120) : null,
                 metadata: {
                     collection: "apify",
                     preset: presetKey,

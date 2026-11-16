@@ -132,7 +132,9 @@ export interface RegionBreakdown {
   total: number;
   located: number;
   unlocated: number;
-  provinces: Array<{ code: string; name: string; total: number; negative: number; cities: Array<{ name: string; total: number }> }>;
+  provinces: Array<{ code: string; name: string; total: number; negative: number; fromText?: number; fromLabel?: number; cities: Array<{ name: string; total: number }> }>;
+  /** Where accounts say they are (platform location labels), apart from what records are about. */
+  accountProvinces?: Array<{ name: string; total: number }>;
 }
 
 /** CVE narrative categories over a period: suggested, confirmed and dismissed per category, and where. */

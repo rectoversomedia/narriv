@@ -12,17 +12,16 @@ import PDFDocument from "pdfkit";
 import { buildXlsx } from "../../lib/spreadsheet.js";
 import supabase from "../../lib/supabase.js";
 import { generateReport } from "./reports.service.js";
+import { reportFreshness } from "../../lib/report-window.js";
 
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
 /** Mentions and sentiment shares for one window, from each signal's stored sentiment (as the dashboard counts them). */
 async function periodTotals(workspaceId, start, end) {
-    const { data, error } = await supabase
+    const { data, error } = await inReportWindow(supabase
         .from("signals")
         .select("sentiment")
-        .eq("workspace_id", workspaceId)
-        .gte("captured_at", start.toISOString())
-        .lt("captured_at", end.toISOString())
+        .eq("workspace_id", workspaceId), start, end, { endExclusive: true })
         .limit(20000);
     // A failed query means "unknown", never "zero mentions last period".
     if (error) return null;
@@ -50,9 +49,11 @@ export async function collectReportData(report) {
     const metrics = sections.dashboard_metrics || {};
     const stored = report.content?.sections && !Array.isArray(report.content.sections) ? report.content.sections : {};
 
-    const [{ data: settings }, { data: clusters }] = await Promise.all([
+    const [{ data: settings }, { data: clusters }, freshness] = await Promise.all([
         supabase.from("workspace_settings").select("brand_name, language").eq("workspace_id", report.workspace_id).maybeSingle(),
         supabase.from("narrative_clusters").select("title, signal_count, sentiment, impact, lifecycle").eq("workspace_id", report.workspace_id).order("signal_count", { ascending: false }).limit(6),
+        // A failure here only drops the freshness note; the report itself still renders.
+        reportFreshness(report.workspace_id, { start: periodStart, end: periodEnd, since: report.created_at }).catch(() => null),
     ]);
 
     const alerts = ((sections.alerts?.items?.length ? sections.alerts.items : stored.alerts?.items) || [])
@@ -79,6 +80,10 @@ export async function collectReportData(report) {
         periodStart,
         periodEnd,
         generatedAt: new Date().toISOString(),
+        createdAt: report.created_at || null,
+        // When the data was last updated, the typical delay per platform, and records that arrived after the report
+        // was created (the page and new downloads include them; a PDF already sent does not).
+        freshness,
         totals: {
             signals: Number(metrics.total_signals || 0),
             analyzed: Number(metrics.analyzed_signals || 0),
@@ -103,7 +108,7 @@ export async function collectReportData(report) {
             };
         }),
         issues: (clusters || []).map((c) => ({ title: c.title, signals: Number(c.signal_count || 0), sentiment: c.sentiment || "neutral", impact: c.impact || "" })),
-        signals: (full?.topSignals || metrics.top_signals || []).map((s) => ({ title: s.title, platform: s.platform, sentiment: String(s.sentiment || "").toLowerCase(), capturedAt: s.capturedAt || s.captured_at || null, url: s.url || s.source_url || null })),
+        signals: (full?.topSignals || metrics.top_signals || []).map((s) => ({ title: s.title, platform: s.platform, sentiment: String(s.sentiment || "").toLowerCase(), capturedAt: s.capturedAt || s.captured_at || null, publishedAt: s.publishedAt || s.published_at || null, url: s.url || s.source_url || null })),
     };
 }
 
@@ -148,6 +153,12 @@ function words(lang) {
         whatToDo: w("Next step", "Langkah"),
         none: w("None in this period.", "Tidak ada pada periode ini."),
         footer: w("Narriv · confidential · generated from workspace records", "Narriv · rahasia · disusun dari data workspace"),
+        dataAsOf: w("Data as of", "Data per"),
+        dataNoteTitle: w("About This Data", "Tentang Data Ini"),
+        dataBasis: w("Each mention is counted in the period it was published in. Collection time is used only when the source gave no publication date.", "Setiap percakapan dihitung pada periode saat diterbitkan. Waktu pengumpulan hanya dipakai bila sumber tidak mencantumkan tanggal terbit."),
+        dataDelay: w("Typical delay before Narriv receives a post", "Jeda umum sebelum Narriv menerima postingan"),
+        hours: (h) => (h < 1 ? w("under 1 hour", "kurang dari 1 jam") : w(`about ${Math.round(h)} hour${Math.round(h) === 1 ? "" : "s"}`, `sekitar ${Math.round(h)} jam`)),
+        dataLate: w("Posts published near the end of the period may arrive after this report. The report page in Narriv always shows the latest count.", "Postingan yang terbit menjelang akhir periode bisa masuk setelah laporan ini dibuat. Halaman laporan di Narriv selalu menampilkan angka terbaru."),
         page: w("Page", "Halaman"),
         severity: { critical: w("Critical", "Kritis"), high: w("High", "Tinggi"), medium: w("Medium", "Sedang"), low: w("Low", "Rendah") },
         status: { open: w("Open", "Terbuka"), acknowledged: w("In progress", "Ditangani"), resolved: w("Resolved", "Selesai") },
@@ -483,6 +494,31 @@ function renderReportPdf(data, lang, mentionLimit) {
         });
     }
 
+    // About the data: what the period counts by, when the data was last updated, and the delay per platform.
+    {
+        const fr = data.freshness;
+        const delays = (fr?.latency || []).filter((p) => p.medianHours !== null).slice(0, 5)
+            .map((p) => `${W.platformName(p.platform)}: ${W.hours(p.medianHours)}`).join(" · ");
+        const lines = [
+            W.dataBasis,
+            fr?.dataAsOf ? `${W.dataAsOf} ${fmtDate(fr.dataAsOf, W.locale, true)} WIB.` : null,
+            delays ? `${W.dataDelay}: ${delays}.` : null,
+            W.dataLate,
+        ].filter(Boolean);
+        doc.font(F.sans).fontSize(8.5);
+        const h = lines.reduce((n, l) => n + doc.heightOfString(l, { width: width - 28 }) + 3, 0) + 34;
+        ensure(h + 10);
+        const y = doc.y + 4;
+        doc.roundedRect(left, y, width, h, 10).fill(C.soft);
+        doc.fillColor(C.navy).font(F.bold).fontSize(9.5).text(W.dataNoteTitle, left + 14, y + 11, { width: width - 28 });
+        let ly = y + 27;
+        for (const l of lines) {
+            doc.fillColor(C.body).font(F.sans).fontSize(8.5).text(l, left + 14, ly, { width: width - 28 });
+            ly = doc.y + 3;
+        }
+        doc.y = y + h + 10;
+    }
+
     // Signals (notable mentions): each row's page is noted so an orphan page can be avoided (see buildReportPdf).
     const pageNow = () => doc.bufferedPageRange().start + doc.bufferedPageRange().count - 1;
     const pageBeforeMentions = pageNow();
@@ -503,7 +539,7 @@ function renderReportPdf(data, lang, mentionLimit) {
             doc.fillColor(C.muted).font(F.sans).fontSize(8.5).text(`${W.platformName(s.platform)} · ${W.sentiment[s.sentiment] || s.sentiment || "—"}`, left + 14 + (sLogo ? 13 : 0), metaY, { width: width - 120 });
             const rowEnd = doc.y;
             // The date sits beside the title; drawing it moves doc.y back up, so the row's end is restored after.
-            doc.fillColor(C.muted).font(F.sans).fontSize(8.5).text(fmtDate(s.capturedAt, W.locale), left + width - 100, y, { width: 100, align: "right" });
+            doc.fillColor(C.muted).font(F.sans).fontSize(8.5).text(fmtDate(s.publishedAt || s.capturedAt, W.locale), left + width - 100, y, { width: 100, align: "right" });
             doc.y = rowEnd + 8;
             mentionPages.push(pageNow());
         }
@@ -549,6 +585,7 @@ function tables(data, lang = data.language) {
             ...(data.brand ? [[W.brand, data.brand]] : []),
             [W.period, `${fmtDate(data.periodStart, W.locale)} – ${fmtDate(data.periodEnd, W.locale)}`],
             [W.generated, `${fmtDate(data.generatedAt, W.locale, true)} WIB`],
+            ...(data.freshness?.dataAsOf ? [[W.dataAsOf, `${fmtDate(data.freshness.dataAsOf, W.locale, true)} WIB`]] : []),
             [W.verdictTitle, W.verdict[verdictOf(data.totals)]],
             [W.signals, data.totals.signals],
             [W.negative, `${data.totals.negative}%`],
@@ -560,7 +597,7 @@ function tables(data, lang = data.language) {
         alerts: [[H.title, H.severity, H.status, H.what, H.todo, H.date], ...data.alerts.map((a) => [a.title, W.severity[a.severity] || a.severity, W.status[a.status] || a.status, a.whatHappened, a.whatToDo, fmtDate(a.createdAt, W.locale, true)])],
         issues: [[H.issue, H.count, H.share, H.sentiment, H.impact], ...data.issues.map((i) => [i.title, i.signals, `${Math.round((i.signals / total) * 100)}%`, W.sentiment[String(i.sentiment).toLowerCase()] || i.sentiment, W.severity[String(i.impact).toLowerCase()] || i.impact])],
         platforms: [[H.platform, H.count, H.share], ...data.platforms.map((p) => [W.platformName(p.platform), p.count, `${Math.round((p.count / platformTotal) * 100)}%`])],
-        signals: [[H.title, H.platform, H.sentiment, H.date, H.url], ...data.signals.map((s) => [s.title, W.platformName(s.platform), W.sentiment[s.sentiment] || s.sentiment, fmtDate(s.capturedAt, W.locale, true), s.url || ""])],
+        signals: [[H.title, H.platform, H.sentiment, H.date, H.url], ...data.signals.map((s) => [s.title, W.platformName(s.platform), W.sentiment[s.sentiment] || s.sentiment, fmtDate(s.publishedAt || s.capturedAt, W.locale, true), s.url || ""])],
     };
 }
 

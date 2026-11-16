@@ -10,7 +10,7 @@
  * engagement. Clustering and alert rules run once per batch afterwards.
  */
 import supabaseAdmin from "../../lib/supabase.js";
-import { resolveRecordRegion } from "../../lib/indonesia-regions.js";
+import { provinceFromLabel, resolveRecordRegion } from "../../lib/indonesia-regions.js";
 import { logStructured } from "../../lib/logger.js";
 import { checkBudgetAllowance } from "../../lib/cost-management.js";
 import { analyzeSignal } from "../ai/ai.service.js";
@@ -191,6 +191,9 @@ export async function persistCollectedRecords(records, {
 
       // The province the record is about, from its own text (else its location label); see indonesia-regions.js.
       const place = resolveRecordRegion({ title: record.title, content, label: record.region, fallback: signalDefaults.region });
+      // Kept apart from the province the record is about: where the account says it is, from the platform's label.
+      const declared = record.region ? provinceFromLabel(record.region) : null;
+      const accountLocation = record.region ? { label: String(record.region).slice(0, 120), province: declared?.name || null } : null;
 
       const { data: signal, error: signalErr } = await supabaseAdmin
         .from("signals")
@@ -219,6 +222,7 @@ export async function persistCollectedRecords(records, {
             ingestion_type: ingestionType,
             keyword,
             ...(place.geo ? { geo: place.geo } : {}),
+            ...(accountLocation ? { account_location: accountLocation } : {}),
             ...(cve ? { cve } : {}),
             ...(record.metadata || {}),
           },

@@ -228,7 +228,16 @@ export interface ReportView {
   platforms: Array<{ platform: string; count: number }>;
   alerts: Array<{ title: string; severity: string; status: string; whatHappened: string; whatToDo: string; createdAt: string | null }>;
   issues: Array<{ title: string; signals: number; sentiment: string; impact: string }>;
-  signals: Array<{ title: string; platform: string; sentiment: string; capturedAt: string | null; url: string | null }>;
+  signals: Array<{ title: string; platform: string; sentiment: string; capturedAt: string | null; publishedAt?: string | null; url: string | null }>;
+  freshness?: ReportFreshness | null;
+}
+
+/** When the data behind a report was last updated, the delay per platform, and records that arrived later. */
+export interface ReportFreshness {
+  dataAsOf: string | null;
+  latency: Array<{ platform: string; medianHours: number | null; p90Hours: number | null; sample: number }>;
+  lateArrivals: number | null;
+  basis: "published_at";
 }
 
 export async function getReportView(id: string): Promise<ReportView | null> {
@@ -295,6 +304,79 @@ export interface NarrativeDetailRecord extends NarrativeRecord {
     publishedAt?: string | null;
   }>;
   evidenceNote?: string | null;
+  spread?: NarrativeSpread | null;
+  precedents?: NarrativePrecedent[];
+  expectation?: NarrativeExpectation | null;
+}
+
+/** How a narrative spread, read from its linked records (backend lib/narrative-spread.js). */
+export interface NarrativeSpread {
+  records: number;
+  spanHours: number;
+  origin: { id: string; author: string | null; hidden: boolean; platform: string | null; title: string | null; url: string | null; at: string; timeBasis: "published" | "collected"; interactions: number };
+  amplifiers: Array<{ name: string; platforms: string[]; posts: number; interactions: number; views: number; kind: "outlet" | "account"; firstAt: string; hoursAfterOrigin: number; isOrigin: boolean }>;
+  hiddenAccounts: number;
+  path: Array<{ platform: string; firstAt: string; records: number; interactions: number; hoursAfterOrigin: number }>;
+  regions: { about: Array<{ name: string; count: number }>; from: Array<{ name: string; count: number }>; unplaced: number };
+  textClusters: Array<{ kind: "coordination" | "syndication"; records: number; authors: number; platforms: string[]; firstAt: string; spanMinutes: number; sample: string | null; accounts: string[] }>;
+}
+
+export interface NarrativePrecedent {
+  id: string;
+  title: string;
+  similarity: number;
+  sharedWords: string[];
+  sentiment: string | null;
+  records: number;
+  firstAt: string;
+  lastAt: string;
+  hoursToPeak: number;
+  peakRecords: number;
+  activeHours: number;
+  negativeShare: number | null;
+  actions: Array<{ title: string; status: string; type: string; createdAt: string }>;
+}
+
+export interface NarrativeExpectation {
+  basedOn: number;
+  medianHoursToPeak: number | null;
+  medianActiveHours: number | null;
+  ageHours: number;
+  hoursUntilTypicalPeak: number | null;
+  withActions: number;
+}
+
+/** A conversation growing right now that a brand could join (backend lib/content-waves.js). */
+export interface ContentWave {
+  id: string;
+  title: string;
+  description: string;
+  records: number;
+  momentum: { last24h: number; prior24h: number; changePct: number | null; label: string };
+  positiveShare: number | null;
+  negativeShare: number | null;
+  interactions: number;
+  platforms: string[];
+  risk: { level: "go" | "careful" | "avoid"; reasons: Array<{ code: "negative" | "sensitive" | "coordination"; value: string | number }> };
+  window: { ageHours: number | null; typicalLifeHours: number | null; hoursLeft: number | null; basedOn: number };
+  samples: Array<{ title: string; platform: string | null; url: string | null }>;
+}
+
+export interface ContentIdeas {
+  angles: Array<{ title: string; format: string; platform: string; hook: string }>;
+  caution: string;
+}
+
+export async function getContentWaves(): Promise<ContentWave[]> {
+  try {
+    return (await apiClient<{ waves: ContentWave[] }>("/api/narratives/waves")).waves ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getContentIdeas(narrativeId: string): Promise<ContentIdeas> {
+  return apiClient<ContentIdeas>(`/api/narratives/${narrativeId}/content-ideas`, { method: "POST" });
 }
 
 export async function getNarratives(

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { RegionBreakdown } from "@/lib/api-service";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
@@ -9,9 +10,15 @@ import { BOX } from "@/lib/surface";
  * Where the records are about, per province: a bar for the count, the negative share beside it, and the cities
  * named most. Picking a province filters Monitoring to it; picking it again clears the filter. Records about no
  * Indonesian place are counted at the foot, so the bars never pretend to cover everything.
+ *
+ * A second tab shows where accounts SAY they are (the platform's location label), kept apart from what records are
+ * about. Neither is an IP address: platforms do not share those.
  */
 export function RegionPanel({ data, days, selected, onSelect, loading }: { data?: RegionBreakdown; days: number; selected?: string; onSelect: (code: string | undefined) => void; loading?: boolean }) {
   const L = useL();
+  const [view, setView] = useState<"about" | "accounts">("about");
+  const accounts = data?.accountProvinces ?? [];
+  const accountMax = Math.max(1, ...accounts.map((a) => a.total));
   const provinces = data?.provinces ?? [];
   const top = provinces.slice(0, 8);
   const max = Math.max(1, ...top.map((p) => p.total));
@@ -20,9 +27,41 @@ export function RegionPanel({ data, days, selected, onSelect, loading }: { data?
   return (
     <section className={BOX}>
       <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#101334]">{L("By Region", "Sebaran Wilayah")}</h2>
-      <p className="mt-0.5 text-[12px] font-medium text-[#5A6478]">{L(`Provinces discussed, ${periodLabel}`, `Provinsi yang dibicarakan, ${periodLabel}`)}</p>
+      <p className="mt-0.5 text-[12px] font-medium text-[#5A6478]">
+        {view === "about" ? L(`Provinces discussed, ${periodLabel}`, `Provinsi yang dibicarakan, ${periodLabel}`) : L(`Where accounts say they are, ${periodLabel}`, `Lokasi yang dicantumkan akun, ${periodLabel}`)}
+      </p>
+      <div role="tablist" aria-label={L("Region view", "Tampilan wilayah")} className="mt-3 inline-flex rounded-[10px] bg-[#F1F4FA] p-0.5">
+        {([["about", L("Discussed", "Dibahas")], ["accounts", L("Account Location", "Lokasi Akun")]] as const).map(([key, label]) => (
+          <button key={key} type="button" role="tab" aria-selected={view === key} onClick={() => setView(key)} className={cn("h-8 rounded-[8px] px-3 text-[12px] font-bold transition", view === key ? "bg-white text-[#101334] shadow-sm" : "text-[#5A6478] hover:text-[#101334]")}>
+            {label}
+          </button>
+        ))}
+      </div>
 
-      {loading ? (
+      {view === "accounts" ? (
+        loading ? null : accounts.length === 0 ? (
+          <p className="mt-4 text-[12px] font-medium leading-relaxed text-[#5A6478]">
+            {L(
+              "No account in this period shares a location in Indonesia yet. This comes from location labels that TikTok, YouTube and some marketplaces show; most social accounts do not share one.",
+              "Belum ada akun pada periode ini yang mencantumkan lokasi di Indonesia. Data ini berasal dari label lokasi yang ditampilkan TikTok, YouTube, dan sebagian marketplace; kebanyakan akun media sosial tidak mencantumkannya.",
+            )}
+          </p>
+        ) : (
+          <ul className="mt-3 space-y-2.5">
+            {accounts.slice(0, 8).map((a) => (
+              <li key={a.name}>
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-[13px] font-bold text-[#101334]">{a.name}</span>
+                  <span className="text-[13px] font-black tabular-nums text-[#101334]">{a.total}</span>
+                </span>
+                <span className="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-[#E8ECF6]">
+                  <span className="h-full bg-[#8B5CF6]" style={{ width: `${(a.total / accountMax) * 100}%` }} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : loading ? (
         <div className="mt-4 space-y-2.5" aria-hidden="true">
           {[0, 1, 2, 3].map((i) => <div key={i} className="h-9 animate-pulse rounded-lg bg-[#F1F4FA]" />)}
         </div>
@@ -67,7 +106,7 @@ export function RegionPanel({ data, days, selected, onSelect, loading }: { data?
         </ul>
       )}
 
-      {data && data.total > 0 ? (
+      {data && data.total > 0 && view === "about" ? (
         <p className="mt-3 text-[11px] font-medium leading-relaxed text-[#5A6478]">
           {L(
             `${data.located} of ${data.total} mentions name a place in Indonesia${provinces.length > top.length ? `; ${provinces.length - top.length} more provinces in the filter` : ""}.`,
@@ -75,6 +114,12 @@ export function RegionPanel({ data, days, selected, onSelect, loading }: { data?
           )}
         </p>
       ) : null}
+      <p className="mt-2 text-[11px] font-medium leading-relaxed text-[#8A93AD]">
+        {L(
+          "Read from each mention's text and from platform location labels, never from IP addresses.",
+          "Dibaca dari isi percakapan dan label lokasi platform, bukan dari alamat IP.",
+        )}
+      </p>
     </section>
   );
 }

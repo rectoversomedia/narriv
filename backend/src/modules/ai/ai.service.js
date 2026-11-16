@@ -425,6 +425,46 @@ export const analyzeCluster = async (signalsContext, lang = "en") => {
 };
 
 /**
+ * Content angles for a brand that wants to join a rising conversation ("riding the wave"), from the narrative and a
+ * few of its posts. Returns { angles: [{ title, format, platform, hook }], caution } or null without a provider.
+ */
+export const suggestContentAngles = async ({ brand, title, description, samples = [], risk = null, lang = "en" }, usageCtx = null) => {
+    if (!OPENAI_API_KEY) return null;
+    const id = lang === "id";
+    const system = [
+        "You are a senior social media strategist for brands in Indonesia.",
+        "Suggest how a brand can join a rising online conversation in a way that is relevant, tasteful and on-brand.",
+        "Never suggest mocking people, exploiting tragedy, disasters, religion, ethnicity or politics. If the topic is sensitive, say so in `caution` and keep angles respectful or suggest not joining.",
+        `Write in ${id ? "Indonesian (natural, professional)" : "English (natural, professional)"}.`,
+        'Return ONLY JSON: {"angles":[{"title":"short idea name","format":"e.g. TikTok video, carousel, X thread","platform":"best platform","hook":"the opening line or concept, one sentence"}],"caution":"one sentence on what to avoid, or empty"}. Give exactly 3 angles.',
+    ].join(" ");
+    const user = [
+        `Brand: ${brand || "the brand"}`,
+        `Conversation: ${title}`,
+        description ? `Summary: ${description}` : null,
+        risk ? `Risk check: ${risk}` : null,
+        samples.length ? `Sample posts:\n${samples.slice(0, 6).map((s) => `- ${String(s).slice(0, 200)}`).join("\n")}` : null,
+    ].filter(Boolean).join("\n");
+    try {
+        const raw = await callOpenAI([{ role: "system", content: system }, { role: "user", content: user }], usageCtx);
+        const parsed = tryParseJSON(raw);
+        if (!parsed.ok || !Array.isArray(parsed.data?.angles)) return null;
+        return {
+            angles: parsed.data.angles.slice(0, 3).map((a) => ({
+                title: String(a.title || "").slice(0, 120),
+                format: String(a.format || "").slice(0, 80),
+                platform: String(a.platform || "").slice(0, 40),
+                hook: String(a.hook || "").slice(0, 300),
+            })).filter((a) => a.title),
+            caution: String(parsed.data.caution || "").slice(0, 300),
+        };
+    } catch (error) {
+        logStructured("error", "ai_content_angles_failed", { error: error?.message });
+        return null;
+    }
+};
+
+/**
  * Fallback generator for signals summary when AI provider is offline or rate-limited
  */
 function buildFallbackSummary(signals = [], contextInfo = {}) {

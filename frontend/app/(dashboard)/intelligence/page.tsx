@@ -9,6 +9,7 @@ import { Bot, Brain, Check, ChevronDown, ChevronRight, Database, Info, Layers3, 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
+import { NarrativePrecedents, NarrativeSpreadPanel } from "@/components/intelligence/narrative-spread";
 import { getNarrativeById, getNarratives, getSources, triggerClustering, type NarrativeRecord, type NarrativeDetailRecord } from "@/lib/api-service";
 import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
@@ -1176,6 +1177,9 @@ function NarrativeEvidence({ detail }: { detail: NarrativeDetailRecord }) {
           <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold text-[#647099]">{pickL("Last seen", "Terakhir muncul")}</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.lastSeen)}</dd></div>
         </dl>
       </section>
+
+      {detail.spread ? <NarrativeSpreadPanel spread={detail.spread} /> : null}
+      <NarrativePrecedents precedents={detail.precedents ?? []} expectation={detail.expectation} />
 
       <section aria-label={pickL("AI assessment", "Penilaian AI")}>
         <h3 className="text-sm font-black text-[#53608C]">{pickL("AI assessment", "Penilaian AI")}</h3>

@@ -71,7 +71,14 @@ export function reportEmailHtml(data, lang, appUrl) {
             meta: `${w("Owner", "PJ")}: ${esc(a.owner || w("not assigned yet", "belum ditetapkan"))}${a.whatToDo ? `<br>${esc(a.whatToDo)}` : ""}`,
         })))
         : w("No open alerts require a decision this week.", "Tidak ada peringatan terbuka yang memerlukan keputusan minggu ini."));
-    body += emailButton(`${appUrl}/reports`, w("View report in Narriv", "Lihat laporan di Narriv"), w("The full report is attached as a PDF.", "Laporan lengkap terlampir dalam PDF."));
+    const asOf = data.freshness?.dataAsOf
+        ? new Date(data.freshness.dataAsOf).toLocaleString(id ? "id-ID" : "en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })
+        : null;
+    const note = [
+        w("The full report is attached as a PDF.", "Laporan lengkap terlampir dalam PDF."),
+        asOf ? w(`Data as of ${asOf} WIB, counted by publication date. Posts that arrive late appear on the report page in Narriv.`, `Data per ${asOf} WIB, dihitung berdasarkan tanggal terbit. Postingan yang terlambat masuk tetap muncul di halaman laporan Narriv.`) : null,
+    ].filter(Boolean).join("<br>");
+    body += emailButton(`${appUrl}/reports`, w("View report in Narriv", "Lihat laporan di Narriv"), note);
     return emailLayout({
         lang: id ? "id" : "en",
         title: `${brand}: ${data.title || w("Report", "Laporan")}`,
