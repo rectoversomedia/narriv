@@ -90,22 +90,17 @@ export async function notifyAndRecord(alert) {
     }
     // Critical and high alerts also go straight to the people: email (notification email, else the owners) and
     // WhatsApp when switched on. Sent once per alert (a webhook retry does not resend), never from the demo.
+    // To keep inboxes readable: a critical alert goes out at once unless its topic was emailed in the last 6 hours;
+    // a high alert waits and goes out in the next summary (sendPendingAlertDigests, run by the hourly crons).
     let direct = alert.metadata?.notification?.direct || null;
-    if (!direct && ["critical", "high"].includes(String(alert.severity).toLowerCase()) && !isDemoWorkspace(alert.workspace_id)) {
-        try {
-            const { notifyNewHighRiskAlert } = await import("../notifications/notification-dispatch.service.js");
-            const r = await notifyNewHighRiskAlert({
-                workspaceId: alert.workspace_id,
-                alertId: alert.id,
-                title: alert.title,
-                severity: String(alert.severity).toLowerCase(),
-                whatHappened: alert.what_happened || alert.whatHappened || null,
-                whatToDo: alert.what_to_do || alert.whatToDo || null,
-            });
-            direct = { at: new Date().toISOString(), delivered: r.delivered, channels: (r.results || []).map((x) => ({ provider: x.provider, delivered: x.delivered })) };
-        } catch (err) {
-            direct = { at: new Date().toISOString(), delivered: false, error: String(err?.message || err).slice(0, 160) };
-            logStructured("warn", "alert_direct_notify_failed", { alertId: alert.id, error: err?.message || err });
+    const severity = String(alert.severity).toLowerCase();
+    if (!direct && ["critical", "high"].includes(severity) && !isDemoWorkspace(alert.workspace_id)) {
+        if (severity === "high") {
+            direct = { pending: true, queuedAt: new Date().toISOString() };
+        } else if (await topicEmailedRecently(alert)) {
+            direct = { at: new Date().toISOString(), delivered: false, skipped: "topic_emailed_recently" };
+        } else {
+            direct = await sendAlertNow(alert);
         }
     }
     const failed = (result.results || []).filter((r) => r.status === "failed");
@@ -128,6 +123,105 @@ export async function notifyAndRecord(alert) {
         logStructured("warn", "alert_notification_failed", { alertId: alert.id, ...notification });
     }
     return notification;
+}
+
+const TOPIC_EMAIL_COOLDOWN_HOURS = 6;
+const alertTopic = (a) => String(a.metadata?.keyword || a.title || "").trim().toLowerCase();
+
+/** True when another alert on the same topic in this workspace was emailed within the cooldown. */
+async function topicEmailedRecently(alert) {
+    const since = new Date(Date.now() - TOPIC_EMAIL_COOLDOWN_HOURS * 3600 * 1000).toISOString();
+    const { data } = await supabase
+        .from("alerts")
+        .select("id, title, metadata")
+        .eq("workspace_id", alert.workspace_id)
+        .neq("id", alert.id)
+        .gte("created_at", since)
+        .eq("metadata->notification->direct->>delivered", "true")
+        .limit(200);
+    const topic = alertTopic(alert);
+    return (data || []).some((a) => alertTopic(a) === topic);
+}
+
+async function sendAlertNow(alert) {
+    try {
+        const { notifyNewHighRiskAlert } = await import("../notifications/notification-dispatch.service.js");
+        const r = await notifyNewHighRiskAlert({
+            workspaceId: alert.workspace_id,
+            alertId: alert.id,
+            title: alert.title,
+            severity: String(alert.severity).toLowerCase(),
+            whatHappened: alert.what_happened || alert.whatHappened || null,
+            whatToDo: alert.what_to_do || alert.whatToDo || null,
+        });
+        return { at: new Date().toISOString(), delivered: r.delivered, channels: (r.results || []).map((x) => ({ provider: x.provider, delivered: x.delivered })) };
+    } catch (err) {
+        logStructured("warn", "alert_direct_notify_failed", { alertId: alert.id, error: err?.message || err });
+        return { at: new Date().toISOString(), delivered: false, error: String(err?.message || err).slice(0, 160) };
+    }
+}
+
+async function recordDirect(alert, direct) {
+    const { data: fresh } = await supabase.from("alerts").select("metadata").eq("id", alert.id).maybeSingle();
+    const metadata = fresh?.metadata || alert.metadata || {};
+    await supabase
+        .from("alerts")
+        .update({ metadata: { ...metadata, notification: { ...(metadata.notification || {}), direct } } })
+        .eq("id", alert.id)
+        .eq("workspace_id", alert.workspace_id);
+}
+
+/**
+ * Sends the high alerts waiting since the last run: one email per workspace (the full alert email when there is only
+ * one, a summary when there are several), one alert per topic, skipping topics emailed in the last 6 hours.
+ */
+export async function sendPendingAlertDigests() {
+    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const { data, error } = await supabase
+        .from("alerts")
+        .select("*")
+        .gte("created_at", since)
+        .eq("metadata->notification->direct->>pending", "true")
+        .order("created_at", { ascending: true })
+        .limit(300);
+    if (error) {
+        logStructured("warn", "alert_digest_query_failed", { error: error.message });
+        return { workspaces: 0, emailed: 0, error: error.message };
+    }
+    const byWorkspace = new Map();
+    for (const a of data || []) {
+        if (isDemoWorkspace(a.workspace_id)) continue;
+        byWorkspace.set(a.workspace_id, [...(byWorkspace.get(a.workspace_id) || []), a]);
+    }
+    let emailed = 0;
+    for (const [workspaceId, list] of byWorkspace) {
+        const send = [];
+        const topics = new Set();
+        for (const a of list.slice().reverse()) {
+            const topic = alertTopic(a);
+            if (topics.has(topic) || await topicEmailedRecently(a)) continue;
+            topics.add(topic);
+            send.push(a);
+        }
+        let direct;
+        if (send.length === 1) {
+            direct = await sendAlertNow(send[0]);
+        } else if (send.length > 1) {
+            try {
+                const { notifyAlertDigest } = await import("../notifications/notification-dispatch.service.js");
+                const r = await notifyAlertDigest({ workspaceId, alerts: send });
+                direct = { at: new Date().toISOString(), delivered: r.delivered, digest: send.length, channels: (r.results || []).map((x) => ({ provider: x.provider, delivered: x.delivered })) };
+            } catch (err) {
+                logStructured("warn", "alert_digest_failed", { workspaceId, error: err?.message || err });
+                direct = { at: new Date().toISOString(), delivered: false, error: String(err?.message || err).slice(0, 160) };
+            }
+        }
+        if (direct?.delivered) emailed += 1;
+        for (const a of list) {
+            await recordDirect(a, send.includes(a) ? direct : { at: new Date().toISOString(), delivered: false, skipped: "topic_emailed_recently" });
+        }
+    }
+    return { workspaces: byWorkspace.size, emailed };
 }
 
 /**

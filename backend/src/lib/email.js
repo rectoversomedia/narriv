@@ -2,7 +2,9 @@ import { Resend } from "resend";
 import { logStructured } from "./logger.js";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const EMAIL_FROM = process.env.EMAIL_FROM || "Narriv <noreply@narriv.com>";
+const EMAIL_FROM = process.env.EMAIL_FROM || "Narriv <noreply@narriv.digital>";
+// Replies go to a person, not the no-reply sender.
+const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || "fajar@narriv.digital";
 
 let resendClient = null;
 
@@ -49,6 +51,7 @@ export async function sendEmail({ to, subject, html, text, from, attachments }) 
         const { data, error } = await client.emails.send({
             from: from || EMAIL_FROM,
             to: [to],
+            replyTo: EMAIL_REPLY_TO,
             subject,
             html,
             ...(text ? { text } : {}),

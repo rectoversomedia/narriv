@@ -221,6 +221,17 @@ const runDaily = async (req, res) => {
 router.get("/daily", runDaily);
 router.post("/daily", runDaily);
 
+// High alerts wait for the next run and go out as one email per workspace (see sendPendingAlertDigests).
+async function sendDigests() {
+    try {
+        const { sendPendingAlertDigests } = await import("../alerts/alerts.service.js");
+        return await sendPendingAlertDigests();
+    } catch (error) {
+        logStructured("warn", "cron_alert_digest_failed", { error: error.message });
+        return { error: error.message };
+    }
+}
+
 // Scheduled real-data ingestion (Vercel Cron, every hour).
 const runIngest = async (req, res) => {
     if (!verifyCronSecret(req)) return res.status(401).json({ error: "Unauthorized" });
@@ -228,6 +239,7 @@ const runIngest = async (req, res) => {
         const { runScheduledIngestion } = await import("../ingestion/scheduled-ingestion.js");
         const perKeywordLimit = Math.min(Math.max(parseInt(req.query.limit, 10) || 8, 1), 15);
         const summary = await runScheduledIngestion({ budgetMs: INGEST_BUDGET_MS, perKeywordLimit, trigger: ingestTrigger({ userAgent: req.headers["user-agent"], slot: req.query.slot ?? null }) });
+        summary.alertDigests = await sendDigests();
         res.status(summary.status === "failed" ? 500 : 200).json(summary);
     } catch (error) {
         logStructured("error", "cron_ingest_failed", { error: error.message });
@@ -243,7 +255,8 @@ const runSocial = async (req, res) => {
     if (!verifyCronSecret(req)) return res.status(401).json({ error: "Unauthorized" });
     try {
         const { runSocialSchedule } = await import("../ingestion/social-schedule.service.js");
-        res.json(await runSocialSchedule());
+        const summary = await runSocialSchedule();
+        res.json({ ...summary, alertDigests: await sendDigests() });
     } catch (error) {
         logStructured("error", "cron_social_failed", { error: error.message });
         res.status(500).json({ error: "Internal server error" });

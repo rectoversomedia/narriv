@@ -207,6 +207,59 @@ export async function notifyNewHighRiskAlert({ workspaceId, alertId, title, seve
     });
 }
 
+/** Several alerts in one email: each with its severity, what happened and a link, then a button to all alerts. */
+export function alertDigestEmailHtml({ lang, brandName, alerts }) {
+    const w = (en, idText) => (lang === "id" ? idText : en);
+    const n = alerts.length;
+    const sevName = { critical: w("Critical", "Kritis"), high: w("High risk", "Risiko tinggi") };
+    let body = emailHero({
+        chip: w("Alert summary", "Ringkasan peringatan"),
+        chipColor: "#C2410C",
+        title: w(`${n} new alerts need your attention`, `${n} peringatan baru perlu perhatian Anda`),
+        lead: w("Grouped into one email so your inbox stays readable. Open each alert to see the full details and assign an owner.", "Digabung dalam satu email agar kotak masuk Anda tetap rapi. Buka setiap peringatan untuk melihat detail lengkap dan menetapkan penanggung jawab."),
+    });
+    body += `<div style="margin-top:26px">${emailList(alerts.map((a) => {
+        const sev = String(a.severity || "").toLowerCase();
+        const what = String(a.what_happened || a.description || "");
+        return {
+            tag: `${sevName[sev] || sev}${a.created_at ? ` · ${jakartaTime(a.created_at, lang)}` : ""}`,
+            tagColor: SEV_COLOR[sev] || "#5F6B94",
+            title: a.title,
+            href: `${appUrl()}/alerts/${encodeURIComponent(a.id)}`,
+            meta: what ? esc(what.length > 180 ? `${what.slice(0, 177)}...` : what) : null,
+        };
+    }))}</div>`;
+    body += emailButton(`${appUrl()}/alerts`, w("View all alerts in Narriv", "Lihat semua peringatan di Narriv"));
+    return emailLayout({
+        lang,
+        title: w(`${n} new alerts`, `${n} peringatan baru`),
+        preheader: alerts.map((a) => a.title).join(" · "),
+        kicker: brandName,
+        body,
+        reason: w(
+            `You are receiving this email because alert notifications are enabled for the ${esc(brandName)} workspace. High-risk alerts are grouped into one summary; critical alerts are sent right away.`,
+            `Anda menerima email ini karena notifikasi peringatan aktif untuk workspace ${esc(brandName)}. Peringatan risiko tinggi digabung dalam satu ringkasan; peringatan kritis dikirim langsung.`,
+        ),
+    });
+}
+
+export async function notifyAlertDigest({ workspaceId, alerts }) {
+    const lang = await workspaceLanguage(workspaceId);
+    const { data: ws } = await baseSupabaseAdmin.from("workspace_settings").select("brand_name").eq("workspace_id", workspaceId).maybeSingle();
+    const brandName = ws?.brand_name || "Narriv";
+    const n = alerts.length;
+    const lines = alerts.map((a, i) => `${i + 1}. ${a.title}`).join("\n");
+    return dispatchByEnabledChannels({
+        workspaceId,
+        subject: lang === "en" ? `[Narriv] ${n} New Alerts: ${brandName}` : `[Narriv] ${n} Peringatan Baru: ${brandName}`,
+        message: lines,
+        html: alertDigestEmailHtml({ lang, brandName, alerts }),
+        text: `${lang === "en" ? `[Narriv] ${n} new alerts for ${brandName}` : `[Narriv] ${n} peringatan baru untuk ${brandName}`}\n\n${lines}\n\n${appUrl()}/alerts`,
+        metadata: { event: "alert_digest", count: n },
+        requireEscalationToggle: true,
+    });
+}
+
 export async function notifyAssignmentChange({
     workspaceId,
     targetType,
