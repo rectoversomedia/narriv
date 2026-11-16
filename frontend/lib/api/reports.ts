@@ -133,8 +133,8 @@ export async function sendTestScheduleEmail(scheduleId: string): Promise<SendTes
     return await apiClient<SendTestEmailResponse>(`/api/reports/schedules/${scheduleId}/test-email`, {
       method: "POST",
     });
-  } catch {
-    return { success: false, message: "Failed to send test email" };
+  } catch (error) {
+    return { success: false, message: error instanceof Error && error.message ? error.message : "Failed to send test email" };
   }
 }
 

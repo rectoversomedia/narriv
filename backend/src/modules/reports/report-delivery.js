@@ -40,7 +40,7 @@ export function reportEmailHtml(data, lang, appUrl) {
     const range = period(data, lang);
 
     let body = emailHero({
-        chip: w("Weekly report", "Laporan mingguan"),
+        chip: w("Report", "Laporan"),
         title: brand,
         lead: [esc(data.title), range && esc(range)].filter(Boolean).join(" · "),
     });
@@ -74,12 +74,29 @@ export function reportEmailHtml(data, lang, appUrl) {
     body += emailButton(`${appUrl}/reports`, w("View report in Narriv", "Lihat laporan di Narriv"), w("The full report is attached as a PDF.", "Laporan lengkap terlampir dalam PDF."));
     return emailLayout({
         lang: id ? "id" : "en",
-        title: `${brand}: ${w("weekly report", "laporan mingguan")}`,
+        title: `${brand}: ${data.title || w("Report", "Laporan")}`,
         preheader: `${t.signals} ${w("mentions", "percakapan")}, ${t.negative}% ${w("negative", "negatif")}, ${t.alerts} ${w("alerts", "peringatan")}${range ? ` · ${range}` : ""}`,
         kicker: brand,
         body,
         reason: w(`You are receiving this email because you are a scheduled report recipient for ${esc(brand)}.`, `Anda menerima email ini karena terdaftar sebagai penerima laporan terjadwal ${esc(brand)}.`),
     });
+}
+
+/** Builds the report email (numbers, decisions, PDF attached) in the report's language and sends it to each address. */
+export async function emailReport(report, to, { subjectPrefix = "" } = {}) {
+    const { sendEmail } = await import("../../lib/email.js");
+    const lang = report.content?.language || await workspaceLanguage(report.workspace_id);
+    const data = await collectReportData(report);
+    const pdf = await buildReportPdf(data, lang);
+    const appUrl = (process.env.FRONTEND_URL || process.env.APP_URL || "https://www.narriv.digital").replace(/\/$/, "");
+    const subject = `${subjectPrefix}${data.brand || "Narriv"}: ${data.title || (lang === "en" ? "Report" : "Laporan")}`;
+    const html = reportEmailHtml(data, lang, appUrl);
+    let sent = 0;
+    for (const email of to) {
+        const r = await sendEmail({ to: email, subject, html, attachments: [{ filename: reportFileName(data, "pdf"), content: pdf }] });
+        if (r?.id) sent++;
+    }
+    return sent;
 }
 
 export async function deliverScheduledReport(reportId) {
@@ -88,22 +105,12 @@ export async function deliverScheduledReport(reportId) {
         if (!report) return { sent: false, reason: "report_not_found" };
         const { data: notif } = await db.from("workspace_notification_settings").select("email_enabled").eq("workspace_id", report.workspace_id).maybeSingle();
         if (notif && notif.email_enabled === false) return { sent: false, reason: "email_disabled" };
-        const { sendEmail, isEmailConfigured } = await import("../../lib/email.js");
+        const { isEmailConfigured } = await import("../../lib/email.js");
         if (!isEmailConfigured()) return { sent: false, reason: "email_provider_not_configured" };
         const to = await recipients(report.workspace_id);
         if (!to.length) return { sent: false, reason: "no_recipient" };
 
-        const lang = report.content?.language || await workspaceLanguage(report.workspace_id);
-        const data = await collectReportData(report);
-        const pdf = await buildReportPdf(data, lang);
-        const appUrl = (process.env.FRONTEND_URL || process.env.APP_URL || "https://www.narriv.digital").replace(/\/$/, "");
-        const subject = lang === "en" ? `${data.brand || "Narriv"}: Weekly Report` : `${data.brand || "Narriv"}: Laporan Mingguan`;
-        const html = reportEmailHtml(data, lang, appUrl);
-        let sent = 0;
-        for (const email of to) {
-            const r = await sendEmail({ to: email, subject, html, attachments: [{ filename: reportFileName(data, "pdf"), content: pdf }] });
-            if (r?.id) sent++;
-        }
+        const sent = await emailReport(report, to);
         await db.from("audit_logs").insert({ user_id: null, workspace_id: report.workspace_id, event: "report_email_sent", metadata: { reportId, recipients: to.length, sent, scheduled: true } });
         return { sent: sent > 0, recipients: to.length, delivered: sent };
     } catch (error) {

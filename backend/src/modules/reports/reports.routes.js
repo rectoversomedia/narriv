@@ -649,6 +649,29 @@ router.patch("/schedules/:id/toggle", async (req, res) => {
     }
 });
 
+// POST /api/reports/schedules/:id/test-email — Send the workspace's latest report, as the schedule would, to the requester only
+router.post("/schedules/:id/test-email", rateLimiters.export(), async (req, res) => {
+    try {
+        const { data: schedule } = await supabase.from("report_schedules").select("id, workspace_id").eq("id", req.params.id).maybeSingle();
+        if (!schedule) return res.status(404).json({ success: false, message: "Schedule not found" });
+        const workspaceId = await resolveWorkspaceIdForUser(req.user.id, schedule.workspace_id);
+        if (!workspaceId) return res.status(403).json({ success: false, message: "Access denied" });
+        const { isEmailConfigured } = await import("../../lib/email.js");
+        if (!isEmailConfigured()) return res.status(503).json({ success: false, message: "Email delivery is not configured" });
+        const to = req.user.email;
+        if (!to) return res.status(400).json({ success: false, message: "Your account has no email address" });
+        const { data: report } = await supabase.from("reports").select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (!report) return res.status(409).json({ success: false, message: "Generate a report first, then send the test email." });
+        const { emailReport } = await import("./report-delivery.js");
+        const sent = await emailReport(report, [to], { subjectPrefix: "[Test] " });
+        if (!sent) return res.status(502).json({ success: false, message: "The email could not be sent" });
+        return res.json({ success: true, message: `Test email sent to ${to}`, recipients: [to] });
+    } catch (error) {
+        logStructured("error", "schedule_test_email_failed", { error: error?.message || error });
+        return res.status(500).json({ success: false, message: "The email could not be sent" });
+    }
+});
+
 // GET /api/reports/analytics — Aggregate metrics: format distribution, top templates, trend timeline
 router.get("/analytics", async (req, res) => {
     try {
