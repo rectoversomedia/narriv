@@ -53,7 +53,7 @@ export function reportEmailHtml(data, lang, appUrl) {
     if (change !== null) {
         const line = change === 0
             ? w("Negative share unchanged from the previous period.", "Porsi negatif sama dengan periode sebelumnya.")
-            : w(`Negative share ${change > 0 ? "up" : "down"} ${Math.abs(change)} points from the previous period.`, `Porsi negatif ${change > 0 ? "naik" : "turun"} ${Math.abs(change)} poin dari periode sebelumnya.`);
+            : w(`Negative share is ${change > 0 ? "up" : "down"} ${Math.abs(change)} points from the previous period.`, `Porsi negatif ${change > 0 ? "naik" : "turun"} ${Math.abs(change)} poin dari periode sebelumnya.`);
         body += `<p style="margin:16px 0 0;text-align:center;font-size:14px;color:${change > 0 ? "#B42318" : "#5F6B94"};font-weight:600">${line}</p>`;
     }
     const issues = (data.issues || []).slice(0, 3);
@@ -63,22 +63,22 @@ export function reportEmailHtml(data, lang, appUrl) {
             meta: `${i.signals} ${w("mentions", "percakapan")}${i.impact ? ` · ${esc(i.impact)}` : ""}`,
         }))));
     }
-    body += emailSection(w("To decide", "Yang perlu diputuskan"), open.length
+    body += emailSection(w("Decisions needed", "Yang perlu diputuskan"), open.length
         ? emailList(open.map((a, i) => ({
             tag: `${i + 1} · ${sev[a.severity] || a.severity || ""}`,
             tagColor: sevColor[a.severity] || "#5F6B94",
             title: a.title,
-            meta: `${w("Owner", "PJ")}: ${esc(a.owner || w("no owner yet", "belum ada PJ"))}${a.whatToDo ? `<br>${esc(a.whatToDo)}` : ""}`,
+            meta: `${w("Owner", "PJ")}: ${esc(a.owner || w("not assigned yet", "belum ditetapkan"))}${a.whatToDo ? `<br>${esc(a.whatToDo)}` : ""}`,
         })))
-        : w("Nothing open needs a decision this week.", "Tidak ada peringatan terbuka yang perlu diputuskan minggu ini."));
-    body += emailButton(`${appUrl}/reports`, w("Open the report in Narriv", "Buka laporan di Narriv"), w("The full report is attached as a PDF.", "Laporan lengkap terlampir dalam PDF."));
+        : w("No open alerts require a decision this week.", "Tidak ada peringatan terbuka yang memerlukan keputusan minggu ini."));
+    body += emailButton(`${appUrl}/reports`, w("View report in Narriv", "Lihat laporan di Narriv"), w("The full report is attached as a PDF.", "Laporan lengkap terlampir dalam PDF."));
     return emailLayout({
         lang: id ? "id" : "en",
         title: `${brand}: ${w("weekly report", "laporan mingguan")}`,
         preheader: `${t.signals} ${w("mentions", "percakapan")}, ${t.negative}% ${w("negative", "negatif")}, ${t.alerts} ${w("alerts", "peringatan")}${range ? ` · ${range}` : ""}`,
         kicker: brand,
         body,
-        reason: w(`You get this email because you receive the scheduled reports for ${esc(brand)}.`, `Anda menerima email ini karena terdaftar sebagai penerima laporan terjadwal ${esc(brand)}.`),
+        reason: w(`You are receiving this email because you are a scheduled report recipient for ${esc(brand)}.`, `Anda menerima email ini karena terdaftar sebagai penerima laporan terjadwal ${esc(brand)}.`),
     });
 }
 
@@ -97,7 +97,7 @@ export async function deliverScheduledReport(reportId) {
         const data = await collectReportData(report);
         const pdf = await buildReportPdf(data, lang);
         const appUrl = (process.env.FRONTEND_URL || process.env.APP_URL || "https://www.narriv.digital").replace(/\/$/, "");
-        const subject = lang === "en" ? `${data.brand || "Narriv"}: weekly report` : `${data.brand || "Narriv"}: laporan mingguan`;
+        const subject = lang === "en" ? `${data.brand || "Narriv"}: Weekly Report` : `${data.brand || "Narriv"}: Laporan Mingguan`;
         const html = reportEmailHtml(data, lang, appUrl);
         let sent = 0;
         for (const email of to) {

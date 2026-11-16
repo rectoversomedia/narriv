@@ -306,14 +306,14 @@ async function detectAlertsNow(workspaceId) {
             ? `${negativeCount} dari ${totalCount} percakapan terbaru (${roundedRatio}%) bernada negatif untuk ${topicKey}.`
             : `${negativeCount} of ${totalCount} recent signals (${roundedRatio}%) are negative for ${topicKey}.`;
         const whatHappened = id
-            ? `${negativeCount} dari ${totalCount} percakapan terbaru tentang "${topicKey}" (${roundedRatio}%) bernada negatif. Angka ini naik tajam dalam periode pemantauan terakhir.`
-            : `${negativeCount} of ${totalCount} recent mentions of "${topicKey}" (${roundedRatio}%) are negative, a sharp rise within the latest monitoring window.`;
+            ? `${negativeCount} dari ${totalCount} percakapan terbaru tentang "${topicKey}" (${roundedRatio}%) bernada negatif, meningkat tajam pada periode pemantauan terakhir.`
+            : `${negativeCount} of the ${totalCount} latest mentions of "${topicKey}" (${roundedRatio}%) are negative, a sharp increase in the most recent monitoring period.`;
         const defaultWhy = id
-            ? `Sentimen negatif yang menumpuk dalam waktu singkat bisa menggerus kepercayaan pada brand dan berpotensi membesar menjadi krisis. Tim komunikasi sebaiknya meninjaunya sekarang.`
-            : `Negative sentiment piling up this fast can erode trust in the brand and may grow into a crisis. The communications team should review it now.`;
+            ? `Sentimen negatif yang meningkat dalam waktu singkat dapat menurunkan kepercayaan terhadap brand dan berpotensi berkembang menjadi krisis. Kami menyarankan tim komunikasi segera meninjaunya.`
+            : `A rapid build-up of negative sentiment can erode trust in the brand and may escalate into a crisis. We recommend the communications team review it promptly.`;
         const defaultAction = id
-            ? `Baca percakapan pemicunya, siapkan pernyataan klarifikasi atau tanggapan sementara, lalu tunjuk satu penanggung jawab.`
-            : `Read the mentions behind it, prepare a clarifying statement or holding response, and assign one owner.`;
+            ? `Tinjau percakapan pemicu, siapkan pernyataan klarifikasi atau tanggapan sementara, lalu tetapkan satu penanggung jawab.`
+            : `Review the mentions behind this alert, prepare a clarification or holding statement, and assign a single owner.`;
 
         // Attempt AI enhancement if available
         let whyItMatters = defaultWhy;

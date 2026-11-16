@@ -61,7 +61,7 @@ export async function sendReportEmail({ workspaceId, reportId, recipientEmail, s
             kicker: brand,
             body: emailHero({ chip: w("Report", "Laporan"), title: subject })
                 + `<div style="margin-top:24px;background:#F5F7FF;border:1px solid #E6EAF3;border-radius:14px;padding:18px 20px">${paragraphs}</div>`
-                + emailButton(`${appUrl()}/reports`, w("Open the report in Narriv", "Buka laporan di Narriv")),
+                + emailButton(`${appUrl()}/reports`, w("View report in Narriv", "Lihat laporan di Narriv")),
             reason: w(`Sent from the ${esc(brand)} workspace on Narriv.`, `Dikirim dari workspace ${esc(brand)} di Narriv.`),
         });
 

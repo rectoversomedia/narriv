@@ -58,10 +58,10 @@ ${body}
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px">
 <tr><td align="center" style="padding:26px 24px 8px;text-align:center;font:400 12px/1.7 ${FONT};color:${MUTED}">
 <div style="font-weight:700;color:${INK};font-size:13px">Narriv</div>
-<div>${w(lang, "Media monitoring and early crisis alerts for Indonesian brands", "Pemantauan media dan peringatan dini krisis untuk brand di Indonesia")}</div>
+<div>${w(lang, "Media monitoring and early crisis alerts for brands in Indonesia", "Pemantauan media dan peringatan dini krisis untuk brand di Indonesia")}</div>
 <div style="margin-top:10px">${link(app, w(lang, "Open Narriv", "Buka Narriv"))} &nbsp;·&nbsp; ${link(`${app}/settings`, w(lang, "Notification settings", "Pengaturan notifikasi"))} &nbsp;·&nbsp; ${link(help, w(lang, "Help", "Bantuan"))}</div>
 ${reason ? `<div style="margin-top:12px;color:#8A93B5">${reason}</div>` : ""}
-<div style="margin-top:12px;color:#8A93B5">&copy; ${new Date().getFullYear()} Narriv · ${w(lang, "Member of Rectoverso", "Bagian dari Rectoverso")}</div>
+<div style="margin-top:12px;color:#8A93B5">&copy; ${new Date().getFullYear()} Narriv · ${"Member of Rectoverso"}</div>
 </td></tr>
 </table>
 </td></tr>

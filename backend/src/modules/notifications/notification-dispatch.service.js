@@ -118,7 +118,7 @@ const jakartaTime = (iso, lang) => {
     if (Number.isNaN(d.getTime())) return "";
     const day = d.toLocaleDateString(lang === "id" ? "id-ID" : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" });
     const time = d.toLocaleTimeString(lang === "id" ? "id-ID" : "en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Jakarta" });
-    return `${day}, ${time} WIB`;
+    return lang === "id" ? `${day} pukul ${time} WIB` : `${day} at ${time} WIB`;
 };
 
 /**
@@ -131,20 +131,20 @@ export function alertEmailHtml({ lang, brandName, alertId, title, severity, what
     const chip = { critical: w("Critical alert", "Peringatan kritis"), high: w("High-risk alert", "Peringatan risiko tinggi") }[sev] || w("Alert", "Peringatan");
     const when = jakartaTime(detectedAt, lang);
     const srcList = (sources || []).filter(Boolean).map((p) => platformName(p, lang));
-    const lead = [when && w(`Detected ${esc(when)}`, `Terdeteksi ${esc(when)}`), srcList.length && `${w("from", "dari")} ${esc(srcList.join(", "))}`].filter(Boolean).join(" ");
+    const lead = [when && w(`Detected on ${esc(when)}`, `Terdeteksi ${esc(when)}`), srcList.length && `${w("Sources", "Sumber")}: ${esc(srcList.join(", "))}`].filter(Boolean).join(" · ");
     let body = emailHero({ chip, chipColor: SEV_COLOR[sev] || "#465FFF", title: title || w("New alert", "Peringatan baru"), lead: lead || null });
     if (stats && Number(stats.total) > 0) {
         body += emailStats([
             [String(stats.negative ?? 0), w("negative mentions", "percakapan negatif"), "#B42318"],
-            [String(stats.total), w("mentions checked", "percakapan dicek")],
+            [String(stats.total), w("mentions reviewed", "percakapan ditinjau")],
             [`${Math.round(Number(stats.ratio) || 0)}%`, w("negative share", "porsi negatif"), "#B42318"],
         ]);
     }
     if (whatHappened) body += emailSection(w("What happened", "Apa yang terjadi"), esc(whatHappened));
     if (whyItMatters) body += emailSection(w("Why it matters", "Mengapa ini penting"), esc(whyItMatters));
-    if (whatToDo) body += emailSection(w("Recommended next step", "Langkah yang disarankan"), `<div style="background:#F5F7FF;border-left:4px solid #465FFF;border-radius:8px;padding:12px 14px;color:#101334;font-weight:600">${esc(whatToDo)}</div>`);
+    if (whatToDo) body += emailSection(w("Recommended action", "Tindakan yang disarankan"), `<div style="background:#F5F7FF;border-left:4px solid #465FFF;border-radius:8px;padding:12px 14px;color:#101334;font-weight:600">${esc(whatToDo)}</div>`);
     if (mentions?.length) {
-        body += emailSection(w("Mentions behind this alert", "Contoh percakapan pemicu"), emailList(mentions.map((m) => ({
+        body += emailSection(w("Mentions that triggered this alert", "Percakapan yang memicu peringatan ini"), emailList(mentions.map((m) => ({
             tag: platformName(m.platform, lang),
             tagColor: "#465FFF",
             title: String(m.title || "").slice(0, 140),
@@ -152,7 +152,7 @@ export function alertEmailHtml({ lang, brandName, alertId, title, severity, what
             meta: [m.author && esc(m.author), m.at && esc(jakartaTime(m.at, lang))].filter(Boolean).join(" · ") || null,
         }))));
     }
-    body += emailButton(`${appUrl()}/alerts/${encodeURIComponent(alertId || "")}`, w("Open the alert in Narriv", "Buka peringatan di Narriv"), w("Assign an owner and track the response there.", "Tunjuk penanggung jawab dan pantau penanganannya di sana."));
+    body += emailButton(`${appUrl()}/alerts/${encodeURIComponent(alertId || "")}`, w("View alert in Narriv", "Lihat peringatan di Narriv"), w("Assign an owner and track the response from the alert page.", "Tetapkan penanggung jawab dan pantau penanganannya dari halaman peringatan."));
     return emailLayout({
         lang,
         title: `${chip}: ${title || ""}`,
@@ -160,8 +160,8 @@ export function alertEmailHtml({ lang, brandName, alertId, title, severity, what
         kicker: brandName,
         body,
         reason: w(
-            `You get this email because alerts are switched on for the ${esc(brandName)} workspace. Only critical and high-risk alerts are emailed.`,
-            `Anda menerima email ini karena notifikasi aktif untuk workspace ${esc(brandName)}. Hanya peringatan kritis dan risiko tinggi yang dikirim lewat email.`,
+            `You are receiving this email because alert notifications are enabled for the ${esc(brandName)} workspace. Only critical and high-risk alerts are sent by email.`,
+            `Anda menerima email ini karena notifikasi peringatan aktif untuk workspace ${esc(brandName)}. Hanya peringatan kritis dan berisiko tinggi yang dikirim melalui email.`,
         ),
     });
 }
@@ -191,10 +191,10 @@ export async function notifyNewHighRiskAlert({ workspaceId, alertId, title, seve
     const lang = await workspaceLanguage(workspaceId);
     const { data: ws } = await baseSupabaseAdmin.from("workspace_settings").select("brand_name").eq("workspace_id", workspaceId).maybeSingle();
     const details = await alertDetails(alertId).catch(() => ({}));
-    const sevWord = { critical: lang === "en" ? "CRITICAL" : "KRITIS", high: lang === "en" ? "HIGH" : "TINGGI" }[severity] || (lang === "en" ? "ALERT" : "PERINGATAN");
+    const sevWord = { critical: lang === "en" ? "Critical Alert" : "Peringatan Kritis", high: lang === "en" ? "High-Risk Alert" : "Peringatan Risiko Tinggi" }[severity] || (lang === "en" ? "Alert" : "Peringatan");
     return dispatchByEnabledChannels({
         workspaceId,
-        subject: `[Narriv] ${sevWord}: ${title || (lang === "en" ? "New alert" : "Peringatan baru")}`,
+        subject: `[Narriv] ${sevWord}: ${title || (lang === "en" ? "New Alert" : "Peringatan Baru")}`,
         message: `${whatHappened || ""}${whatToDo ? `\n${lang === "en" ? "Next step" : "Langkah"}: ${whatToDo}` : ""}`,
         html: alertEmailHtml({ lang, brandName: ws?.brand_name || "Narriv", alertId, title, severity, whatHappened, whatToDo, ...details }),
         text: formatAlertText({ id: alertId, title, severity, what_happened: whatHappened, what_to_do: whatToDo }),

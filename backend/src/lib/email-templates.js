@@ -26,7 +26,7 @@ function baseLayout(bodyHtml, { title, preheader } = {}) {
         title: title || APP_NAME,
         preheader,
         body: bodyHtml,
-        reason: "This is an account email from Narriv. You get it because this address was used to sign in or sign up.",
+        reason: "This is an account email from Narriv, sent because this address was used to sign up or sign in.",
     });
 }
 
@@ -43,9 +43,9 @@ export function emailVerificationCode({ name, code, expiresInMinutes = 10 }) {
     const greeting = name ? name.split(" ")[0] : "there";
 
     const html = baseLayout(`
-    ${emailHero({ chip: "Verify your email", title: `Hi ${esc(greeting)}, welcome to ${APP_NAME}`, lead: "Enter this code in Narriv to confirm your email address and finish setting up your account." })}
+    ${emailHero({ chip: "Verify your email", title: `Hi ${esc(greeting)}, welcome to ${APP_NAME}`, lead: "Enter this code in Narriv to verify your email address and complete your account setup." })}
     ${emailCode(code)}
-    <p style="${NOTE}">This code expires in <strong>${expiresInMinutes} minutes</strong>.<br>If you didn't create a Narriv account, you can ignore this email.</p>
+    <p style="${NOTE}">This code expires in <strong>${expiresInMinutes} minutes</strong>.<br>If you did not create a Narriv account, you can safely ignore this email.</p>
   `, { title: `${code} is your ${APP_NAME} verification code`, preheader: `Your verification code is ${code}. It expires in ${expiresInMinutes} minutes.` });
 
     const text = [
@@ -84,9 +84,9 @@ export function passwordResetCode({ name, code, expiresInMinutes = 10 }) {
     const greeting = name ? name.split(" ")[0] : "there";
 
     const html = baseLayout(`
-    ${emailHero({ chip: "Password reset", title: `Hi ${esc(greeting)}, here is your reset code`, lead: "We received a request to reset your Narriv password. Enter this code to confirm it's you." })}
+    ${emailHero({ chip: "Password reset", title: `Hi ${esc(greeting)}, here is your reset code`, lead: "We received a request to reset your Narriv password. Enter this code to confirm it is you." })}
     ${emailCode(code)}
-    <p style="${NOTE}">This code expires in <strong>${expiresInMinutes} minutes</strong>.<br>If you didn't ask to reset your password, ignore this email. Your password stays the same.</p>
+    <p style="${NOTE}">This code expires in <strong>${expiresInMinutes} minutes</strong>.<br>If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
   `, { title: `${code} is your ${APP_NAME} password reset code`, preheader: `Your reset code is ${code}. It expires in ${expiresInMinutes} minutes.` });
 
     const text = [
@@ -125,9 +125,9 @@ export function passwordResetConfirmation({ name }) {
     const greeting = name ? name.split(" ")[0] : "there";
 
     const html = baseLayout(`
-    ${emailHero({ chip: "Password changed", chipColor: "#12A150", title: `Hi ${esc(greeting)}, your password was successfully reset`, lead: "For your security, we signed you out of every device. Sign in again with your new password." })}
+    ${emailHero({ chip: "Password changed", chipColor: "#12A150", title: `Hi ${esc(greeting)}, your password was successfully reset`, lead: "For your security, you have been signed out of all devices. Please sign in again with your new password." })}
     ${emailButton(`${APP_URL}/login`, "Sign in to Narriv")}
-    <p style="${NOTE}">Didn't change your password? <a href="${APP_URL}/reset-password" style="color:#465FFF;font-weight:700">Reset it again now</a> to secure your account.</p>
+    <p style="${NOTE}">Did not change your password? <a href="${APP_URL}/reset-password" style="color:#465FFF;font-weight:700">Reset it now</a> to secure your account.</p>
   `, { title: `Your ${APP_NAME} password was reset`, preheader: "Your password was changed and all sessions were signed out." });
 
     const text = [

@@ -270,7 +270,28 @@ router.post("/backfill-regions", requirePlatformAdmin, validateRequest({ body: z
     }
 });
 
-router.post("/test-email", requirePlatformAdmin, validateRequest({ body: z.object({ to: z.string().trim().email().max(254) }) }), async (req, res) => {
+// Fictional English sample for the admin test email (illustrative numbers only).
+const TEST_EMAIL_SAMPLE_EN = (now) => ({
+    report: {
+        brand: "Arunika Bank", title: "Weekly Report", periodStart: new Date(now - 7 * 864e5).toISOString(), periodEnd: new Date(now).toISOString(),
+        totals: { signals: 214, negative: 31, positive: 22, alerts: 4 }, previous: { signals: 180, negative: 26 },
+        issues: [{ title: "Mobile app login failures", signals: 48, impact: "High" }, { title: "Complaints about new transfer fees", signals: 31 }],
+        alerts: [{ title: "Negative Sentiment Spike: mobile app outage", severity: "critical", status: "open", owner: "Digital Team", whatToDo: "Publish a status update on social channels within the hour." }],
+    },
+    alert: {
+        alertId: "", title: "Negative Sentiment Spike: mobile app outage", severity: "critical",
+        whatHappened: "12 of the 19 latest mentions of \"mobile app outage\" (63%) are negative, a sharp increase in the most recent monitoring period.",
+        whyItMatters: "A rapid build-up of negative sentiment can erode trust in the brand and may escalate into a crisis. We recommend the communications team review it promptly.",
+        whatToDo: "Review the mentions behind this alert, prepare a clarification or holding statement, and assign a single owner.",
+        stats: { negative: 12, total: 19, ratio: 63 }, sources: ["news", "x", "tiktok"], detectedAt: new Date(now).toISOString(),
+        mentions: [
+            { title: "Customers report they cannot log in to the Arunika mobile app", platform: "news", author: "Sample News", at: new Date(now - 36e5).toISOString() },
+            { title: "Third day the app won't open. Any update, Arunika?", platform: "x", author: "@sample_user", at: new Date(now - 72e5).toISOString() },
+        ],
+    },
+});
+
+router.post("/test-email", requirePlatformAdmin, validateRequest({ body: z.object({ to: z.string().trim().email().max(254), lang: z.enum(["en", "id"]).optional() }) }), async (req, res) => {
     try {
         const { sendEmail, isEmailConfigured } = await import("../../lib/email.js");
         if (!isEmailConfigured()) return res.status(503).json({ error: "Email provider is not configured" });
@@ -278,29 +299,41 @@ router.post("/test-email", requirePlatformAdmin, validateRequest({ body: z.objec
         const { reportEmailHtml } = await import("../reports/report-delivery.js");
         const { alertEmailHtml } = await import("../notifications/notification-dispatch.service.js");
         const to = req.body.to;
+        const lang = req.body.lang || "en";
         const appUrl = (process.env.FRONTEND_URL || process.env.APP_URL || "https://www.narriv.digital").replace(/\/$/, "");
-        const result = { report: null, alert: null };
+        const result = { report: null, alert: null, lang };
 
-        const { data: report } = await db.from("reports").select("*").eq("workspace_id", DEMO_WORKSPACE_ID).order("created_at", { ascending: false }).limit(1).maybeSingle();
-        if (report) {
-            const data = await collectReportData(report);
-            const pdf = await buildReportPdf(data, "id");
-            const sent = await sendEmail({ to, subject: `[Tes] ${data.brand || "Narriv"}: laporan mingguan`, html: reportEmailHtml(data, "id", appUrl), attachments: [{ filename: reportFileName(data, "pdf"), content: pdf }] });
+        if (lang === "en") {
+            // The demo workspace is written in Indonesian, so the English test uses a fixed English sample.
+            const now = Date.now();
+            const sample = TEST_EMAIL_SAMPLE_EN(now);
+            const pdf = await fetch(`${(process.env.MARKETING_URL || "https://www.narriv.digital").replace(/\/$/, "")}/contoh-laporan-narriv.pdf`).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
+            const sent = await sendEmail({ to, subject: `[Test] ${sample.report.brand}: Weekly Report`, html: reportEmailHtml(sample.report, "en", appUrl), ...(pdf ? { attachments: [{ filename: "Narriv-Sample-Report.pdf", content: Buffer.from(pdf) }] } : {}) });
             result.report = sent?.id ? "sent" : "failed";
+            const sentAlert = await sendEmail({ to, subject: `[Test] [Narriv] Critical Alert: ${sample.alert.title}`, html: alertEmailHtml({ lang: "en", brandName: sample.report.brand, ...sample.alert }) });
+            result.alert = sentAlert?.id ? "sent" : "failed";
         } else {
-            result.report = "no_report";
-        }
+            const { data: report } = await db.from("reports").select("*").eq("workspace_id", DEMO_WORKSPACE_ID).order("created_at", { ascending: false }).limit(1).maybeSingle();
+            if (report) {
+                const data = await collectReportData(report);
+                const pdf = await buildReportPdf(data, "id");
+                const sent = await sendEmail({ to, subject: `[Tes] ${data.brand || "Narriv"}: Laporan Mingguan`, html: reportEmailHtml(data, "id", appUrl), attachments: [{ filename: reportFileName(data, "pdf"), content: pdf }] });
+                result.report = sent?.id ? "sent" : "failed";
+            } else {
+                result.report = "no_report";
+            }
 
-        const { data: alert } = await db.from("alerts").select("id, title, severity, what_happened, why_it_matters, what_to_do, sources, metadata, created_at").eq("workspace_id", DEMO_WORKSPACE_ID).in("severity", ["critical", "high"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
-        const { data: ws } = await db.from("workspace_settings").select("brand_name").eq("workspace_id", DEMO_WORKSPACE_ID).maybeSingle();
-        const title = alert?.title || "Peringatan contoh";
-        const severity = alert?.severity || "critical";
-        const sentAlert = await sendEmail({
-            to,
-            subject: `[Tes] [Narriv] ${severity === "high" ? "TINGGI" : "KRITIS"}: ${title}`,
-            html: alertEmailHtml({ lang: "id", brandName: ws?.brand_name || "Narriv", alertId: alert?.id || "", title, severity, whatHappened: alert?.what_happened || null, whyItMatters: alert?.why_it_matters || null, whatToDo: alert?.what_to_do || null, sources: alert?.sources || [], detectedAt: alert?.created_at, stats: alert?.metadata?.total_count ? { negative: alert.metadata.negative_count, total: alert.metadata.total_count, ratio: alert.metadata.negative_ratio } : null }),
-        });
-        result.alert = sentAlert?.id ? "sent" : "failed";
+            const { data: alert } = await db.from("alerts").select("id, title, severity, what_happened, why_it_matters, what_to_do, sources, metadata, created_at").eq("workspace_id", DEMO_WORKSPACE_ID).in("severity", ["critical", "high"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
+            const { data: ws } = await db.from("workspace_settings").select("brand_name").eq("workspace_id", DEMO_WORKSPACE_ID).maybeSingle();
+            const title = alert?.title || "Peringatan contoh";
+            const severity = alert?.severity || "critical";
+            const sentAlert = await sendEmail({
+                to,
+                subject: `[Tes] [Narriv] ${severity === "high" ? "Peringatan Risiko Tinggi" : "Peringatan Kritis"}: ${title}`,
+                html: alertEmailHtml({ lang: "id", brandName: ws?.brand_name || "Narriv", alertId: alert?.id || "", title, severity, whatHappened: alert?.what_happened || null, whyItMatters: alert?.why_it_matters || null, whatToDo: alert?.what_to_do || null, sources: alert?.sources || [], detectedAt: alert?.created_at, stats: alert?.metadata?.total_count ? { negative: alert.metadata.negative_count, total: alert.metadata.total_count, ratio: alert.metadata.negative_ratio } : null }),
+            });
+            result.alert = sentAlert?.id ? "sent" : "failed";
+        }
 
         await recordAuditLog({ userId: req.user.id, event: "platform_admin_test_email", metadata: { to, ...result } }).catch(() => {});
         return res.json(result);
