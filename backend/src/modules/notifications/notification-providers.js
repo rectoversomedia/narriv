@@ -1,5 +1,6 @@
 import { logStructured } from "../../lib/logger.js";
 import { sendEmail, isEmailConfigured } from "../../lib/email.js";
+import { appUrl, emailButton, emailHero, emailLayout, esc } from "../../lib/email-layout.js";
 import { whatsappRecipients } from "../../lib/notifications/chat-channels.js";
 
 export function createEmailProvider() {
@@ -22,17 +23,17 @@ export function createEmailProvider() {
                 };
             }
 
-            const html = customHtml || `
-                <div style="font-family: sans-serif; padding: 20px;">
-                    <h2>${subject}</h2>
-                    <p>${message}</p>
-                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #eaeaea;" />
-                    <p style="font-size: 12px; color: #666;">
-                        This is an automated notification from Narriv.<br />
-                        Workspace ID: ${metadata?.workspaceId || "Unknown"}
-                    </p>
-                </div>
-            `;
+            const lang = metadata?.lang === "id" ? "id" : "en";
+            const html = customHtml || emailLayout({
+                lang,
+                title: subject,
+                preheader: message,
+                kicker: metadata?.brandName,
+                body: emailHero({ title: subject })
+                    + `<div style="margin-top:22px;background:#F5F7FF;border:1px solid #E6EAF3;border-radius:14px;padding:18px 20px">${esc(message).replace(/\n/g, "<br>")}</div>`
+                    + emailButton(appUrl(), lang === "id" ? "Buka Narriv" : "Open Narriv"),
+                reason: lang === "id" ? "Notifikasi otomatis dari Narriv." : "An automatic notification from Narriv.",
+            });
 
             const result = await sendEmail({
                 to,

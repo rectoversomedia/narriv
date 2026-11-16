@@ -4,6 +4,8 @@
  * Each template function returns { subject, html, text } ready for sendEmail().
  */
 
+import { emailButton, emailCode, emailHero, emailLayout, emailText, esc } from "./email-layout.js";
+
 const APP_NAME = process.env.APP_NAME || "Narriv";
 const APP_URL = process.env.APP_URL || "http://localhost:3001";
 // SAFETY: warn if emails would contain broken localhost links in production
@@ -18,39 +20,17 @@ if (
     );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Shared layout helpers                                              */
-/* ------------------------------------------------------------------ */
-
-function baseLayout(bodyHtml) {
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${APP_NAME}</title>
-<style>
-  body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-  .container { max-width: 480px; margin: 40px auto; background: #ffffff; border-radius: 8px; border: 1px solid #e4e4e7; overflow: hidden; }
-  .header { background: #18181b; padding: 24px 32px; text-align: center; }
-  .header h1 { color: #ffffff; font-size: 20px; margin: 0; font-weight: 600; letter-spacing: -0.3px; }
-  .body { padding: 32px; color: #27272a; font-size: 15px; line-height: 1.6; }
-  .code-box { background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0; }
-  .code { font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #18181b; font-family: 'SF Mono', Monaco, Consolas, monospace; }
-  .footer { padding: 16px 32px; background: #fafafa; border-top: 1px solid #e4e4e7; text-align: center; font-size: 12px; color: #a1a1aa; }
-  .muted { color: #71717a; font-size: 13px; }
-  p { margin: 0 0 12px; }
-</style>
-</head>
-<body>
-<div class="container">
-  <div class="header"><h1>${APP_NAME}</h1></div>
-  <div class="body">${bodyHtml}</div>
-  <div class="footer">&copy; ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</div>
-</div>
-</body>
-</html>`;
+function baseLayout(bodyHtml, { title, preheader } = {}) {
+    return emailLayout({
+        lang: "en",
+        title: title || APP_NAME,
+        preheader,
+        body: bodyHtml,
+        reason: "This is an account email from Narriv. You get it because this address was used to sign in or sign up.",
+    });
 }
+
+const NOTE = `margin:22px 0 0;text-align:center;font:400 13px/1.6 ${emailText.FONT};color:${emailText.MUTED}`;
 
 /**
  * @param {object} opts
@@ -63,14 +43,10 @@ export function emailVerificationCode({ name, code, expiresInMinutes = 10 }) {
     const greeting = name ? name.split(" ")[0] : "there";
 
     const html = baseLayout(`
-    <p>Hi ${greeting},</p>
-    <p>Welcome to ${APP_NAME}! Use the code below to verify your email address:</p>
-    <div class="code-box">
-      <div class="code">${code}</div>
-    </div>
-    <p class="muted">This code expires in <strong>${expiresInMinutes} minutes</strong>.</p>
-    <p class="muted">If you didn't create an account, you can safely ignore this email.</p>
-  `);
+    ${emailHero({ chip: "Verify your email", title: `Hi ${esc(greeting)}, welcome to ${APP_NAME}`, lead: "Enter this code in Narriv to confirm your email address and finish setting up your account." })}
+    ${emailCode(code)}
+    <p style="${NOTE}">This code expires in <strong>${expiresInMinutes} minutes</strong>.<br>If you didn't create a Narriv account, you can ignore this email.</p>
+  `, { title: `${code} is your ${APP_NAME} verification code`, preheader: `Your verification code is ${code}. It expires in ${expiresInMinutes} minutes.` });
 
     const text = [
         `Hi ${greeting},`,
@@ -108,14 +84,10 @@ export function passwordResetCode({ name, code, expiresInMinutes = 10 }) {
     const greeting = name ? name.split(" ")[0] : "there";
 
     const html = baseLayout(`
-    <p>Hi ${greeting},</p>
-    <p>We received a request to reset your password. Use the code below to verify your identity:</p>
-    <div class="code-box">
-      <div class="code">${code}</div>
-    </div>
-    <p class="muted">This code expires in <strong>${expiresInMinutes} minutes</strong>.</p>
-    <p class="muted">If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.</p>
-  `);
+    ${emailHero({ chip: "Password reset", title: `Hi ${esc(greeting)}, here is your reset code`, lead: "We received a request to reset your Narriv password. Enter this code to confirm it's you." })}
+    ${emailCode(code)}
+    <p style="${NOTE}">This code expires in <strong>${expiresInMinutes} minutes</strong>.<br>If you didn't ask to reset your password, ignore this email. Your password stays the same.</p>
+  `, { title: `${code} is your ${APP_NAME} password reset code`, preheader: `Your reset code is ${code}. It expires in ${expiresInMinutes} minutes.` });
 
     const text = [
         `Hi ${greeting},`,
@@ -153,11 +125,10 @@ export function passwordResetConfirmation({ name }) {
     const greeting = name ? name.split(" ")[0] : "there";
 
     const html = baseLayout(`
-    <p>Hi ${greeting},</p>
-    <p>Your password has been successfully reset.</p>
-    <p>If you did not make this change, please contact our support team immediately or <a href="${APP_URL}/reset-password" style="color: #2563eb;">reset your password again</a>.</p>
-    <p class="muted">For your security, all existing sessions have been signed out.</p>
-  `);
+    ${emailHero({ chip: "Password changed", chipColor: "#12A150", title: `Hi ${esc(greeting)}, your password was successfully reset`, lead: "For your security, we signed you out of every device. Sign in again with your new password." })}
+    ${emailButton(`${APP_URL}/login`, "Sign in to Narriv")}
+    <p style="${NOTE}">Didn't change your password? <a href="${APP_URL}/reset-password" style="color:#465FFF;font-weight:700">Reset it again now</a> to secure your account.</p>
+  `, { title: `Your ${APP_NAME} password was reset`, preheader: "Your password was changed and all sessions were signed out." });
 
     const text = [
         `Hi ${greeting},`,

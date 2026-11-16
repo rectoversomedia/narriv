@@ -291,14 +291,14 @@ router.post("/test-email", requirePlatformAdmin, validateRequest({ body: z.objec
             result.report = "no_report";
         }
 
-        const { data: alert } = await db.from("alerts").select("id, title, severity, what_happened, what_to_do").eq("workspace_id", DEMO_WORKSPACE_ID).in("severity", ["critical", "high"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
+        const { data: alert } = await db.from("alerts").select("id, title, severity, what_happened, why_it_matters, what_to_do, sources, metadata, created_at").eq("workspace_id", DEMO_WORKSPACE_ID).in("severity", ["critical", "high"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
         const { data: ws } = await db.from("workspace_settings").select("brand_name").eq("workspace_id", DEMO_WORKSPACE_ID).maybeSingle();
         const title = alert?.title || "Peringatan contoh";
         const severity = alert?.severity || "critical";
         const sentAlert = await sendEmail({
             to,
             subject: `[Tes] [Narriv] ${severity === "high" ? "TINGGI" : "KRITIS"}: ${title}`,
-            html: alertEmailHtml({ lang: "id", brandName: ws?.brand_name || "Narriv", alertId: alert?.id || "", title, severity, whatHappened: alert?.what_happened || null, whatToDo: alert?.what_to_do || null }),
+            html: alertEmailHtml({ lang: "id", brandName: ws?.brand_name || "Narriv", alertId: alert?.id || "", title, severity, whatHappened: alert?.what_happened || null, whyItMatters: alert?.why_it_matters || null, whatToDo: alert?.what_to_do || null, sources: alert?.sources || [], detectedAt: alert?.created_at, stats: alert?.metadata?.total_count ? { negative: alert.metadata.negative_count, total: alert.metadata.total_count, ratio: alert.metadata.negative_ratio } : null }),
         });
         result.alert = sentAlert?.id ? "sent" : "failed";
 

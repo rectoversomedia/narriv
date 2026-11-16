@@ -306,14 +306,14 @@ async function detectAlertsNow(workspaceId) {
             ? `${negativeCount} dari ${totalCount} percakapan terbaru (${roundedRatio}%) bernada negatif untuk ${topicKey}.`
             : `${negativeCount} of ${totalCount} recent signals (${roundedRatio}%) are negative for ${topicKey}.`;
         const whatHappened = id
-            ? `Aturan otomatis mendeteksi lonjakan sentimen negatif yang tajam (${roundedRatio}%, ${negativeCount}/${totalCount} percakapan) terkait '${topicKey}' dalam periode pemantauan terakhir.`
-            : `Automated rules engine detected an acute negative sentiment surge (${roundedRatio}%, ${negativeCount}/${totalCount} signals) concerning '${topicKey}' within the recent monitoring window.`;
+            ? `${negativeCount} dari ${totalCount} percakapan terbaru tentang "${topicKey}" (${roundedRatio}%) bernada negatif. Angka ini naik tajam dalam periode pemantauan terakhir.`
+            : `${negativeCount} of ${totalCount} recent mentions of "${topicKey}" (${roundedRatio}%) are negative, a sharp rise within the latest monitoring window.`;
         const defaultWhy = id
-            ? `Lonjakan sentimen negatif yang terkonsentrasi mengancam kepercayaan terhadap brand dan menandakan krisis yang bisa membesar, sehingga perlu dipantau tim PR segera.`
-            : `A concentrated negative sentiment surge threatens brand trust and indicates an escalating crisis requiring immediate PR monitoring.`;
+            ? `Sentimen negatif yang menumpuk dalam waktu singkat bisa menggerus kepercayaan pada brand dan berpotensi membesar menjadi krisis. Tim komunikasi sebaiknya meninjaunya sekarang.`
+            : `Negative sentiment piling up this fast can erode trust in the brand and may grow into a crisis. The communications team should review it now.`;
         const defaultAction = id
-            ? `Tinjau percakapan yang masuk, siapkan pernyataan klarifikasi atau tanggapan sementara, dan tunjuk penanggung jawab insiden.`
-            : `Review incoming signals, draft a clarifying statement or holding response, and assign an incident lead.`;
+            ? `Baca percakapan pemicunya, siapkan pernyataan klarifikasi atau tanggapan sementara, lalu tunjuk satu penanggung jawab.`
+            : `Read the mentions behind it, prepare a clarifying statement or holding response, and assign one owner.`;
 
         // Attempt AI enhancement if available
         let whyItMatters = defaultWhy;

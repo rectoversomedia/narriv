@@ -2,6 +2,7 @@ import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { workspaceLanguage } from "../../lib/workspace-language.js";
 import { signalSentiment } from "../alerts/alerts.service.js";
+import { appUrl, emailButton, emailHero, emailLayout, esc } from "../../lib/email-layout.js";
 
 /**
  * Send a report via email.
@@ -49,17 +50,20 @@ export async function sendReportEmail({ workspaceId, reportId, recipientEmail, s
             return { sent: false, reason: "email_provider_not_configured" };
         }
 
-        const html = `
-            <div style="font-family: sans-serif; padding: 20px;">
-                <h2>${subject}</h2>
-                <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                    ${body.replace(/\n/g, '<br />')}
-                </div>
-                <p style="margin-top: 30px;">
-                    <a href="${process.env.APP_URL || 'http://localhost:3001'}/reports" style="background: #465FFF; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">View Report Details</a>
-                </p>
-            </div>
-        `;
+        const lang = await workspaceLanguage(workspaceId);
+        const w = (en, id) => (lang === "id" ? id : en);
+        const brand = workspaceSettings?.brand_name || "Narriv";
+        const paragraphs = String(body || "").split(/\n{2,}/).map((para) => `<p style="margin:0 0 14px">${esc(para).replace(/\n/g, "<br>")}</p>`).join("");
+        const html = emailLayout({
+            lang,
+            title: subject,
+            preheader: String(body || "").slice(0, 140),
+            kicker: brand,
+            body: emailHero({ chip: w("Report", "Laporan"), title: subject })
+                + `<div style="margin-top:24px;background:#F5F7FF;border:1px solid #E6EAF3;border-radius:14px;padding:18px 20px">${paragraphs}</div>`
+                + emailButton(`${appUrl()}/reports`, w("Open the report in Narriv", "Buka laporan di Narriv")),
+            reason: w(`Sent from the ${esc(brand)} workspace on Narriv.`, `Dikirim dari workspace ${esc(brand)} di Narriv.`),
+        });
 
         const result = await sendEmail({
             to,
