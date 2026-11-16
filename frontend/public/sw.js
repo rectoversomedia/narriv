@@ -3,7 +3,7 @@
 //
 // It deliberately caches nothing from the product: pages and API answers carry a client's data, which should not
 // be stored on the device, and a stale copy of a monitoring screen would mislead. Everything goes to the network.
-const VERSION = "narriv-sw-2";
+const VERSION = "narriv-sw-3";
 
 const OFFLINE_HTML = `<!doctype html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -34,10 +34,13 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
 
-// Page loads go to the network; only when that fails is the offline page shown. Other requests are untouched.
+// While the device is online the worker stays out of the way entirely: the browser loads every page itself, with
+// its own redirects (re-fetching a page load from a worker changes how Safari on iPhone sends it, which broke
+// sign-in). Only when the device reports no connection is the offline page shown.
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET" || request.mode !== "navigate") return;
+  if (self.navigator.onLine !== false) return;
   event.respondWith(
     fetch(request).catch(() => new Response(OFFLINE_HTML, { status: 503, headers: { "Content-Type": "text/html; charset=utf-8", "X-Narriv-SW": VERSION } })),
   );

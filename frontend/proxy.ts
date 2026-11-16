@@ -80,8 +80,16 @@ export function proxy(request: NextRequest) {
   // A client-side prefetch or navigation (a fetch, not a document load) cannot follow a redirect to the other host:
   // answer it with an empty response so the router skips the prefetch, or falls back to a full page load that
   // redirects. Next.js strips its own RSC headers before this runs, so the browser's fetch destination decides.
+  // A page load always gets the redirect, also when it does not say "document": Safari on iPhone sends a page load
+  // that passes through the service worker with another destination, and an empty answer there shows up as a
+  // downloaded file called "login". Page loads are recognised by their navigate mode or by asking for HTML.
   const fetchDest = request.headers.get("sec-fetch-dest");
-  const crossHost = (url: string) => (fetchDest && fetchDest !== "document" ? new NextResponse(null, { status: 204 }) : NextResponse.redirect(url));
+  const isPageLoad =
+    !fetchDest ||
+    fetchDest === "document" ||
+    request.headers.get("sec-fetch-mode") === "navigate" ||
+    (request.headers.get("accept") ?? "").includes("text/html");
+  const crossHost = (url: string) => (isPageLoad ? NextResponse.redirect(url) : new NextResponse(null, { status: 204 }));
   if (host === APP_HOST && isMarketingPath(pathname)) {
     return crossHost(`${MARKETING_ORIGIN}${pathname}${search}`);
   }
