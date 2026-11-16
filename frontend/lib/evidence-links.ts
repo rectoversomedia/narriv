@@ -46,7 +46,7 @@ export function hoursToDays(hours: number) {
 }
 
 export function issueHref(narrativeId: string, hours?: number) {
-  return `/intelligence${query({ narrative: narrativeId, days: hours ? hoursToDays(hours) : undefined })}`;
+  return `/intelligence/${encodeURIComponent(narrativeId)}${query({ days: hours ? hoursToDays(hours) : undefined })}`;
 }
 
 /** Reads Monitoring filters from a URL query, ignoring anything invalid. */

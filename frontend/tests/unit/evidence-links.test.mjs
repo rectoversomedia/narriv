@@ -8,10 +8,11 @@ test("finding links carry the issue, period and filters to an existing page", ()
   assert.equal(monitoringHref({ hours: 168, narrative: "abc-1", relevance: "direct" }), "/signals?hours=168&narrative=abc-1&relevance=direct");
   assert.equal(monitoringHref({ hours: 24, sentiment: "negative", relevance: "direct" }), "/signals?hours=24&relevance=direct&sentiment=negative");
   assert.equal(monitoringHref(), "/signals");
-  assert.equal(issueHref("abc-1", 168), "/intelligence?narrative=abc-1&days=7");
-  assert.equal(issueHref("abc-1", 24), "/intelligence?narrative=abc-1&days=1");
+  assert.equal(issueHref("abc-1", 168), "/intelligence/abc-1?days=7");
+  assert.equal(issueHref("abc-1", 24), "/intelligence/abc-1?days=1");
+  assert.equal(issueHref("abc-1"), "/intelligence/abc-1");
   assert.deepEqual([24, 168, 720, 2000].map(hoursToDays), [1, 7, 30, 90]);
-  for (const page of ["app/(dashboard)/signals/page.tsx", "app/(dashboard)/intelligence/page.tsx"]) assert.ok(existsSync(page));
+  for (const page of ["app/(dashboard)/signals/page.tsx", "app/(dashboard)/intelligence/page.tsx", "app/(dashboard)/intelligence/[id]/page.tsx"]) assert.ok(existsSync(page));
 });
 
 test("a link round-trips into the same Monitoring filters", () => {

@@ -9,14 +9,13 @@ import { Bot, Brain, Check, ChevronDown, ChevronRight, Database, Info, Layers3, 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
-import { NarrativeDetailView } from "@/components/intelligence/narrative-detail";
-import { getNarrativeById, getNarratives, getSources, triggerClustering, type NarrativeRecord } from "@/lib/api-service";
+import { getNarratives, getSources, triggerClustering, type NarrativeRecord } from "@/lib/api-service";
 import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
 import { StatStrip } from "@/components/ui/stamp";
-import { monitoringHref, parseIssueLink } from "@/lib/evidence-links";
+import { issueHref, parseIssueLink } from "@/lib/evidence-links";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
 import { useToast } from "@/components/ui/toast";
@@ -450,7 +449,6 @@ export default function IntelligencePage() {
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [mapZoom, setMapZoom] = useState(1);
   const [isAllClustersModalOpen, setIsAllClustersModalOpen] = useState(false);
-  const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [isPlanResponseOpen, setIsPlanResponseOpen] = useState(false);
   const [isLandscapeOpen, setIsLandscapeOpen] = useState(false);
   const [isSelectedActionsOpen, setIsSelectedActionsOpen] = useState(false);
@@ -499,11 +497,9 @@ export default function IntelligencePage() {
       const option = periodOptions.find((o) => o.days === link.days);
       if (option) setSelectedPeriod(option);
     }
-    if (link.narrative) {
-      setSelectedClusterId(link.narrative);
-      setIsAnalysisOpen(true);
-    }
-  }, []);
+    // Old links (?narrative=<id>) open the issue's own page.
+    if (link.narrative) router.replace(issueHref(link.narrative, link.days ? link.days * 24 : undefined));
+  }, [router]);
 
   useEffect(() => {
     const mountedId = window.setTimeout(() => setMounted(true), 0);
@@ -518,7 +514,6 @@ export default function IntelligencePage() {
     
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        setIsAnalysisOpen(false);
         setIsLandscapeOpen(false);
         setIsAllClustersModalOpen(false);
       }
@@ -553,15 +548,10 @@ export default function IntelligencePage() {
   const clusters = liveClusters;
   const emptyCluster = buildEmptyCluster(ti);
   const selectedCluster = clusters.find((cluster) => cluster.id === selectedClusterId) ?? clusters[0] ?? emptyCluster;
-  // A linked narrative may sit outside the loaded list; its detail is still fetched by id.
   const selectedNarrativeId = selectedClusterId ?? (selectedCluster.id === "empty" ? null : selectedCluster.id);
   const selectedLifecycleKey = selectedNarrativeId ? classifyLifecycle(selectedCluster) : null;
-  const narrativeDetailQuery = useQuery({
-    queryKey: ["narrative-detail", selectedNarrativeId],
-    queryFn: () => selectedNarrativeId ? getNarrativeById(selectedNarrativeId) : null,
-    enabled: Boolean(selectedNarrativeId && isAnalysisOpen),
-    staleTime: 30 * 1000,
-  });
+  /** An issue's full analysis lives on its own page, opened for the period in view. */
+  const openIssue = (id: string) => router.push(issueHref(id, selectedPeriod.days * 24));
   // Data freshness comes from the pipeline status endpoint, not a fixed label.
   const pipelineQuery = useQuery({
     queryKey: ["pipeline-status"],
@@ -745,7 +735,7 @@ export default function IntelligencePage() {
               language={language}
               onOpen={(id) => setSelectedClusterId(id)}
               onPlan={(id) => { setSelectedClusterId(id); setIsPlanResponseOpen(true); }}
-              onReport={(id) => { setSelectedClusterId(id); setIsAnalysisOpen(true); }}
+              onReport={(id) => openIssue(id)}
             />
       ) : null}
 
@@ -815,7 +805,7 @@ export default function IntelligencePage() {
                     memberSignalIds: cluster.memberSignalIds,
                   }))}
                   selectedId={selectedCluster.id === "empty" ? null : selectedCluster.id}
-                  onSelect={(id) => { setSelectedClusterId(id); setIsAnalysisOpen(true); }}
+                  onSelect={(id) => openIssue(id)}
                   zoom={mapZoom}
                   signalLabel={(count) => ti("labels.signals", { count: formatSignals(count) })}
                 />
@@ -922,7 +912,7 @@ export default function IntelligencePage() {
                 </button>
                 {isSelectedActionsOpen && selectedNarrativeId ? (
                   <div className="absolute right-0 top-full z-50 mt-1 w-[160px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)]">
-                    <button type="button" onClick={() => { setIsSelectedActionsOpen(false); setIsAnalysisOpen(true); }} className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-[11px] font-extrabold text-[#475070] transition hover:bg-[#F8FAFF]">
+                    <button type="button" onClick={() => { setIsSelectedActionsOpen(false); if (selectedNarrativeId) openIssue(selectedNarrativeId); }} className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-[11px] font-extrabold text-[#475070] transition hover:bg-[#F8FAFF]">
                       {ti("actions.viewDetails")}
                     </button>
                     <button type="button" onClick={() => { 
@@ -976,7 +966,7 @@ export default function IntelligencePage() {
                 <button type="button" onClick={() => setIsPlanResponseOpen(true)} disabled={!selectedNarrativeId} className="flex h-11 w-full items-center justify-center rounded-[12px] bg-[#465FFF] text-[14px] font-black text-white transition hover:bg-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50">
                   {pickL("Create Action Plan", "Buat Rencana Aksi")}
                 </button>
-                <button type="button" onClick={() => setIsAnalysisOpen(true)} disabled={!selectedNarrativeId} className="flex h-11 w-full items-center justify-center gap-1.5 rounded-[12px] border-[1.5px] border-[#101334] bg-white text-[14px] font-black text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#F7F8FC] disabled:cursor-not-allowed disabled:opacity-50">
+                <button type="button" onClick={() => { if (selectedNarrativeId) openIssue(selectedNarrativeId); }} disabled={!selectedNarrativeId} className="flex h-11 w-full items-center justify-center gap-1.5 rounded-[12px] border-[1.5px] border-[#101334] bg-white text-[14px] font-black text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#F7F8FC] disabled:cursor-not-allowed disabled:opacity-50">
                   {ti("selectedNarrative.btnAnalysis")} <ChevronRight size={14} />
                 </button>
               </div>
@@ -1062,34 +1052,6 @@ export default function IntelligencePage() {
           {ti("footer.btnSettings")}
         </button>
       </footer>
-
-      <ModalShell open={mounted && isAnalysisOpen} onClose={() => setIsAnalysisOpen(false)} size="xl" title={narrativeDetailQuery.data?.title || (selectedCluster.id === selectedNarrativeId ? text(selectedCluster.topic, language) : "")} description={ti("analysisModal.subtitle")} footer={<><div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-[#647099]">{ti("analysisModal.draftNote")}</p>
-                  <a href={monitoringHref({ narrative: selectedNarrativeId ?? undefined, hours: selectedPeriod.days <= 1 ? 24 : selectedPeriod.days <= 7 ? 168 : selectedPeriod.days <= 30 ? 720 : undefined })} className="mt-1 inline-block text-[11px] font-black text-[#3B52F5] hover:underline">{ti("analysisModal.viewRecords")}</a>
-                </div>
-                <button type="button" onClick={() => setIsPlanResponseOpen(true)} className="h-9 rounded-[9px] bg-[#465FFF] px-4 text-[12px] font-black text-white transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40">
-                  {ti("analysisModal.planResponse")}
-                </button></>}>
-{narrativeDetailQuery.isPending ? (
-                <div className="flex h-40 items-center justify-center">
-                  <RefreshCcw className="animate-spin text-[#647099]" size={24} />
-                </div>
-              ) : narrativeDetailQuery.data === null || narrativeDetailQuery.isError ? (
-                <div className="flex h-48 flex-col items-center justify-center text-center">
-                  <p className="mt-2 text-sm font-black text-[#53608C]">{ti("analysisModal.errorTitle")}</p>
-                  <p className="mt-1 max-w-sm text-xs font-semibold leading-relaxed text-[#647099]">{ti("analysisModal.errorDesc")}</p>
-                  <button type="button" onClick={() => void narrativeDetailQuery.refetch()} className="mt-4 rounded-[8px] border border-[#D9DEEA] bg-white px-4 py-2 text-[11px] font-black text-[#53608C] transition hover:bg-[#F8FAFF]">
-                    {ti("retry")}
-                  </button>
-                </div>
-              ) : narrativeDetailQuery.data ? (
-                <NarrativeDetailView detail={narrativeDetailQuery.data} />
-              ) : (
-                <div className="flex h-40 flex-col items-center justify-center text-center">
-                  <p className="mt-2 text-sm font-bold text-[#53608C]">{ti("analysisModal.noData")}</p>
-                </div>
-              )}
-</ModalShell>
 
       {selectedNarrativeId ? (
         <CreateActionPlanModal

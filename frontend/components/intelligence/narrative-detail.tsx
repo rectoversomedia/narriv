@@ -164,13 +164,31 @@ function Evidence({ detail, n }: { detail: NarrativeDetailRecord; n: string }) {
   );
 }
 
-export function NarrativeDetailView({ detail }: { detail: NarrativeDetailRecord }) {
+/**
+ * The whole detail. As a page on wide screens it runs in two columns: the spread on the left, history and the
+ * records beside it; on narrow screens (and in a modal) everything stacks in reading order.
+ */
+export function NarrativeDetailView({ detail, layout = "stack" }: { detail: NarrativeDetailRecord; layout?: "stack" | "page" }) {
+  const spread = detail.spread ? <NarrativeSpreadPanel spread={detail.spread} n="01" /> : null;
+  const history = <NarrativePrecedents precedents={detail.precedents ?? []} expectation={detail.expectation} n={detail.spread ? "02" : "01"} />;
+  const records = <Evidence detail={detail} n={detail.spread ? "03" : "02"} />;
+  if (layout === "page") {
+    return (
+      <div className="grid gap-8">
+        <Summary detail={detail} />
+        <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="grid gap-8">{spread ?? history}</div>
+          <div className="grid gap-8">{spread ? history : null}{records}</div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="grid gap-8">
       <Summary detail={detail} />
-      {detail.spread ? <NarrativeSpreadPanel spread={detail.spread} n="01" /> : null}
-      <NarrativePrecedents precedents={detail.precedents ?? []} expectation={detail.expectation} n={detail.spread ? "02" : "01"} />
-      <Evidence detail={detail} n={detail.spread ? "03" : "02"} />
+      {spread}
+      {history}
+      {records}
     </div>
   );
 }
