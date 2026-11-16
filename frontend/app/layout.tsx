@@ -8,6 +8,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { LaunchOverlay } from "@/components/launch/launch-overlay";
 import { Analytics } from "@/components/analytics/analytics";
 import { ServiceWorker } from "@/components/pwa/service-worker";
+import { WebsiteInstallGuard } from "@/components/pwa/website-install-guard";
 import { LAUNCH_BOOT_SCRIPT } from "@/lib/launch";
 import { cn } from "@/lib/utils";
 import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/seo";
@@ -114,6 +115,7 @@ export default function RootLayout({
             <LaunchOverlay />
             <Analytics />
             <ServiceWorker />
+            <WebsiteInstallGuard />
           </ReactQueryProvider>
         </IntlProvider>
       </body>
