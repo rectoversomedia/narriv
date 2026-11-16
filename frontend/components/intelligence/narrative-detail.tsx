@@ -41,6 +41,7 @@ function story(d: NarrativeDetailRecord, total: number, top: [string, number] | 
   if (m) {
     if (m.last24h > m.prior24h) parts.push(pickL(`Still growing: ${m.last24h} new in the last 24 hours.`, `Masih naik: ${m.last24h} catatan baru dalam 24 jam terakhir.`));
     else if (m.last24h === 0) parts.push(pickL("Quiet in the last 24 hours.", "Tenang dalam 24 jam terakhir."));
+    else if (m.last24h === m.prior24h) parts.push(pickL(`Steady: ${m.last24h} in the last 24 hours, the same as the day before.`, `Stabil: ${m.last24h} dalam 24 jam terakhir, sama dengan sehari sebelumnya.`));
     else parts.push(pickL(`Slowing: ${m.last24h} in the last 24 hours against ${m.prior24h} the day before.`, `Melambat: ${m.last24h} dalam 24 jam terakhir dibanding ${m.prior24h} sehari sebelumnya.`));
   }
   return parts.join(" ");
@@ -73,7 +74,7 @@ function Summary({ detail }: { detail: NarrativeDetailRecord }) {
           {m ? (
             <span className={cn("inline-flex items-center gap-1 rounded-[7px] px-2 py-0.5 font-mono text-[10.5px] font-bold", alarming ? "bg-[#E5484D] text-white" : up ? "bg-[#465FFF] text-white" : "bg-white/10 text-white/75")}>
               {up ? <TrendingUp size={12} aria-hidden="true" /> : <TrendingDown size={12} aria-hidden="true" />}
-              {up ? pickL("Growing", "Naik") : m.last24h === 0 ? pickL("Quiet", "Tenang") : pickL("Slowing", "Melambat")}
+              {up ? pickL("Growing", "Naik") : m.last24h === 0 ? pickL("Quiet", "Tenang") : m.last24h === m.prior24h ? pickL("Steady", "Stabil") : pickL("Slowing", "Melambat")}
             </span>
           ) : null}
         </div>
