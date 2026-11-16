@@ -9,8 +9,8 @@ import { Bot, Brain, Check, ChevronDown, ChevronRight, Database, Info, Layers3, 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
-import { NarrativePrecedents, NarrativeSpreadPanel } from "@/components/intelligence/narrative-spread";
-import { getNarrativeById, getNarratives, getSources, triggerClustering, type NarrativeRecord, type NarrativeDetailRecord } from "@/lib/api-service";
+import { NarrativeDetailView } from "@/components/intelligence/narrative-detail";
+import { getNarrativeById, getNarratives, getSources, triggerClustering, type NarrativeRecord } from "@/lib/api-service";
 import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,6 @@ import { TopicMapCanvas } from "@/components/intelligence/topic-map-canvas";
 import { readableTone } from "@/lib/readable-tone";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
-import { intlLocale } from "@/store/useUiStore";
 import { ModalShell } from "@/components/ui/modal-shell";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type LocalizedText = { en: string; id: string };
@@ -659,7 +658,7 @@ export default function IntelligencePage() {
         ? "..."
         : pipelineQuery.isError
           ? ti("footer.freshnessUnavailable")
-          : ti("footer.lastIngestion", { time: timeAgo(pipelineQuery.data?.ingestion.lastRawDocumentAt) }),
+          : ti("footer.lastIngestion", { time: timeAgo(pipelineQuery.data?.ingestion?.lastRawDocumentAt) }),
       tone: "blue" as Tone,
     },
     {
@@ -672,7 +671,7 @@ export default function IntelligencePage() {
     {
       icon: Layers3,
       title: ti("footer.lastAnalysis"),
-      value: pipelineQuery.isPending ? "..." : timeAgo(pipelineQuery.data?.analysis.lastAnalysisAt),
+      value: pipelineQuery.isPending ? "..." : timeAgo(pipelineQuery.data?.analysis?.lastAnalysisAt),
       detail: ti("footer.lastAnalysisDetail"),
       tone: "purple" as Tone,
     },
@@ -1064,7 +1063,7 @@ export default function IntelligencePage() {
         </button>
       </footer>
 
-      <ModalShell open={mounted && isAnalysisOpen} onClose={() => setIsAnalysisOpen(false)} size="lg" title={narrativeDetailQuery.data?.title || (selectedCluster.id === selectedNarrativeId ? text(selectedCluster.topic, language) : "")} description={ti("analysisModal.subtitle")} footer={<><div className="min-w-0">
+      <ModalShell open={mounted && isAnalysisOpen} onClose={() => setIsAnalysisOpen(false)} size="xl" title={narrativeDetailQuery.data?.title || (selectedCluster.id === selectedNarrativeId ? text(selectedCluster.topic, language) : "")} description={ti("analysisModal.subtitle")} footer={<><div className="min-w-0">
                   <p className="text-[11px] font-semibold text-[#647099]">{ti("analysisModal.draftNote")}</p>
                   <a href={monitoringHref({ narrative: selectedNarrativeId ?? undefined, hours: selectedPeriod.days <= 1 ? 24 : selectedPeriod.days <= 7 ? 168 : selectedPeriod.days <= 30 ? 720 : undefined })} className="mt-1 inline-block text-[11px] font-black text-[#3B52F5] hover:underline">{ti("analysisModal.viewRecords")}</a>
                 </div>
@@ -1084,7 +1083,7 @@ export default function IntelligencePage() {
                   </button>
                 </div>
               ) : narrativeDetailQuery.data ? (
-                <NarrativeEvidence detail={narrativeDetailQuery.data} />
+                <NarrativeDetailView detail={narrativeDetailQuery.data} />
               ) : (
                 <div className="flex h-40 flex-col items-center justify-center text-center">
                   <p className="mt-2 text-sm font-bold text-[#53608C]">{ti("analysisModal.noData")}</p>
@@ -1136,94 +1135,6 @@ export default function IntelligencePage() {
               </div>
 </ModalShell>
 
-    </div>
-  );
-}
-
-const SENTIMENT_CHIP: Record<string, string> = {
-  positive: "border-transparent bg-emerald-50 text-emerald-700",
-  negative: "border-transparent bg-rose-50 text-rose-700",
-  neutral: "border-slate-200 bg-slate-50 text-slate-600",
-  mixed: "border-transparent bg-amber-50 text-amber-700",
-  unanalyzed: "border-dashed border-slate-300 bg-white text-[#5A6478]",
-};
-
-function sentimentWord(key: string) {
-  const map: Record<string, [string, string]> = { positive: ["Positive", "Positif"], negative: ["Negative", "Negatif"], neutral: ["Neutral", "Netral"], mixed: ["Mixed", "Campuran"], unanalyzed: ["Not analysed", "Belum dianalisis"] };
-  const pair = map[String(key).toLowerCase()];
-  return pair ? pickL(pair[0], pair[1]) : key;
-}
-
-function formatDate(iso?: string | null) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString(intlLocale(), { dateStyle: "medium", timeStyle: "short" });
-}
-
-/** Narrative evidence: observed facts (counts, dates, linked sources) separate from model assessments. */
-function NarrativeEvidence({ detail }: { detail: NarrativeDetailRecord }) {
-  const signals = detail.relatedSignals || [];
-  const breakdown = detail.sentimentBreakdown || {};
-  const total = Object.values(breakdown).reduce((sum, v) => sum + v, 0);
-  const momentum = detail.momentum;
-  return (
-    <div className="grid gap-6">
-      <section aria-label={pickL("Facts", "Fakta")}>
-        <h3 className="text-sm font-black text-[#53608C]">{pickL("Facts", "Fakta")}</h3>
-        <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold text-[#647099]">{pickL("Articles", "Berita")}</dt><dd className="mt-1 text-lg font-black text-[#101334]">{signals.length}</dd></div>
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3" title={momentum?.basis}><dt className="text-[10px] font-bold text-[#647099]">{pickL("Last 24h vs day before", "24 jam terakhir vs sebelumnya")}</dt><dd className="mt-1 text-lg font-black text-[#101334]">{momentum ? `${momentum.last24h} vs ${momentum.prior24h}` : "—"}</dd></div>
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold text-[#647099]">{pickL("First seen", "Pertama muncul")}</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.firstSeen)}</dd></div>
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold text-[#647099]">{pickL("Last seen", "Terakhir muncul")}</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.lastSeen)}</dd></div>
-        </dl>
-      </section>
-
-      {detail.spread ? <NarrativeSpreadPanel spread={detail.spread} /> : null}
-      <NarrativePrecedents precedents={detail.precedents ?? []} expectation={detail.expectation} />
-
-      <section aria-label={pickL("AI assessment", "Penilaian AI")}>
-        <h3 className="text-sm font-black text-[#53608C]">{pickL("AI assessment", "Penilaian AI")}</h3>
-        <p className="mt-2 text-[12px] font-semibold text-[#58648C]">
-          {pickL("Confidence", "Keyakinan")}: <span className="font-black text-[#101334]">{detail.confidence === null || detail.confidence === undefined ? pickL("not available", "belum tersedia") : `${detail.confidence}%`}</span>
-          {detail.confidenceBasis ? <span className="text-[#647099]"> · {detail.confidenceBasis}</span> : null}
-        </p>
-        {total > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {Object.entries(breakdown).filter(([, v]) => v > 0).map(([key, value]) => (
-              <span key={key} className={cn("rounded-md border px-2 py-1 text-[11px] font-black capitalize", SENTIMENT_CHIP[key] || SENTIMENT_CHIP.neutral)}>
-                {sentimentWord(key)} {Math.round((value / total) * 100)}% ({value})
-              </span>
-            ))}
-          </div>
-        ) : null}
-      </section>
-
-      <section aria-label={pickL("Evidence", "Bukti")}>
-        <h3 className="text-sm font-black text-[#53608C]">{pickL("Evidence", "Bukti")} ({signals.length})</h3>
-        {signals.length === 0 ? (
-          <p className="mt-2 text-[12px] font-semibold text-[#647099]">{detail.evidenceNote || pickL("No linked articles.", "Belum ada berita tertaut.")}</p>
-        ) : (
-          <ul className="mt-3 flex flex-col gap-2">
-            {signals.slice(0, 20).map((sig) => (
-              <li key={sig.id} className="rounded-lg border border-[#EEF1F7] p-3">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  {sig.url ? (
-                    <a href={sig.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[#101334] underline-offset-2 hover:text-[#3B52F5] hover:underline">{sig.title}</a>
-                  ) : (
-                    <p className="text-sm font-bold text-[#101334]">{sig.title}</p>
-                  )}
-                  <span className={cn("shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-black capitalize", SENTIMENT_CHIP[sig.sentiment] || SENTIMENT_CHIP.unanalyzed)}>
-                    {sentimentWord(sig.sentiment)}
-                    {typeof sig.analysisConfidence === "number" ? ` · ${Math.round(sig.analysisConfidence * 100)}%` : ""}
-                  </span>
-                </div>
-                <p className="mt-1 text-[11px] font-semibold text-[#647099]">{sig.platform === "news" ? pickL("News", "Berita") : sig.platform || pickL("Unknown source", "Sumber tidak diketahui")} · {formatDate(sig.publishedAt || sig.capturedAt)}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-        {signals.length > 20 ? <p className="mt-2 text-[11px] font-semibold text-[#647099]">{pickL(`Showing the 20 most recent of ${signals.length} articles.`, `Menampilkan 20 terbaru dari ${signals.length} berita.`)}</p> : null}
-      </section>
     </div>
   );
 }

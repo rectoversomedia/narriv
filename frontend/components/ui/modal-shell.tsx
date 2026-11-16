@@ -25,7 +25,7 @@ export function ModalShell({
   description?: string;
   children: ReactNode;
   footer?: ReactNode;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   closeLabel?: string;
 }) {
   const titleId = useId();
@@ -57,7 +57,7 @@ export function ModalShell({
         onMouseDown={(event) => event.stopPropagation()}
         className={cn(
           "flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[18px] bg-white shadow-[0_24px_70px_rgba(16,19,52,0.25)] animate-in fade-in zoom-in-95 duration-150 sm:rounded-[18px]",
-          size === "sm" ? "sm:max-w-md" : size === "lg" ? "sm:max-w-3xl" : "sm:max-w-2xl",
+          size === "sm" ? "sm:max-w-md" : size === "lg" ? "sm:max-w-3xl" : size === "xl" ? "sm:max-w-4xl" : "sm:max-w-2xl",
         )}
       >
         <header className="flex items-start justify-between gap-4 border-b border-[#EEF1F7] px-6 py-5">
