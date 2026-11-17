@@ -72,9 +72,10 @@ export function Sidebar() {
           <Link href="/" aria-label="Narriv" className="relative block h-12 w-full">
             <Image src="/brand/favicon-nv-96.png" alt="" width={40} height={40} priority className={cn("absolute left-0 top-1 size-10 transition-opacity duration-200", collapsed ? "opacity-100" : "opacity-0")} />
             {/* The wordmark with "Narrative Intelligence" right under it (the image has ~14% empty space below the letters). */}
-            <span className={cn("absolute left-1 top-0 flex flex-col transition-opacity duration-200", collapsed ? "opacity-0" : "opacity-100")}>
-              <Image src="/brand/logo-p-nv.webp" alt="Narriv" width={128} height={48} priority className="h-11 w-auto" />
-              <span className="-mt-[2px] pl-[2px] font-mono text-[9.5px] font-bold uppercase leading-none tracking-[0.14em] text-white/60">Narrative Intelligence</span>
+            {/* items-start: a flex column stretches children to its widest one (the tagline), which squashed the logo wide. */}
+            <span className={cn("absolute left-1 top-0 flex flex-col items-start transition-opacity duration-200", collapsed ? "opacity-0" : "opacity-100")}>
+              <Image src="/brand/logo-p-nv.webp" alt="Narriv" width={128} height={48} priority className="h-12 w-auto max-w-none object-contain" />
+              <span className="-mt-[3px] pl-[1px] font-mono text-[8.5px] font-bold uppercase leading-none tracking-[0.06em] text-white/60">Narrative Intelligence</span>
             </span>
           </Link>
         </div>
