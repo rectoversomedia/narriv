@@ -147,7 +147,8 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
           ) : (
             <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {keywords.map((k) => {
-                const run = k.lastRun && k.isActive && run_ok(k.lastRun.status) ? k.lastRun : null;
+                // Demo keywords carry a run time but no counts: no "0 found" grid for them.
+                const run = k.lastRun && k.isActive && run_ok(k.lastRun.status) && k.lastRun.fetched != null ? k.lastRun : null;
                 return (
                   <li key={k.id} className={cn("flex flex-col border-b border-[#E6EAF2] py-4 sm:border-b-0", !k.isActive && "opacity-60")}>
                     {editing?.id === k.id ? (
@@ -252,6 +253,8 @@ function LastRunLine({ keyword, t }: { keyword: MonitoringKeyword; t: T }) {
     return <span className="block text-[12px] font-bold text-[#C81E1E]">{t("lastRunFailed", { time: timeAgo(run.at), reason: run.errorCategory || "unknown" })}</span>;
   }
   if (run.status === "deferred") return null;
+  // Demo keywords carry a run time without counts; the card footer already shows it.
+  if (run.fetched == null) return null;
   return (
     <span className="block text-[12px] font-bold text-[#5A6478]">
       {t("lastRun", { time: timeAgo(run.at), fetched: run.fetched ?? 0, inserted: run.inserted ?? 0, duplicates: run.deduplicated ?? 0 })}

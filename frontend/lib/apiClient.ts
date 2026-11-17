@@ -23,6 +23,9 @@ const client = ky.create({
   prefix: BASE_URL,
   credentials: "omit",
   retry: 0,
+  // Every response depends on the bearer token and workspace, so never revalidate from the browser cache: a
+  // cross-origin 304 reached the browser without CORS headers and failed (workspace list "could not be loaded").
+  cache: "no-store",
 });
 
 type ApiClientOptions = RequestInit & {

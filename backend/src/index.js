@@ -72,6 +72,9 @@ scheduleAlertEscalation();
 scheduleVisibilityScans();
 
 const app = express();
+// API responses are per user and per workspace: no ETags, so no conditional 304s that a cross-origin browser
+// request cannot read.
+app.set("etag", false);
 app.set("trust proxy", process.env.TRUST_PROXY || "loopback");
 
 // Strip /api prefix so Express can match routes registered without /api.

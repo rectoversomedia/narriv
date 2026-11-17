@@ -127,7 +127,7 @@ export function formatAlertForTeams(alert) {
                         {
                             type: "Action.OpenUrl",
                             title: "View in Narriv",
-                            url: `${process.env.APP_URL || "https://app.narriv.ai"}/alerts/${alert.id}`,
+                            url: `${process.env.APP_URL || "https://app.narriv.digital"}/alerts/${alert.id}`,
                         },
                         ...(alert.status === "new"
                             ? [
@@ -232,7 +232,7 @@ export function formatSignalForTeams(signal) {
                         {
                             type: "Action.OpenUrl",
                             title: "View Signal",
-                            url: `${process.env.APP_URL || "https://app.narriv.ai"}/signals/${signal.id}`,
+                            url: `${process.env.APP_URL || "https://app.narriv.digital"}/signals/${signal.id}`,
                         },
                     ],
                 },
@@ -306,7 +306,7 @@ export function formatActionPlanForTeams(actionPlan) {
                         {
                             type: "Action.OpenUrl",
                             title: "View Action Plan",
-                            url: `${process.env.APP_URL || "https://app.narriv.ai"}/action-plans/${actionPlan.id}`,
+                            url: `${process.env.APP_URL || "https://app.narriv.digital"}/action-plans/${actionPlan.id}`,
                         },
                     ],
                 },
@@ -366,7 +366,7 @@ export function formatReportForTeams(report) {
                         {
                             type: "Action.OpenUrl",
                             title: "View Report",
-                            url: `${process.env.APP_URL || "https://app.narriv.ai"}/reports/${report.id}`,
+                            url: `${process.env.APP_URL || "https://app.narriv.digital"}/reports/${report.id}`,
                         },
                         ...(report.downloadUrl
                             ? [

@@ -15,7 +15,7 @@ import express from "express";
 import { z } from "zod";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
-import { resolveWorkspaceIdForUser, requireWorkspaceRole, MANAGER_ROLES, getWorkspaceRole } from "../../lib/workspace-access.js";
+import { resolveWorkspaceIdForUser, requireWorkspaceRole, MANAGER_ROLES, getWorkspaceRole, isDemoWorkspace } from "../../lib/workspace-access.js";
 import supabase from "../../lib/supabase.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
@@ -75,6 +75,17 @@ export async function latestKeywordRuns(workspaceId) {
     return { runs, error: null };
 }
 
+/**
+ * Demo workspaces are seeded, never collected, so the scheduler has no runs for them and every keyword read
+ * "awaiting first run" next to hundreds of sample mentions. Show them as collected at the top of the hour instead.
+ */
+export function demoKeywordRuns(rows, now = Date.now()) {
+    const at = new Date(Math.floor(now / 3600000) * 3600000).toISOString();
+    const runs = new Map();
+    for (const r of rows) runs.set(String(r.keyword).trim().toLowerCase(), { at, status: "success", fetched: null, inserted: null, deduplicated: null, errorCategory: null });
+    return { runs, error: null };
+}
+
 /** active | paused | failing | awaiting_first_run | not_in_rotation */
 export function keywordMonitoringStatus({ isActive, scheduled, lastRun }) {
     if (!isActive) return "paused";
@@ -122,7 +133,7 @@ router.get("/", async (req, res) => {
         return res.status(500).json({ error: "Failed to load keywords" });
     }
     const role = await getWorkspaceRole(req.user.id, ws);
-    const { runs, error: runsError } = await latestKeywordRuns(ws);
+    const { runs, error: runsError } = isDemoWorkspace(ws) ? demoKeywordRuns(data || []) : await latestKeywordRuns(ws);
     return res.json({ ...present(data || [], runs, await scheduledLimit(ws)), canEdit: MANAGER_ROLES.includes(role), runHistoryAvailable: !runsError });
 });
 

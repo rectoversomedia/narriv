@@ -257,7 +257,7 @@ export const BRAND_SCENARIO = {
     region: (platform, r) => (platform === "news" ? "Nasional" : ["Jakarta", "Surabaya", "Bandung", "Medan", "Makassar"][Math.floor(r() * 5)]),
     criticalKey: "dataleak",
     alerts: (people, owner) => [
-        { key: "dataleak", title: "Lonjakan isu kebocoran data: Bank Arunika", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 2 * H, ago: 5 * H, level: "critical",
+        { key: "dataleak", title: "Lonjakan isu kebocoran data: Bank Arunika", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 26 * H, ago: 5 * H, level: "critical",
           what: "Klaim kebocoran data nasabah menyebar di X dan forum dalam 36 jam terakhir; mayoritas bernada negatif.", why: "Isu keamanan data cepat merusak kepercayaan dan bisa menarik perhatian regulator.", todo: "Siapkan pernyataan sementara dalam 2 jam, minta tim IT memverifikasi klaim, dan tunjuk juru bicara." },
         { key: "outage", title: "Lonjakan sentimen negatif: Arunika Mobile", type: "risk", severity: "high", status: "acknowledged", team: "Operasional & IT", to: people.bayu, deadlineIn: -3 * H, ago: 30 * H, level: "high",
           what: "Keluhan login dan transfer gagal di Arunika Mobile naik tajam saat jam sibuk.", why: "Gangguan berulang menurunkan kepercayaan pada layanan digital dan memicu perpindahan ke pesaing.", todo: "Publikasikan status pemulihan, perbarui setiap 2 jam, dan balas keluhan teratas di X." },

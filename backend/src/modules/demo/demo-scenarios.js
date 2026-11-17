@@ -71,7 +71,7 @@ export const GOV_SCENARIO = {
     region: (platform) => (platform === "news" ? "Nasional" : "Jawa Tengah"),
     criticalKey: "bansos",
     alerts: (people, owner) => [
-        { key: "bansos", title: "Hoaks bansos mencatut nama Pemkot Lestari", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 2 * H, ago: 4 * H, level: "critical",
+        { key: "bansos", title: "Hoaks bansos mencatut nama Pemkot Lestari", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 26 * H, ago: 4 * H, level: "critical",
           what: "Tautan pendaftaran bansos palsu menyebar di grup Facebook warga dan TikTok dalam 36 jam terakhir.", why: "Warga bisa tertipu dan kehilangan uang; kepercayaan pada program bansos resmi ikut turun.", todo: "Terbitkan klarifikasi resmi dalam 2 jam, sebarkan kanal pendaftaran yang benar, dan laporkan tautan palsu ke platform." },
         { key: "flood", title: "Keluhan banjir rob Lestari Utara meningkat", type: "risk", severity: "high", status: "acknowledged", team: "BPBD & Dinas PU", to: people.maya, deadlineIn: -2 * H, ago: 26 * H, level: "high",
           what: "Keluhan banjir rob dan pompa yang tidak berfungsi naik setiap hari di Lestari Utara.", why: "Penanganan yang dinilai lambat menjadi sorotan DPRD dan media.", todo: "Umumkan jadwal penanganan, pasang posko informasi, dan perbarui status setiap 6 jam." },
@@ -255,7 +255,7 @@ export const CVE_SCENARIO = {
         return { cve: { category: n.cve, confidence: Math.round((0.7 + r() * 0.25) * 100) / 100, reason: n.reason, model: "demo", ...(review ? { review } : {}) } };
     },
     alerts: (people, owner) => [
-        { key: "incite", title: "Seruan 'amaliyah' terhadap pos polisi di Jawa Tengah", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 2 * H, ago: 3 * H, level: "critical",
+        { key: "incite", title: "Seruan 'amaliyah' terhadap pos polisi di Jawa Tengah", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 26 * H, ago: 3 * H, level: "critical",
           what: "Unggahan yang menyerukan serangan terhadap pos polisi beredar di X dan grup Facebook terbuka setelah penangkapan.", why: "Seruan serangan terhadap aparat berisiko berujung tindakan nyata dalam hitungan jam.", todo: "Teruskan ke aparat setempat sekarang, laporkan konten ke platform, dan pantau apakah seruan menyebar ke wilayah lain." },
         { key: "thogut", title: "Narasi 'pemerintah thogut' naik di Jawa Barat dan Jawa Timur", type: "risk", severity: "high", status: "acknowledged", team: "Tim Kontra-Narasi", to: people.laila, deadlineIn: 6 * H, ago: 20 * H, level: "high",
           what: "Unggahan yang menyebut pemerintah dan aparat 'thogut' serta Pancasila 'kekufuran' naik 3× sejak penangkapan.", why: "Delegitimasi negara adalah pintu masuk ke pembenaran kekerasan.", todo: "Angkat penjelasan ulama soal Pancasila dan negara, libatkan ormas keagamaan di Jawa Barat dan Jawa Timur." },
