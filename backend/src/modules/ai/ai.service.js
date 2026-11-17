@@ -482,9 +482,12 @@ function buildFallbackSummary(signals = [], contextInfo = {}) {
             en: `${negative} of ${total} signals today are negative${short ? `, led by "${short}"` : ""}.`,
             id: `${negative} dari ${total} percakapan hari ini negatif${short ? `, terbanyak soal "${short}"` : ""}.`,
         },
+        // "Amplify the positive stories" only when there are some; a tie at zero is an unread or quiet day.
         insight: mostlyNegative
             ? { en: "Prepare a holding statement and answer the main complaint on the busiest channel.", id: "Siapkan pernyataan sementara dan jawab keluhan utama di kanal yang paling ramai." }
-            : { en: "Amplify the positive stories while they trend.", id: "Perkuat cerita positif selagi sedang ramai." },
+            : positive > 0
+                ? { en: "Amplify the positive stories while they trend.", id: "Perkuat cerita positif selagi sedang ramai." }
+                : { en: "Nothing needs a response yet. Read the newest mentions to check their tone.", id: "Belum ada yang perlu ditanggapi. Baca percakapan terbaru untuk memeriksa nadanya." },
     };
 }
 

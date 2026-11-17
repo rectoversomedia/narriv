@@ -120,6 +120,7 @@ export function OverviewHero({
   hours,
   periodLabel,
   lastDataLabel,
+  analysed,
 }: {
   brandName: string;
   logoUrl?: string | null;
@@ -131,6 +132,8 @@ export function OverviewHero({
   hours: MonitoringPeriod;
   periodLabel: string;
   lastDataLabel: string | null;
+  /** Mentions with a sentiment label; 0 while the first batch is still being read. */
+  analysed?: number;
 }) {
   const L = useL();
   const fmt = (n: number) => n.toLocaleString(intlLocale());
@@ -139,14 +142,20 @@ export function OverviewHero({
   const worstShare = worst ? negShare(worst) : 0;
 
   // No mentions yet is not "under control": it says the first data is still on its way.
-  const level: Level = total === 0 && openAlerts === 0 ? "waiting" : criticalAlerts > 0 || negativeShare >= 40 || worstShare >= 60 ? "attention" : negativeShare >= 25 || openAlerts > 0 ? "watch" : "calm";
-  const levelLabel = { attention: L("Needs Attention", "Perlu Perhatian"), watch: L("Watch Closely", "Pantau Ketat"), calm: L("Under Control", "Terkendali"), waiting: L("Waiting for Data", "Menunggu Data") }[level];
-  const headline = level === "waiting"
+  // Mentions in but none read yet: 0% negative would say "Under Control" before anything was judged.
+  const analysing = total > 0 && analysed === 0 && criticalAlerts === 0;
+  const level: Level = (total === 0 && openAlerts === 0) || analysing ? "waiting" : criticalAlerts > 0 || negativeShare >= 40 || worstShare >= 60 ? "attention" : negativeShare >= 25 || openAlerts > 0 ? "watch" : "calm";
+  const levelLabel = { attention: L("Needs Attention", "Perlu Perhatian"), watch: L("Watch Closely", "Pantau Ketat"), calm: L("Under Control", "Terkendali"), waiting: analysing ? L("Being Analysed", "Sedang Dianalisis") : L("Waiting for Data", "Menunggu Data") }[level];
+  const headline = analysing
+    ? L(`${fmt(total)} mentions are in; Narriv is reading their tone now.`, `${fmt(total)} percakapan sudah masuk; Narriv sedang membaca nadanya.`)
+    : level === "waiting"
     ? L(`No mentions in the last ${periodLabel} yet.`, `Belum ada percakapan dalam ${periodLabel} terakhir.`)
     : worst && worstShare >= 30
     ? L(`${worst.keyword} is under the most pressure: ${worstShare}% of ${fmt(worst.count)} mentions are negative.`, `${worst.keyword} paling disorot: ${worstShare}% dari ${fmt(worst.count)} percakapan bernada negatif.`)
     : L(`No keyword has a high negative share in the last ${periodLabel}.`, `Tidak ada kata kunci dengan porsi negatif tinggi dalam ${periodLabel} terakhir.`);
-  const followUp = level === "waiting"
+  const followUp = analysing
+    ? L("The verdict appears here once they are scored, usually within the hour.", "Kesimpulan muncul di sini setelah dinilai, biasanya dalam satu jam.")
+    : level === "waiting"
     ? L("Narriv checks your keywords every hour; results appear here as they arrive.", "Narriv memeriksa kata kunci Anda setiap jam; hasilnya muncul di sini begitu masuk.")
     : criticalAlerts > 0
     ? L(`${criticalAlerts} critical ${criticalAlerts === 1 ? "alert is" : "alerts are"} waiting for an owner.`, `${criticalAlerts} peringatan kritis menunggu ditangani.`)

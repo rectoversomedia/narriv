@@ -340,6 +340,7 @@ export default function DashboardPage() {
           hours={hours}
           periodLabel={periodWord[period]}
           lastDataLabel={lastDataAt ? timeAgo(lastDataAt) : null}
+          analysed={analysed}
         />
       ) : null}
 

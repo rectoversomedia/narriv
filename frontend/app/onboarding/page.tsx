@@ -248,7 +248,9 @@ export default function OnboardingPage() {
     const current = step === "processing" ? 5 : step;
     const err = validateStep(current);
     if (err) {
-      toast.error(err);
+      // A missing field is not a failure: title it as a hint, and bring the form back to the top where the fields are.
+      toast.error(err, pickL("One more thing", "Satu lagi"));
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
     if (step === 5) {
@@ -836,7 +838,10 @@ function SourcesStep({
           </span>
           <span className="flex items-center gap-3 self-start sm:self-auto">
             <span className="text-xs font-bold text-[#3E4975]">{wantSocial ? pickL("Requested", "Diminta") : pickL("Request", "Minta")}</span>
-            <ToggleSwitch active={wantSocial} onChange={() => setWantSocial((v) => !v)} />
+            {/* Drawn only: the whole card is the switch. A nested button was invalid HTML and its click toggled twice. */}
+            <span aria-hidden className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors ${wantSocial ? "bg-[#465FFF]" : "bg-[#D6DDEC]"}`}>
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${wantSocial ? "translate-x-6" : "translate-x-1"}`} />
+            </span>
           </span>
         </button>
       </div>

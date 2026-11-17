@@ -430,7 +430,7 @@ function DeliveryStatus({ ta, integrations, isLoading }: { ta: ReturnType<typeof
 
   return (
     <Panel className="flex min-h-[252px] flex-col p-4">
-      <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.delivery.title")} <span className="text-[12px] font-bold text-[#53608C]">{ta("v2.delivery.thisAlert")}</span></h3>
+      <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.delivery.title")}</h3>
       <div className="mt-4 flex-1 space-y-4">
         {isLoading ? (
           Array.from({ length: 4 }, (_, index) => <div key={index} className="h-8 animate-pulse rounded-[8px] bg-[#F1F4FB]" />)
