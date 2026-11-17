@@ -29,10 +29,6 @@
     {
       "path": "/api/cron/demo-refresh",
       "schedule": "0 20 * * *"
-    },
-    {
-      "path": "/health",
-      "schedule": "*/5 * * * *"
     }
   ],
   "functions": {

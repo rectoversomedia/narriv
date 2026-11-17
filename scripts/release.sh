@@ -17,11 +17,19 @@ if [[ "${1:-}" != "--skip-gates" ]]; then
   npm run check:frontend
 fi
 
+# Both projects are built on this machine and only the finished output is uploaded (--prebuilt), so a release uses
+# none of Vercel's paid build minutes. Both set their Root Directory (backend / frontend) in Vercel, so both build
+# from the repo root; each pull refreshes .vercel/ with that project's settings and production env first.
+ship() {
+  VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$1 $V pull --yes --environment=production
+  VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$1 $V build --prod
+  VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$1 $V deploy --prebuilt --prod --yes
+}
+
 echo "== deploy backend (narriv-api)"
-# Both projects set their Root Directory (backend / frontend) in Vercel, so both deploy from the repo root.
-VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$API_PROJECT $V deploy --prod --yes
+ship $API_PROJECT
 echo "== deploy frontend"
-VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$WEB_PROJECT $V deploy --prod --yes || echo "(an 'Not authorized' line after a successful deploy is the apex alias; check below)"
+ship $WEB_PROJECT || echo "(an 'Not authorized' line after a successful deploy is the apex alias; check below)"
 
 echo "== verify"
 curl -fsS https://narriv-api.vercel.app/health && echo
