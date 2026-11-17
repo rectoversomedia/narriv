@@ -62,6 +62,8 @@ export type SectionKey = keyof typeof SECTION_TABS;
 
 /** The menu whose tabs include this exact page, or null (detail pages and pages outside the menus get no tabs). */
 export function sectionForPath(pathname: string): SectionKey | null {
+  // Pages that keep their menu's tabs without being a tab themselves (the Daily Brief opens from Analysis).
+  if (pathname === "/brief") return "today";
   const entry = (Object.entries(SECTION_TABS) as Array<[SectionKey, ReadonlyArray<{ href: string }>]>).find(([, tabs]) => tabs.some((tab) => tab.href === pathname));
   return entry ? entry[0] : null;
 }
