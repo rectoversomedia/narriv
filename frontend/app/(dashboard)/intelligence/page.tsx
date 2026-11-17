@@ -379,7 +379,9 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
             <span className="mb-1 block font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{L("Next Step", "Langkah Berikutnya")}</span>
             {topIsRisk || risk
               ? L(`Prepare a response for "${name(risk || top)}".`, `Siapkan respons untuk "${name(risk || top)}".`)
-              : L(`Amplify "${name(top)}" while it is positive.`, `Perkuat "${name(top)}" selagi positif.`)}
+              : top.sentiment === "positive"
+                ? L(`Amplify "${name(top)}" while it is positive.`, `Perkuat "${name(top)}" selagi positif.`)
+                : L(`Keep an eye on "${name(top)}"; it is not negative yet.`, `Pantau "${name(top)}"; belum bernada negatif.`)}
           </p>
           <button type="button" onClick={() => onPlan((risk || top).id)} className="inline-flex h-11 w-full items-center justify-center rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5] sm:w-auto">{L("Create Action Plan", "Buat Rencana Aksi")}</button>
           <button type="button" onClick={() => onReport((risk || top).id)} className="inline-flex h-11 w-full items-center justify-center rounded-[12px] border-[1.5px] border-white/80 px-5 text-[14px] font-black text-white transition hover:bg-white/10 sm:w-auto">{L("See the Analysis", "Lihat Analisis")}</button>

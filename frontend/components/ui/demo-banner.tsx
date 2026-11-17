@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Repeat } from "lucide-react";
 import { DemoPicker } from "@/components/auth/demo-picker";
 import { pickL } from "@/lib/use-l";
+import { isDemoSession, useAuthStore } from "@/store/useAuthStore";
 
 // One banner for every page in a demo session. Signals and narratives in the
 // demo workspace come from live monitoring; sample panels carry their own
@@ -13,6 +14,9 @@ import { pickL } from "@/lib/use-l";
 export function DemoBanner() {
   const t = useTranslations("DemoApp.sidebar");
   const [open, setOpen] = useState(false);
+  // Guard here, not at each call site: AI Answers rendered it unconditionally, so real workspaces saw "Demo Workspace".
+  const isDemo = isDemoSession(useAuthStore((state) => state.user));
+  if (!isDemo) return null;
   return (
     <div role="note" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-[10px] border border-transparent bg-[#8B5CFF]/10 px-4 py-3 text-center">
       <p className="text-[13px] font-bold text-[#6E44E8]">

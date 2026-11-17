@@ -235,7 +235,7 @@ export const runClustering = async (workspaceId) => {
         const safeImpact = ["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(impact) ? impact : "MEDIUM";
         
         const fallbackTitle = cluster[0]?.title 
-            ? `${cluster[0].title.split(" - ")[0].substring(0, 45)}`
+            ? `${shortTitle(cluster[0].title.split(" - ")[0], 45)}`
             : (allClusterKeywords.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") || (lang === "en" ? "Emerging Topic" : "Topik baru"));
         const title = aiAnalysis?.title || fallbackTitle;
         const description = aiAnalysis?.description || (lang === "en"
@@ -546,4 +546,13 @@ export async function compareClusterPeriods(workspaceId, period1Start, period1En
         comparison,
         newClusters,
     };
+}
+
+/** Cut a headline at a word boundary (no "Pilihan Pemba"), adding an ellipsis only when something was cut. */
+function shortTitle(text, max) {
+    const t = String(text || "").trim();
+    if (t.length <= max) return t;
+    const cut = t.slice(0, max + 1);
+    const space = cut.lastIndexOf(" ");
+    return `${(space > max * 0.5 ? cut.slice(0, space) : t.slice(0, max)).replace(/[\s,.:;-]+$/, "")}…`;
 }

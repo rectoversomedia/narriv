@@ -10,6 +10,7 @@ import { BOX } from "@/lib/surface";
 import { useL } from "@/lib/use-l";
 import { intlLocale } from "@/store/useUiStore";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
+import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import {
   fetchDashboardSummaryStrict,
   getAlerts,
@@ -156,13 +157,17 @@ function FirstRun() {
   const active = (keywordsQuery.data?.data ?? []).filter((k) => k.isActive);
   const canEdit = Boolean(keywordsQuery.data?.canEdit);
   const startedRef = useRef(false);
+  // Once per workspace, not once per browser tab: a second account or workspace made in the same tab must still get
+  // its first collection (it used to wait for the hourly run while the card said "running").
+  const userId = useAuthStore((state) => state.user?.id ?? "");
+  const firstRunKey = `narriv_first_run:${useWorkspaceStore.getState().selectedWorkspaceId || userId}`;
   useEffect(() => {
     if (startedRef.current || !canEdit || active.length === 0) return;
     let already = false;
-    try { already = sessionStorage.getItem("narriv_first_run") === "1"; sessionStorage.setItem("narriv_first_run", "1"); } catch { /* storage off: still run once */ }
+    try { already = sessionStorage.getItem(firstRunKey) === "1"; sessionStorage.setItem(firstRunKey, "1"); } catch { /* storage off: still run once */ }
     startedRef.current = true;
     if (!already) run.mutate();
-  }, [canEdit, active.length, run]);
+  }, [canEdit, active.length, run, firstRunKey]);
 
   const nextHour = new Date(Math.ceil(Date.now() / 3600000) * 3600000).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" });
   const names = active.slice(0, 3).map((k) => `«${k.keyword}»`).join(", ");
