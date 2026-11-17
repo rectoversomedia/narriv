@@ -12,6 +12,12 @@ describe('ingestTrigger', () => {
     expect(ingestTrigger({ userAgent: 'curl/8.0', slot: '6' })).toBe('manual:6');
     expect(ingestTrigger({ userAgent: undefined, slot: null })).toBe('manual');
   });
+
+  it('counts the Cloudflare scheduler that runs the hourly jobs as scheduled', () => {
+    expect(ingestTrigger({ userAgent: 'rectoverso-scheduler/1.0', slot: 'hourly' })).toBe('scheduler:hourly');
+    const health = schedulerHealth([run('2026-10-11T12:01:00Z', 'scheduler:hourly')], NOW, { slots: [12] });
+    expect(health.missedSlotsLast24h).toEqual([]);
+  });
 });
 
 describe('schedulerHealth', () => {

@@ -17,10 +17,12 @@ const DAILY_BACKFILL_BUDGET_MS = 150000;
 const INGEST_BUDGET_MS = 230000;
 
 function verifyCronSecret(req) {
-    // Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`; manual callers may use x-cron-secret.
+    // Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`; the Cloudflare scheduler that runs the hourly jobs
+    // (Vercel Hobby allows only daily crons) sends SCHEDULER_SECRET the same way; manual callers may use x-cron-secret.
     const auth = req.headers.authorization || "";
     const secret = auth.startsWith("Bearer ") ? auth.slice(7) : req.headers["x-cron-secret"];
-    const expected = process.env.CRON_SECRET;
+    const accepted = [process.env.CRON_SECRET, process.env.SCHEDULER_SECRET].filter(Boolean);
+    const expected = accepted.length > 0;
     // Caller identity without secrets: tells a Vercel scheduler call (vercel-cron/1.0)
     // apart from manual requests when diagnosing scheduled runs.
     const caller = {
@@ -33,7 +35,7 @@ function verifyCronSecret(req) {
         logStructured("error", "cron_no_secret_configured", caller);
         return false;
     }
-    if (!secret || secret !== expected) {
+    if (!secret || !accepted.includes(secret)) {
         logStructured("warn", "cron_auth_failed", caller);
         return false;
     }

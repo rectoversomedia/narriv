@@ -41,6 +41,17 @@ describe('cron authentication', () => {
     expect(fake.calls.some((c) => c.table === 'cron_ingestion_logs' && c.op === 'insert')).toBe(true);
   });
 
+  it('accepts the scheduler secret that the Cloudflare scheduler sends', async () => {
+    process.env.SCHEDULER_SECRET = 'test-scheduler-secret';
+    try {
+      const res = await request(app).get('/api/cron/ingest?slot=hourly').set('Authorization', 'Bearer test-scheduler-secret').set('User-Agent', 'rectoverso-scheduler/1.0');
+      expect(res.status).toBe(200);
+      expect(res.body.trigger).toBe('scheduler:hourly');
+    } finally {
+      delete process.env.SCHEDULER_SECRET;
+    }
+  });
+
   it('accepts x-cron-secret for manual POST triggers', async () => {
     const res = await request(app).post('/api/cron/ingest').set('x-cron-secret', 'test-cron-secret').send({});
     expect(res.status).toBe(200);

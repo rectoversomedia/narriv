@@ -2,7 +2,7 @@
  * Scheduler health for scheduled RSS ingestion, derived from
  * cron_ingestion_logs rows (job_name = scheduled-rss-ingestion).
  *
- * Distinguishes scheduler-initiated runs (trigger "vercel-cron:<slot>") from
+ * Distinguishes scheduler-initiated runs (trigger "scheduler:<slot>" or "vercel-cron:<slot>") from
  * manual runs, and flags expected UTC slots in the last 24h with no
  * scheduler run. Vercel Hobby cron may fire any time within the scheduled
  * hour, so a slot only counts as missed once its grace window has passed.
@@ -12,12 +12,16 @@
 export const INGEST_SLOTS_UTC = Array.from({ length: 24 }, (_, h) => h);
 export const SLOT_GRACE_MINUTES = 50;
 
-const isScheduled = (trigger) => typeof trigger === "string" && trigger.startsWith("vercel-cron");
+// The hourly jobs are called by a Cloudflare scheduler (user agent "rectoverso-scheduler/…"), since Vercel Hobby
+// only allows daily crons; the daily ones still come from Vercel Cron ("vercel-cron/…").
+const SCHEDULERS = [["vercel-cron", "vercel-cron"], ["rectoverso-scheduler", "scheduler"]];
+const isScheduled = (trigger) => typeof trigger === "string" && SCHEDULERS.some(([, tag]) => trigger.startsWith(`${tag}:`));
 
 /** Classify the caller of the ingest endpoint without trusting the slot param alone. */
 export function ingestTrigger({ userAgent, slot }) {
-    const fromScheduler = String(userAgent || "").toLowerCase().startsWith("vercel-cron");
-    if (fromScheduler) return `vercel-cron:${slot ?? "unknown"}`;
+    const agent = String(userAgent || "").toLowerCase();
+    const scheduler = SCHEDULERS.find(([prefix]) => agent.startsWith(prefix));
+    if (scheduler) return `${scheduler[1]}:${slot ?? "unknown"}`;
     return slot != null ? `manual:${slot}` : "manual";
 }
 
