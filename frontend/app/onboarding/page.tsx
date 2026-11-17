@@ -1007,12 +1007,9 @@ function ProcessingStep({
   ];
 
   return (
-    <div className="flex flex-col items-center py-16 text-center">
-      <div className="relative">
-        <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-[#E6EAF2] bg-white shadow-sm">
-          <img src="/brand/logo-h-nv.webp" alt="Narriv" width={144} height={96} className="object-contain" />
-        </div>
-      </div>
+    // At 100% the welcome screen fades in over this one: fade this out first so the two never show through each other.
+    <div className={`flex flex-col items-center py-16 text-center transition-opacity delay-150 duration-200 ${progress >= 100 && !submitError ? "opacity-0" : "opacity-100"}`}>
+      <img src="/brand/logo-bulat-nv.webp" alt="Narriv" width={96} height={96} className="size-24 rounded-full object-contain" />
 
       <h1 className="mt-10 text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
       <p className="mt-3 max-w-md text-sm font-medium text-[#5F6B94] leading-relaxed">{t("desc")}</p>
