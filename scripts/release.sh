@@ -22,7 +22,16 @@ fi
 # from the repo root; each pull refreshes .vercel/ with that project's settings and production env first.
 ship() {
   VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$1 $V pull --yes --environment=production
+  # Sensitive variables come down as the literal text "[SENSITIVE]". Left in, that placeholder overrides the real
+  # public values in frontend/.env.production at build time (NEXT_PUBLIC_API_URL became "[SENSITIVE]" and sign-in
+  # posted to the app's own domain). Drop them: secrets are read at runtime on Vercel, never from this file.
+  sed -i '' '/="\[SENSITIVE\]"/d' .vercel/.env.production.local
+  if grep -q '\[SENSITIVE\]' .vercel/.env.production.local; then echo "sensitive placeholders left in .vercel/.env.production.local" >&2; exit 1; fi
   VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$1 $V build --prod
+  # The frontend must call the API by its real address; refuse to ship a build that does not.
+  if [[ "$1" == "$WEB_PROJECT" ]] && ! grep -rqs "narriv-api.vercel.app" .vercel/output/static; then
+    echo "frontend build does not contain the API address; not deploying" >&2; exit 1
+  fi
   VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$1 $V deploy --prebuilt --prod --yes
 }
 
