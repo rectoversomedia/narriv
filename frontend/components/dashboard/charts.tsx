@@ -90,7 +90,7 @@ export function DonutChart({ data, center, label }: { data: Array<{ name: string
       </ResponsiveContainer>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
         <p className="text-[27px] font-black tracking-[-0.04em] text-[#101334]">{center}</p>
-        <p className="mt-1 text-[11px] font-bold text-[#53608C]">{label}</p>
+        <p className="mt-1 text-[12px] font-bold text-[#53608C]">{label}</p>
       </div>
     </div>
   );

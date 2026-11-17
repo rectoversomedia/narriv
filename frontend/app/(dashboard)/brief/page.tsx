@@ -139,16 +139,16 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
               { label: L("Reputation", "Reputasi"), value: repLook ? `${repScore}` : "—", sub: repLook ? `/100 · ${L(...repLook.word)}` : L("not enough data", "data belum cukup"), color: repLook?.color ?? "#5A6478", bar: repLook ? repScore : undefined, barColor: repLook?.bar },
             ].map((m) => (
               <div key={m.label} className="rounded-[14px] bg-[#F6F7FC] px-4 py-3.5">
-                <dt className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{m.label}</dt>
+                <dt className="font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{m.label}</dt>
                 <dd className="mt-1 text-[30px] font-black leading-none tracking-[-0.03em]" style={{ color: m.color }}>{m.value}</dd>
                 {typeof m.bar === "number" ? <div className="mt-2 h-1.5 w-full rounded-full bg-[#E3E7F1]"><div className="h-full rounded-full" style={{ width: `${Math.max(2, Math.min(100, m.bar))}%`, background: m.barColor }} /></div> : null}
-                <dd className="mt-1.5 font-mono text-[11px] font-bold text-[#5F6B94]">{m.sub}</dd>
+                <dd className="mt-1.5 font-mono text-[12px] font-bold text-[#5F6B94]">{m.sub}</dd>
               </div>
             ))}
           </dl>
 
           <div className="mt-5 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:flex-wrap sm:items-center">
-            <p className="px-1 font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF] sm:mr-2">{L("Start Here", "Mulai dari Sini")}</p>
+            <p className="px-1 font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF] sm:mr-2">{L("Start Here", "Mulai dari Sini")}</p>
             {first ? (
               <button type="button" onClick={() => runStep(first)} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5] sm:w-auto">
                 {code.action(first.action)}: {stepButton(first)}
@@ -180,8 +180,8 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span className="text-[16px] font-black text-[#101334]">{code.action(a.action)}</span>
-                          <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em]", levelTone(a.priority))}>{code.level(a.priority)}</span>
-                          <span className="rounded-[6px] bg-[#EEF1FF] px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#3B52F5]">{code.urgency(a.urgency)}</span>
+                          <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em]", levelTone(a.priority))}>{code.level(a.priority)}</span>
+                          <span className="rounded-[6px] bg-[#EEF1FF] px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#3B52F5]">{code.urgency(a.urgency)}</span>
                         </div>
                         <p className="mt-1 text-[14px] font-medium leading-relaxed text-[#31406B]">{a.reason}</p>
                       </div>
@@ -189,7 +189,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
                     {button ? (
                       <button type="button" onClick={() => runStep(a)} className={cn("h-10 w-full shrink-0 rounded-[12px] px-4 text-[13px] font-black text-white transition sm:w-auto", STEP_STRATEGY[a.action] ? "bg-[#465FFF] hover:bg-[#3B52F5]" : "bg-[#101334] hover:bg-[#1F2452]")}>{button}</button>
                     ) : (
-                      <span className="shrink-0 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-[#5F6B94] sm:pl-2">{L("Keep watching", "Pantau terus")}</span>
+                      <span className="shrink-0 font-mono text-[12px] font-bold uppercase tracking-[0.06em] text-[#5F6B94] sm:pl-2">{L("Keep watching", "Pantau terus")}</span>
                     )}
                   </li>
                 );
@@ -225,7 +225,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
             <section className="rounded-[18px] border-[1.5px] border-[#101334] bg-[#0B0F2E] p-5 text-white shadow-[0_4px_0_#465FFF] sm:p-6">
               {emerging.length ? (
                 <>
-                  <p className="font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#FBBF24]">{L("Gaining Momentum", "Sedang Naik")}</p>
+                  <p className="font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#FBBF24]">{L("Gaining Momentum", "Sedang Naik")}</p>
                   <ul className="mt-2 space-y-1.5">
                     {emerging.slice(0, 3).map((i) => <li key={i.title} className="text-[15px] font-black leading-snug">{i.title}</li>)}
                   </ul>
@@ -233,7 +233,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
               ) : null}
               {watch.length ? (
                 <div className={cn(emerging.length && "mt-5 border-t border-white/10 pt-4")}>
-                  <p className="font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{L("Watch Next", "Pantau Berikutnya")}</p>
+                  <p className="font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{L("Watch Next", "Pantau Berikutnya")}</p>
                   <ul className="mt-2 space-y-2">
                     {watch.map((w, i) => (
                       <li key={i} className="flex gap-2 text-[14px] font-semibold leading-snug text-white/85"><span className="text-[#A5B4FF]">→</span>{w.label}</li>

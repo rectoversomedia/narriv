@@ -231,7 +231,7 @@ export function AdvancedSearchModal({
                     type="button"
                     onClick={() => setPlatform(platform === opt.value ? "" : opt.value)}
                     className={cn(
-                      "rounded-lg border px-3 py-2 text-[11px] font-bold transition",
+                      "rounded-lg border px-3 py-2 text-[12px] font-bold transition",
                       platform === opt.value
                         ? "border-[#465FFF] bg-[#465FFF]/10 text-[#3B52F5]"
                         : "border-[#EDF1F7] bg-white text-[#58648C] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
@@ -246,7 +246,7 @@ export function AdvancedSearchModal({
             {/* Sentiment Filter */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#8B5CFF]/10 text-[10px] font-black text-[#6E44E8]">S</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#8B5CFF]/10 text-[11px] font-black text-[#6E44E8]">S</span>
                 {t("sentiment")}
               </label>
               <div className="flex flex-wrap gap-2">
@@ -264,7 +264,7 @@ export function AdvancedSearchModal({
                       type="button"
                       onClick={() => setSentiment(sentiment === opt.value ? "" : opt.value)}
                       className={cn(
-                        "rounded-full border px-3 py-1.5 text-[11px] font-black transition",
+                        "rounded-full border px-3 py-1.5 text-[12px] font-black transition",
                         sentiment === opt.value
                           ? activeClass
                           : "border-[#EDF1F7] bg-white text-[#58648C] hover:border-[#465FFF]/30"
@@ -295,7 +295,7 @@ export function AdvancedSearchModal({
                       }
                     }}
                     className={cn(
-                      "rounded-lg border px-3 py-2 text-[11px] font-bold transition",
+                      "rounded-lg border px-3 py-2 text-[12px] font-bold transition",
                       datePreset === opt.value
                         ? "border-[#465FFF] bg-[#465FFF]/10 text-[#3B52F5]"
                         : "border-[#EDF1F7] bg-white text-[#58648C] hover:border-[#465FFF]/30"
@@ -308,7 +308,7 @@ export function AdvancedSearchModal({
                   type="button"
                   onClick={() => setDatePreset("custom")}
                   className={cn(
-                    "rounded-lg border px-3 py-2 text-[11px] font-bold transition",
+                    "rounded-lg border px-3 py-2 text-[12px] font-bold transition",
                     datePreset === "custom"
                       ? "border-[#465FFF] bg-[#465FFF]/10 text-[#3B52F5]"
                       : "border-[#EDF1F7] bg-white text-[#58648C] hover:border-[#465FFF]/30"
@@ -320,21 +320,21 @@ export function AdvancedSearchModal({
               {datePreset === "custom" && (
                 <div className="flex gap-3 pt-2">
                   <div className="flex-1 space-y-1">
-                    <label className="text-[10px] font-bold text-[#5F6B94]">{t("from")}</label>
+                    <label className="text-[11px] font-bold text-[#5F6B94]">{t("from")}</label>
                     <input
                       type="date"
                       value={dateFrom}
                       onChange={(e) => setDateFrom(e.target.value)}
-                      className="w-full rounded-lg border border-[#EDF1F7] px-3 py-2 text-[11px] font-medium outline-none transition focus:border-[#465FFF] bg-white"
+                      className="w-full rounded-lg border border-[#EDF1F7] px-3 py-2 text-[12px] font-medium outline-none transition focus:border-[#465FFF] bg-white"
                     />
                   </div>
                   <div className="flex-1 space-y-1">
-                    <label className="text-[10px] font-bold text-[#5F6B94]">{t("to")}</label>
+                    <label className="text-[11px] font-bold text-[#5F6B94]">{t("to")}</label>
                     <input
                       type="date"
                       value={dateTo}
                       onChange={(e) => setDateTo(e.target.value)}
-                      className="w-full rounded-lg border border-[#EDF1F7] px-3 py-2 text-[11px] font-medium outline-none transition focus:border-[#465FFF] bg-white"
+                      className="w-full rounded-lg border border-[#EDF1F7] px-3 py-2 text-[12px] font-medium outline-none transition focus:border-[#465FFF] bg-white"
                     />
                   </div>
                 </div>
@@ -344,7 +344,7 @@ export function AdvancedSearchModal({
             {/* Source ID */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#F59E0B]/10 text-[10px] font-black text-[#A04606]">#</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#F59E0B]/10 text-[11px] font-black text-[#A04606]">#</span>
                 {t("sourceId")}
               </label>
               <input
@@ -368,7 +368,7 @@ export function AdvancedSearchModal({
                 placeholder={t("topicsPlaceholder")}
                 className="w-full rounded-lg border border-[#EDF1F7] px-3 py-2 text-[12px] font-medium outline-none transition focus:border-[#465FFF] placeholder:text-[#647099]"
               />
-              <p className="text-[10px] font-medium text-[#647099]">{t("topicsHint")}</p>
+              <p className="text-[11px] font-medium text-[#647099]">{t("topicsHint")}</p>
             </div>
 
             {/* Language */}
@@ -383,7 +383,7 @@ export function AdvancedSearchModal({
                     type="button"
                     onClick={() => setLanguage(language === opt.value ? "" : opt.value)}
                     className={cn(
-                      "rounded-lg border px-2 py-1.5 text-[10px] font-bold transition",
+                      "rounded-lg border px-2 py-1.5 text-[11px] font-bold transition",
                       language === opt.value
                         ? "border-[#465FFF] bg-[#465FFF]/10 text-[#3B52F5]"
                         : "border-[#EDF1F7] bg-white text-[#58648C] hover:border-[#465FFF]/30"
@@ -398,7 +398,7 @@ export function AdvancedSearchModal({
             {/* Narrative Type */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#8B5CFF]/10 text-[10px] font-black text-[#6E44E8]">N</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#8B5CFF]/10 text-[11px] font-black text-[#6E44E8]">N</span>
                 {t("filterNarrativeType")}
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -416,7 +416,7 @@ export function AdvancedSearchModal({
                         );
                       }}
                       className={cn(
-                        "rounded-lg border px-3 py-2 text-[11px] font-bold transition",
+                        "rounded-lg border px-3 py-2 text-[12px] font-bold transition",
                         isActive
                           ? "border-[#8B5CFF] bg-[#8B5CFF]/10 text-[#6E44E8]"
                           : "border-[#EDF1F7] bg-white text-[#58648C] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
@@ -509,7 +509,7 @@ export function ActiveFiltersChips({ filters, onRemove, onClearAll }: ActiveFilt
       {chips.map((chip) => (
         <span
           key={chip.key}
-          className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-[#EEF2FF] px-2.5 py-1 text-[11px] font-bold text-[#3B52F5]"
+          className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-[#EEF2FF] px-2.5 py-1 text-[12px] font-bold text-[#3B52F5]"
         >
           <span className="text-[#647099]">{chip.label}:</span>
           <span className="capitalize">{chip.value}</span>
@@ -525,7 +525,7 @@ export function ActiveFiltersChips({ filters, onRemove, onClearAll }: ActiveFilt
       <button
         type="button"
         onClick={onClearAll}
-        className="text-[11px] font-bold text-[#5F6B94] transition hover:text-[#3B52F5]"
+        className="text-[12px] font-bold text-[#5F6B94] transition hover:text-[#3B52F5]"
       >
         {t("clearAll")}
       </button>

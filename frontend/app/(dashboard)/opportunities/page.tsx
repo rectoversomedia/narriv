@@ -51,8 +51,8 @@ function FeaturedOpportunity({ alert, onPlan }: { alert: Alert; onPlan: () => vo
       <div className="h-2 bg-[#12A66A]" />
       <div className="p-5 sm:p-7">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-[8px] bg-[#047857] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-white">{L("Opportunity", "Peluang")}</span>
-          <span className={cn("rounded-[8px] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em]", priority.tone)}>{L(priority.en, priority.id)}</span>
+          <span className="rounded-[8px] bg-[#047857] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-white">{L("Opportunity", "Peluang")}</span>
+          <span className={cn("rounded-[8px] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.08em]", priority.tone)}>{L(priority.en, priority.id)}</span>
           <span className="nv-stamp">{L(...status)}</span>
           <span className="font-mono text-[11.5px] font-medium text-[#5F6B94]">{shortDate(alert.createdAt)}</span>
         </div>
@@ -62,7 +62,7 @@ function FeaturedOpportunity({ alert, onPlan }: { alert: Alert; onPlan: () => vo
           <p className="mt-4 inline-flex items-center gap-2 rounded-[10px] bg-[#FFF7E8] px-3 py-2 text-[13px] font-bold text-[#92400E]">{L("No owner yet: assign someone so it is not missed.", "Belum ada penanggung jawab: tunjuk seseorang supaya tidak terlewat.")}</p>
         ) : null}
         <div className="mt-5 rounded-[18px] bg-[#0B2E22] p-5 text-white sm:p-6">
-          <p className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#6EE7B7]"><Sparkles size={13} /> {L("What You Can Do", "Yang Bisa Dilakukan")}</p>
+          <p className="flex items-center gap-2 font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#6EE7B7]"><Sparkles size={13} /> {L("What You Can Do", "Yang Bisa Dilakukan")}</p>
           <p className="mt-2.5 max-w-3xl text-[18px] font-bold leading-[1.5] sm:text-[20px]">{alert.whatToDo || L("Turn this good news into a story your audience sees.", "Ubah kabar baik ini menjadi cerita yang dilihat audiens Anda.")}</p>
           <div className="mt-5 flex flex-wrap gap-2.5">
             <button type="button" onClick={onPlan} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5] sm:w-auto">

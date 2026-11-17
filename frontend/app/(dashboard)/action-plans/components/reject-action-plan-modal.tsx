@@ -63,7 +63,7 @@ export function RejectActionPlanModal({ open, onOpenChange, planTitle, onConfirm
       <div className="space-y-4">
         {planTitle ? (
           <div className="rounded-[12px] border border-[#EEF1F7] bg-[#FBFCFF] px-4 py-3">
-            <p className="text-[11px] font-black text-[#5A6478]">{t("planTitleLabel")}</p>
+            <p className="text-[12px] font-black text-[#5A6478]">{t("planTitleLabel")}</p>
             <p className="mt-1 truncate text-[14px] font-black text-[#101334]" title={planTitle}>{planTitle}</p>
           </div>
         ) : null}
@@ -82,7 +82,7 @@ export function RejectActionPlanModal({ open, onOpenChange, planTitle, onConfirm
         <div className="space-y-1.5">
           <label htmlFor={textareaId} className="flex items-center justify-between text-[12px] font-black text-[#101334]">
             <span>{t("reasonLabel")}</span>
-            <span className="text-[11px] font-semibold text-[#8A93AD]">{reason.length}/1000</span>
+            <span className="text-[12px] font-semibold text-[#6B7591]">{reason.length}/1000</span>
           </label>
           <textarea
             id={textareaId}

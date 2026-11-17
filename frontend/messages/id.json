@@ -4225,7 +4225,7 @@
     "stable": "Stabil",
     "negativeShare": "Porsi Negatif",
     "emerging": "Narasi yang Mulai Muncul",
-    "noEmerging": "Belum ada narasi baru yang terdeteksi.",
+    "noEmerging": "Tidak ada narasi baru di periode ini. Isu lama ada di Peta Isu.",
     "velocity": "{value} baru dalam 24 jam",
     "whyScore": "Kenapa skornya {score}/100",
     "noComponent": "Tidak ada komponen risiko yang meningkat di periode ini.",

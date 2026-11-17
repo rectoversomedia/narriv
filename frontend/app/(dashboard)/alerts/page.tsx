@@ -151,7 +151,7 @@ function StatusBadge({ status }: { status: AlertStatus }) {
   };
 
   const labels: Record<AlertStatus, [string, string]> = { New: ["New", "Baru"], Investigating: ["In progress", "Ditangani"], Escalated: ["Escalated", "Dieskalasi"], Resolved: ["Resolved", "Selesai"] };
-  return <span className={cn("whitespace-nowrap rounded-[8px] px-2.5 py-1 text-[11px] font-black", styles[status])}>{pickL(...labels[status])}</span>;
+  return <span className={cn("whitespace-nowrap rounded-[8px] px-2.5 py-1 text-[12px] font-black", styles[status])}>{pickL(...labels[status])}</span>;
 }
 
 /** Logo for a social/app source; null for news and anything without a logo (it used to fall back to X). */
@@ -362,7 +362,7 @@ function CriticalIncident({
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-[8px] bg-[#B42318] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-white">
+              <span className="rounded-[8px] bg-[#B42318] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-white">
                 {pickL("Critical Incident", "Insiden Kritis")}{totalCritical > 1 ? ` · ${pickL(`${totalCritical} open`, `${totalCritical} aktif`)}` : ""}
               </span>
               {left ? (
@@ -377,7 +377,7 @@ function CriticalIncident({
             <dl className="mt-5 grid gap-3 sm:grid-cols-3">
               {facts.map((f) => (
                 <div key={f.label} className={cn("min-w-0 rounded-[14px] px-4 py-3", f.bad ? "bg-[#FFF5F4] shadow-[inset_0_0_0_1.5px_#F5B5B0]" : "bg-[#F6F7FC]")}>
-                  <dt className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{f.label}</dt>
+                  <dt className="font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{f.label}</dt>
                   <dd className={cn("mt-1 truncate text-[20px] font-black leading-tight", f.bad ? "text-[#B42318]" : "text-[#101334]")} title={f.value}>{f.value}</dd>
                   <dd className={cn("mt-0.5 truncate text-[12px] font-bold", f.bad ? "text-[#B42318]" : "text-[#5F6B94]")}>{f.sub}</dd>
                 </div>
@@ -395,9 +395,10 @@ function CriticalIncident({
                 <option value="">{pickL("Assign an Owner…", "Tunjuk Penanggung Jawab…")}</option>
                 {members.map((m) => <option key={m.userId} value={m.userId}>{memberName(m)}</option>)}
               </select>
-              <button type="button" onClick={() => onPlan(alert)} className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5]">{pickL("Create Action Plan", "Buat Rencana Aksi")}</button>
+              {/* One loud button at a time: while nobody owns the incident the red owner picker leads and the plan steps back. */}
+              <button type="button" onClick={() => onPlan(alert)} className={cn("inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[14px] font-black text-white transition", unassigned ? "border-[1.5px] border-white/80 hover:bg-white/10" : "bg-[#465FFF] hover:bg-[#3B52F5]")}>{pickL("Create Action Plan", "Buat Rencana Aksi")}</button>
               {alert.status === "New" ? (
-                <button type="button" onClick={() => onStatusChange(alert.id, "acknowledged")} className="inline-flex h-11 items-center justify-center rounded-[12px] border-[1.5px] border-white/80 px-5 text-[14px] font-black text-white transition hover:bg-white/10">{pickL("I'm Handling This", "Saya Tangani")}</button>
+                <button type="button" onClick={() => onStatusChange(alert.id, "acknowledged")} className="inline-flex h-11 items-center justify-center rounded-[12px] px-4 text-[14px] font-bold text-white/80 underline-offset-4 transition hover:text-white hover:underline">{pickL("I'm Handling This", "Saya Tangani")}</button>
               ) : null}
               <Link href={`/alerts/${alert.id}`} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[12px] px-4 text-[14px] font-bold text-white/80 transition hover:bg-white/10 hover:text-white sm:ml-auto">
                 {ta("v2.incident.viewDetails")} <ArrowRight size={15} />
@@ -429,7 +430,7 @@ function DeliveryStatus({ ta, integrations, isLoading }: { ta: ReturnType<typeof
 
   return (
     <Panel className="flex min-h-[252px] flex-col p-4">
-      <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.delivery.title")} <span className="text-[11px] font-bold text-[#53608C]">{ta("v2.delivery.thisAlert")}</span></h3>
+      <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.delivery.title")} <span className="text-[12px] font-bold text-[#53608C]">{ta("v2.delivery.thisAlert")}</span></h3>
       <div className="mt-4 flex-1 space-y-4">
         {isLoading ? (
           Array.from({ length: 4 }, (_, index) => <div key={index} className="h-8 animate-pulse rounded-[8px] bg-[#F1F4FB]" />)
@@ -441,18 +442,18 @@ function DeliveryStatus({ ta, integrations, isLoading }: { ta: ReturnType<typeof
                 <p className="truncate text-[12px] font-black text-[#101334]">{channel.name}</p>
                 <p className="mt-0.5 text-[9px] font-bold text-[#647099]">{channel.platform}</p>
               </div>
-              <div className="text-right"><p className="inline-flex items-center gap-1 text-[10px] font-black text-[#047857]">{ta("v2.delivery.active")}</p><p className="text-[9px] font-bold text-[#31406B]">{channel.lastSyncAt ? new Date(channel.lastSyncAt).toLocaleDateString(intlLocale(), { day: "2-digit", month: "short" }) : ta("v2.delivery.ready")}</p></div>
+              <div className="text-right"><p className="inline-flex items-center gap-1 text-[11px] font-black text-[#047857]">{ta("v2.delivery.active")}</p><p className="text-[9px] font-bold text-[#31406B]">{channel.lastSyncAt ? new Date(channel.lastSyncAt).toLocaleDateString(intlLocale(), { day: "2-digit", month: "short" }) : ta("v2.delivery.ready")}</p></div>
             </div>
           ))
         ) : (
           <div className="py-4">
             <p className="text-[12px] font-black text-[#101334]">{ta("v2.delivery.noChannels")}</p>
-            <p className="mt-1 text-[10px] font-bold text-[#647099]">{ta("v2.delivery.noChannelsDesc")}</p>
+            <p className="mt-1 text-[11px] font-bold text-[#647099]">{ta("v2.delivery.noChannelsDesc")}</p>
           </div>
         )}
-        {extraCount > 0 ? <p className="text-[10px] font-black text-[#53608C]">+{extraCount} {ta("v2.delivery.moreChannels")}</p> : null}
+        {extraCount > 0 ? <p className="text-[11px] font-black text-[#53608C]">+{extraCount} {ta("v2.delivery.moreChannels")}</p> : null}
       </div>
-      <Link href="/workspace/integrations" className="mt-5 inline-flex items-center gap-1 self-start text-[11px] font-black text-[#3B52F5] hover:underline">{ta("v2.delivery.viewAllChannels")} <ArrowRight size={13} /></Link>
+      <Link href="/workspace/integrations" className="mt-5 inline-flex items-center gap-1 self-start text-[12px] font-black text-[#3B52F5] hover:underline">{ta("v2.delivery.viewAllChannels")} <ArrowRight size={13} /></Link>
     </Panel>
   );
 }
@@ -476,9 +477,9 @@ function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof use
               <span className="relative z-[1] flex size-8 shrink-0 items-center justify-center rounded-full text-[13px] font-black text-white" style={{ background: item.isActive ? heat : "#B8C0D4" }}>{index + 1}</span>
               <div className="min-w-0 flex-1 rounded-[10px] bg-[#F7F8FC] px-3 py-2">
                 <p className="text-[13px] font-black leading-snug text-[#101334]">{item.roleName}</p>
-                <p className="mt-0.5 text-[11px] font-bold text-[#5A6478]">
+                <p className="mt-0.5 text-[12px] font-bold text-[#5A6478]">
                   {ta("v2.escalationMatrix.sla", { time: formatSlaMinutes(item.slaMinutes, ta) })}
-                  {item.isActive ? null : <span className="ml-1.5 text-[#8A93AD]">· {ta("v2.escalationMatrix.standbyLabel")}</span>}
+                  {item.isActive ? null : <span className="ml-1.5 text-[#6B7591]">· {ta("v2.escalationMatrix.standbyLabel")}</span>}
                 </p>
               </div>
             </li>
@@ -502,7 +503,7 @@ function AlertPagination({ page, totalPages, onPageChange, ta }: { page: number;
       </button>
       {pages.map((item, index) => (
         <div key={item} className="contents">
-          {index > 0 && item - pages[index - 1] > 1 ? <span className="px-1 text-[11px] font-black text-[#647099]">...</span> : null}
+          {index > 0 && item - pages[index - 1] > 1 ? <span className="px-1 text-[12px] font-black text-[#647099]">...</span> : null}
         <button key={item} type="button" onClick={() => onPageChange(item)} className={cn("flex size-9 items-center justify-center rounded-[8px] border text-[12px] font-black transition", page === item ? "border-[#465FFF] bg-white text-[#3B52F5] shadow-sm" : "border-[#E6EAF2] bg-white text-[#31406B] hover:border-[#C9D4F6]")}>{item}</button>
         </div>
       ))}
@@ -554,7 +555,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
           <button
             onClick={() => onBulkStatusChange("open")}
             disabled={isBulkUpdating}
-            className="flex items-center gap-1.5 rounded-[6px] bg-[#465FFF] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#3147E8] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#465FFF] px-3 py-1.5 text-[12px] font-black text-white transition hover:bg-[#3147E8] disabled:opacity-50"
           >
             {isBulkUpdating ? <Loader2 size={12} className="animate-spin" /> : <Bell size={12} />}
             Mark as New
@@ -562,7 +563,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
           <button
             onClick={() => onBulkStatusChange("acknowledged")}
             disabled={isBulkUpdating}
-            className="flex items-center gap-1.5 rounded-[6px] bg-[#B45309] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#92400E] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#B45309] px-3 py-1.5 text-[12px] font-black text-white transition hover:bg-[#92400E] disabled:opacity-50"
           >
             {isBulkUpdating ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
             Acknowledge
@@ -570,14 +571,14 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
           <button
             onClick={() => onBulkStatusChange("resolved")}
             disabled={isBulkUpdating}
-            className="flex items-center gap-1.5 rounded-[6px] bg-[#047857] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#065F46] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#047857] px-3 py-1.5 text-[12px] font-black text-white transition hover:bg-[#065F46] disabled:opacity-50"
           >
             {isBulkUpdating ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
             Resolve
           </button>
           <button
             onClick={() => onSelectionChange(new Set())}
-            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#3B52F5]"
+            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[12px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#3B52F5]"
           >
             Clear
           </button>
@@ -593,7 +594,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6B94]" />
             <input type="search" value={searchQuery ?? ""} onChange={(e) => onSearchChange(e.target.value)} placeholder={ta("filter.search")} className="h-10 w-full min-w-[220px] rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-10 text-[13px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white" />
           </label>
-          <button type="button" onClick={onOpenFilterModal} className={cn("inline-flex h-10 items-center gap-2 rounded-[8px] border px-4 text-[11px] font-black transition", activeFilterCount > 0 ? "border-transparent bg-[#EEF2FF] text-[#3B52F5]" : "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:border-[#C9D4F6]")}>
+          <button type="button" onClick={onOpenFilterModal} className={cn("inline-flex h-10 items-center gap-2 rounded-[8px] border px-4 text-[12px] font-black transition", activeFilterCount > 0 ? "border-transparent bg-[#EEF2FF] text-[#3B52F5]" : "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:border-[#C9D4F6]")}>
             {ta("filter.title")}
             {activeFilterCount > 0 ? <span className="rounded-full bg-[#465FFF] px-1.5 py-0.5 text-[9px] leading-none text-white">{activeFilterCount}</span> : null}
           </button>
@@ -608,11 +609,11 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
             <li key={`m-${alert.id}`}>
               <Link href={`/alerts/${alert.id}`} className="block border-b border-[#E6EAF2] py-3.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className={cn("rounded-[6px] px-2 py-0.5 text-[11px] font-black", alert.tone === "red" ? "bg-[#C81E1E] text-white" : alert.tone === "amber" ? "bg-[#F59E0B] text-white" : "bg-[#E5F6EE] text-[#047857]")}>{alert.tags[0]}</span>
+                  <span className={cn("rounded-[6px] px-2 py-0.5 text-[12px] font-black", alert.tone === "red" ? "bg-[#C81E1E] text-white" : alert.tone === "amber" ? "bg-[#F59E0B] text-white" : "bg-[#E5F6EE] text-[#047857]")}>{alert.tags[0]}</span>
                   <StatusBadge status={alert.status} />
                 </div>
                 <p className="mt-2 line-clamp-2 text-[14px] font-black leading-snug text-[#101334]">{alert.title}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-bold">
                   <span className={alert.sourceLabel === ta("table.unassigned") ? "rounded-full bg-[#C81E1E] px-2 py-0.5 text-white" : "rounded-full bg-white px-2 py-0.5 text-[#31406B]"}>{alert.sourceLabel}</span>
                   <span className={alert.overdue ? "rounded-full bg-[#C81E1E] px-2 py-0.5 text-white" : "rounded-full bg-white px-2 py-0.5 text-[#31406B]"}>{alert.overdue ? pickL("Overdue · ", "Lewat tenggat · ") : ""}{alert.deadline}</span>
                 </div>
@@ -624,7 +625,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
         <table className="w-full min-w-[720px] table-fixed border-collapse text-left">
           <colgroup><col className="w-10" /><col /><col className="w-[96px]" /><col className="w-[150px]" /><col className="w-[120px]" /><col className="w-[130px]" /><col className="w-10" /></colgroup>
           <thead>
-            <tr className="border-b border-[#E6EAF2] text-[10px] font-black text-[#5F6B94]">
+            <tr className="border-b border-[#E6EAF2] text-[11px] font-black text-[#5F6B94]">
               <th className="w-10 px-3 py-3">
                 <button
                   type="button"
@@ -660,7 +661,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 <td colSpan={7} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center">
                     <p className="mt-3 text-[13px] font-bold text-[#B42318]">{ta("table.errorTitle")}</p>
-                    <p className="mt-1 text-[11px] font-semibold text-[#647099]">{ta("table.errorDesc")}</p>
+                    <p className="mt-1 text-[12px] font-semibold text-[#647099]">{ta("table.errorDesc")}</p>
                   </div>
                 </td>
               </tr>
@@ -669,7 +670,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 <td colSpan={7} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center">
                     <p className="mt-3 text-[13px] font-bold text-[#5F6B94]">{ta("empty.noAlerts")}</p>
-                    <p className="mt-1 text-[11px] font-semibold text-[#647099]">{ta("empty.noAlertsDesc")}</p>
+                    <p className="mt-1 text-[12px] font-semibold text-[#647099]">{ta("empty.noAlertsDesc")}</p>
                   </div>
                 </td>
               </tr>
@@ -699,21 +700,21 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                   <div className="min-w-0">
                     <Link href={`/alerts/${alert.id}`} className="text-[14.5px] font-black leading-snug text-[#101334] hover:text-[#3B52F5]">{alert.title}</Link>
                     {alert.description ? <p className="mt-1 line-clamp-2 text-[12.5px] font-medium leading-snug text-[#3A4566]">{alert.description}</p> : null}
-                    {alert.time ? <p className="mt-1 font-mono text-[11px] font-medium text-[#8A93AD]">{alert.time}</p> : null}
+                    {alert.time ? <p className="mt-1 font-mono text-[12px] font-medium text-[#6B7591]">{alert.time}</p> : null}
                   </div>
                 </td>
-                <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em]", alert.tone === "red" ? "bg-[#B42318] text-white" : alert.tone === "amber" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#E8F7EF] text-[#047857]")}>{alert.tags[0]}</span></td>
+                <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em]", alert.tone === "red" ? "bg-[#B42318] text-white" : alert.tone === "amber" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#E8F7EF] text-[#047857]")}>{alert.tags[0]}</span></td>
                 <td className="px-3 py-3 align-middle">{alert.sourceLabel === ta("table.unassigned") ? <span className="text-[12px] font-black text-[#C81E1E]">{alert.sourceLabel}</span> : <span className="line-clamp-2 text-[12px] font-black text-[#31406B]">{alert.sourceLabel}</span>}</td>
-                <td className="px-3 py-3 align-middle">{alert.overdue ? <span className="inline-block rounded-[6px] bg-[#C81E1E] px-2 py-1 text-[11px] font-black leading-tight text-white"><span className="block text-[10px] text-white/80">{pickL("Overdue", "Lewat tenggat")}</span>{alert.deadline}</span> : <span className="text-[12px] font-black text-[#31406B]">{alert.deadline}</span>}</td>
-                <td className="px-3 py-3 align-middle"><StatusBadge status={alert.status} /><p className="mt-1 text-[10px] font-bold text-[#5A6478]">{alert.ack}</p></td>
+                <td className="px-3 py-3 align-middle">{alert.overdue ? <span className="inline-block rounded-[6px] bg-[#C81E1E] px-2 py-1 text-[12px] font-black leading-tight text-white"><span className="block text-[11px] text-white/80">{pickL("Overdue", "Lewat tenggat")}</span>{alert.deadline}</span> : <span className="text-[12px] font-black text-[#31406B]">{alert.deadline}</span>}</td>
+                <td className="px-3 py-3 align-middle"><StatusBadge status={alert.status} /><p className="mt-1 text-[11px] font-bold text-[#5A6478]">{alert.ack}</p></td>
                 <td className="relative px-3 py-3 text-right align-middle">
                   <button type="button" aria-label={pickL(`Open actions for ${alert.title}`, `Buka aksi untuk ${alert.title}`)} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5]"><MoreVertical size={16} /></button>
                   {openMenuId === alert.id ? (
                     <div ref={menuRef} className="absolute right-3 top-full z-50 mt-1 w-48 rounded-[10px] border border-[#E6EAF2] bg-white py-1 shadow-[0_12px_36px_rgba(16,24,40,0.12)]">
                       <p className="px-3 py-1.5 text-[9px] font-black text-[#647099]">{ta("table.changeStatus")}</p>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "open"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]">{ta("table.statusNew")}</button>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]">{ta("table.statusInvestigating")}</button>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "resolved"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]">{ta("table.statusResolved")}</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "open"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[12px] font-bold text-[#31406B] hover:bg-[#F8FAFF]">{ta("table.statusNew")}</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[12px] font-bold text-[#31406B] hover:bg-[#F8FAFF]">{ta("table.statusInvestigating")}</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "resolved"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[12px] font-bold text-[#31406B] hover:bg-[#F8FAFF]">{ta("table.statusResolved")}</button>
                     </div>
                   ) : null}
                 </td>
@@ -723,7 +724,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
         </table>
       </div>
       <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-[#EDF1F7] pt-3 sm:flex-row">
-        <p className="text-[11px] font-bold text-[#5F6B94]">{footerText}</p>
+        <p className="text-[12px] font-bold text-[#5F6B94]">{footerText}</p>
         <AlertPagination page={page} totalPages={totalPages} onPageChange={onPageChange} ta={ta} />
       </div>
     </Panel>
@@ -1165,14 +1166,14 @@ export default function AlertsPage() {
           <div className="flex items-center gap-3">
             <div>
               <p className="text-[13px] font-bold text-slate-900">{pickL("Alert metrics unavailable", "Metrik peringatan belum bisa dimuat")}</p>
-              <p className="text-[11px] font-medium text-[#5A6478]">{pickL("The data could not be loaded. Try again in a moment.", "Data gagal dimuat. Coba lagi sebentar lagi.")}</p>
+              <p className="text-[12px] font-medium text-[#5A6478]">{pickL("The data could not be loaded. Try again in a moment.", "Data gagal dimuat. Coba lagi sebentar lagi.")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => void summaryQuery.refetch()}
-              className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
+              className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-700 hover:bg-slate-50"
             >
               {pickL("Retry", "Coba lagi")}
             </button>
@@ -1197,7 +1198,7 @@ export default function AlertsPage() {
 
 
 
-      <ModalShell open={isNotificationRulesModalOpen} onClose={closeNotificationRulesModal} size="lg" title={ta("v2.notificationRulesModal.title")} description={ta("v2.notificationRulesModal.desc")} footer={<><p className="text-[10px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.limitHint")}</p>
+      <ModalShell open={isNotificationRulesModalOpen} onClose={closeNotificationRulesModal} size="lg" title={ta("v2.notificationRulesModal.title")} description={ta("v2.notificationRulesModal.desc")} footer={<><p className="text-[11px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.limitHint")}</p>
               <div className="flex gap-2">
                 <button type="button" onClick={closeNotificationRulesModal} disabled={isSavingNotificationRules} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60">
                   {ta("v2.notificationRulesModal.cancel")}
@@ -1215,7 +1216,7 @@ export default function AlertsPage() {
                   <aside className="space-y-3">
                     <div className="rounded-[14px] border border-[#E6EAF2] bg-[#FBFCFF] p-4">
                       <p className="text-[12px] font-black text-[#101334]">{ta("v2.notificationRulesModal.deliveryTitle")}</p>
-                      <p className="mt-1 text-[10px] font-bold leading-snug text-[#647099]">{ta("v2.notificationRulesModal.deliveryDesc")}</p>
+                      <p className="mt-1 text-[11px] font-bold leading-snug text-[#647099]">{ta("v2.notificationRulesModal.deliveryDesc")}</p>
                       <div className="mt-4 space-y-2">
                         {([
                           ["emailEnabled", "emailEnabled"],
@@ -1225,7 +1226,7 @@ export default function AlertsPage() {
                         ] as const).map(([key, labelKey]) => (
                           <label key={key} className="flex items-center justify-between gap-3 rounded-[10px] border border-[#E6EAF2] bg-white px-3 py-2.5">
                             <span>
-                              <span className="block text-[11px] font-black text-[#101334]">{ta(`v2.notificationRulesModal.toggles.${labelKey}`)}</span>
+                              <span className="block text-[12px] font-black text-[#101334]">{ta(`v2.notificationRulesModal.toggles.${labelKey}`)}</span>
                               <span className="mt-0.5 block text-[9px] font-bold text-[#647099]">{ta(`v2.notificationRulesModal.toggleDesc.${labelKey}`)}</span>
                             </span>
                             <input
@@ -1248,7 +1249,7 @@ export default function AlertsPage() {
                           ["quiet", "presetQuiet", "presetQuietDesc"],
                         ] as const).map(([preset, titleKey, descKey]) => (
                           <button key={preset} type="button" onClick={() => applyNotificationPreset(preset)} className="w-full rounded-[11px] border border-[#DDE3EF] bg-[#FBFCFF] p-3 text-left transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF]">
-                            <span className="block text-[11px] font-black text-[#101334]">{ta(`v2.notificationRulesModal.${titleKey}`)}</span>
+                            <span className="block text-[12px] font-black text-[#101334]">{ta(`v2.notificationRulesModal.${titleKey}`)}</span>
                             <span className="mt-1 block text-[9px] font-bold leading-snug text-[#647099]">{ta(`v2.notificationRulesModal.${descKey}`)}</span>
                           </button>
                         ))}
@@ -1260,15 +1261,15 @@ export default function AlertsPage() {
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EEF1F7] p-4">
                       <div>
                         <p className="text-[13px] font-black text-[#101334]">{ta("v2.notificationRulesModal.rulesTitle")}</p>
-                        <p className="mt-0.5 text-[10px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.rulesDesc")}</p>
+                        <p className="mt-0.5 text-[11px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.rulesDesc")}</p>
                       </div>
-                      <button type="button" onClick={addNotificationRule} disabled={notificationRuleDraft.length >= 20} className="inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#3B52F5] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-50">
+                      <button type="button" onClick={addNotificationRule} disabled={notificationRuleDraft.length >= 20} className="inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#3B52F5] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-50">
                         {ta("v2.notificationRulesModal.addRule")}
                       </button>
                     </div>
 
                     {notificationRulesLoadFailed ? (
-                      <div className="m-4 rounded-[10px] border border-transparent bg-[#FFF6F6] px-4 py-3 text-[11px] font-bold text-[#B42318]">
+                      <div className="m-4 rounded-[10px] border border-transparent bg-[#FFF6F6] px-4 py-3 text-[12px] font-bold text-[#B42318]">
                         {ta("v2.notificationRulesModal.loadWarning")}
                       </div>
                     ) : null}
@@ -1277,13 +1278,13 @@ export default function AlertsPage() {
                       {notificationRuleDraft.length === 0 ? (
                         <div className="p-8 text-center">
                           <p className="text-[13px] font-black text-[#101334]">{ta("v2.notificationRulesModal.noRules")}</p>
-                          <p className="mt-1 text-[10px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.noRulesDesc")}</p>
+                          <p className="mt-1 text-[11px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.noRulesDesc")}</p>
                         </div>
                       ) : notificationRuleDraft.map((rule, index) => (
                         <div key={rule.id} className="rounded-[12px] border border-[#E6EAF2] bg-[#FBFCFF] p-3">
                           <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_76px_36px] md:items-end">
                             <label className="block">
-                              <span className="mb-1.5 block text-[10px] font-black text-[#5F6B94]">{ta("v2.notificationRulesModal.triggerLabel")}</span>
+                              <span className="mb-1.5 block text-[11px] font-black text-[#5F6B94]">{ta("v2.notificationRulesModal.triggerLabel")}</span>
                               <select
                                 value={rule.trigger}
                                 onChange={(event) => updateNotificationRuleDraft(index, { trigger: event.target.value as NotificationRuleTrigger })}
@@ -1301,7 +1302,7 @@ export default function AlertsPage() {
                               </select>
                             </label>
                             <label className="block">
-                              <span className="mb-1.5 block text-[10px] font-black text-[#5F6B94]">{ta("v2.notificationRulesModal.conditionLabel")}</span>
+                              <span className="mb-1.5 block text-[11px] font-black text-[#5F6B94]">{ta("v2.notificationRulesModal.conditionLabel")}</span>
                               <select
                                 value={rule.condition}
                                 onChange={(event) => updateNotificationRuleDraft(index, { condition: event.target.value })}
@@ -1316,7 +1317,7 @@ export default function AlertsPage() {
                               </select>
                             </label>
                             <label className="block">
-                              <span className="mb-1.5 block text-[10px] font-black text-[#5F6B94]">{ta("v2.notificationRulesModal.actionLabel")}</span>
+                              <span className="mb-1.5 block text-[11px] font-black text-[#5F6B94]">{ta("v2.notificationRulesModal.actionLabel")}</span>
                               <select
                                 value={rule.channels[0] ?? "standard"}
                                 onChange={(event) => updateNotificationRuleDraft(index, { channels: [event.target.value] })}
@@ -1333,7 +1334,7 @@ export default function AlertsPage() {
                                 })}
                               </select>
                             </label>
-                            <label className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#31406B]">
+                            <label className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B]">
                               <input
                                 type="checkbox"
                                 checked={rule.enabled}
@@ -1376,7 +1377,7 @@ export default function AlertsPage() {
                 {escalationDraft.map((item, index) => (
                   <div key={`${item.order}-${index}`} className="grid gap-2 rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF] p-2.5 md:grid-cols-[78px_minmax(0,1fr)_120px_86px_36px] md:items-center">
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-black text-[#5F6B94] md:hidden">{ta("v2.escalationMatrix.levelLabel")}</span>
+                      <span className="mb-1 block text-[11px] font-black text-[#5F6B94] md:hidden">{ta("v2.escalationMatrix.levelLabel")}</span>
                       <input
                         value={item.level}
                         maxLength={10}
@@ -1386,7 +1387,7 @@ export default function AlertsPage() {
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-black text-[#5F6B94] md:hidden">{ta("v2.escalationMatrix.ownerLabel")}</span>
+                      <span className="mb-1 block text-[11px] font-black text-[#5F6B94] md:hidden">{ta("v2.escalationMatrix.ownerLabel")}</span>
                       <select
                         value={item.roleName}
                         onChange={(event) => updateEscalationDraft(index, { roleName: event.target.value })}
@@ -1408,7 +1409,7 @@ export default function AlertsPage() {
                       ) : null}
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-black text-[#5F6B94] md:hidden">{ta("v2.escalationMatrix.timeLabel")}</span>
+                      <span className="mb-1 block text-[11px] font-black text-[#5F6B94] md:hidden">{ta("v2.escalationMatrix.timeLabel")}</span>
                       <input
                         value={item.slaMinutes}
                         min={1}
@@ -1419,7 +1420,7 @@ export default function AlertsPage() {
                         placeholder="15"
                       />
                     </label>
-                    <label className="flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#31406B]">
+                    <label className="flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B]">
                       <input
                         type="checkbox"
                         checked={item.isActive}
@@ -1441,8 +1442,8 @@ export default function AlertsPage() {
                 ))}
               </div>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 p-3">
-                <p className="text-[11px] font-bold text-[#5F6B94]">{ta("v2.escalationMatrix.limitHint")}</p>
-                <button type="button" onClick={addEscalationLevel} disabled={escalationDraft.length >= 5} className="inline-flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#3B52F5] transition hover:border-[#C9D4F6] disabled:cursor-not-allowed disabled:opacity-50">
+                <p className="text-[12px] font-bold text-[#5F6B94]">{ta("v2.escalationMatrix.limitHint")}</p>
+                <button type="button" onClick={addEscalationLevel} disabled={escalationDraft.length >= 5} className="inline-flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#3B52F5] transition hover:border-[#C9D4F6] disabled:cursor-not-allowed disabled:opacity-50">
                   {ta("v2.escalationMatrix.addLevel")}
                 </button>
               </div>
@@ -1484,12 +1485,12 @@ export default function AlertsPage() {
               }} className="space-y-4">
                 {/* ── Core Info ── */}
                 <div>
-                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("titleLabel")}</label>
+                  <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{taCreate("titleLabel")}</label>
                   <input name="title" required placeholder={taCreate("titlePlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("typeLabel")}</label>
+                    <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{taCreate("typeLabel")}</label>
                     <select
                       name="type"
                       value={createType}
@@ -1511,7 +1512,7 @@ export default function AlertsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("severityLabel")}</label>
+                    <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{taCreate("severityLabel")}</label>
                     <select
                       name="severity"
                       value={createSeverity}
@@ -1539,21 +1540,21 @@ export default function AlertsPage() {
 
                 {/* ── Context ── */}
                 <div>
-                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("whatHappenedLabel")}</label>
+                  <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{taCreate("whatHappenedLabel")}</label>
                   <textarea name="whatHappened" rows={2} placeholder={taCreate("whatHappenedPlaceholder")} className="w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] p-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white resize-none" />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("whyItMattersLabel")}</label>
+                  <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{taCreate("whyItMattersLabel")}</label>
                   <textarea name="whyItMatters" rows={2} placeholder={taCreate("whyItMattersPlaceholder")} className="w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] p-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white resize-none" />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("whatToDoLabel")}</label>
+                  <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{taCreate("whatToDoLabel")}</label>
                   <textarea name="whatToDo" rows={2} placeholder={taCreate("whatToDoPlaceholder")} className="w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] p-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white resize-none" />
                 </div>
 
                 {/* ── Assignment & Sources ── */}
                 <div className="rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF]">
-                  <button type="button" onClick={() => setIsCreateAdvancedOpen((open) => !open)} className="flex w-full items-center justify-between px-3.5 py-2.5 text-[11px] font-black text-[#31406B]">
+                  <button type="button" onClick={() => setIsCreateAdvancedOpen((open) => !open)} className="flex w-full items-center justify-between px-3.5 py-2.5 text-[12px] font-black text-[#31406B]">
                     <span className="flex items-center gap-2">{taCreate("advancedSection")}</span>
                     <ChevronRight size={14} className={cn("text-[#647099] transition-transform", isCreateAdvancedOpen && "rotate-90")} />
                   </button>
@@ -1561,7 +1562,7 @@ export default function AlertsPage() {
                     <div className="space-y-3 border-t border-[#E6EAF2] px-3.5 pb-3.5 pt-3">
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div>
-                          <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("assignedToLabel")}</label>
+                          <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{taCreate("assignedToLabel")}</label>
                           <select
                             name="assignedTo"
                             value={createAssignedTo}
@@ -1581,7 +1582,7 @@ export default function AlertsPage() {
                           </select>
                         </div>
                         <div>
-                          <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("assignedTeamLabel")}</label>
+                          <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{taCreate("assignedTeamLabel")}</label>
                           <select
                             name="assignedTeam"
                             value={createAssignedTeam}
@@ -1595,15 +1596,15 @@ export default function AlertsPage() {
                         </div>
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("deadlineLabel")}</label>
+                        <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{taCreate("deadlineLabel")}</label>
                         <input name="deadline" type="datetime-local" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{ta("v2.incident.source")}</label>
+                        <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{ta("v2.incident.source")}</label>
                         {(sourcesQuery.data?.data ?? []).length > 0 ? (
                           <div className="grid grid-cols-2 gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white p-2.5 max-h-[140px] overflow-y-auto">
                             {(sourcesQuery.data?.data ?? []).map((src) => (
-                              <label key={src.id} className="flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#31406B] transition hover:bg-[#F5F7FC] cursor-pointer">
+                              <label key={src.id} className="flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[12px] font-bold text-[#31406B] transition hover:bg-[#F5F7FC] cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={selectedSources.includes(src.name)}
@@ -1622,14 +1623,14 @@ export default function AlertsPage() {
                             ))}
                           </div>
                         ) : (
-                          <p className="px-3 py-2.5 text-[11px] font-semibold text-[#647099]">
+                          <p className="px-3 py-2.5 text-[12px] font-semibold text-[#647099]">
                             No sources configured yet. Add sources in the Sources page.
                           </p>
                         )}
                         {selectedSources.length > 0 && (
                           <div className="mt-1.5 flex flex-wrap gap-1">
                             {selectedSources.map((s) => (
-                              <span key={s} className="inline-flex items-center gap-1 rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[10px] font-black text-[#3B52F5]">
+                              <span key={s} className="inline-flex items-center gap-1 rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[11px] font-black text-[#3B52F5]">
                                 {s}
                                 <button type="button" onClick={() => setSelectedSources((prev) => prev.filter((x) => x !== s))} className="ml-0.5 text-[#3B52F5]/60 hover:text-[#3B52F5]">
                                   <X size={10} />
@@ -1672,7 +1673,7 @@ export default function AlertsPage() {
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[12px] font-black text-[#101334]">{ta("table.severity")}</p>
-                    <p className="mt-0.5 text-[10px] font-bold text-[#647099]">{ta("filter.severityDesc")}</p>
+                    <p className="mt-0.5 text-[11px] font-bold text-[#647099]">{ta("filter.severityDesc")}</p>
                   </div>
                   {severityFilter ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#3B52F5]">{severityFilter}</span> : null}
                 </div>
@@ -1688,7 +1689,7 @@ export default function AlertsPage() {
                       key={option.value}
                       type="button"
                       onClick={() => { setSeverityFilter(option.value); setPage(1); }}
-                      className={cn("rounded-[10px] px-3 py-2 text-[11px] font-black transition", severityFilter === option.value ? "bg-[#465FFF] text-white shadow-sm" : "border border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#C9D4F6] hover:bg-[#F8FAFF]")}
+                      className={cn("rounded-[10px] px-3 py-2 text-[12px] font-black transition", severityFilter === option.value ? "bg-[#465FFF] text-white shadow-sm" : "border border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#C9D4F6] hover:bg-[#F8FAFF]")}
                     >
                       {option.label}
                     </button>
@@ -1699,7 +1700,7 @@ export default function AlertsPage() {
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[12px] font-black text-[#101334]">{ta("table.status")}</p>
-                    <p className="mt-0.5 text-[10px] font-bold text-[#647099]">{ta("filter.statusDesc")}</p>
+                    <p className="mt-0.5 text-[11px] font-bold text-[#647099]">{ta("filter.statusDesc")}</p>
                   </div>
                   {statusFilter && statusFilter !== "unresolved" ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#3B52F5]">{statusFilter}</span> : null}
                 </div>
@@ -1715,7 +1716,7 @@ export default function AlertsPage() {
                       key={option.value}
                       type="button"
                       onClick={() => { setStatusFilter(option.value); setPage(1); }}
-                      className={cn("rounded-[10px] px-3 py-2 text-[11px] font-black transition", statusFilter === option.value ? "bg-[#465FFF] text-white shadow-sm" : "border border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#C9D4F6] hover:bg-[#F8FAFF]")}
+                      className={cn("rounded-[10px] px-3 py-2 text-[12px] font-black transition", statusFilter === option.value ? "bg-[#465FFF] text-white shadow-sm" : "border border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#C9D4F6] hover:bg-[#F8FAFF]")}
                     >
                       {option.label}
                     </button>

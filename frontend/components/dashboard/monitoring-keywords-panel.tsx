@@ -174,19 +174,19 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
                     {/* The last collection in three numbers. */}
                     {run ? (
                       <div className="mt-3 grid grid-cols-3 gap-1.5">
-                        {([[pickL("Found", "Ditemukan"), run.fetched ?? 0, "#101334"], [pickL("New", "Baru"), run.inserted ?? 0, "#047857"], [pickL("Duplicates", "Duplikat"), run.deduplicated ?? 0, "#8A93AD"]] as const).map(([label, n, color]) => (
+                        {([[pickL("Found", "Ditemukan"), run.fetched ?? 0, "#101334"], [pickL("New", "Baru"), run.inserted ?? 0, "#047857"], [pickL("Duplicates", "Duplikat"), run.deduplicated ?? 0, "#6B7591"]] as const).map(([label, n, color]) => (
                           <div key={label} className="rounded-[10px] bg-white px-2.5 py-2">
                             <p className="text-[18px] font-black leading-none" style={{ color }}>{n}</p>
-                            <p className="mt-1 text-[10px] font-black text-[#8A93AD]">{label}</p>
+                            <p className="mt-1 text-[11px] font-black text-[#6B7591]">{label}</p>
                           </div>
                         ))}
-                        {(run.fetched ?? 0) === 0 ? <p className="col-span-3 mt-1 rounded-[8px] bg-[#FFF3DC] px-2.5 py-1.5 text-[11px] font-bold text-[#A04606]">{pickL("Nothing found: try a more common name or spelling.", "Tidak ada hasil: coba nama atau ejaan yang lebih umum.")}</p> : null}
+                        {(run.fetched ?? 0) === 0 ? <p className="col-span-3 mt-1 rounded-[8px] bg-[#FFF3DC] px-2.5 py-1.5 text-[12px] font-bold text-[#A04606]">{pickL("Nothing found: try a more common name or spelling.", "Tidak ada hasil: coba nama atau ejaan yang lebih umum.")}</p> : null}
                       </div>
                     ) : (
                       <div className="mt-3"><LastRunLine keyword={k} t={t} /></div>
                     )}
                     <div className="mt-auto flex items-center justify-between gap-2 pt-3">
-                      <span className="text-[11px] font-bold text-[#8A93AD]">{k.lastRun ? pickL(`last run ${timeAgo(k.lastRun.at)}`, `terakhir ${timeAgo(k.lastRun.at)}`) : pickL("not run yet", "belum pernah diambil")}</span>
+                      <span className="text-[12px] font-bold text-[#6B7591]">{k.lastRun ? pickL(`last run ${timeAgo(k.lastRun.at)}`, `terakhir ${timeAgo(k.lastRun.at)}`) : pickL("not run yet", "belum pernah diambil")}</span>
                       {canEdit && editing?.id !== k.id ? (
                         <span className="flex items-center gap-0.5">
                           <button type="button" disabled={busy} onClick={() => updateMutation.mutate({ id: k.id, input: { isActive: !k.isActive } })} title={k.isActive ? t("deactivate") : t("activate")} className={iconBtn}>
@@ -240,7 +240,7 @@ const run_ok = (status: string) => status !== "failed" && status !== "deferred";
 function KeywordStatus({ keyword, t }: { keyword: MonitoringKeyword; t: T }) {
   const status = keyword.monitoringStatus ?? (!keyword.isActive ? "paused" : keyword.scheduled ? "awaiting_first_run" : "not_in_rotation");
   return (
-    <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black", STATUS_STYLE[status])}>
+    <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[12px] font-black", STATUS_STYLE[status])}>
       {t(`status_${status}`)}
     </span>
   );
@@ -309,7 +309,7 @@ function RunMonitoringNow({ onDone }: { onDone: () => void }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[14px] font-black text-[#101334]">{pickL("Need the latest now?", "Butuh data terbaru sekarang?")}</p>
-          <p className="text-[11px] font-semibold text-[#5A6478]">{pickL("Collects the latest public news for up to 3 active keywords (8 articles each) and analyses it. Takes up to 2 minutes; one run per 10 minutes.", "Mengambil berita publik terbaru untuk hingga 3 kata kunci aktif (8 artikel per kata kunci) lalu menganalisisnya. Butuh hingga 2 menit; satu run per 10 menit.")}</p>
+          <p className="text-[12px] font-semibold text-[#5A6478]">{pickL("Collects the latest public news for up to 3 active keywords (8 articles each) and analyses it. Takes up to 2 minutes; one run per 10 minutes.", "Mengambil berita publik terbaru untuk hingga 3 kata kunci aktif (8 artikel per kata kunci) lalu menganalisisnya. Butuh hingga 2 menit; satu run per 10 menit.")}</p>
         </div>
         <button
           type="button"
@@ -322,10 +322,10 @@ function RunMonitoringNow({ onDone }: { onDone: () => void }) {
         </button>
       </div>
       {failure ? (
-        <p role={failure.tone === "error" ? "alert" : "status"} className={cn("mt-2 text-[10.5px] font-semibold", failure.tone === "error" ? "text-[#C81E1E]" : "text-[#31406B]")}>{failure.text}</p>
+        <p role={failure.tone === "error" ? "alert" : "status"} className={cn("mt-2 text-[11.5px] font-semibold", failure.tone === "error" ? "text-[#C81E1E]" : "text-[#31406B]")}>{failure.text}</p>
       ) : null}
       {result ? (
-        <div className="mt-2 text-[10.5px] font-semibold text-[#31406B]" role="status">
+        <div className="mt-2 text-[11.5px] font-semibold text-[#31406B]" role="status">
           <p>
             {RUN_STATUS_TEXT[result.status] ? pickL(...RUN_STATUS_TEXT[result.status]) : result.status}{" "}
             {pickL(

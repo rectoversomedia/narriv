@@ -80,7 +80,7 @@ export function DemoPicker({ open, onClose }: { open: boolean; onClose: () => vo
           <X size={18} aria-hidden="true" />
         </button>
 
-        <p className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-[#5F6B94]">{L("Live Demo · No Sign-Up", "Demo Langsung · Tanpa Daftar")}</p>
+        <p className="font-mono text-[12px] font-bold uppercase tracking-[0.12em] text-[#5F6B94]">{L("Live Demo · No Sign-Up", "Demo Langsung · Tanpa Daftar")}</p>
         <h2 id="demo-picker-title" className="mx-auto mt-2 max-w-2xl text-balance text-[24px] font-black leading-[1.15] tracking-[-0.03em] sm:mt-3 sm:text-[38px]">{L("Which Case Is ", "Kasus Mana yang ")}<span className="mk-brush">{L("Closest to Yours?", "Paling Mirip?")}</span></h2>
         <p className="mx-auto mt-2 max-w-lg text-balance text-[14px] font-medium leading-relaxed text-[#5B6070] sm:text-[15px]">{L("Each opens the full Narriv app with fictional data. No sign-up needed.", "Masing-masing membuka aplikasi Narriv lengkap dengan data fiktif. Tanpa perlu mendaftar.")}</p>
 
@@ -99,11 +99,11 @@ export function DemoPicker({ open, onClose }: { open: boolean; onClose: () => vo
             >
               <span className="relative block w-[112px] shrink-0 overflow-hidden border-r-[1.5px] border-[#101334] md:aspect-[600/340] md:w-full md:border-b-[1.5px] md:border-r-0">
                 <Image src={s.image} alt="" fill sizes="(min-width: 768px) 340px, 112px" className="object-cover transition duration-500 group-hover:scale-[1.04]" />
-                <span aria-hidden="true" className="absolute bottom-2 left-2 hidden rounded-[8px] md:bottom-3 md:left-3 md:block border-[1.5px] border-[#101334] bg-white px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#101334]">0{SCENARIOS.indexOf(s) + 1}</span>
+                <span aria-hidden="true" className="absolute bottom-2 left-2 hidden rounded-[8px] md:bottom-3 md:left-3 md:block border-[1.5px] border-[#101334] bg-white px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#101334]">0{SCENARIOS.indexOf(s) + 1}</span>
               </span>
               <span className="flex min-w-0 flex-1 flex-col items-start px-4 py-3.5 md:items-center md:px-5 md:pb-5 md:pt-5">
                 <span className="max-w-full truncate whitespace-nowrap text-[16px] font-black leading-tight md:text-[15.5px] lg:text-[18px] xl:text-[19px]">{L(s.title[0], s.title[1])}</span>
-                <span className="mt-1.5 rounded-[8px] px-2.5 py-1 font-mono text-[11px] font-bold" style={{ backgroundColor: `color-mix(in srgb, ${s.accent} 12%, white)`, color: s.accent }}>{L(s.who[0], s.who[1])}</span>
+                <span className="mt-1.5 rounded-[8px] px-2.5 py-1 font-mono text-[12px] font-bold" style={{ backgroundColor: `color-mix(in srgb, ${s.accent} 12%, white)`, color: s.accent }}>{L(s.who[0], s.who[1])}</span>
                 <span className="mt-3 hidden flex-1 text-balance text-[14px] font-medium leading-relaxed text-[#31406B] md:block">{L(s.body[0], s.body[1])}</span>
                 <span className="mt-2.5 inline-flex h-9 w-full items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-[#101334] text-[13px] font-black text-white shadow-[0_2px_0_#101334] transition group-hover:brightness-110 md:mt-5 md:h-11 md:rounded-[12px] md:text-[14px] md:shadow-[0_3px_0_#101334]" style={{ backgroundColor: s.accent }}>
                   {loading === s.key ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : null}

@@ -130,7 +130,7 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
 function StatusPill({ status, t }: { status: ActionStatus; t: (key: string) => string }) {
   const style = status === "done" ? "bg-[#10B981]/12 text-[#047857]" : status === "in-progress" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#EF4444]/10 text-[#C81E1E]";
   const label = status === "done" ? t("statusDone") : status === "in-progress" ? t("statusInProgress") : t("statusActive");
-  return <span className={cn("shrink-0 rounded-[6px] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.06em]", style)}>{label}</span>;
+  return <span className={cn("shrink-0 rounded-[6px] px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em]", style)}>{label}</span>;
 }
 
 function Avatar({ name }: { name: string }) {
@@ -160,7 +160,7 @@ function ProgressLine({ value, tone }: { value: number; tone: Tone }) {
           <span key={step} className="h-1.5 flex-1 rounded-full" style={{ backgroundColor: step <= value ? style.color : "#EEF1F7" }} />
         ))}
       </span>
-      <span className="whitespace-nowrap text-right text-[10px] font-black text-[#101334]">{pickL(`Stage ${value}/3`, `Tahap ${value}/3`)}</span>
+      <span className="whitespace-nowrap text-right text-[11px] font-black text-[#101334]">{pickL(`Stage ${value}/3`, `Tahap ${value}/3`)}</span>
     </div>
   );
 }
@@ -183,8 +183,8 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
       {/* The issue in one line, impact as a chip; owner by name only (the role lives on the plan). */}
       <p className="mt-1.5 line-clamp-2 text-[13px] font-medium text-[#3A4566]" title={action.issue}>{action.issue}</p>
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        <span className="font-mono text-[11px] font-bold uppercase tracking-[0.04em]" style={{ color: readableTone(style.color) }}>{action.impact}</span>
-        <span className="font-mono text-[11px] font-medium text-[#5F6B94]">· {action.due}</span>
+        <span className="font-mono text-[12px] font-bold uppercase tracking-[0.04em]" style={{ color: readableTone(style.color) }}>{action.impact}</span>
+        <span className="font-mono text-[12px] font-medium text-[#5F6B94]">· {action.due}</span>
       </div>
       <div className="mt-3 flex items-center gap-2">
         <Avatar name={action.owner} />
@@ -246,23 +246,23 @@ function FilterDropdown({ isOpen, onClose, filterPriority, setFilterPriority, fi
       <div className="flex items-center justify-between">
         <h3 className="text-[13px] font-black text-[#101334]">{t("filterModal.title")}</h3>
         {activeCount > 0 && (
-          <button type="button" onClick={() => { setFilterPriority("all"); setFilterStatus("all"); }} className="text-[11px] font-bold text-[#3B52F5]">{t("filterModal.clearAll")}</button>
+          <button type="button" onClick={() => { setFilterPriority("all"); setFilterStatus("all"); }} className="text-[12px] font-bold text-[#3B52F5]">{t("filterModal.clearAll")}</button>
         )}
       </div>
       <div className="mt-4 space-y-3">
         <div>
-          <p className="mb-2 text-[11px] font-bold text-[#5F6B94]">{t("filterModal.priority")}</p>
+          <p className="mb-2 text-[12px] font-bold text-[#5F6B94]">{t("filterModal.priority")}</p>
           <div className="flex flex-wrap gap-1.5">
             {priorities.map((p) => (
-              <button key={p.value} type="button" onClick={() => setFilterPriority(p.value)} className={cn("rounded-full px-3 py-1.5 text-[10px] font-black transition", filterPriority === p.value ? "bg-[#465FFF] text-white" : "bg-[#F8FAFF] text-[#53608C] hover:bg-[#EEF0FF]")}>{p.label}</button>
+              <button key={p.value} type="button" onClick={() => setFilterPriority(p.value)} className={cn("rounded-full px-3 py-1.5 text-[11px] font-black transition", filterPriority === p.value ? "bg-[#465FFF] text-white" : "bg-[#F8FAFF] text-[#53608C] hover:bg-[#EEF0FF]")}>{p.label}</button>
             ))}
           </div>
         </div>
         <div>
-          <p className="mb-2 text-[11px] font-bold text-[#5F6B94]">{t("filterModal.status")}</p>
+          <p className="mb-2 text-[12px] font-bold text-[#5F6B94]">{t("filterModal.status")}</p>
           <div className="flex flex-wrap gap-1.5">
             {statuses.map((s) => (
-              <button key={s.value} type="button" onClick={() => setFilterStatus(s.value)} className={cn("rounded-full px-3 py-1.5 text-[10px] font-black transition", filterStatus === s.value ? "bg-[#465FFF] text-white" : "bg-[#F8FAFF] text-[#53608C] hover:bg-[#EEF0FF]")}>{s.label}</button>
+              <button key={s.value} type="button" onClick={() => setFilterStatus(s.value)} className={cn("rounded-full px-3 py-1.5 text-[11px] font-black transition", filterStatus === s.value ? "bg-[#465FFF] text-white" : "bg-[#F8FAFF] text-[#53608C] hover:bg-[#EEF0FF]")}>{s.label}</button>
             ))}
           </div>
         </div>
@@ -526,7 +526,7 @@ export default function ActionPlansPage() {
               </div>
             ) : (<>
             <div className="flex flex-wrap items-center gap-2">
-              <span className={cn("rounded-[8px] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em]", selectedPriority === "high" ? "bg-[#B42318] text-white" : selectedPriority === "medium" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#E8F7EF] text-[#047857]")}>{t(`lanes.${selectedPriority}`)}</span>
+              <span className={cn("rounded-[8px] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.08em]", selectedPriority === "high" ? "bg-[#B42318] text-white" : selectedPriority === "medium" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#E8F7EF] text-[#047857]")}>{t(`lanes.${selectedPriority}`)}</span>
               <span className="nv-stamp">{selectedStatusLabel}</span>
               <span className="font-mono text-[11.5px] font-medium text-[#5F6B94]">{t("dueDateLabel")} {selectedDue}</span>
             </div>
@@ -535,24 +535,24 @@ export default function ActionPlansPage() {
 
             <dl className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
               <div className="min-w-0 rounded-[14px] bg-[#F6F7FC] px-4 py-3">
-                <dt className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("categoryLabel")}</dt>
+                <dt className="font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("categoryLabel")}</dt>
                 <dd className="mt-1 text-[16px] font-black leading-snug text-[#101334]">{selectedIssue}</dd>
               </div>
               <div className="min-w-0 rounded-[14px] bg-[#FFF5F4] px-4 py-3 shadow-[inset_0_0_0_1.5px_#F5B5B0]">
-                <dt className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("impactFieldLabel")}</dt>
+                <dt className="font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("impactFieldLabel")}</dt>
                 <dd className="mt-1 text-[20px] font-black leading-tight text-[#B42318]">{impactWord(String(selectedImpact)) || selectedImpact}</dd>
               </div>
             </dl>
 
             {/* The steps, numbered, each with when it should happen. */}
             <div className="mt-6">
-              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("aiStepsTitle")}</p>
+              <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("aiStepsTitle")}</p>
               <ol className="mt-2 divide-y divide-[#EEF0F6]">
                 {(detailSteps ?? []).map(([item, when], stepIndex) => (
                   <li key={`${stepIndex}:${item}`} className="flex items-start gap-3 py-3">
-                    <span className="grid size-7 shrink-0 place-items-center rounded-full border-[1.5px] border-[#101334] font-mono text-[11px] font-bold text-[#101334]">{String(stepIndex + 1).padStart(2, "0")}</span>
+                    <span className="grid size-7 shrink-0 place-items-center rounded-full border-[1.5px] border-[#101334] font-mono text-[12px] font-bold text-[#101334]">{String(stepIndex + 1).padStart(2, "0")}</span>
                     <span className="min-w-0 flex-1 pt-0.5 text-[15px] font-bold leading-snug text-[#101334]">{item}</span>
-                    {when ? <span className="shrink-0 rounded-[6px] bg-[#EEF1FF] px-2 py-1 font-mono text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#3B52F5]">{when}</span> : null}
+                    {when ? <span className="shrink-0 rounded-[6px] bg-[#EEF1FF] px-2 py-1 font-mono text-[11.5px] font-bold uppercase tracking-[0.04em] text-[#3B52F5]">{when}</span> : null}
                   </li>
                 ))}
               </ol>
@@ -560,7 +560,7 @@ export default function ActionPlansPage() {
 
             {/* The decision on the AI's draft. */}
             <div className="mt-5 rounded-[18px] bg-[#101334] p-5 text-white">
-              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{pickL("Your Decision", "Keputusan Anda")}</p>
+              <p className="font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{pickL("Your Decision", "Keputusan Anda")}</p>
               <p className="mt-1.5 text-[15px] font-semibold text-white/80">{pickL("AI drafted this plan. Approve it to go ahead, or reject it with a reason so the next draft is better.", "Rencana ini disusun AI. Setujui untuk dijalankan, atau tolak dengan alasan supaya draf berikutnya lebih baik.")}</p>
               <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
                 <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-[#465FFF] px-6 text-[14px] font-black text-white transition hover:bg-[#3B52F5] disabled:opacity-50">
@@ -579,7 +579,7 @@ export default function ActionPlansPage() {
           {latestPlan?.id ? (
             <Panel className="!p-0">
               <CardContent className="p-5">
-                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{pickL("Tracking", "Pelacakan")}</p>
+                <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{pickL("Tracking", "Pelacakan")}</p>
                 <PlanWorkflowControls key={`${latestPlan.id}-${latestPlan.workflowStatus ?? ""}-${latestPlan.assignedTo ?? ""}`} planId={latestPlan.id} status={latestPlan.workflowStatus} assignedTo={latestPlan.assignedTo} />
                 <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="mt-3 flex items-center justify-center gap-1 text-[13px] font-bold text-[#3B52F5] hover:underline">{pickL("Pick Another Plan", "Pilih Rencana Lain")} <ChevronRight size={14} className="-rotate-90" /></a>
               </CardContent>
@@ -589,7 +589,7 @@ export default function ActionPlansPage() {
           {/* How the AI's plans have been received, plus what it learned; one card instead of two. */}
           <Panel className="!p-0">
             <CardContent className="p-5">
-              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("performance")}</p>
+              <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("performance")}</p>
               {feedbackAccuracyQuery.isPending ? (
                 <PanelSkeleton className="mt-3" />
               ) : accuracy ? (
@@ -602,7 +602,7 @@ export default function ActionPlansPage() {
                     ].map(([label, value, tone]) => (
                       <div key={String(label)} className="px-2">
                         <p className={cn("text-[22px] font-black leading-none", String(tone))}>{value != null ? `${value}%` : "—"}</p>
-                        <p className="mt-1.5 text-[11px] font-bold leading-tight text-[#5F6B94]">{label}</p>
+                        <p className="mt-1.5 text-[12px] font-bold leading-tight text-[#5F6B94]">{label}</p>
                       </div>
                     ))}
                   </div>
@@ -623,7 +623,7 @@ export default function ActionPlansPage() {
 
               {actionPlanLearningQuery.data?.insights?.length ? (
                 <div className="mt-5 border-t border-[#EEF0F6] pt-4">
-                  <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("keyInsights")}</p>
+                  <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("keyInsights")}</p>
                   <ul className="mt-2 space-y-2">
                     {actionPlanLearningQuery.data.insights.map((insight) => {
                       const stats = actionPlanLearningQuery.data?.stats;

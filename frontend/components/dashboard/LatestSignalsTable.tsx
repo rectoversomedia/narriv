@@ -63,7 +63,7 @@ export function LatestSignalsTable({ signals }: LatestSignalsTableProps) {
                     {signal.platform}
                   </td>
                   <td className="px-4 py-3.5">
-                    <span className={`px-2 py-1 rounded-md text-[10px] font-bold border ${getSentimentColor(signal.sentiment)}`}>
+                    <span className={`px-2 py-1 rounded-md text-[11px] font-bold border ${getSentimentColor(signal.sentiment)}`}>
                       {signal.sentiment}
                     </span>
                   </td>

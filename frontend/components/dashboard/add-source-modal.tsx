@@ -79,11 +79,11 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center justify-between gap-2">
                       <span className="text-[14px] font-black text-[#101334]">{option.title}</span>
-                      <span className="text-[11px] font-black text-[#5A6478]">{L(`${option.platforms.length} sources`, `${option.platforms.length} sumber`)}</span>
+                      <span className="text-[12px] font-black text-[#5A6478]">{L(`${option.platforms.length} sources`, `${option.platforms.length} sumber`)}</span>
                     </span>
                     <span className="mt-2 flex flex-wrap gap-1.5">
                       {option.platforms.map(([key, name]) => (
-                        <span key={name} className="inline-flex items-center gap-1.5 rounded-full bg-white px-2 py-1 text-[11px] font-black text-[#31406B] shadow-[0_1px_2px_rgba(16,24,40,0.06)]">
+                        <span key={name} className="inline-flex items-center gap-1.5 rounded-full bg-white px-2 py-1 text-[12px] font-black text-[#31406B] shadow-[0_1px_2px_rgba(16,24,40,0.06)]">
                           {key ? <PlatformIcon platform={key} className="size-3.5" /> : null}{name}
                         </span>
                       ))}
@@ -96,7 +96,7 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
         </div>
         {keyword.trim() && count ? (
           <div className="rounded-[12px] bg-[#101334] px-4 py-3 text-white">
-            <p className="text-[10px] font-black text-[#A9B4FF]">{L("Summary", "Ringkasan")}</p>
+            <p className="text-[11px] font-black text-[#A9B4FF]">{L("Summary", "Ringkasan")}</p>
             <p className="mt-0.5 text-[13px] font-bold">{L(`${count} sources will watch «${keyword.trim()}», checked every hour.`, `${count} sumber akan memantau «${keyword.trim()}», dicek setiap jam.`)}</p>
           </div>
         ) : null}

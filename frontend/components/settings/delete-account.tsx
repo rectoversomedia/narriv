@@ -44,14 +44,14 @@ export function DeleteAccountRow() {
       <div className="flex flex-col gap-3.5 border-t border-slate-100/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 flex-1">
           <span className="block text-[11.5px] font-black text-[#D32F2F]">{L("Delete Account", "Hapus Akun")}</span>
-          <span className="mt-1 block text-[10px] font-semibold leading-normal text-[#5A6478]">
+          <span className="mt-1 block text-[11px] font-semibold leading-normal text-[#5A6478]">
             {L("Permanently deletes your account and the workspaces you own, with all their data.", "Hapus permanen akun Anda dan workspace milik Anda beserta seluruh datanya.")}
           </span>
         </div>
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-[11px] font-black text-white shadow-sm transition hover:bg-rose-700"
+          className="flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-[12px] font-black text-white shadow-sm transition hover:bg-rose-700"
         >
           {L("Delete Account", "Hapus Akun")}
         </button>

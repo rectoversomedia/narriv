@@ -59,8 +59,8 @@ export default function IssueDetailPage() {
             <ArrowLeft size={14} aria-hidden="true" /> {L("Back to Issue Map", "Kembali ke Peta Isu")}
           </Link>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-[#3B52F5]">{L("Issue", "Isu")}</span>
-            {impact ? <span className={cn("rounded-[7px] px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em]", impact.tone)}>{L(impact.en, impact.id)}</span> : null}
+            <span className="font-mono text-[12px] font-bold uppercase tracking-[0.12em] text-[#3B52F5]">{L("Issue", "Isu")}</span>
+            {impact ? <span className={cn("rounded-[7px] px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em]", impact.tone)}>{L(impact.en, impact.id)}</span> : null}
           </div>
           <h1 className="mt-1.5 max-w-4xl text-balance text-[28px] font-black leading-[1.12] tracking-[-0.03em] text-[#101334] sm:text-[34px]">
             {data?.title ?? (detail.isPending ? "…" : L("Issue", "Isu"))}
@@ -96,7 +96,7 @@ export default function IssueDetailPage() {
       )}
 
       {data ? (
-        <p className="text-[12px] font-medium text-[#8A93AD]">
+        <p className="text-[12px] font-medium text-[#6B7591]">
           {L("Action plans are drafted from this issue's records and need review before anything is published.", "Rencana aksi disusun sebagai draf dari catatan isu ini dan perlu ditinjau sebelum dipublikasikan.")}
         </p>
       ) : null}

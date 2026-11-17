@@ -69,13 +69,13 @@ function KeywordRowItem({ k, hours }: { k: KeywordRow; hours: MonitoringPeriod }
           <p className="mt-0.5 text-[12px] font-bold text-[#3B52F5] opacity-0 transition group-hover:opacity-100">{L("See Mentions →", "Lihat Percakapan →")}</p>
         </div>
         {/* Negative share (top right on phones, last column on wide screens) */}
-        <span className={cn("justify-self-end rounded-[8px] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.04em] lg:order-last", shareTone(share))}>
+        <span className={cn("justify-self-end rounded-[8px] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.04em] lg:order-last", shareTone(share))}>
           {share}% {L("Negative", "Negatif")}
         </span>
         {/* Trend */}
         <div className="col-span-2 lg:col-span-1">
-          {k.daily?.some((v) => v > 0) ? <Sparkline values={k.daily} /> : <p className="text-[12px] font-semibold text-[#8A93AD]">{L("No Trend Yet", "Belum Ada Tren")}</p>}
-          <p className="mt-0.5 font-mono text-[10px] font-medium text-[#8A93AD]">{L("Last 7 Days", "7 Hari Terakhir")}</p>
+          {k.daily?.some((v) => v > 0) ? <Sparkline values={k.daily} /> : <p className="text-[12px] font-semibold text-[#6B7591]">{L("No Trend Yet", "Belum Ada Tren")}</p>}
+          <p className="mt-0.5 font-mono text-[11px] font-medium text-[#6B7591]">{L("Last 7 Days", "7 Hari Terakhir")}</p>
         </div>
         {/* Sentiment split */}
         <div className="col-span-2 lg:col-span-1">
@@ -84,7 +84,7 @@ function KeywordRowItem({ k, hours }: { k: KeywordRow; hours: MonitoringPeriod }
           </div>
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 lg:flex-nowrap lg:gap-x-2.5">
             {parts.map((p) => (
-              <span key={p.label} className={cn("inline-flex items-center gap-1 text-[11px] font-semibold text-[#5F6B94]", p.n === 0 && "opacity-40")}>
+              <span key={p.label} className={cn("inline-flex items-center gap-1 text-[12px] font-semibold text-[#5F6B94]", p.n === 0 && "opacity-40")}>
                 <span className="size-1.5 rounded-full" style={{ backgroundColor: p.color }} />
                 {p.label} <b className="font-mono font-bold tabular-nums text-[#101334]">{pct(p.n)}%</b>
               </span>
@@ -94,11 +94,11 @@ function KeywordRowItem({ k, hours }: { k: KeywordRow; hours: MonitoringPeriod }
         {/* Volume and new in 24 hours */}
         <div className="lg:text-right">
           <p className="text-[24px] font-black leading-none tabular-nums text-[#101334]">{fmt(k.count)}</p>
-          <p className="mt-1 font-mono text-[10.5px] font-medium text-[#5F6B94]">{L("mentions", "percakapan")}</p>
+          <p className="mt-1 font-mono text-[11.5px] font-medium text-[#5F6B94]">{L("mentions", "percakapan")}</p>
         </div>
         <div className="text-right">
           <p className={cn("text-[24px] font-black leading-none tabular-nums", k.last24h > 0 ? "text-[#3B52F5]" : "text-[#C9D0E3]")}>{k.last24h > 0 ? `+${fmt(k.last24h)}` : "0"}</p>
-          <p className="mt-1 font-mono text-[10.5px] font-medium text-[#5F6B94]">{L("new in 24h", "baru 24 jam")}</p>
+          <p className="mt-1 font-mono text-[11.5px] font-medium text-[#5F6B94]">{L("new in 24h", "baru 24 jam")}</p>
         </div>
       </Link>
     </li>
@@ -175,14 +175,16 @@ export function OverviewHero({
             <BrandMark name={brandName} logoUrl={logoUrl} small className="size-12 shrink-0 rounded-[14px] shadow-[0_0_0_1.5px_#101334]" />
             <div className="min-w-0">
               <h2 className="truncate text-[20px] font-black leading-tight tracking-[-0.02em] sm:text-[22px]">{brandName}</h2>
-              <p className="font-mono text-[11px] font-medium text-[#5F6B94]">
+              <p className="font-mono text-[12px] font-medium text-[#5F6B94]">
                 {L(`Last ${periodLabel}`, `${periodLabel} terakhir`)}{lastDataLabel ? L(` · latest data ${lastDataLabel}`, ` · data terbaru ${lastDataLabel}`) : ""}
               </p>
             </div>
           </div>
-          <span className={cn("inline-flex items-center gap-1.5 rounded-[8px] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em]", style.chip)}>
+          <span className={cn("inline-flex items-center gap-1.5 rounded-[8px] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.08em]", style.chip)}>
             <span className={cn("size-1.5 rounded-full", style.dot)} />
             {levelLabel}
+            {/* The window the verdict covers, so it is not read against the 24-hour Daily Brief. */}
+            <span className="opacity-70">· {L(periodLabel, periodLabel)}</span>
           </span>
         </div>
 
@@ -194,16 +196,16 @@ export function OverviewHero({
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {kpis.map((k) => (
             <Link key={k.l} href={k.href} className="group rounded-[14px] bg-[#F6F7FC] px-4 py-3.5 transition hover:bg-[#EEF1FF]">
-              <p className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{k.l}</p>
+              <p className="font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{k.l}</p>
               <p className={cn("mt-1 text-[32px] font-black leading-none tracking-[-0.03em] tabular-nums", k.tone)}>{k.v}</p>
-              <p className="mt-1.5 flex items-center justify-between font-mono text-[11px] font-bold text-[#5F6B94]">{k.sub}<span className="text-[#3B52F5] opacity-0 transition group-hover:opacity-100">→</span></p>
+              <p className="mt-1.5 flex items-center justify-between font-mono text-[12px] font-bold text-[#5F6B94]">{k.sub}<span className="text-[#3B52F5] opacity-0 transition group-hover:opacity-100">→</span></p>
             </Link>
           ))}
         </div>
 
         {/* Where to act. */}
         <div className="mt-5 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:flex-wrap sm:items-center">
-          <p className="px-1 font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF] sm:mr-2">{L("Act On It", "Tindak Lanjuti")}</p>
+          <p className="px-1 font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF] sm:mr-2">{L("Act On It", "Tindak Lanjuti")}</p>
           <Link href="/alerts" className="inline-flex h-11 items-center justify-center rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5]">
             {criticalAlerts > 0 ? L(`Handle ${criticalAlerts} Critical ${criticalAlerts === 1 ? "Alert" : "Alerts"}`, `Tangani ${criticalAlerts} Peringatan Kritis`) : openAlerts > 0 ? L(`Review ${openAlerts} Open Alerts`, `Tinjau ${openAlerts} Peringatan Aktif`) : L("Open Alerts", "Buka Peringatan")}
           </Link>
@@ -220,10 +222,10 @@ export function OverviewHero({
           <div className="mt-7">
             <div className="flex flex-wrap items-end justify-between gap-2 border-b border-[#EEF0F6] pb-3">
               <div>
-                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Monitored Keywords", "Kata Kunci yang Dipantau")}</p>
+                <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Monitored Keywords", "Kata Kunci yang Dipantau")}</p>
                 <h3 className="mt-1 text-[19px] font-black tracking-[-0.02em]">{L("Where The Pressure Is", "Di Mana Tekanannya")}</h3>
               </div>
-              <p className="font-mono text-[11px] font-medium text-[#5F6B94]">{L("highest negative share first", "urut dari porsi negatif tertinggi")}</p>
+              <p className="font-mono text-[12px] font-medium text-[#5F6B94]">{L("highest negative share first", "urut dari porsi negatif tertinggi")}</p>
             </div>
             <ul className="mt-1 divide-y divide-[#EEF0F6]">
               {sorted.map((k) => <KeywordRowItem key={k.keyword} k={k} hours={hours} />)}

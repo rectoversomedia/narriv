@@ -44,7 +44,7 @@ export function WebsiteInstallGuard() {
       <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(70,95,255,0.4),transparent_70%)]" />
       <div className="relative w-full max-w-sm text-center">
         <p className="text-[30px] font-black tracking-[-0.03em]">Narriv<span className="text-[#EC4899]">.</span></p>
-        <p className="mt-6 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#A5B4FF]">{L("One Quick Step", "Satu Langkah Lagi")}</p>
+        <p className="mt-6 font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-[#A5B4FF]">{L("One Quick Step", "Satu Langkah Lagi")}</p>
         <h1 id="install-guard-title" className="mt-2 text-[24px] font-black leading-tight tracking-[-0.02em]">{L("This icon opens the website, not the Narriv app", "Ikon ini membuka situs, bukan aplikasi Narriv")}</h1>
         <p className="mt-2 text-[14.5px] font-medium leading-relaxed text-white/70">{L("Add Narriv from app.narriv.digital so it opens full screen and stays signed in.", "Pasang Narriv dari app.narriv.digital supaya terbuka penuh dan tetap masuk.")}</p>
         <ol className="mt-6 grid gap-2.5 text-left">

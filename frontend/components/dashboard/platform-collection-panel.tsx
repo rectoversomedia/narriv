@@ -100,25 +100,25 @@ export function PlatformCollectionPanel() {
       </div>
 
       {collectionsQuery.isError ? (
-        <p className="mt-4 text-[11px] font-semibold text-[#C81E1E]">{t("loadFailed")}</p>
+        <p className="mt-4 text-[12px] font-semibold text-[#C81E1E]">{t("loadFailed")}</p>
       ) : !data ? (
         <div className="mt-4 h-20 animate-pulse rounded-lg bg-slate-100" aria-busy="true" />
       ) : (
         <>
           {!data.configured ? (
-            <p className="mt-4 text-[11px] font-semibold text-[#9A5B00]">{t("notConfigured")}</p>
+            <p className="mt-4 text-[12px] font-semibold text-[#9A5B00]">{t("notConfigured")}</p>
           ) : canManage ? (
             <form
               className="mt-4 flex flex-wrap items-end gap-2"
               onSubmit={(e) => { e.preventDefault(); start.mutate(); }}
             >
-              <label className="text-[10px] font-black text-[#5A6478]">
+              <label className="text-[11px] font-black text-[#5A6478]">
                 {t("platform")}
                 <select value={selectedPreset} onChange={(e) => setPreset(e.target.value)} className="mt-1 block h-9 rounded-lg border border-[#DDE3EF] bg-white px-2 text-[12px] font-semibold normal-case tracking-normal text-[#31406B]">
                   {presets.map((p) => <option key={p.key} value={p.key}>{platformLabel(t, p.platform)}</option>)}
                 </select>
               </label>
-              <label className="text-[10px] font-black text-[#5A6478]">
+              <label className="text-[11px] font-black text-[#5A6478]">
                 {t("keyword")}
                 <select value={selectedKeyword} onChange={(e) => setKeyword(e.target.value)} disabled={activeKeywords.length === 0} className="mt-1 block h-9 max-w-[220px] rounded-lg border border-[#DDE3EF] bg-white px-2 text-[12px] font-semibold normal-case tracking-normal text-[#31406B]">
                   {activeKeywords.length === 0 ? <option value="">{t("noKeyword")}</option> : null}
@@ -128,27 +128,27 @@ export function PlatformCollectionPanel() {
               <button
                 type="submit"
                 disabled={start.isPending || running || activeKeywords.length === 0}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#465FFF] px-3 text-[11px] font-black text-white hover:bg-[#3B52F5] disabled:opacity-60"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#465FFF] px-3 text-[12px] font-black text-white hover:bg-[#3B52F5] disabled:opacity-60"
               >
                 {start.isPending ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : null}
                 {t("start")}
               </button>
-              <p className="basis-full text-[10px] font-semibold text-[#5A6478]">
+              <p className="basis-full text-[11px] font-semibold text-[#5A6478]">
                 {t("costNote")}
               </p>
             </form>
           ) : (
-            <p className="mt-4 text-[11px] font-semibold text-[#5A6478]">{t("ownersOnly")}</p>
+            <p className="mt-4 text-[12px] font-semibold text-[#5A6478]">{t("ownersOnly")}</p>
           )}
 
           {start.isError ? (
-            <p role="alert" className="mt-2 text-[11px] font-semibold text-[#C81E1E]">
+            <p role="alert" className="mt-2 text-[12px] font-semibold text-[#C81E1E]">
               {start.error instanceof Error ? start.error.message : t("startFailed")}
             </p>
           ) : null}
 
           {data.data.length > 0 ? (
-            <ul className="mt-4 divide-y divide-[#EEF1F7] text-[11px] font-semibold" role="status" aria-live="polite">
+            <ul className="mt-4 divide-y divide-[#EEF1F7] text-[12px] font-semibold" role="status" aria-live="polite">
               {data.data.slice(0, 8).map((run) => {
                 const d = describe(run, t, te);
                 return (
@@ -160,7 +160,7 @@ export function PlatformCollectionPanel() {
                         {d.text}
                       </span>
                     </span>
-                    <span className="shrink-0 text-[10px] text-[#5A6478]">
+                    <span className="shrink-0 text-[11px] text-[#5A6478]">
                       {when(run.startedAt)}
                       {typeof run.costUsd === "number" ? ` · Apify $${run.costUsd.toFixed(3)}` : ""}
                     </span>
@@ -169,7 +169,7 @@ export function PlatformCollectionPanel() {
               })}
             </ul>
           ) : (
-            <p className="mt-4 text-[11px] font-semibold text-[#5A6478]">{t("none")}</p>
+            <p className="mt-4 text-[12px] font-semibold text-[#5A6478]">{t("none")}</p>
           )}
         </>
       )}

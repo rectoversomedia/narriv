@@ -168,7 +168,7 @@ const RELEVANCE_TONE: Record<string, string> = {
 function RelevanceBadge({ relevance }: { relevance: SignalRow["relevance"] }) {
   const t = useTranslations("Signals.filters");
   if (!relevance) return null;
-  return <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", RELEVANCE_TONE[relevance])}>{t(`rel_${relevance}`)}</span>;
+  return <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", RELEVANCE_TONE[relevance])}>{t(`rel_${relevance}`)}</span>;
 }
 
 /**
@@ -184,15 +184,15 @@ function PlaceChip({ place, basis, account }: { place: string | null; basis?: Si
       {place ? (
         <span
           title={fromLabel ? pickL("From the platform's location label for this account or upload", "Dari label lokasi platform untuk akun atau unggahan ini") : pickL("Named in the text of this mention", "Disebut dalam isi percakapan ini")}
-          className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#F1F4FA] px-2 py-0.5 text-[10px] font-bold text-[#31406B]"
+          className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#F1F4FA] px-2 py-0.5 text-[11px] font-bold text-[#31406B]"
         >
           <MapPin size={10} aria-hidden="true" className="shrink-0 text-[#465FFF]" />
           <span className="truncate">{fromLabel ? `${pickL("Account", "Akun")}: ${place}` : place}</span>
         </span>
       ) : null}
       {account ? (
-        <span title={pickL("From the platform's location label for this account or upload", "Dari label lokasi platform untuk akun atau unggahan ini")} className="inline-flex max-w-full items-center gap-1 rounded-full border border-dashed border-[#C9D1E6] px-2 py-0.5 text-[10px] font-bold text-[#5A6478]">
-          <MapPin size={10} aria-hidden="true" className="shrink-0 text-[#8A93AD]" />
+        <span title={pickL("From the platform's location label for this account or upload", "Dari label lokasi platform untuk akun atau unggahan ini")} className="inline-flex max-w-full items-center gap-1 rounded-full border border-dashed border-[#C9D1E6] px-2 py-0.5 text-[11px] font-bold text-[#5A6478]">
+          <MapPin size={10} aria-hidden="true" className="shrink-0 text-[#6B7591]" />
           <span className="truncate">{pickL("Account", "Akun")}: {account}</span>
         </span>
       ) : null}
@@ -220,14 +220,14 @@ function CveChip({ id, cve }: { id: string; cve: CveTag | null }) {
   const status = tag.review?.status;
   return (
     <span className="inline-flex max-w-full flex-wrap items-center gap-1">
-      <span title={tag.reason ?? undefined} className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black", status === "dismissed" ? "bg-slate-100 text-slate-500 line-through" : cat.tone)}>
+      <span title={tag.reason ?? undefined} className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-black", status === "dismissed" ? "bg-slate-100 text-slate-500 line-through" : cat.tone)}>
         {pickL(cat.label[0], cat.label[1])}
         {status === "confirmed" ? <Check size={10} aria-label={pickL("confirmed", "terkonfirmasi")} /> : null}
       </span>
       {!status && !isDemo ? (
         <>
-          <button type="button" disabled={review.isPending} onClick={() => review.mutate("confirmed")} className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-[#047857] shadow-[inset_0_0_0_1px_#A7E3C9] hover:bg-[#E8F7F0]">{pickL("Correct", "Benar")}</button>
-          <button type="button" disabled={review.isPending} onClick={() => review.mutate("dismissed")} className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-[#5A6478] shadow-[inset_0_0_0_1px_#DDE3EF] hover:bg-slate-50">{pickL("Not this", "Bukan")}</button>
+          <button type="button" disabled={review.isPending} onClick={() => review.mutate("confirmed")} className="rounded-full bg-white px-1.5 py-0.5 text-[11px] font-bold text-[#047857] shadow-[inset_0_0_0_1px_#A7E3C9] hover:bg-[#E8F7F0]">{pickL("Correct", "Benar")}</button>
+          <button type="button" disabled={review.isPending} onClick={() => review.mutate("dismissed")} className="rounded-full bg-white px-1.5 py-0.5 text-[11px] font-bold text-[#5A6478] shadow-[inset_0_0_0_1px_#DDE3EF] hover:bg-slate-50">{pickL("Not this", "Bukan")}</button>
         </>
       ) : null}
     </span>
@@ -301,9 +301,9 @@ function MonitoringFilterBar({ filters, onChange, narrativeTitle, relevanceAvail
           </select>
         </label>
       </div>
-      {!relevanceAvailable ? <p className="mt-2 text-[11px] text-[#5A6478]">{t("relevanceUnavailable")}</p> : null}
+      {!relevanceAvailable ? <p className="mt-2 text-[12px] text-[#5A6478]">{t("relevanceUnavailable")}</p> : null}
       {filters.narrative || active ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] font-semibold">
           {filters.narrative ? (
             <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#465FFF]/10 px-2.5 py-1 text-[#3B52F5]">
               <span className="truncate">{t("issueChip", { title: narrativeTitle || t("issueSelected") })}</span>
@@ -365,8 +365,8 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
       <div className="h-2" style={{ backgroundColor: band }} />
       <div className="p-5 sm:p-7">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Last 24 Hours", "24 Jam Terakhir")}</p>
-          <span className="rounded-[6px] px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em]" style={{ backgroundColor: verdict.bg, color: verdict.color }}>{verdict.word}</span>
+          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Last 24 Hours", "24 Jam Terakhir")}</p>
+          <span className="rounded-[6px] px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em]" style={{ backgroundColor: verdict.bg, color: verdict.color }}>{verdict.word}</span>
         </div>
 
         <div className="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-end">
@@ -395,7 +395,7 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
             {tiles.map((tile) => (
               <div key={tile.key} className="rounded-[14px] bg-[#F6F7FC] px-4 py-3">
-                <dt className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{tile.label}</dt>
+                <dt className="font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{tile.label}</dt>
                 <dd className="mt-1 text-[28px] font-black leading-none tracking-[-0.03em] tabular-nums" style={{ color: tile.tone }}>{tile.value}</dd>
               </div>
             ))}
@@ -405,7 +405,7 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
         {advice || onPlan ? (
           <div className="mt-5 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:items-center">
             <p className="min-w-0 flex-1 px-1 text-[15px] font-bold leading-snug text-white">
-              <span className="mb-1 block font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{L("Next Step", "Langkah Berikutnya")}</span>
+              <span className="mb-1 block font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{L("Next Step", "Langkah Berikutnya")}</span>
               {advice ?? L("Review today's negative mentions and decide on a response.", "Tinjau percakapan negatif hari ini dan putuskan responsnya.")}
             </p>
             {onPlan ? <button type="button" onClick={onPlan} className="inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5] sm:w-auto">{L("Create Action Plan", "Buat Rencana Aksi")}</button> : null}
@@ -436,7 +436,7 @@ function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
     MIXED: ["Mixed", "Campuran"],
     UNANALYZED: ["Not analysed", "Belum dianalisis"],
   };
-  return <span className={cn("whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-black", styles[sentiment])}>{pickL(...labels[sentiment])}</span>;
+  return <span className={cn("whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-black", styles[sentiment])}>{pickL(...labels[sentiment])}</span>;
 }
 
 
@@ -482,7 +482,7 @@ function SentimentCorrector({ id, sentiment }: { id: string; sentiment: Sentimen
 }
 
 function AnalysisBadge({ status, confidence }: { status: "analyzed" | "unanalyzed"; confidence: number | null }) {
-  if (status !== "analyzed") return <span className="text-[12px] font-bold text-[#8A93AD]">{pickL("Not yet", "Belum")}</span>;
+  if (status !== "analyzed") return <span className="text-[12px] font-bold text-[#6B7591]">{pickL("Not yet", "Belum")}</span>;
   return <span className="text-[12px] font-black text-[#3B52F5]">{confidence === null ? pickL("Done", "Selesai") : `${Math.round(confidence * 100)}%`}</span>;
 }
 
@@ -532,7 +532,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
           <button
             onClick={onBulkAnalyze}
             disabled={isBulkProcessing}
-            className="flex items-center gap-1.5 rounded-[6px] bg-[#465FFF] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#3147E8] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#465FFF] px-3 py-1.5 text-[12px] font-black text-white transition hover:bg-[#3147E8] disabled:opacity-50"
           >
             {isBulkProcessing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
             {t("bulk.analyze")}
@@ -540,7 +540,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
           <button
             onClick={onBulkCreateAlert}
             disabled={isBulkProcessing}
-            className="flex items-center gap-1.5 rounded-[6px] bg-[#B45309] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#92400E] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#B45309] px-3 py-1.5 text-[12px] font-black text-white transition hover:bg-[#92400E] disabled:opacity-50"
           >
             {isBulkProcessing ? <Loader2 size={12} className="animate-spin" /> : <AlertTriangle size={12} />}
             {t("bulk.createAlert")}
@@ -548,14 +548,14 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
           <button
             onClick={onBulkDelete}
             disabled={isBulkProcessing}
-            className="flex items-center gap-1.5 rounded-[6px] bg-[#C81E1E] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#A51818] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#C81E1E] px-3 py-1.5 text-[12px] font-black text-white transition hover:bg-[#A51818] disabled:opacity-50"
           >
             {isBulkProcessing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
             {t("bulk.delete")}
           </button>
           <button
             onClick={() => onSelectionChange(new Set())}
-            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#3B52F5]"
+            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[12px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#3B52F5]"
           >
             {t("bulk.clear")}
           </button>
@@ -571,9 +571,9 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
         <div className="flex flex-wrap items-center gap-2">
           <label className="relative block w-full sm:w-[220px]">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#647099]" />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={tSignals("search")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] pl-9 pr-3 text-[11px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={tSignals("search")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] pl-9 pr-3 text-[12px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white" />
           </label>
-          <span className="inline-flex h-9 items-center rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#31406B] shadow-[0_1px_4px_rgba(16,24,40,0.04)]">
+          <span className="inline-flex h-9 items-center rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-[0_1px_4px_rgba(16,24,40,0.04)]">
             {tSignals("sortLatest")}
           </span>
         </div>
@@ -594,16 +594,16 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     <PlaceChip place={row.place} basis={row.placeBasis} account={row.accountPlace} />
                     <CveChip id={row.id} cve={row.cve} />
                   </div>
-                  <p className="mt-1 text-[11px] text-[#5A6478]">
+                  <p className="mt-1 text-[12px] text-[#5A6478]">
                     {row.tags.join(" · ")}
                   </p>
-                  <p className="text-[11px] text-[#5A6478]">
+                  <p className="text-[12px] text-[#5A6478]">
                     {t("headerPublished")}: {row.time} · {t("headerCaptured")}: {row.captured}
                   </p>
                   {row.narratives[0] ? (
-                    <Link href={monitoringHref({ narrative: row.narratives[0].id })} className="mt-0.5 block truncate text-[11px] font-semibold text-[#3B52F5] hover:underline">{row.relatedNarrative}</Link>
+                    <Link href={monitoringHref({ narrative: row.narratives[0].id })} className="mt-0.5 block truncate text-[12px] font-semibold text-[#3B52F5] hover:underline">{row.relatedNarrative}</Link>
                   ) : null}
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] font-bold">
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-[12px] font-bold">
                     {row.url ? <a href={row.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#3B52F5]">{t("original")} <ExternalLink size={11} /></a> : null}
                     <button type="button" onClick={() => onGenerateActionPlan?.(row)} className="text-[#3B52F5]">{t("plan")}</button>
                     <button type="button" onClick={() => onInvestigate(row)} className="text-[#3B52F5]">{tSignals("investigate")}</button>
@@ -627,7 +627,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
               <col className="w-[11%]" />
             </colgroup>
             <thead>
-              <tr className="border-b border-[#EEF0F6] font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+              <tr className="border-b border-[#EEF0F6] font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                 <th className="px-2.5 py-3">
                   <button
                     type="button"
@@ -682,7 +682,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                         {row.relatedNarrative}{row.narrativeCount > 1 ? ` +${row.narrativeCount - 1}` : ""}
                       </Link>
                     ) : (
-                      <span className="block text-[12px] font-bold text-[#8A93AD]">—</span>
+                      <span className="block text-[12px] font-bold text-[#6B7591]">—</span>
                     )}
                   </td>
                   <td className="px-2.5 py-3 align-middle"><AnalysisBadge status={row.analysisStatus} confidence={row.analysisConfidence} /></td>
@@ -690,11 +690,11 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                   <td className="px-2.5 py-3 align-middle">
                     {/* One button per row: a negative or mixed record needs checking, a positive or neutral one a plan. */}
                     {row.sentiment === "NEGATIVE" || row.sentiment === "MIXED" ? (
-                      <button type="button" onClick={() => onInvestigate(row)} className="inline-flex h-8 w-full items-center justify-center rounded-[8px] bg-[#465FFF] px-2 text-[11px] font-black text-white transition hover:bg-[#3147E8]">
+                      <button type="button" onClick={() => onInvestigate(row)} className="inline-flex h-8 w-full items-center justify-center rounded-[8px] bg-[#465FFF] px-2 text-[12px] font-black text-white transition hover:bg-[#3147E8]">
                         {tSignals("investigate")}
                       </button>
                     ) : (
-                      <button type="button" onClick={() => onGenerateActionPlan?.(row)} title={t("planTitle")} className="inline-flex h-8 w-full items-center justify-center rounded-[8px] bg-[#EEF1FF] px-2 text-[11px] font-black text-[#3B52F5] transition hover:bg-[#E1E6FF]">
+                      <button type="button" onClick={() => onGenerateActionPlan?.(row)} title={t("planTitle")} className="inline-flex h-8 w-full items-center justify-center rounded-[8px] bg-[#EEF1FF] px-2 text-[12px] font-black text-[#3B52F5] transition hover:bg-[#E1E6FF]">
                         {t("plan")}
                       </button>
                     )}
@@ -705,7 +705,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
           </table>
         </div>
         <div className="flex flex-col items-center justify-between gap-3 border-t border-[#EDF1F7] px-4 py-3 sm:flex-row">
-          <p className="text-[11px] font-bold text-[#5F6B94]">{footerText}</p>
+          <p className="text-[12px] font-bold text-[#5F6B94]">{footerText}</p>
           <DashboardPagination pagination={pagination} onPageChange={onPageChange} disabled={isFetching} />
         </div>
       </Panel>
@@ -735,7 +735,7 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
       {!hasData && data !== undefined ? (
         <div className="mt-4 flex flex-col items-center justify-center gap-2 py-6 text-center">
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
-          <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
+          <p className="text-[11px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
       ) : (
         <div className="mt-4 space-y-2.5">
@@ -744,7 +744,7 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
             return (
               <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-1 gap-3 border-b border-[#E6EAF2] py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <span className="min-w-0"><span className="line-clamp-2 block text-[14px] font-black leading-snug text-[#101334]" title={item.title}>{item.title}</span><span className="mt-1 block text-[12px] font-semibold text-[#58648C]">{item.meta}</span></span>
-                <span className="text-left sm:text-right"><span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-black", style.soft, style.text)}>{codeLabel(item.badge)}</span><span className="mt-2 block text-[11px] font-bold text-[#5A6478]">{item.time}</span></span>
+                <span className="text-left sm:text-right"><span className={cn("rounded-full px-2.5 py-0.5 text-[12px] font-black", style.soft, style.text)}>{codeLabel(item.badge)}</span><span className="mt-2 block text-[12px] font-bold text-[#5A6478]">{item.time}</span></span>
               </div>
             );
           })}
@@ -772,10 +772,10 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
     <Panel className="flex h-full flex-col">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("timeframe")}</p>
+          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("timeframe")}</p>
           <h3 className="mt-1.5 !text-[19px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
         </div>
-        {totalSignals ? <p className="shrink-0 text-right"><b className="block text-[24px] font-black leading-none text-[#101334]">{totalSignals.toLocaleString()}</b><span className="font-mono text-[10.5px] font-bold text-[#5F6B94]">{t("totalLabel")}</span></p> : null}
+        {totalSignals ? <p className="shrink-0 text-right"><b className="block text-[24px] font-black leading-none text-[#101334]">{totalSignals.toLocaleString()}</b><span className="font-mono text-[11.5px] font-bold text-[#5F6B94]">{t("totalLabel")}</span></p> : null}
       </div>
       {items.length === 0 ? (
         <div className="mt-5 flex flex-col items-center justify-center gap-1 py-6 text-center">
@@ -821,10 +821,10 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
     <Panel className="flex h-full flex-col">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("period").replace(/[()]/g, "")}</p>
+          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("period").replace(/[()]/g, "")}</p>
           <h3 className="mt-1.5 !text-[19px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
         </div>
-        {hasNonZero ? <p className="shrink-0 text-right"><b className="block text-[24px] font-black leading-none text-[#101334]">{total.toLocaleString(uiLanguage)}</b><span className="font-mono text-[10.5px] font-bold text-[#5F6B94]">{t("signalsLabel")}</span></p> : null}
+        {hasNonZero ? <p className="shrink-0 text-right"><b className="block text-[24px] font-black leading-none text-[#101334]">{total.toLocaleString(uiLanguage)}</b><span className="font-mono text-[11.5px] font-bold text-[#5F6B94]">{t("signalsLabel")}</span></p> : null}
       </div>
 
       {isLoading ? (
@@ -832,7 +832,7 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
       ) : !hasNonZero ? (
         <div className="mt-5 flex flex-col items-center justify-center gap-1 rounded-[12px] bg-[#F4F6FC] py-8 text-center">
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
-          <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
+          <p className="text-[11px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
       ) : (
         <div className="mt-4 flex flex-1 flex-col">
@@ -851,7 +851,7 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
               </div>
             ))}
           </div>
-          <div className="mt-1.5 flex gap-[3px] px-2 font-mono text-[10px] font-bold text-[#5F6B94]">
+          <div className="mt-1.5 flex gap-[3px] px-2 font-mono text-[11px] font-bold text-[#5F6B94]">
             {values.map((_, i) => <span key={i} className="flex-1 text-center">{i % every === 0 ? labels?.[i] ?? "" : ""}</span>)}
           </div>
         </div>
@@ -868,7 +868,7 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
     <Panel className="flex h-full flex-col">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{pickL("Being Investigated", "Sedang Diselidiki")}</p>
+          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{pickL("Being Investigated", "Sedang Diselidiki")}</p>
           <h3 className="mt-1.5 !text-[19px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
         </div>
         <Link href="/workspace/cases" className="shrink-0 text-[13px] font-bold text-[#3B52F5] hover:underline">{t("viewAll")} →</Link>
@@ -889,9 +889,9 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
                   <span className={cn("mt-1.5 size-2.5 shrink-0 rounded-full", open ? "bg-[#465FFF]" : "bg-[#F59E0B]")} />
                   <span className="min-w-0 flex-1">
                     <span className="line-clamp-2 block text-[14px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]" title={item.title}>{item.title}</span>
-                    <span className="mt-0.5 block font-mono text-[11px] font-medium text-[#5F6B94]">{item.meta}</span>
+                    <span className="mt-0.5 block font-mono text-[12px] font-medium text-[#5F6B94]">{item.meta}</span>
                   </span>
-                  <span className={cn("shrink-0 rounded-[6px] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.06em]", open ? "bg-[#EEF1FF] text-[#3B52F5]" : "bg-[#FFF4E5] text-[#A04606]")}>{codeLabel(item.badge)}</span>
+                  <span className={cn("shrink-0 rounded-[6px] px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em]", open ? "bg-[#EEF1FF] text-[#3B52F5]" : "bg-[#FFF4E5] text-[#A04606]")}>{codeLabel(item.badge)}</span>
                 </Link>
               </li>
             );
@@ -916,15 +916,15 @@ function RelatedNarrativeCard({ n }: { n: { id: string; title: string; signalCou
     <Link href={issueHref(n.id)} className="group flex flex-col justify-between rounded-[16px] bg-[#F6F7FC] p-4 transition hover:bg-[#EEF1FF]" style={{ boxShadow: `inset 4px 0 0 ${look.edge}` }}>
       <div className="pl-1">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.06em]", look.chip)}>{look.word}</span>
-          {n.velocity ? <span className={cn("rounded-[6px] bg-white px-2 py-0.5 font-mono text-[10px] font-bold", rising ? "text-[#B45309]" : "text-[#5F6B94]")}>{n.velocity} / 24{pickL("h", " jam")}</span> : null}
+          <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em]", look.chip)}>{look.word}</span>
+          {n.velocity ? <span className={cn("rounded-[6px] bg-white px-2 py-0.5 font-mono text-[11px] font-bold", rising ? "text-[#B45309]" : "text-[#5F6B94]")}>{n.velocity} / 24{pickL("h", " jam")}</span> : null}
         </div>
         <p className="mt-2.5 line-clamp-2 text-[16px] font-black leading-snug text-[#101334] group-hover:text-[#3B52F5]">{n.title}</p>
       </div>
       <div className="mt-4 flex items-end justify-between gap-2 pl-1">
         <span>
           <b className="block text-[30px] font-black leading-none tracking-[-0.03em] text-[#101334]">{n.signalCount}</b>
-          <span className="font-mono text-[10.5px] font-bold text-[#5F6B94]">{pickL("mentions", "percakapan")}</span>
+          <span className="font-mono text-[11.5px] font-bold text-[#5F6B94]">{pickL("mentions", "percakapan")}</span>
         </span>
         <span className="text-[13px] font-bold text-[#3B52F5]">{pickL("Open Issue →", "Buka Isu →")}</span>
       </div>
@@ -941,7 +941,7 @@ function LiveRelatedNarratives() {
     <div className={cn("mt-6", BOX)}>
       <div className="mb-4 flex items-end justify-between gap-2">
         <div>
-          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{pickL("Issues Behind These Mentions", "Isu di Balik Percakapan Ini")}</p>
+          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{pickL("Issues Behind These Mentions", "Isu di Balik Percakapan Ini")}</p>
           <h3 className="mt-1.5 text-[19px] font-black tracking-[-0.02em] text-[#101334]">{t("relatedNarratives")}</h3>
         </div>
         <Link href="/intelligence" className="shrink-0 text-[13px] font-bold text-[#3B52F5] hover:underline">{pickL("Issue Map →", "Peta Isu →")}</Link>

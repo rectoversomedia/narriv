@@ -329,8 +329,8 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
       <div className="h-2" style={{ backgroundColor: risk ? "#B42318" : topTone.color }} />
       <CardContent className="p-5 sm:p-7">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("What Is Happening", "Yang Sedang Terjadi")}</p>
-          <p className="font-mono text-[11px] font-bold text-[#5A6478]">{L(`From ${formatSignals(total)} mentions in ${live.length} issues`, `Dari ${formatSignals(total)} percakapan dalam ${live.length} isu`)}</p>
+          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("What Is Happening", "Yang Sedang Terjadi")}</p>
+          <p className="font-mono text-[12px] font-bold text-[#5A6478]">{L(`From ${formatSignals(total)} mentions in ${live.length} issues`, `Dari ${formatSignals(total)} percakapan dalam ${live.length} isu`)}</p>
         </div>
 
         <button
@@ -341,12 +341,12 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
         >
           <div className="flex size-[86px] flex-col items-center justify-center rounded-full bg-white shadow-[0_4px_14px_rgba(16,19,52,0.08)]">
             <span className="text-[26px] font-black leading-none tracking-[-0.04em]" style={{ color: readableTone(topTone.color) }}>{share}%</span>
-            <span className="mt-1 text-[10px] font-black text-[#5A6478]">{L("of talk", "porsi")}</span>
+            <span className="mt-1 text-[11px] font-black text-[#5A6478]">{L("of talk", "porsi")}</span>
           </div>
           <div className="min-w-0 self-center">
-            <p className="text-[11px] font-black" style={{ color: readableTone(topTone.color) }}>{L("Main issue", "Isu utama")}</p>
+            <p className="text-[12px] font-black" style={{ color: readableTone(topTone.color) }}>{L("Main issue", "Isu utama")}</p>
             <p className="mt-1 text-[24px] font-black leading-tight tracking-[-0.03em] text-[#101334] sm:text-[28px]">{name(top)}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-black">
+            <div className="mt-2 flex flex-wrap gap-1.5 text-[12px] font-black">
               <span className="rounded-full bg-white px-2.5 py-1 text-[#101334]">{formatSignals(top.signals)} {L("mentions", "percakapan")}</span>
               <span className={cn("rounded-full px-2.5 py-1", topIsRisk ? "bg-[#C81E1E] text-white" : top.sentiment === "positive" ? "bg-[#047857] text-white" : "bg-white text-[#31406B]")}>{L(...SENTIMENT_LABEL[top.sentiment])}</span>
               {top.growth && top.growth !== "0%" ? <span className="rounded-full bg-white px-2.5 py-1 text-[#B45309]">{growthLabel(top.growth)}</span> : null}
@@ -360,7 +360,7 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
             const tone = toneStyles[tile.tone];
             const body = (
               <>
-                <p className="text-[10px] font-black" style={{ color: readableTone(tone.color) }}>{tile.label}</p>
+                <p className="text-[11px] font-black" style={{ color: readableTone(tone.color) }}>{tile.label}</p>
                 <p className="mt-1.5 text-[24px] font-black leading-none tracking-[-0.03em] text-[#101334]">{tile.value}</p>
                 {tile.topic ? <p className="mt-1.5 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{tile.topic}</p> : null}
               </>
@@ -376,7 +376,7 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
 
         <div className="mt-5 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:flex-wrap sm:items-center">
           <p className="min-w-0 flex-1 px-1 text-[15px] font-bold leading-snug text-white">
-            <span className="mb-1 block font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{L("Next Step", "Langkah Berikutnya")}</span>
+            <span className="mb-1 block font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{L("Next Step", "Langkah Berikutnya")}</span>
             {topIsRisk || risk
               ? L(`Prepare a response for "${name(risk || top)}".`, `Siapkan respons untuk "${name(risk || top)}".`)
               : L(`Amplify "${name(top)}" while it is positive.`, `Perkuat "${name(top)}" selagi positif.`)}
@@ -405,17 +405,17 @@ function ClusterRow({ cluster, rank, max, selected, language, onClick }: { clust
   return (
     <button type="button" onClick={onClick} aria-pressed={selected} className={cn("w-full rounded-[12px] p-3 text-left transition", selected ? "bg-[#EEF1FF] ring-2 ring-[#465FFF]" : "bg-[#F7F8FC] hover:bg-[#EEF1F7]")}>
       <div className="flex items-start gap-3">
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#101334] text-[11px] font-black text-white">{rank}</span>
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#101334] text-[12px] font-black text-white">{rank}</span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <p className="line-clamp-2 text-[13px] font-black leading-snug text-[#101334]">{text(cluster.topic, language)}</p>
-            <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black", growth.cls)}>{growth.label}</span>
+            <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[12px] font-black", growth.cls)}>{growth.label}</span>
           </div>
           <div className="mt-2 flex items-center gap-2">
             <div className="h-2 flex-1 rounded-full bg-white"><div className="h-full rounded-full" style={{ width: `${Math.max(4, (cluster.signals / max) * 100)}%`, background: bar }} /></div>
             <span className="shrink-0 text-[12px] font-black text-[#101334]">{formatSignals(cluster.signals)}</span>
           </div>
-          <p className="mt-1 text-[11px] font-bold" style={{ color: bar === "#94A3B8" ? "#5A6478" : bar }}>{L(...sentWord)}</p>
+          <p className="mt-1 text-[12px] font-bold" style={{ color: bar === "#94A3B8" ? "#5A6478" : bar }}>{L(...sentWord)}</p>
         </div>
       </div>
     </button>
@@ -428,7 +428,7 @@ function CompetitorDonut({ label, gradient, totalLabel }: { label: string; gradi
       <div className="absolute size-[102px] rounded-full bg-white" />
       <div className="relative max-w-[86px] text-center">
         <p className="text-[24px] font-black leading-none tracking-[-0.03em] text-[#101334]">{totalLabel}</p>
-        <p className="mt-0.5 text-[10px] font-bold leading-tight text-[#647099]">{label}</p>
+        <p className="mt-0.5 text-[11px] font-bold leading-tight text-[#647099]">{label}</p>
       </div>
     </div>
   );
@@ -750,7 +750,7 @@ export default function IntelligencePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Impact filter (All Topics) */}
                   <div className="relative" ref={impactMenuRef}>
-                    <button type="button" onClick={() => { setIsImpactMenuOpen((o) => !o); setIsSentimentMenuOpen(false); }} aria-expanded={isImpactMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", impactFilter !== "all" ? "border-[#E6EAF2] text-[#3B52F5]" : "border-[#E5E9F3] text-[#4F5877]")}>
+                    <button type="button" onClick={() => { setIsImpactMenuOpen((o) => !o); setIsSentimentMenuOpen(false); }} aria-expanded={isImpactMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[12px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", impactFilter !== "all" ? "border-[#E6EAF2] text-[#3B52F5]" : "border-[#E5E9F3] text-[#4F5877]")}>
                       {impactFilter === "all" ? ti("topicMap.allTopics") : ti(`topicMap.impact.${impactFilter}`)}
                       <ChevronDown size={13} className={cn("text-[#647099] transition", isImpactMenuOpen && "rotate-180")} />
                     </button>
@@ -767,7 +767,7 @@ export default function IntelligencePage() {
                   </div>
                   {/* Sentiment filter */}
                   <div className="relative" ref={sentimentMenuRef}>
-                    <button type="button" onClick={() => { setIsSentimentMenuOpen((o) => !o); setIsImpactMenuOpen(false); }} aria-expanded={isSentimentMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", sentimentFilter !== "all" ? "border-[#E6EAF2] text-[#3B52F5]" : "border-[#E5E9F3] text-[#4F5877]")}>
+                    <button type="button" onClick={() => { setIsSentimentMenuOpen((o) => !o); setIsImpactMenuOpen(false); }} aria-expanded={isSentimentMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[12px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", sentimentFilter !== "all" ? "border-[#E6EAF2] text-[#3B52F5]" : "border-[#E5E9F3] text-[#4F5877]")}>
                       {sentimentFilter === "all" ? ti("topicMap.filter") : ti(`topicMap.sentiment.${sentimentFilter}`)}
                       <ChevronDown size={13} className={cn("text-[#647099] transition", isSentimentMenuOpen && "rotate-180")} />
                     </button>
@@ -819,7 +819,7 @@ export default function IntelligencePage() {
                 </div>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-x-9 gap-y-2 border-t border-[#EEF1F7] pt-3 text-[10px] font-extrabold text-[#53608C]">
+              <div className="mt-3 flex flex-wrap items-center gap-x-9 gap-y-2 border-t border-[#EEF1F7] pt-3 text-[11px] font-extrabold text-[#53608C]">
                 <div className="flex items-center gap-2">
                   <span className="text-[#647099]">{ti("topicMap.intensity")}</span>
                   <span className="size-1.5 rounded-full bg-[#C9D0E2]" />
@@ -841,7 +841,7 @@ export default function IntelligencePage() {
                   <span className="flex items-center gap-1.5"><span className="w-9 border-b border-[#8A94B8]" />{ti("topicMap.strong")}</span>
                 </div>
               </div>
-              <p className="mt-2 text-[10px] font-semibold text-[#647099]">{ti("topicMap.tip")}</p>
+              <p className="mt-2 text-[11px] font-semibold text-[#647099]">{ti("topicMap.tip")}</p>
             </CardContent>
           </Panel>
 
@@ -862,13 +862,13 @@ export default function IntelligencePage() {
           <Panel className="!border-[#465FFF] shadow-[0_4px_0_#465FFF]">
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3 relative" ref={actionsMenuRef}>
-                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#3B52F5]">{ti("selectedNarrative.title")}</p>
+                <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#3B52F5]">{ti("selectedNarrative.title")}</p>
                 <button type="button" onClick={() => setIsSelectedActionsOpen((v) => !v)} disabled={!selectedNarrativeId} aria-label={ti("selectedNarrative.moreActions")} aria-expanded={isSelectedActionsOpen} className="rounded-full p-1 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C] disabled:cursor-not-allowed disabled:opacity-40">
                   <MoreHorizontal size={16} />
                 </button>
                 {isSelectedActionsOpen && selectedNarrativeId ? (
                   <div className="absolute right-0 top-full z-50 mt-1 w-[160px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)]">
-                    <button type="button" onClick={() => { setIsSelectedActionsOpen(false); if (selectedNarrativeId) openIssue(selectedNarrativeId); }} className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-[11px] font-extrabold text-[#475070] transition hover:bg-[#F8FAFF]">
+                    <button type="button" onClick={() => { setIsSelectedActionsOpen(false); if (selectedNarrativeId) openIssue(selectedNarrativeId); }} className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-[12px] font-extrabold text-[#475070] transition hover:bg-[#F8FAFF]">
                       {ti("actions.viewDetails")}
                     </button>
                     <button type="button" onClick={() => { 
@@ -876,7 +876,7 @@ export default function IntelligencePage() {
                       navigator.clipboard.writeText(selectedNarrativeId)
                         .then(() => toastHook.success(ti("toast.copySuccess")))
                         .catch(() => toastHook.error(ti("toast.copyFailed"))); 
-                    }} className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-[11px] font-extrabold text-[#475070] transition hover:bg-[#F8FAFF]">
+                    }} className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-[12px] font-extrabold text-[#475070] transition hover:bg-[#F8FAFF]">
                       {ti("actions.copyId")}
                     </button>
                   </div>
@@ -893,10 +893,10 @@ export default function IntelligencePage() {
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                <TrendBadge value={selectedCluster.growth} tone={selectedCluster.tone} className="px-2.5 py-1 text-[10px]" />
-                <TrendBadge value={text(selectedCluster.priority, language)} tone={selectedCluster.priorityTone} className="px-2.5 py-1 text-[10px]" />
+                <TrendBadge value={selectedCluster.growth} tone={selectedCluster.tone} className="px-2.5 py-1 text-[11px]" />
+                <TrendBadge value={text(selectedCluster.priority, language)} tone={selectedCluster.priorityTone} className="px-2.5 py-1 text-[11px]" />
                 {selectedLifecycleKey ? (
-                  <Badge variant={toneStyles[selectedCluster.tone].badge} className="normal-case tracking-normal px-2.5 py-1 text-[10px]">
+                  <Badge variant={toneStyles[selectedCluster.tone].badge} className="normal-case tracking-normal px-2.5 py-1 text-[11px]">
                     {ti(`lifecycle.phases.${selectedLifecycleKey}.title`)}
                   </Badge>
                 ) : null}
@@ -904,17 +904,17 @@ export default function IntelligencePage() {
               {/* Size and spread in one line; the recommendation shows only when it says something new. */}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="rounded-[10px] bg-[#F5F7FC] px-3 py-2">
-                  <p className="text-[10px] font-black text-[#647099]">{pickL("Records", "Percakapan")}</p>
+                  <p className="text-[11px] font-black text-[#647099]">{pickL("Records", "Percakapan")}</p>
                   <p className="text-[18px] font-black text-[#101334]">{selectedCluster.signals}</p>
                 </div>
                 <div className="rounded-[10px] bg-[#F5F7FC] px-3 py-2">
-                  <p className="text-[10px] font-black text-[#647099]">{pickL("Spread", "Sebaran")}</p>
+                  <p className="text-[11px] font-black text-[#647099]">{pickL("Spread", "Sebaran")}</p>
                   <p className="text-[18px] font-black text-[#101334]">{text(selectedCluster.related[0]?.topic ?? { en: "-", id: "-" }, language)}</p>
                 </div>
               </div>
               {text(selectedCluster.aiRec, language) && text(selectedCluster.aiRec, language) !== text(selectedCluster.description, language) ? (
                 <div className="mt-3 rounded-[12px] bg-[#101334] p-3">
-                  <p className="text-[10px] font-black text-[#A9B4FF]">{pickL("Next step", "Langkah berikutnya")}</p>
+                  <p className="text-[11px] font-black text-[#A9B4FF]">{pickL("Next step", "Langkah berikutnya")}</p>
                   <p className="mt-1 line-clamp-3 text-[12px] font-bold leading-snug text-white">{text(selectedCluster.aiRec, language)}</p>
                 </div>
               ) : null}
@@ -932,7 +932,7 @@ export default function IntelligencePage() {
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{ti("growingClusters.title")}</h3>
-                <button type="button" onClick={() => setIsAllClustersModalOpen(true)} className="text-[11px] font-black text-[#3B52F5] transition hover:text-[#3B52F5]">
+                <button type="button" onClick={() => setIsAllClustersModalOpen(true)} className="text-[12px] font-black text-[#3B52F5] transition hover:text-[#3B52F5]">
                   {ti("growingClusters.viewAll")}
                 </button>
               </div>
@@ -971,7 +971,7 @@ export default function IntelligencePage() {
                   })}
                 </div>
               </div>
-              <button type="button" onClick={() => setIsLandscapeOpen(true)} className="mt-3 flex w-full items-center justify-center gap-1.5 text-[11px] font-extrabold text-[#3B52F5] transition hover:text-[#3B52F5]">
+              <button type="button" onClick={() => setIsLandscapeOpen(true)} className="mt-3 flex w-full items-center justify-center gap-1.5 text-[12px] font-extrabold text-[#3B52F5] transition hover:text-[#3B52F5]">
                 {ti("competitorShare.viewLandscape")}
                 <ChevronRight size={13} />
               </button>
@@ -987,17 +987,17 @@ export default function IntelligencePage() {
             return (
               <div key={item.title} className={cn("flex gap-3 xl:border-r xl:border-[#E9EDF5] xl:pr-5", index === footerItems.length - 1 && "xl:border-r-0")}> 
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-[#647099]">{item.title}</p>
+                  <p className="text-[11px] font-black text-[#647099]">{item.title}</p>
                   <p className="mt-1 text-[12px] font-black text-[#101334]">{item.value}</p>
                   {item.progress ? (
                     <div className="mt-2 flex items-center gap-2">
                       <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#EEF1F7]">
                         <span className="block h-full rounded-full bg-[#10B981] transition-all duration-500" style={{ width: `${item.progressValue ?? 0}%` }} />
                       </span>
-                      <span className="text-[10px] font-bold text-[#647099]">{item.detail}</span>
+                      <span className="text-[11px] font-bold text-[#647099]">{item.detail}</span>
                     </div>
                   ) : (
-                    <p className="mt-1 text-[10px] font-bold text-[#647099]">{item.detail}</p>
+                    <p className="mt-1 text-[11px] font-bold text-[#647099]">{item.detail}</p>
                   )}
                 </div>
               </div>

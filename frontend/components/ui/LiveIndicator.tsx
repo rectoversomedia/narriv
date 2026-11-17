@@ -88,7 +88,7 @@ export function LiveIndicator({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold transition-colors ${
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors ${
         status === "connected"
           ? "bg-emerald-50 text-emerald-700"
           : status === "connecting"

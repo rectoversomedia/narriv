@@ -141,7 +141,8 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
   const net = pos - neg;
   const verdict = !k || (k.total_signals ?? 0) === 0
     ? { word: L("No data", "Belum ada data"), color: "#5A6478", bg: "#F1F4FA" }
-    : net <= -15 ? { word: L("Negative", "Negatif"), color: "#C81E1E", bg: "#FDECEC" }
+    // 40% negative is "Needs Attention" on the Overview, so it can never read as "Balanced" here.
+    : net <= -15 || neg >= 40 ? { word: L("Negative", "Negatif"), color: "#C81E1E", bg: "#FDECEC" }
       : net >= 15 ? { word: L("Positive", "Positif"), color: "#047857", bg: "#E5F6EE" }
         : { word: L("Balanced", "Seimbang"), color: "#31406B", bg: "#EEF1F8" };
   const list = narratives ?? [];
@@ -157,8 +158,8 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{L("This period at a glance", "Ringkasan periode ini")}</h2>
-            <span className="rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]">{L("From your data", "Dari data Anda")}</span>
+            <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{L("Last 30 days at a glance", "Ringkasan 30 hari terakhir")}</h2>
+            <span className="rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[11px] font-black text-[#6E44E8]">{L("From your data", "Dari data Anda")}</span>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <span className="rounded-[10px] px-3 py-1.5 text-[20px] font-black leading-none" style={{ color: verdict.color, background: verdict.bg }}>{verdict.word}</span>
@@ -177,17 +178,17 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#3B52F5]">{Math.round((top.signalCount / totalInIssues) * 100)}%</p>
-                <p className="mt-2 font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Main Issue", "Isu Utama")}</p>
+                <p className="mt-2 font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Main Issue", "Isu Utama")}</p>
                 <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{top.title}</p>
               </div>
               <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#C81E1E]">{risk ? risk.signalCount : 0}</p>
-                <p className="mt-2 font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Biggest Risk", "Risiko Terbesar")}</p>
+                <p className="mt-2 font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Biggest Risk", "Risiko Terbesar")}</p>
                 <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{risk ? risk.title : L("No negative issue", "Tidak ada isu negatif")}</p>
               </div>
               <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#A04606]">{fastest?.velocity || "—"}</p>
-                <p className="mt-2 font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Fastest Rising", "Naik Paling Cepat")}</p>
+                <p className="mt-2 font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Fastest Rising", "Naik Paling Cepat")}</p>
                 <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{fastest?.title}</p>
               </div>
             </div>
@@ -205,17 +206,17 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
               <div className="mt-3 flex h-[150px] items-end gap-2">
                 {days.map((d) => (
                   <div key={d.date} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${d.date}: ${d.total}`}>
-                    <span className="text-[11px] font-black text-[#101334]">{d.total}</span>
+                    <span className="text-[12px] font-black text-[#101334]">{d.total}</span>
                     <div className="flex w-full max-w-[34px] flex-col-reverse overflow-hidden rounded-t-[6px]" style={{ height: `${Math.max(4, (d.total / maxDay) * 100)}%` }}>
                       <span style={{ flex: d.negative, background: "#E5484D" }} />
                       <span style={{ flex: d.positive, background: "#12A66A" }} />
                       <span style={{ flex: d.neutral + d.mixed + d.unanalyzed, background: "#B8C0D4" }} />
                     </div>
-                    <span className="text-[10px] font-bold text-[#5A6478]">{new Date(d.date).toLocaleDateString(pickL("en-US", "id-ID"), { day: "numeric", month: "short" })}</span>
+                    <span className="text-[11px] font-bold text-[#5A6478]">{new Date(d.date).toLocaleDateString(pickL("en-US", "id-ID"), { day: "numeric", month: "short" })}</span>
                   </div>
                 ))}
               </div>
-              <div className="mt-2 flex flex-wrap gap-x-3 text-[11px] font-bold text-[#3A4566]">
+              <div className="mt-2 flex flex-wrap gap-x-3 text-[12px] font-bold text-[#3A4566]">
                 <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[#E5484D]" />{L("Negative", "Negatif")}</span>
                 <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[#12A66A]" />{L("Positive", "Positif")}</span>
                 <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[#B8C0D4]" />{L("Neutral & other", "Netral & lainnya")}</span>
@@ -262,14 +263,14 @@ function ReportPreviewSidebar({
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1">
                 <p className="line-clamp-2 text-[14px] font-black leading-snug text-[#101334]">{reportTitle}</p>
-                <p className="mt-0.5 text-[10px] font-bold text-[#5F6B94]">{tr("preview.latestReport")}</p>
+                <p className="mt-0.5 text-[11px] font-bold text-[#5F6B94]">{tr("preview.latestReport")}</p>
               </div>
               {reportStatus && <StatusBadge status={reportStatus} />}
             </div>
 
             {reportSections.length > 0 ? (
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {reportSections.slice(0, 6).map((section) => <span key={section} className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#31406B]">{section}</span>)}
+                {reportSections.slice(0, 6).map((section) => <span key={section} className="rounded-full bg-white px-2.5 py-1 text-[12px] font-black text-[#31406B]">{section}</span>)}
               </div>
             ) : (
               latestReport.summary?.trim() ? (
@@ -283,13 +284,13 @@ function ReportPreviewSidebar({
               {tr("preview.viewPreview")}
             </Link>
             <div className="grid grid-cols-3 gap-2">
-              <button type="button" onClick={onExportPdf} className="flex h-9 items-center justify-center gap-1 rounded-[8px] border border-[#E6EAF2] bg-white text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
+              <button type="button" onClick={onExportPdf} className="flex h-9 items-center justify-center gap-1 rounded-[8px] border border-[#E6EAF2] bg-white text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
                 PDF
               </button>
-              <button type="button" onClick={() => onExportFile?.("csv")} className="flex h-9 items-center justify-center gap-1 rounded-[8px] border border-[#E6EAF2] bg-white text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
+              <button type="button" onClick={() => onExportFile?.("csv")} className="flex h-9 items-center justify-center gap-1 rounded-[8px] border border-[#E6EAF2] bg-white text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
                 CSV
               </button>
-              <button type="button" onClick={() => onExportFile?.("xlsx")} className="flex h-9 items-center justify-center gap-1 rounded-[8px] border border-[#E6EAF2] bg-white text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
+              <button type="button" onClick={() => onExportFile?.("xlsx")} className="flex h-9 items-center justify-center gap-1 rounded-[8px] border border-[#E6EAF2] bg-white text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
                 Excel
               </button>
             </div>
@@ -298,7 +299,7 @@ function ReportPreviewSidebar({
       ) : (
         <div className="mt-4 flex flex-col items-center justify-center py-8 text-center">
           <p className="text-[12px] font-bold text-[#53608C]">{tr("preview.emptyTitle")}</p>
-          <p className="mt-1 text-[10px] font-bold text-[#647099]">{tr("preview.emptyDesc")}</p>
+          <p className="mt-1 text-[11px] font-bold text-[#647099]">{tr("preview.emptyDesc")}</p>
         </div>
       )}
     </Panel>
@@ -410,7 +411,7 @@ function ReportsTable({
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder={tr("filter.search")}
-              className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] pl-8 pr-3 text-[10px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white"
+              className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] pl-8 pr-3 text-[11px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white"
             />
           </label>
           <div className="relative flex-1 sm:flex-none">
@@ -418,7 +419,7 @@ function ReportsTable({
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               aria-label={pickL("Filter report type", "Saring jenis laporan")}
-              className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] outline-none transition hover:bg-[#F7F8FC] focus:border-[#465FFF] sm:w-auto"
+              className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[11px] font-black text-[#58648C] outline-none transition hover:bg-[#F7F8FC] focus:border-[#465FFF] sm:w-auto"
             >
               <option value="all">{pickL("All types", "Semua jenis")}</option>
               {Object.entries(REPORT_TYPE_LABELS).map(([key, [en, id]]) => <option key={key} value={pickL(en, id)}>{pickL(en, id)}</option>)}
@@ -428,12 +429,12 @@ function ReportsTable({
             <button
               type="button"
               onClick={() => { setActiveTab("all"); setSearchTerm(""); setTypeFilter("all"); }}
-              className="inline-flex h-8 items-center justify-center gap-1 rounded-[7px] border border-transparent bg-[#FFF5F5] px-2.5 text-[10px] font-black text-[#B42318] transition hover:bg-[#FFEBEB] sm:flex-none"
+              className="inline-flex h-8 items-center justify-center gap-1 rounded-[7px] border border-transparent bg-[#FFF5F5] px-2.5 text-[11px] font-black text-[#B42318] transition hover:bg-[#FFEBEB] sm:flex-none"
             >
               {tr("clear") || "Reset"}
             </button>
           ) : null}
-          <button type="button" onClick={() => setSortDirection((value) => value === "desc" ? "asc" : "desc")} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-[#F7F8FC] sm:flex-none">
+          <button type="button" onClick={() => setSortDirection((value) => value === "desc" ? "asc" : "desc")} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[11px] font-black text-[#58648C] transition hover:bg-[#F7F8FC] sm:flex-none">
             {sortDirection === "desc" ? tr("filter.latest") : tr("filter.oldest")} <ChevronDown size={12} className={cn("transition", sortDirection === "asc" && "rotate-180")} />
           </button>
         </div>
@@ -447,7 +448,7 @@ function ReportsTable({
             type="button"
             onClick={() => setActiveTab(tab.value)}
             className={cn(
-              "h-7 rounded-[7px] px-3 text-[10.5px] font-black transition",
+              "h-7 rounded-[7px] px-3 text-[11.5px] font-black transition",
               activeTab === tab.value
                 ? "bg-[#465FFF] text-white shadow-sm"
                 : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#58648C] hover:bg-[#F7F8FC]"
@@ -468,10 +469,10 @@ function ReportsTable({
               </Link>
               <StatusBadge status={report.status} />
             </div>
-            <p className="mt-1.5 text-[11px] font-bold text-[#5F6B94]">{report.type} · {report.period}</p>
-            <p className="mt-0.5 text-[10.5px] font-bold text-[#647099]">{report.created} {report.createdTime}</p>
+            <p className="mt-1.5 text-[12px] font-bold text-[#5F6B94]">{report.type} · {report.period}</p>
+            <p className="mt-0.5 text-[11.5px] font-bold text-[#647099]">{report.created} {report.createdTime}</p>
             <div className="mt-3 grid grid-cols-4 gap-1.5">
-              <Link href={`/reports/${report.id}`} className="inline-flex items-center justify-center rounded-md bg-[#465FFF] px-2 py-2 text-[11px] font-black text-white">
+              <Link href={`/reports/${report.id}`} className="inline-flex items-center justify-center rounded-md bg-[#465FFF] px-2 py-2 text-[12px] font-black text-white">
                 {pickL("Open", "Buka")}
               </Link>
               {(["pdf", "xlsx", "csv"] as const).map((format) => (
@@ -480,7 +481,7 @@ function ReportsTable({
                   type="button"
                   onClick={() => (format === "pdf" ? onExport(String(report.id)) : onExportFile?.(String(report.id), format))}
                   disabled={isFetching}
-                  className="inline-flex items-center justify-center rounded-md border border-[#DDE3EF] bg-white px-2 py-2 text-[11px] font-black text-[#5F6B94] disabled:opacity-50"
+                  className="inline-flex items-center justify-center rounded-md border border-[#DDE3EF] bg-white px-2 py-2 text-[12px] font-black text-[#5F6B94] disabled:opacity-50"
                 >
                   {format === "xlsx" ? "Excel" : format.toUpperCase()}
                 </button>
@@ -490,7 +491,7 @@ function ReportsTable({
         )) : (
           <div className="rounded-[12px] border border-dashed border-[#DDE3EF] px-4 py-8 text-center">
             <p className="text-[13px] font-black text-[#101334]">{tr("noMatch")}</p>
-            <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("noMatchDesc")}</p>
+            <p className="mt-1 text-[12px] font-bold text-[#5F6B94]">{tr("noMatchDesc")}</p>
           </div>
         )}
       </div>
@@ -499,7 +500,7 @@ function ReportsTable({
       <div className="mt-4 hidden overflow-x-auto md:block">
         <table className="w-full min-w-[780px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-[#EEF0F6] font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+            <tr className="border-b border-[#EEF0F6] font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
               <th className="px-3 py-3 w-[280px]">{tr("table.report")}</th>
               <th className="px-3 py-3">{tr("table.type")}</th>
               <th className="px-3 py-3">{tr("table.period")}</th>
@@ -527,11 +528,11 @@ function ReportsTable({
                   </div>
                 </td>
                 <td className="px-3 py-3.5 align-middle text-[12.5px] font-bold text-[#31406B]">{report.type}</td>
-                <td className="px-3 py-3.5 align-middle font-mono text-[11px] font-medium text-[#5F6B94]">{report.period}</td>
+                <td className="px-3 py-3.5 align-middle font-mono text-[12px] font-medium text-[#5F6B94]">{report.period}</td>
                 <td className="px-3 py-3.5 align-middle"><StatusBadge status={report.status} /></td>
                 <td className="px-3 py-3.5 align-middle">
                   <span className="block font-mono text-[11.5px] font-bold text-[#31406B]">{report.created}</span>
-                  <span className="mt-0.5 block font-mono text-[10.5px] font-medium text-[#647099]">{report.createdTime}</span>
+                  <span className="mt-0.5 block font-mono text-[11.5px] font-medium text-[#647099]">{report.createdTime}</span>
                 </td>
                 <td className="px-3 py-3.5 text-right align-middle">
                   <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
@@ -544,7 +545,7 @@ function ReportsTable({
                           type="button"
                           onClick={() => (format === "pdf" ? onExport(String(report.id)) : onExportFile?.(String(report.id), format))}
                           disabled={isFetching}
-                          className="rounded-[8px] px-2 py-1.5 font-mono text-[10.5px] font-bold text-[#5F6B94] transition hover:bg-white hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-[8px] px-2 py-1.5 font-mono text-[11.5px] font-bold text-[#5F6B94] transition hover:bg-white hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label={format === "pdf" ? tr("exportAria", { title: report.title }) : undefined}
                           title={`${tr("downloadReady")} ${label}`}
                         >
@@ -559,7 +560,7 @@ function ReportsTable({
               <tr>
                 <td colSpan={6} className="px-3 py-10 text-center">
                   <p className="text-[13px] font-black text-[#101334]">{tr("noMatch")}</p>
-                  <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("noMatchDesc")}</p>
+                  <p className="mt-1 text-[12px] font-bold text-[#5F6B94]">{tr("noMatchDesc")}</p>
                 </td>
               </tr>
             )}
@@ -569,7 +570,7 @@ function ReportsTable({
 
       {/* Table Footer */}
       <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-[#EDF1F7] pt-3 sm:flex-row">
-        <p className="text-[11px] font-bold text-[#5F6B94]">{footerText}</p>
+        <p className="text-[12px] font-bold text-[#5F6B94]">{footerText}</p>
         <DashboardPagination pagination={pagination} onPageChange={onPageChange} disabled={isFetching} />
       </div>
     </Panel>
@@ -612,7 +613,7 @@ function FormatDonut({ distribution }: { distribution: Array<{ name: string; val
               <span className="absolute h-[88px] w-[88px] rounded-full bg-white" />
               <span className="relative text-center">
                 <b className="block text-[22px] font-black text-[#101334]">{totalForPercent}</b>
-                <span className="text-[10px] font-bold text-[#5F6B94]">{tr("formatDonut.total")}</span>
+                <span className="text-[11px] font-bold text-[#5F6B94]">{tr("formatDonut.total")}</span>
               </span>
             </div>
             <div className="space-y-2.5 self-center">
@@ -620,7 +621,7 @@ function FormatDonut({ distribution }: { distribution: Array<{ name: string; val
                 const num = parseInt(item.value, 10);
                 const pct = totalForPercent > 0 ? Math.round((num / totalForPercent) * 100) : 0;
                 return (
-                  <div key={item.name} className="flex items-center justify-between gap-3 text-[11px] font-bold">
+                  <div key={item.name} className="flex items-center justify-between gap-3 text-[12px] font-bold">
                     <span className="flex items-center gap-2 text-[#31406B]">
                       <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
                       {item.name}
@@ -634,7 +635,7 @@ function FormatDonut({ distribution }: { distribution: Array<{ name: string; val
         ) : (
           <div className="flex flex-col items-center justify-center py-8 text-center sm:col-span-2 xl:col-span-2">
             <p className="text-[13px] font-bold text-[#53608C]">{tr("formatDonut.noData")}</p>
-            <p className="mt-1 text-[11px] font-bold text-[#647099]">{tr("formatDonut.noDataDesc")}</p>
+            <p className="mt-1 text-[12px] font-bold text-[#647099]">{tr("formatDonut.noDataDesc")}</p>
           </div>
         )}
       </div>
@@ -656,7 +657,7 @@ function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timelin
   return (
     <Panel className="p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{tr("timeline.title")} <span className="text-[11px] font-bold text-[#5F6B94]">{tr("timeline.period")}</span></h3>
+        <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{tr("timeline.title")} <span className="text-[12px] font-bold text-[#5F6B94]">{tr("timeline.period")}</span></h3>
         {hasData ? <span className="text-[13px] font-black text-[#101334]">{total} <span className="font-bold text-[#5A6478]">{pickL("reports", "laporan")}</span></span> : null}
       </div>
       {!hasData ? (
@@ -666,13 +667,13 @@ function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timelin
           <div className="mt-4 flex h-[150px] items-end gap-1.5 rounded-[12px] bg-[#F7F8FC] px-2 pt-3">
             {data.map((d, i) => (
               <div key={d.date} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${formatChartDate(d.date)}: ${d.count}`}>
-                {d.count > 0 ? <span className="text-[10px] font-black text-[#101334]">{d.count}</span> : null}
+                {d.count > 0 ? <span className="text-[11px] font-black text-[#101334]">{d.count}</span> : null}
                 <div className="w-full rounded-t-[4px]" style={{ height: d.count > 0 ? `${Math.max(8, (d.count / max) * 100)}%` : "2px", background: d.count === max ? "#465FFF" : d.count > 0 ? "#9AA9FF" : "#E3E7F1" }} />
                 <span className="sr-only">{i}</span>
               </div>
             ))}
           </div>
-          <div className="mt-1.5 flex gap-1.5 px-2 text-[10px] font-bold text-[#5F6B94]">
+          <div className="mt-1.5 flex gap-1.5 px-2 text-[11px] font-bold text-[#5F6B94]">
             {data.map((d, i) => <span key={d.date} className="flex-1 text-center">{i % every === 0 ? formatChartDate(d.date) : ""}</span>)}
           </div>
         </>
@@ -691,17 +692,17 @@ function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; 
         <div className="mt-5 space-y-3">
           {reports.length > 0 ? reports.slice(0, 5).map((report, idx) => (
             <div key={`${report.title}:${idx}`} className="flex items-center gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[11px] font-black text-[#3B52F5]">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[12px] font-black text-[#3B52F5]">
                 {idx + 1}
               </span>
               <div className="min-w-0 flex-1">
                 <span className="block truncate text-[12px] font-black text-[#101334]">{report.title}</span>
               </div>
-              <span className="text-[11px] font-bold text-[#5F6B94] shrink-0">{report.views}</span>
+              <span className="text-[12px] font-bold text-[#5F6B94] shrink-0">{report.views}</span>
             </div>
           )) : (
             <div className="flex flex-col items-center justify-center py-6 text-center">
-              <p className="text-[11px] font-bold text-[#647099]">{tr("popular.noData")}</p>
+              <p className="text-[12px] font-bold text-[#647099]">{tr("popular.noData")}</p>
             </div>
           )}
         </div>
@@ -709,7 +710,7 @@ function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; 
 
       {reports.length > 0 ? (
         <div className="mt-6 border-t border-[#EDF1F7] pt-4">
-          <button type="button" onClick={onViewAll} className="flex w-full items-center justify-between text-[11px] font-black text-[#3B52F5] hover:text-[#3B20EA] transition-colors">
+          <button type="button" onClick={onViewAll} className="flex w-full items-center justify-between text-[12px] font-black text-[#3B52F5] hover:text-[#3B20EA] transition-colors">
             <span>{tr("popular.viewAll")}</span>
             <ArrowRight size={14} />
           </button>
@@ -1031,7 +1032,8 @@ export default function ReportsPage() {
   });
   const dashboardQuery = useQuery({
     queryKey: ["reports-dashboard-summary"],
-    queryFn: () => getDashboardSummary(),
+    // A fixed 30-day window, named in the panel title, so the verdict matches the Overview default.
+    queryFn: () => getDashboardSummary({ startDate: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString() }),
     staleTime: 60 * 1000,
   });
   
@@ -1155,18 +1157,18 @@ export default function ReportsPage() {
       {/* Schedule Settings Modal */}
       <ModalShell open={mounted && isScheduleModalOpen} onClose={() => { setIsScheduleModalOpen(false); setIsScheduleFormOpen(false); }} size="md" title={tr("scheduleModal.title")}>
 <div className="mb-4 flex justify-end">{!isScheduleFormOpen && (
-                  <button type="button" onClick={() => { setEditingSchedule(null); setIsScheduleFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-[#465FFF] hover:bg-[#3B52F5] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
+                  <button type="button" onClick={() => { setEditingSchedule(null); setIsScheduleFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-[#465FFF] hover:bg-[#3B52F5] px-2.5 text-[11px] font-black text-white shadow-sm transition hover:opacity-90">
                     {tr("scheduleModal.addSchedule")}
                   </button>
                 )}</div>
 {isScheduleFormOpen ? (
                 <form onSubmit={handleSaveSchedule} className="space-y-4">
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.nameLabel")}</label>
+                    <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("scheduleModal.nameLabel")}</label>
                     <input name="name" required defaultValue={editingSchedule?.name || ""} placeholder={tr("scheduleModal.namePlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.templateLabel")}</label>
+                    <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("scheduleModal.templateLabel")}</label>
                     <select name="templateKey" required defaultValue={editingSchedule?.templateKey || ""} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
                       <option value="" disabled>{tr("scheduleModal.templatePlaceholder")}</option>
                       {templatesQuery.data?.data.map((tpl) => (
@@ -1176,7 +1178,7 @@ export default function ReportsPage() {
                   </div>
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div>
-                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.cadenceLabel")}</label>
+                      <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("scheduleModal.cadenceLabel")}</label>
                       <select name="cadence" defaultValue={editingSchedule?.cadence || "weekly"} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
                         <option value="daily">{tr("scheduleModal.daily")}</option>
                         <option value="weekly">{tr("scheduleModal.weekly")}</option>
@@ -1184,7 +1186,7 @@ export default function ReportsPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.dayLabel")}</label>
+                      <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("scheduleModal.dayLabel")}</label>
                       <select name="dayOfWeek" defaultValue={editingSchedule?.dayOfWeek || "monday"} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
                         <option value="monday">{tr("scheduleModal.monday")}</option>
                         <option value="tuesday">{tr("scheduleModal.tuesday")}</option>
@@ -1196,12 +1198,12 @@ export default function ReportsPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.timeLabel")}</label>
+                      <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("scheduleModal.timeLabel")}</label>
                       <input name="timeOfDay" type="time" defaultValue={editingSchedule?.timeOfDay || "09:00"} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                     </div>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.timezoneLabel")}</label>
+                    <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("scheduleModal.timezoneLabel")}</label>
                     <select name="timezone" defaultValue={editingSchedule?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
                       <option value="Asia/Jakarta">Asia/Jakarta (GMT+7)</option>
                       <option value="Asia/Makassar">Asia/Makassar (GMT+8)</option>
@@ -1223,19 +1225,19 @@ export default function ReportsPage() {
                   {/* Email Recipients Section */}
                   <div className="rounded-[10px] border border-[#EEF1F7] bg-[#FAFBFF] p-4 space-y-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[11px] font-black text-[#31406B]">{tr("scheduleModal.recipientsLabel")}</span>
+                      <span className="text-[12px] font-black text-[#31406B]">{tr("scheduleModal.recipientsLabel")}</span>
                     </div>
                     <div>
-                      <label className="mb-1 block text-[10px] font-bold text-[#647099]">{tr("scheduleModal.toLabel")}</label>
+                      <label className="mb-1 block text-[11px] font-bold text-[#647099]">{tr("scheduleModal.toLabel")}</label>
                       <input name="recipients" defaultValue={editingSchedule?.recipients?.join(", ") || ""} placeholder="email@example.com, email2@example.com" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="mb-1 block text-[10px] font-bold text-[#647099]">{tr("scheduleModal.ccLabel")}</label>
+                        <label className="mb-1 block text-[11px] font-bold text-[#647099]">{tr("scheduleModal.ccLabel")}</label>
                         <input name="ccRecipients" defaultValue={editingSchedule?.ccRecipients?.join(", ") || ""} placeholder="cc@example.com" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
                       </div>
                       <div>
-                        <label className="mb-1 block text-[10px] font-bold text-[#647099]">{tr("scheduleModal.bccLabel")}</label>
+                        <label className="mb-1 block text-[11px] font-bold text-[#647099]">{tr("scheduleModal.bccLabel")}</label>
                         <input name="bccRecipients" defaultValue={editingSchedule?.bccRecipients?.join(", ") || ""} placeholder="bcc@example.com" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
                       </div>
                     </div>
@@ -1246,7 +1248,7 @@ export default function ReportsPage() {
                         type="button"
                         onClick={() => sendTestEmailMutation.mutate(editingSchedule.id!)}
                         disabled={sendTestEmailMutation.isPending}
-                        className="flex w-full items-center justify-center gap-2 rounded-[6px] bg-white px-4 py-2 text-[11px] font-black text-[#047857] border border-[#E6EAF2] transition hover:bg-[#10B981]/10 disabled:opacity-50"
+                        className="flex w-full items-center justify-center gap-2 rounded-[6px] bg-white px-4 py-2 text-[12px] font-black text-[#047857] border border-[#E6EAF2] transition hover:bg-[#10B981]/10 disabled:opacity-50"
                       >
                         {sendTestEmailMutation.isPending ? (
                           <RefreshCcw size={13} className="animate-spin" />
@@ -1314,10 +1316,10 @@ export default function ReportsPage() {
                               )}
                             </div>
                           )}
-                          <div className="flex items-center gap-3 mt-2 text-[10px] font-bold text-[#647099]">
+                          <div className="flex items-center gap-3 mt-2 text-[11px] font-bold text-[#647099]">
                             <span>{tr("scheduleModal.lastRun")}: {schedule.lastRunAt ? new Date(schedule.lastRunAt).toLocaleString() : tr("scheduleModal.never")}</span>
                           </div>
-                          <div className="text-[10px] font-bold text-[#047857] mt-0.5">
+                          <div className="text-[11px] font-bold text-[#047857] mt-0.5">
                             {tr("scheduleModal.nextRun")}: {schedule.nextRunAt ? new Date(schedule.nextRunAt).toLocaleString() : tr("scheduleModal.never")}
                           </div>
                         </div>
@@ -1326,12 +1328,12 @@ export default function ReportsPage() {
                             type="button"
                             onClick={() => sendTestEmailMutation.mutate(schedule.id)}
                             disabled={sendTestEmailMutation.isPending}
-                            className="flex h-8 items-center justify-center gap-1.5 rounded-[8px] border border-[#E6EAF2] bg-white px-2.5 text-[10px] font-black text-[#047857] transition hover:bg-[#ECFDF5] disabled:opacity-50"
+                            className="flex h-8 items-center justify-center gap-1.5 rounded-[8px] border border-[#E6EAF2] bg-white px-2.5 text-[11px] font-black text-[#047857] transition hover:bg-[#ECFDF5] disabled:opacity-50"
                             title={tr("scheduleModal.sendTestEmail")}
                           >
                             <Mail size={13} />
                           </button>
-                          <button type="button" onClick={() => toggleScheduleMutation.mutate(schedule.id)} className={cn("flex h-8 items-center justify-center gap-1.5 rounded-[8px] border px-2.5 text-[10px] font-black transition", schedule.enabled ? "border-[#E6EAF2] bg-white text-[#C81E1E] hover:bg-[#FFF4F4]" : "border-[#E6EAF2] bg-white text-[#047857] hover:bg-[#ECFDF5]")}>
+                          <button type="button" onClick={() => toggleScheduleMutation.mutate(schedule.id)} className={cn("flex h-8 items-center justify-center gap-1.5 rounded-[8px] border px-2.5 text-[11px] font-black transition", schedule.enabled ? "border-[#E6EAF2] bg-white text-[#C81E1E] hover:bg-[#FFF4F4]" : "border-[#E6EAF2] bg-white text-[#047857] hover:bg-[#ECFDF5]")}>
                             {schedule.enabled ? tr("scheduleModal.disable") : tr("scheduleModal.enable")}
                           </button>
                           <button type="button" onClick={() => { setEditingSchedule(schedule); setIsScheduleFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#3B52F5] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editSchedule")}>
@@ -1346,7 +1348,7 @@ export default function ReportsPage() {
                   ) : (
                     <div className="flex h-40 flex-col items-center justify-center text-center">
                       <p className="text-[13px] font-bold text-[#53608C]">{tr("scheduleModal.empty")}</p>
-                      <p className="text-[11px] font-bold text-[#647099] mt-1">{tr("scheduleModal.emptyDesc")}</p>
+                      <p className="text-[12px] font-bold text-[#647099] mt-1">{tr("scheduleModal.emptyDesc")}</p>
                     </div>
                   )}
                 </div>
@@ -1381,15 +1383,15 @@ export default function ReportsPage() {
 {rows.length > 0 ? (
                 <form onSubmit={handleShareReport} className="space-y-4">
                   <div className="rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3">
-                    <p className="text-[10px] font-bold text-[#647099]">{tr("shareModal.title")}</p>
+                    <p className="text-[11px] font-bold text-[#647099]">{tr("shareModal.title")}</p>
                     <p className="mt-1 text-[12px] font-black text-[#101334] truncate">{rows[0].title}</p>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("shareModal.emailLabel")}</label>
+                    <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("shareModal.emailLabel")}</label>
                     <input name="email" type="email" required placeholder={tr("shareModal.emailPlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("shareModal.subjectLabel")}</label>
+                    <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("shareModal.subjectLabel")}</label>
                     <input name="subject" placeholder={tr("shareModal.subjectPlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                   </div>
                   <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EEF1F7]">
@@ -1413,30 +1415,30 @@ export default function ReportsPage() {
       {/* Modals */}
       <ModalShell open={mounted && isTemplatesModalOpen} onClose={() => setIsTemplatesModalOpen(false)} size="md" title={tr("buttons.manageTemplates")}>
 <div className="mb-4 flex justify-end">{!isFormOpen && (
-                  <button type="button" onClick={() => { setEditingTemplate(null); setIsFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-[#465FFF] hover:bg-[#3B52F5] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
+                  <button type="button" onClick={() => { setEditingTemplate(null); setIsFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-[#465FFF] hover:bg-[#3B52F5] px-2.5 text-[11px] font-black text-white shadow-sm transition hover:opacity-90">
                     {tr("templateForm.addCustom")}
                   </button>
                 )}</div>
 {isFormOpen ? (
                 <form onSubmit={handleSaveTemplate} className="space-y-4">
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("templateForm.nameLabel")}</label>
+                    <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("templateForm.nameLabel")}</label>
                     <input name="name" required defaultValue={editingTemplate?.name || ""} placeholder={tr("templateForm.namePlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("templateForm.descLabel")}</label>
+                    <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("templateForm.descLabel")}</label>
                     <input name="description" defaultValue={editingTemplate?.description || ""} placeholder={tr("templateForm.descPlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("templateForm.formatLabel")}</label>
+                      <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("templateForm.formatLabel")}</label>
                       <div className="flex h-9 w-full items-center rounded-[8px] border border-[#DDE3EF] bg-[#F5F7FC] px-3 text-[12px] font-bold text-[#647099]">
                         PDF
                       </div>
                       <input type="hidden" name="format" value="PDF" />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("templateForm.cadenceLabel")}</label>
+                      <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("templateForm.cadenceLabel")}</label>
                       <select name="cadence" defaultValue={editingTemplate?.cadence || "On-demand"} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
                         <option value="On-demand">{tr("templateForm.onDemand")}</option>
                         <option value="Daily">{tr("templateForm.daily")}</option>
@@ -1470,7 +1472,7 @@ export default function ReportsPage() {
                               {pickL(`${template.sectionCount} sections`, `${template.sectionCount} bagian`)}
                             </span>
                           </div>
-                          <p className="text-[11px] font-bold text-[#5F6B94] mt-1 leading-relaxed">{template.description}</p>
+                          <p className="text-[12px] font-bold text-[#5F6B94] mt-1 leading-relaxed">{template.description}</p>
                           <div className="flex flex-wrap gap-2 mt-3">
                             <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#3B52F5] px-2.5 py-1.5 rounded-[6px] font-black">
                               {template.format}
@@ -1481,7 +1483,7 @@ export default function ReportsPage() {
                           </div>
                         </div>
                         {template.isSystem ? (
-                          <span className="shrink-0 self-start sm:self-center rounded-[8px] bg-[#F5F7FC] px-3 py-1.5 text-[10px] font-black text-[#647099] border border-[#E6EAF2]">
+                          <span className="shrink-0 self-start sm:self-center rounded-[8px] bg-[#F5F7FC] px-3 py-1.5 text-[11px] font-black text-[#647099] border border-[#E6EAF2]">
                             {tr("buttons.systemTemplate")}
                           </span>
                         ) : (
@@ -1508,7 +1510,7 @@ export default function ReportsPage() {
       <ModalShell open={mounted && isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} size="md" title={tr("createModal.title")} description={tr("createModal.desc")}>
 <form onSubmit={handleGenerateReport} className="space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("createModal.templateLabel")}</label>
+                  <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("createModal.templateLabel")}</label>
                   <select name="templateKey" required defaultValue="" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
                     <option value="" disabled>{tr("createModal.templatePlaceholder")}</option>
                     {templatesQuery.data?.data.map((tpl) => (
@@ -1516,24 +1518,24 @@ export default function ReportsPage() {
                     ))}
                   </select>
                   {!templatesQuery.isPending && (!templatesQuery.data || templatesQuery.data.data.length === 0) && (
-                    <p className="mt-1.5 text-[10px] font-bold text-[#C81E1E]">{tr("createModal.noTemplates")}</p>
+                    <p className="mt-1.5 text-[11px] font-bold text-[#C81E1E]">{tr("createModal.noTemplates")}</p>
                   )}
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("createModal.dateRangeLabel")}</label>
+                  <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{tr("createModal.dateRangeLabel")}</label>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1 block text-[10px] font-bold text-[#647099]">{tr("createModal.startLabel")}</label>
+                      <label className="mb-1 block text-[11px] font-bold text-[#647099]">{tr("createModal.startLabel")}</label>
                       <input name="startDate" type="date" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                     </div>
                     <div>
-                      <label className="mb-1 block text-[10px] font-bold text-[#647099]">{tr("createModal.endLabel")}</label>
+                      <label className="mb-1 block text-[11px] font-bold text-[#647099]">{tr("createModal.endLabel")}</label>
                       <input name="endDate" type="date" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{pickL("Report Language", "Bahasa Laporan")}</label>
+                  <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">{pickL("Report Language", "Bahasa Laporan")}</label>
                   <div role="radiogroup" className="grid grid-cols-2 gap-1 rounded-[10px] border border-[#DDE3EF] bg-[#F8FAFF] p-1">
                     {([["en", "English"], ["id", "Bahasa Indonesia"]] as const).map(([value, label]) => (
                       <button
@@ -1548,7 +1550,7 @@ export default function ReportsPage() {
                       </button>
                     ))}
                   </div>
-                  <p className="mt-1.5 text-[10px] font-bold text-[#647099]">{pickL("The report and its PDF, Excel and CSV files are written in this language.", "Laporan beserta file PDF, Excel, dan CSV-nya ditulis dalam bahasa ini.")}</p>
+                  <p className="mt-1.5 text-[11px] font-bold text-[#647099]">{pickL("The report and its PDF, Excel and CSV files are written in this language.", "Laporan beserta file PDF, Excel, dan CSV-nya ditulis dalam bahasa ini.")}</p>
                 </div>
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EEF1F7]">
                   <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">

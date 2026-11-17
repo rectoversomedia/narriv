@@ -140,7 +140,7 @@ function AlertMock({ c }: { c: Case }) {
             <span className={cn("absolute inset-0 animate-ping rounded-full opacity-60", critical ? "bg-[#E5484D]" : "bg-[#F59E0B]")} />
             <span className={cn("relative size-2.5 rounded-full", critical ? "bg-[#E5484D]" : "bg-[#F59E0B]")} />
           </span>
-          <span className={cn("text-[11px] font-black", critical ? "text-[#B42318]" : "text-[#B45309]")}>
+          <span className={cn("text-[12px] font-black", critical ? "text-[#B42318]" : "text-[#B45309]")}>
             {critical ? L("Critical Alert", "Peringatan Kritis") : L("High-Risk Alert", "Peringatan Risiko Tinggi")}
           </span>
         </div>
@@ -154,7 +154,7 @@ function AlertMock({ c }: { c: Case }) {
           {L("Owner", "Penanggung Jawab")}: <b className="text-[#101334]">{L(c.alert.owner[0], c.alert.owner[1])}</b> · {L("Due in", "Tenggat")} {L(c.alert.due[0], c.alert.due[1])}
         </p>
       </div>
-      <p className="relative mt-4 text-center text-[11px] font-semibold text-white/45">{L("Sample Scenario · Not Client Data", "Contoh Skenario · Bukan Data Klien")}</p>
+      <p className="relative mt-4 text-center text-[12px] font-semibold text-white/45">{L("Sample Scenario · Not Client Data", "Contoh Skenario · Bukan Data Klien")}</p>
     </div>
   );
 }

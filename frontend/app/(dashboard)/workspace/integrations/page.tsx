@@ -193,7 +193,7 @@ export default function IntegrationsPage() {
       </header>
 
       <section className="rounded-[16px] p-5 text-white shadow-[0_12px_32px_rgba(16,19,52,0.16)]" style={{ background: banner.bg }}>
-        <p className="text-[11px] font-black text-white/70">{pickL("Alert delivery", "Pengiriman peringatan")}</p>
+        <p className="text-[12px] font-black text-white/70">{pickL("Alert delivery", "Pengiriman peringatan")}</p>
         <p className="mt-1 text-[24px] font-black leading-tight">{banner.title}</p>
         <p className="mt-1 text-[13px] font-bold text-white/85">{banner.sub}</p>
       </section>
@@ -213,7 +213,7 @@ export default function IntegrationsPage() {
             >
               <div className="flex items-center justify-between">
                 <span className="flex size-10 items-center justify-center rounded-[10px] bg-white shadow-sm"><c.Icon className="size-6 text-[#3B52F5]" /></span>
-                <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-black", live ? "bg-[#12A66A] text-white" : "bg-white text-[#5A6478]")}>{live ? pickL(`${live} connected`, `${live} terhubung`) : pickL("Not connected", "Belum terhubung")}</span>
+                <span className={cn("rounded-full px-2.5 py-1 text-[12px] font-black", live ? "bg-[#12A66A] text-white" : "bg-white text-[#5A6478]")}>{live ? pickL(`${live} connected`, `${live} terhubung`) : pickL("Not connected", "Belum terhubung")}</span>
               </div>
               <p className="mt-3 text-[16px] font-black text-[#101334]">{c.name}</p>
               <p className="mt-0.5 text-[12px] font-black text-[#3B52F5]">{selected ? pickL("Fill in the form below ↓", "Isi form di bawah ↓") : pickL("Connect →", "Hubungkan →")}</p>
@@ -232,7 +232,7 @@ export default function IntegrationsPage() {
           <ol className="mt-3 space-y-2">
             {channel.steps.map((step, i) => (
               <li key={i} className="flex items-center gap-2.5 text-[12px] font-bold text-[#31406B]">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#101334] text-[11px] font-black text-white">{i + 1}</span>
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#101334] text-[12px] font-black text-white">{i + 1}</span>
                 {pickL(...step)}
               </li>
             ))}
@@ -255,7 +255,7 @@ export default function IntegrationsPage() {
                 <label className="grid gap-1.5">
                   <span className="text-[12px] font-black text-[#101334]">{pickL("Recipient numbers", "Nomor penerima")}</span>
                   <input value={recipients} onChange={(e) => { setRecipients(e.target.value); setFormError(""); }} placeholder="0812xxxx, 0813xxxx" className="h-10 rounded-[10px] bg-[#F4F6FC] px-3 text-[13px] font-bold text-[#101334] outline-none placeholder:text-[#A8B0C7] focus:ring-2 focus:ring-[#465FFF]/30" />
-                  <span className="text-[11px] font-semibold leading-snug text-[#5A6478]">{pickL("Separate numbers with commas. WhatsApp only delivers free text to people who messaged your business number in the last 24 hours.", "Pisahkan dengan koma. WhatsApp hanya mengirim pesan bebas ke nomor yang mengirim pesan ke nomor bisnis Anda dalam 24 jam terakhir.")}</span>
+                  <span className="text-[12px] font-semibold leading-snug text-[#5A6478]">{pickL("Separate numbers with commas. WhatsApp only delivers free text to people who messaged your business number in the last 24 hours.", "Pisahkan dengan koma. WhatsApp hanya mengirim pesan bebas ke nomor yang mengirim pesan ke nomor bisnis Anda dalam 24 jam terakhir.")}</span>
                 </label>
               </>
             ) : (
@@ -294,15 +294,15 @@ export default function IntegrationsPage() {
                       <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[#F4F6FC]"><Icon className="size-5 text-[#3B52F5]" /></span>
                       <div className="min-w-0">
                         <p className="truncate text-[14px] font-black text-[#101334]">{item.name}</p>
-                        <p className="text-[11px] font-bold text-[#5A6478]">{platformLabel(item.platform, platformOptions)} · {pickL("last sent", "terakhir kirim")} {formatDateTime(item.lastSyncAt, pickL("never", "belum pernah"))}</p>
-                        {item.errorMessage ? <p className="mt-0.5 text-[11px] font-bold text-[#C81E1E]">{item.errorMessage}</p> : null}
+                        <p className="text-[12px] font-bold text-[#5A6478]">{platformLabel(item.platform, platformOptions)} · {pickL("last sent", "terakhir kirim")} {formatDateTime(item.lastSyncAt, pickL("never", "belum pernah"))}</p>
+                        {item.errorMessage ? <p className="mt-0.5 text-[12px] font-bold text-[#C81E1E]">{item.errorMessage}</p> : null}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-black", look.cls)}>{pickL(...look.label)}</span>
+                      <span className={cn("rounded-full px-2.5 py-1 text-[12px] font-black", look.cls)}>{pickL(...look.label)}</span>
                       <button type="button" onClick={() => testMutation.mutate(item.id)} disabled={testMutation.isPending} className="h-8 rounded-[8px] bg-[#EEF1FF] px-3 text-[12px] font-black text-[#3B52F5] transition hover:bg-[#E1E6FF] disabled:opacity-50">{pickL("Send test", "Kirim uji")}</button>
                       <button type="button" onClick={() => updateStatusMutation.mutate({ id: item.id, status: item.status === "active" ? "inactive" : "active" })} disabled={updateStatusMutation.isPending} className="h-8 rounded-[8px] bg-[#F4F6FC] px-3 text-[12px] font-black text-[#31406B] transition hover:bg-[#EBEEF7] disabled:opacity-50">{item.status === "active" ? pickL("Pause", "Jeda") : pickL("Resume", "Aktifkan")}</button>
-                      <button type="button" onClick={() => setDeleteTarget(item)} aria-label={pickL(`Disconnect ${item.name}`, `Putuskan ${item.name}`)} className="flex size-8 items-center justify-center rounded-[8px] text-[#8A93AD] transition hover:bg-[#FDECEC] hover:text-[#C81E1E]"><Trash2 size={15} /></button>
+                      <button type="button" onClick={() => setDeleteTarget(item)} aria-label={pickL(`Disconnect ${item.name}`, `Putuskan ${item.name}`)} className="flex size-8 items-center justify-center rounded-[8px] text-[#6B7591] transition hover:bg-[#FDECEC] hover:text-[#C81E1E]"><Trash2 size={15} /></button>
                     </div>
                   </li>
                 );

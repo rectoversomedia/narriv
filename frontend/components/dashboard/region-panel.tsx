@@ -88,7 +88,7 @@ export function RegionPanel({ data, days, selected, onSelect, loading }: { data?
                   <span className="flex items-baseline justify-between gap-2">
                     <span className={cn("truncate text-[13px] font-bold", on ? "text-[#3B52F5]" : "text-[#101334]")}>{p.name}</span>
                     <span className="flex shrink-0 items-baseline gap-2">
-                      {p.negative > 0 ? <span className={cn("text-[11px] font-bold", neg >= 40 ? "text-[#C81E1E]" : "text-[#A04606]")}>{L(`${neg}% Negative`, `${neg}% Negatif`)}</span> : null}
+                      {p.negative > 0 ? <span className={cn("text-[12px] font-bold", neg >= 40 ? "text-[#C81E1E]" : "text-[#A04606]")}>{L(`${neg}% Negative`, `${neg}% Negatif`)}</span> : null}
                       <span className="text-[13px] font-black tabular-nums text-[#101334]">{p.total}</span>
                     </span>
                   </span>
@@ -97,7 +97,7 @@ export function RegionPanel({ data, days, selected, onSelect, loading }: { data?
                     <span className="h-full bg-[#465FFF]" style={{ width: `${((p.total - p.negative) / max) * 100}%` }} />
                   </span>
                   {p.cities.length ? (
-                    <span className="mt-1 block truncate text-[11px] font-medium text-[#5A6478]">{p.cities.map((c) => c.name).join(", ")}</span>
+                    <span className="mt-1 block truncate text-[12px] font-medium text-[#5A6478]">{p.cities.map((c) => c.name).join(", ")}</span>
                   ) : null}
                 </button>
               </li>
@@ -107,14 +107,14 @@ export function RegionPanel({ data, days, selected, onSelect, loading }: { data?
       )}
 
       {data && data.total > 0 && view === "about" ? (
-        <p className="mt-3 text-[11px] font-medium leading-relaxed text-[#5A6478]">
+        <p className="mt-3 text-[12px] font-medium leading-relaxed text-[#5A6478]">
           {L(
             `${data.located} of ${data.total} mentions name a place in Indonesia${provinces.length > top.length ? `; ${provinces.length - top.length} more provinces in the filter` : ""}.`,
             `${data.located} dari ${data.total} percakapan menyebut tempat di Indonesia${provinces.length > top.length ? `; ${provinces.length - top.length} provinsi lain ada di filter` : ""}.`,
           )}
         </p>
       ) : null}
-      <p className="mt-2 text-[11px] font-medium leading-relaxed text-[#8A93AD]">
+      <p className="mt-2 text-[12px] font-medium leading-relaxed text-[#6B7591]">
         {L(
           "Read from each mention's text and from platform location labels, never from IP addresses.",
           "Dibaca dari isi percakapan dan label lokasi platform, bukan dari alamat IP.",

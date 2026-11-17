@@ -80,7 +80,7 @@ function Freshness({ data }: { data: ReportView }) {
           <span className="flex flex-wrap items-center gap-1.5">
             <span>{L("Typical delay:", "Jeda umum:")}</span>
             {f.latency.slice(0, 5).map((p) => (
-              <span key={p.platform} title={L(`Median over ${p.sample} posts; 9 in 10 within ${hoursLabel(p.p90Hours, L)}`, `Median dari ${p.sample} postingan; 9 dari 10 dalam ${hoursLabel(p.p90Hours, L)}`)} className="inline-flex items-center gap-1 rounded-full bg-[#F1F4FA] px-2 py-0.5 text-[11px] font-bold text-[#31406B]">
+              <span key={p.platform} title={L(`Median over ${p.sample} posts; 9 in 10 within ${hoursLabel(p.p90Hours, L)}`, `Median dari ${p.sample} postingan; 9 dari 10 dalam ${hoursLabel(p.p90Hours, L)}`)} className="inline-flex items-center gap-1 rounded-full bg-[#F1F4FA] px-2 py-0.5 text-[12px] font-bold text-[#31406B]">
                 <PlatformIcon platform={p.platform} className="size-3.5" />
                 {names[p.platform] ?? p.platform} {hoursLabel(p.medianHours, L)}
               </span>
@@ -114,7 +114,7 @@ function Card({ title, sub, children, className }: { title: string; sub?: string
 function Tile({ label, value, sub, rgb: _rgb, color }: { label: string; value: string; sub: string; rgb: string; color: string }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
-      <p className="text-[11px] font-black" style={{ color }}>{label}</p>
+      <p className="text-[12px] font-black" style={{ color }}>{label}</p>
       <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
       <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{sub}</p>
     </div>
@@ -151,7 +151,7 @@ function ReportBody({ data }: { data: ReportView }) {
   return (
     <div className="space-y-5">
       <section className="rounded-[18px] p-6 text-white shadow-[0_12px_32px_rgba(16,19,52,0.18)]" style={{ background: look.bg }}>
-        <p className="text-[11px] font-black text-white/70">{L("Overall tone", "Nada keseluruhan")}</p>
+        <p className="text-[12px] font-black text-white/70">{L("Overall tone", "Nada keseluruhan")}</p>
         <p className="mt-1 text-[34px] font-black leading-none tracking-[-0.03em]">{look.word}</p>
         <p className="mt-3 max-w-3xl text-[15px] font-bold leading-snug text-white/90">{headline}</p>
       </section>
@@ -172,7 +172,7 @@ function ReportBody({ data }: { data: ReportView }) {
             {(["negative", "positive", "neutral", "mixed"] as const).map((k) => (
               <div key={k} className="flex items-center justify-between rounded-[10px] px-3 py-2.5" style={{ background: SENTIMENT[k].soft }}>
                 <span className="flex items-center gap-2 text-[13px] font-black text-[#101334]"><span className="size-2.5 rounded-full" style={{ background: SENTIMENT[k].color }} />{sentLabel(k)}</span>
-                <span className="text-[15px] font-black text-[#101334]">{t[k]}% <span className="text-[11px] font-bold text-[#5A6478]">· {count(t[k])}</span></span>
+                <span className="text-[15px] font-black text-[#101334]">{t[k]}% <span className="text-[12px] font-bold text-[#5A6478]">· {count(t[k])}</span></span>
               </div>
             ))}
           </div>
@@ -189,7 +189,7 @@ function ReportBody({ data }: { data: ReportView }) {
                   <li key={p.platform}>
                     <div className="flex items-center justify-between text-[13px] font-black text-[#101334]">
                       <span className="flex items-center gap-2"><PlatformIcon platform={p.platform} className="size-4" />{platformName(p.platform)}</span>
-                      <span>{p.count} <span className="text-[11px] font-bold text-[#5A6478]">· {share}%</span></span>
+                      <span>{p.count} <span className="text-[12px] font-bold text-[#5A6478]">· {share}%</span></span>
                     </div>
                     <div className="mt-1 h-2.5 rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full" style={{ width: `${Math.max(3, share)}%`, background: i === 0 ? "#465FFF" : "#A5B4FC" }} /></div>
                   </li>
@@ -208,15 +208,15 @@ function ReportBody({ data }: { data: ReportView }) {
               return (
                 <li key={`${a.title}-${i}`} className="flex flex-col rounded-[14px] bg-[#F7F8FC] p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full px-2.5 py-0.5 text-[11px] font-black text-white" style={{ background: sev.bg }}>{L(sev.en, sev.id)}</span>
-                    <span className="text-[11px] font-bold text-[#5A6478]">{L(...(STATUS[a.status] ?? [a.status, a.status]))} · {fmtDate(a.createdAt)}</span>
+                    <span className="rounded-full px-2.5 py-0.5 text-[12px] font-black text-white" style={{ background: sev.bg }}>{L(sev.en, sev.id)}</span>
+                    <span className="text-[12px] font-bold text-[#5A6478]">{L(...(STATUS[a.status] ?? [a.status, a.status]))} · {fmtDate(a.createdAt)}</span>
                   </div>
                   <p className="mt-2 text-[14px] font-black leading-snug text-[#101334]">{a.title}</p>
                   {a.whatHappened ? <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-snug text-[#3A4566]">{a.whatHappened}</p> : null}
                   {a.whatToDo ? (
                     <div className="mt-auto pt-3">
                       <div className="rounded-[10px] bg-[#101334] px-3 py-2.5">
-                        <p className="text-[10px] font-black text-[#A9B4FF]">{L("Next step", "Langkah")}</p>
+                        <p className="text-[11px] font-black text-[#A9B4FF]">{L("Next step", "Langkah")}</p>
                         <p className="mt-0.5 line-clamp-2 text-[12px] font-bold leading-snug text-white">{a.whatToDo}</p>
                       </div>
                     </div>
@@ -246,7 +246,7 @@ function ReportBody({ data }: { data: ReportView }) {
                       </div>
                       <div className="mt-1.5 flex items-center gap-2">
                         <div className="h-2 flex-1 rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full" style={{ width: `${(issue.signals / maxIssue) * 100}%`, background: s.color }} /></div>
-                        <span className="w-[64px] text-right text-[11px] font-black" style={{ color: s.text }}>{sentLabel(issue.sentiment)}</span>
+                        <span className="w-[64px] text-right text-[12px] font-black" style={{ color: s.text }}>{sentLabel(issue.sentiment)}</span>
                       </div>
                     </div>
                   </li>
@@ -268,12 +268,12 @@ function ReportBody({ data }: { data: ReportView }) {
                     <PlatformIcon platform={sig.platform} className="mt-0.5 size-4 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 text-[13px] font-bold leading-snug text-[#101334]">{sig.title}</p>
-                      <p className="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-bold text-[#5A6478]">
-                        <span className="rounded-full px-2 py-0.5 text-[10px] font-black" style={{ background: s.soft, color: s.text }}>{sentLabel(sig.sentiment)}</span>
+                      <p className="mt-1 flex flex-wrap items-center gap-2 text-[12px] font-bold text-[#5A6478]">
+                        <span className="rounded-full px-2 py-0.5 text-[11px] font-black" style={{ background: s.soft, color: s.text }}>{sentLabel(sig.sentiment)}</span>
                         {platformName(sig.platform)} · {fmtDate(sig.publishedAt || sig.capturedAt)}
                       </p>
                     </div>
-                    {sig.url ? <ExternalLink size={14} className="mt-1 shrink-0 text-[#8A93AD]" /> : null}
+                    {sig.url ? <ExternalLink size={14} className="mt-1 shrink-0 text-[#6B7591]" /> : null}
                   </>
                 );
                 return (
@@ -337,7 +337,7 @@ export default function ReportDetailPage() {
           <h1 className="mt-3 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{data.title}</h1>
           <p className="mt-1 text-[13px] font-bold text-[#5A6478]">
             {data.brand ? `${data.brand} · ` : ""}{fmtDate(data.periodStart)} – {fmtDate(data.periodEnd)}
-            <span className="text-[#8A93AD]"> · {L("created", "dibuat")} {fmtDate(data.createdAt, true)}</span>
+            <span className="text-[#6B7591]"> · {L("created", "dibuat")} {fmtDate(data.createdAt, true)}</span>
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

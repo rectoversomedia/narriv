@@ -122,8 +122,8 @@ function MetricPill({
 }) {
   return (
     <div className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1">
-      <span className="text-[11px] text-[#5F6B94]">{label}</span>
-      <span className={cn("text-[11px] font-bold", valueColor)}>{value}</span>
+      <span className="text-[12px] text-[#5F6B94]">{label}</span>
+      <span className={cn("text-[12px] font-bold", valueColor)}>{value}</span>
     </div>
   );
 }
@@ -143,8 +143,8 @@ function ConfidenceBar({ value }: { value: number }) {
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-[#5F6B94]">AI Confidence</span>
-        <span className="text-[11px] font-bold text-[#101334]">{value}%</span>
+        <span className="text-[12px] text-[#5F6B94]">AI Confidence</span>
+        <span className="text-[12px] font-bold text-[#101334]">{value}%</span>
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
         <div
@@ -259,12 +259,12 @@ export function NarrativeCard({
         </div>
 
         {/* Emotion tag */}
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 capitalize">
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[12px] font-medium text-slate-600 capitalize">
           {emotion}
         </span>
 
         {/* Type tag */}
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 capitalize">
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[12px] font-medium text-slate-600 capitalize">
           {type.replace(/_/g, " ")}
         </span>
       </div>
@@ -324,7 +324,7 @@ export function NarrativeCard({
           </span>
           <span
             className={cn(
-              "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
+              "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold",
               priorityCfg.bg,
               priorityCfg.text,
               "border border-current/20"
@@ -369,7 +369,7 @@ export function NarrativeCard({
                 {relatedKeywords.map((kw) => (
                   <span
                     key={kw}
-                    className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600"
+                    className="rounded-full bg-slate-100 px-2 py-0.5 text-[12px] text-slate-600"
                   >
                     {kw}
                   </span>
@@ -386,7 +386,7 @@ export function NarrativeCard({
                 {relatedEntities.map((entity) => (
                   <span
                     key={entity}
-                    className="rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[11px] font-medium text-[#3B52F5]"
+                    className="rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[12px] font-medium text-[#3B52F5]"
                   >
                     {entity}
                   </span>
@@ -403,7 +403,7 @@ export function NarrativeCard({
                 {relatedCompetitors.map((comp) => (
                   <span
                     key={comp}
-                    className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700"
+                    className="rounded-full bg-amber-50 px-2 py-0.5 text-[12px] font-medium text-amber-700"
                   >
                     {comp}
                   </span>

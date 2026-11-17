@@ -83,13 +83,13 @@ export function Field({ label, hint, htmlFor, children }: { label: string; hint?
     <div className="space-y-1.5">
       <label htmlFor={htmlFor} className="block text-[12px] font-black text-[#101334]">{label}</label>
       {children}
-      {hint ? <p className="text-[11px] font-medium text-[#5A6478]">{hint}</p> : null}
+      {hint ? <p className="text-[12px] font-medium text-[#5A6478]">{hint}</p> : null}
     </div>
   );
 }
 
 export const inputClass =
-  "h-11 w-full rounded-[10px] border border-[#DDE3EF] bg-white px-3 text-[13px] font-semibold text-[#101334] outline-none transition placeholder:text-[#9AA3BC] focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15 disabled:bg-[#F8FAFF] disabled:text-[#8A93AD]";
+  "h-11 w-full rounded-[10px] border border-[#DDE3EF] bg-white px-3 text-[13px] font-semibold text-[#101334] outline-none transition placeholder:text-[#9AA3BC] focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15 disabled:bg-[#F8FAFF] disabled:text-[#6B7591]";
 
 export const primaryButtonClass =
   "inline-flex h-10 items-center justify-center rounded-[10px] bg-[#465FFF] px-5 text-[13px] font-black text-white transition hover:bg-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50";

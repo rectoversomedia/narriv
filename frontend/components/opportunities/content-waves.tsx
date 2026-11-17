@@ -58,18 +58,18 @@ function Ideas({ ideas }: { ideas: ContentIdeas }) {
   const L = useL();
   return (
     <div className="mt-4 rounded-[14px] bg-[#0B1430] p-4 text-white">
-      <p className="flex items-center gap-1.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#A5B4FF]"><Lightbulb size={13} aria-hidden="true" /> {L("Content Ideas", "Ide Konten")}</p>
+      <p className="flex items-center gap-1.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.12em] text-[#A5B4FF]"><Lightbulb size={13} aria-hidden="true" /> {L("Content Ideas", "Ide Konten")}</p>
       <ol className="mt-3 grid gap-2.5 md:grid-cols-3">
         {ideas.angles.map((a, i) => (
           <li key={i} className="rounded-[12px] bg-white/[0.07] p-3">
-            <p className="font-mono text-[10.5px] font-bold text-[#A5B4FF]">0{i + 1} · {a.format}{a.platform ? ` · ${a.platform}` : ""}</p>
+            <p className="font-mono text-[11.5px] font-bold text-[#A5B4FF]">0{i + 1} · {a.format}{a.platform ? ` · ${a.platform}` : ""}</p>
             <p className="mt-1.5 text-[14px] font-black leading-snug">{a.title}</p>
             <p className="mt-1.5 text-[12.5px] font-medium leading-relaxed text-white/75">{a.hook}</p>
           </li>
         ))}
       </ol>
       {ideas.caution ? <p className="mt-3 flex items-start gap-1.5 text-[12px] font-semibold text-[#FCD34D]"><AlertTriangle size={13} className="mt-0.5 shrink-0" aria-hidden="true" /> {ideas.caution}</p> : null}
-      <p className="mt-2 text-[11px] font-medium text-white/45">{L("Suggestions from AI. Check them against your brand guidelines before posting.", "Saran dari AI. Cocokkan dengan pedoman brand sebelum diunggah.")}</p>
+      <p className="mt-2 text-[12px] font-medium text-white/45">{L("Suggestions from AI. Check them against your brand guidelines before posting.", "Saran dari AI. Cocokkan dengan pedoman brand sebelum diunggah.")}</p>
     </div>
   );
 }
@@ -100,8 +100,8 @@ function WaveCard({ wave }: { wave: ContentWave }) {
   return (
     <li className="rounded-[18px] border-[1.5px] border-[#101334] bg-white p-4 shadow-[0_4px_0_#101334] sm:p-5">
       <div className="flex flex-wrap items-center gap-2">
-        <span className={cn("inline-flex items-center gap-1 rounded-[8px] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.06em]", risk.tone)}><RiskIcon size={13} aria-hidden="true" /> {L(risk.en, risk.id)}</span>
-        <span className="inline-flex items-center gap-1 rounded-[8px] bg-[#EEF1FF] px-2.5 py-1 font-mono text-[11px] font-bold text-[#3B52F5]"><TrendingUp size={13} aria-hidden="true" /> {growth} · {m.last24h} {L("in 24h", "dalam 24 jam")}</span>
+        <span className={cn("inline-flex items-center gap-1 rounded-[8px] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.06em]", risk.tone)}><RiskIcon size={13} aria-hidden="true" /> {L(risk.en, risk.id)}</span>
+        <span className="inline-flex items-center gap-1 rounded-[8px] bg-[#EEF1FF] px-2.5 py-1 font-mono text-[12px] font-bold text-[#3B52F5]"><TrendingUp size={13} aria-hidden="true" /> {growth} · {m.last24h} {L("in 24h", "dalam 24 jam")}</span>
         <span className="flex items-center gap-1">{wave.platforms.slice(0, 5).map((p) => <PlatformIcon key={p} platform={p} className="size-4" />)}</span>
       </div>
       <h3 className="mt-3 text-[19px] font-black leading-snug tracking-[-0.015em] text-[#101334]">{wave.title}</h3>
@@ -109,11 +109,11 @@ function WaveCard({ wave }: { wave: ContentWave }) {
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div className="rounded-[12px] bg-[#FBFCFF] p-3 ring-1 ring-[#EEF1F7]">
-          <p className="font-mono text-[10.5px] font-bold uppercase tracking-[0.1em] text-[#5A6478]">{L("Risk Check", "Cek Risiko")}</p>
+          <p className="font-mono text-[11.5px] font-bold uppercase tracking-[0.1em] text-[#5A6478]">{L("Risk Check", "Cek Risiko")}</p>
           <div className="mt-2"><Reasons wave={wave} /></div>
         </div>
         <div className="rounded-[12px] bg-[#FBFCFF] p-3 ring-1 ring-[#EEF1F7]">
-          <p className="flex items-center gap-1 font-mono text-[10.5px] font-bold uppercase tracking-[0.1em] text-[#5A6478]"><Clock size={12} aria-hidden="true" /> {L("Time Window", "Jendela Waktu")}</p>
+          <p className="flex items-center gap-1 font-mono text-[11.5px] font-bold uppercase tracking-[0.1em] text-[#5A6478]"><Clock size={12} aria-hidden="true" /> {L("Time Window", "Jendela Waktu")}</p>
           <p className="mt-2 text-[13px] font-bold leading-snug text-[#101334]">{win.head}</p>
           <p className="mt-0.5 text-[11.5px] font-medium leading-relaxed text-[#5A6478]">{win.note}</p>
         </div>

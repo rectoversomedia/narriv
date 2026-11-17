@@ -192,7 +192,7 @@ export function DashboardPagination({
 
   return (
     <nav className="flex flex-wrap items-center justify-center gap-2 sm:justify-end" aria-label="Pagination">
-      <span className="text-[11px] font-black text-[#5F6B94]" aria-live="polite">
+      <span className="text-[12px] font-black text-[#5F6B94]" aria-live="polite">
         {tp("pagination.pageInfo", { page: total === 0 ? 0 : page, totalPages })}
       </span>
       <div className="flex items-center gap-1.5">
@@ -201,7 +201,7 @@ export function DashboardPagination({
           onClick={() => onPageChange(page - 1)}
           disabled={disabled || !canGoPrevious}
           aria-label={pickL(`Go to previous page, page ${page - 1}`, `Ke halaman sebelumnya, halaman ${page - 1}`)}
-          className="inline-flex h-[34px] items-center rounded-[8px] border border-[#E6EAF2] bg-white px-3 text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-45"
+          className="inline-flex h-[34px] items-center rounded-[8px] border border-[#E6EAF2] bg-white px-3 text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-45"
         >
           {tp("pagination.prev")}
         </button>
@@ -210,7 +210,7 @@ export function DashboardPagination({
           onClick={() => onPageChange(page + 1)}
           disabled={disabled || !canGoNext}
           aria-label={pickL(`Go to next page, page ${page + 1}`, `Ke halaman berikutnya, halaman ${page + 1}`)}
-          className="inline-flex h-[34px] items-center rounded-[8px] border border-[#E6EAF2] bg-white px-3 text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-45"
+          className="inline-flex h-[34px] items-center rounded-[8px] border border-[#E6EAF2] bg-white px-3 text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-45"
         >
           {tp("pagination.next")}
         </button>

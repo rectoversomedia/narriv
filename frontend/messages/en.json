@@ -4225,7 +4225,7 @@
     "stable": "Stable",
     "negativeShare": "Negative Share",
     "emerging": "Emerging Narratives",
-    "noEmerging": "No emerging narratives detected.",
+    "noEmerging": "No new narratives in this window. Older issues are on the Issue Map.",
     "velocity": "{value} new in 24h",
     "whyScore": "Why this score ({score}/100)",
     "noComponent": "No risk component is elevated in this window.",

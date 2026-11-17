@@ -147,7 +147,7 @@ export function DonutMock({ center, label }: { center: string; label: string }) 
       <div className="absolute h-[112px] w-[112px] rounded-full bg-background" />
       <div className="relative text-center z-10">
         <p className="text-[26px] font-black text-slate-900">{center}</p>
-        <p className="mt-0.5 text-[11px] font-semibold text-[#5A6478]">{label}</p>
+        <p className="mt-0.5 text-[12px] font-semibold text-[#5A6478]">{label}</p>
       </div>
     </div>
   );

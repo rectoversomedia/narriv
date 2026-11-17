@@ -472,14 +472,14 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3">
             <div>
               <p className="text-[13px] font-bold text-slate-900">{ts("loadFailedTitle")}</p>
-              <p className="text-[11px] font-medium text-[#5A6478]">{ts("loadFailedDesc")}</p>
+              <p className="text-[12px] font-medium text-[#5A6478]">{ts("loadFailedDesc")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => void workspaceSettingsQuery.refetch()}
-              className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
+              className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-700 hover:bg-slate-50"
             >
               Retry
             </button>
@@ -492,13 +492,13 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3">
             <div>
               <p className="text-[13px] font-bold text-slate-900">{ts("membersLoadFailedTitle")}</p>
-              <p className="text-[11px] font-medium text-[#5A6478]">{ts("membersLoadFailedDesc")}</p>
+              <p className="text-[12px] font-medium text-[#5A6478]">{ts("membersLoadFailedDesc")}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => void membersQuery.refetch()}
-            className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 hover:bg-slate-50 shrink-0"
+            className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-700 hover:bg-slate-50 shrink-0"
           >
             Retry
           </button>
@@ -541,7 +541,7 @@ export default function SettingsPage() {
                 />
                 <div className="min-w-0">
                   <p className="text-[13px] font-black text-[#101334]">{L("Workspace logo", "Logo workspace")}</p>
-                  <p className="text-[11px] font-semibold text-[#5A6478]">{ts("logo.formatHint")}</p>
+                  <p className="text-[12px] font-semibold text-[#5A6478]">{ts("logo.formatHint")}</p>
                   <button
                     type="button"
                     onClick={handleLogoUpload}
@@ -550,13 +550,13 @@ export default function SettingsPage() {
                   >
                     <Upload size={13} strokeWidth={2.5} /> {uploadLogoMutation.isPending ? ts("workspaceInfo.logoUploading") : L("Change logo", "Ganti logo")}
                   </button>
-                  {logoError ? <p className="mt-1 text-[11px] font-bold text-[#C81E1E]">{logoError}</p> : null}
+                  {logoError ? <p className="mt-1 text-[12px] font-bold text-[#C81E1E]">{logoError}</p> : null}
                 </div>
               </div>
 
               <div className="space-y-3.5">
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-extrabold text-[#5F6B94]">
+                  <label className="mb-1.5 block text-[11px] font-extrabold text-[#5F6B94]">
                     {ts("workspaceInfo.labelName")}
                   </label>
                   <input
@@ -570,7 +570,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-extrabold text-[#5F6B94]">
+                  <label className="mb-1.5 block text-[11px] font-extrabold text-[#5F6B94]">
                     {ts("workspaceInfo.labelIndustry")}
                   </label>
                   <div className="relative">
@@ -596,7 +596,7 @@ export default function SettingsPage() {
 
             <div className="grid gap-3.5 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-[10px] font-extrabold text-[#5F6B94]">
+                <label className="mb-1.5 block text-[11px] font-extrabold text-[#5F6B94]">
                   {ts("workspaceInfo.labelTimezone")}
                 </label>
                 <div className="relative">
@@ -615,7 +615,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[10px] font-extrabold text-[#5F6B94]">
+                <label className="mb-1.5 block text-[11px] font-extrabold text-[#5F6B94]">
                   {ts("workspaceInfo.labelLanguage")}
                 </label>
                 <div className="relative">
@@ -666,10 +666,10 @@ export default function SettingsPage() {
             <div className="flex flex-wrap gap-2.5">
               {/* Roles are enforced server-side; this explains them (there is no separate role editor). */}
               <details className="relative">
-                <summary className="flex h-9 cursor-pointer list-none items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-slate-700 shadow-sm transition hover:bg-slate-50">
+                <summary className="flex h-9 cursor-pointer list-none items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-slate-700 shadow-sm transition hover:bg-slate-50">
                   {L("What each role can do", "Wewenang tiap peran")}
                 </summary>
-                <div className="absolute right-0 z-20 mt-2 w-[300px] rounded-[10px] border border-[#DDE3EF] bg-white p-3 text-[11px] font-semibold leading-relaxed text-slate-600 shadow-lg">
+                <div className="absolute right-0 z-20 mt-2 w-[300px] rounded-[10px] border border-[#DDE3EF] bg-white p-3 text-[12px] font-semibold leading-relaxed text-slate-600 shadow-lg">
                   <p><b className="text-[#101334]">{L("Owner", "Pemilik")}</b>: {L("everything an admin can do, plus granting or removing the owner role. The last owner cannot be removed.", "semua yang bisa dilakukan admin, ditambah memberi atau mencabut peran pemilik. Pemilik terakhir tidak bisa dihapus.")}</p>
                   <p className="mt-2"><b className="text-[#101334]">Admin</b>: {L("add and remove members (not owners), change workspace settings, monitoring keywords and integrations.", "menambah dan menghapus anggota (kecuali pemilik), mengubah pengaturan workspace, kata kunci pemantauan, dan integrasi.")}</p>
                   <p className="mt-2"><b className="text-[#101334]">{L("Analyst", "Analis")}</b>: {L("view all workspace data, ask questions, and work on cases and action plans. Cannot change members, settings or keywords.", "melihat semua data workspace, bertanya ke Narriv, serta mengerjakan kasus dan rencana aksi. Tidak bisa mengubah anggota, pengaturan, atau kata kunci.")}</p>
@@ -678,7 +678,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setShowInviteModal(true)}
-                className="flex h-9 items-center gap-1.5 rounded-[8px] bg-[#465FFF] px-3.5 text-[11px] font-black text-white shadow-sm transition hover:bg-[#3B20EA]"
+                className="flex h-9 items-center gap-1.5 rounded-[8px] bg-[#465FFF] px-3.5 text-[12px] font-black text-white shadow-sm transition hover:bg-[#3B20EA]"
               >
                 {ts("common.inviteMember")}
               </button>
@@ -704,14 +704,14 @@ export default function SettingsPage() {
                       </span>
                       <div className="min-w-0">
                         <p className="truncate text-[14px] font-black text-[#101334]">{personName}</p>
-                        <p className="truncate text-[11px] font-bold text-[#5A6478]">{jobParts.length ? `${jobParts.join(" · ")} · ` : ""}{member.email}</p>
+                        <p className="truncate text-[12px] font-bold text-[#5A6478]">{jobParts.length ? `${jobParts.join(" · ")} · ` : ""}{member.email}</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 pl-[52px]">
-                      <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-black", roleStyles[member.role])}>{member.role}</span>
-                      <span className="rounded-full bg-[#F4F6FC] px-2.5 py-1 text-[11px] font-bold text-[#31406B]">{member.permission}</span>
-                      <span className="text-[11px] font-bold text-[#8A93AD]">{L("joined", "bergabung")} {member.time}</span>
-                      <button type="button" onClick={() => setMemberToDelete(member)} title={ts("removeUser")} aria-label={ts("removeUser")} className="ml-auto flex size-8 items-center justify-center rounded-[8px] text-[#8A93AD] transition hover:bg-[#FDECEC] hover:text-[#C81E1E]">
+                      <span className={cn("rounded-full px-2.5 py-1 text-[12px] font-black", roleStyles[member.role])}>{member.role}</span>
+                      <span className="rounded-full bg-[#F4F6FC] px-2.5 py-1 text-[12px] font-bold text-[#31406B]">{member.permission}</span>
+                      <span className="text-[12px] font-bold text-[#6B7591]">{L("joined", "bergabung")} {member.time}</span>
+                      <button type="button" onClick={() => setMemberToDelete(member)} title={ts("removeUser")} aria-label={ts("removeUser")} className="ml-auto flex size-8 items-center justify-center rounded-[8px] text-[#6B7591] transition hover:bg-[#FDECEC] hover:text-[#C81E1E]">
                         <Trash size={14} />
                       </button>
                     </div>
@@ -738,7 +738,7 @@ export default function SettingsPage() {
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.emailAlerts")}</span>
+                <span className="block text-[12px] font-black text-[#101334]">{ts("notifications.emailAlerts")}</span>
                 <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.emailAlertsDesc")}</span>
               </div>
               <Switch label={ts("notifications.emailAlerts")} checked={notifEmailValue} onChange={toggleEmail} disabled={notificationMutation.isPending} />
@@ -746,7 +746,7 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="block text-[11px] font-black text-[#101334]">{L("WhatsApp for critical alerts", "WhatsApp untuk peringatan kritis")}</span>
+                  <span className="block text-[12px] font-black text-[#101334]">{L("WhatsApp for critical alerts", "WhatsApp untuk peringatan kritis")}</span>
                   <span className="block text-[9.5px] text-[#5A6478] font-semibold">{whatsappReady ? L("Critical and high alerts, sent from Narriv's number", "Peringatan kritis dan tinggi, dikirim dari nomor Narriv") : L("Coming soon", "Segera hadir")}</span>
                 </div>
                 <Switch label={L("WhatsApp alerts", "Peringatan WhatsApp")} checked={whatsappReady && whatsappOn} onChange={toggleWhatsapp} disabled={!whatsappReady || notificationMutation.isPending} />
@@ -767,7 +767,7 @@ export default function SettingsPage() {
             {/* Slack, Teams, Google Chat and webhooks are set up on the Integrations page. */}
             <Link href="/workspace/integrations" className="flex items-center justify-between rounded-[10px] bg-[#E9FBF0] px-3 py-2.5 transition hover:bg-[#DDF7E7]">
               <span>
-                <span className="block text-[11px] font-black text-[#101334]">{L("Slack, Teams, Google Chat & more", "Slack, Teams, Google Chat & lainnya")}</span>
+                <span className="block text-[12px] font-black text-[#101334]">{L("Slack, Teams, Google Chat & more", "Slack, Teams, Google Chat & lainnya")}</span>
                 <span className="block text-[9.5px] font-semibold text-[#047857]">{L("Send alerts to your team's chat, set up in Integrations", "Kirim peringatan ke chat tim, atur di Integrasi")}</span>
               </span>
               <ArrowRight size={13} className="text-[#047857]" />
@@ -786,7 +786,7 @@ export default function SettingsPage() {
                 <span className="flex items-center gap-3">
                   <span className="text-[#5F6B94]"><Webhook size={16} /></span>
                   <span>
-                    <span className="block text-[11px] font-black text-[#101334]">{ts("related.integrations")}</span>
+                    <span className="block text-[12px] font-black text-[#101334]">{ts("related.integrations")}</span>
                     <span className="block text-[9px] text-[#5A6478] font-semibold">{ts("related.integrationsDesc")}</span>
                   </span>
                 </span>
@@ -796,7 +796,7 @@ export default function SettingsPage() {
                 <span className="flex items-center gap-3">
                   <span className="text-[#5F6B94]"><Database size={16} /></span>
                   <span>
-                    <span className="block text-[11px] font-black text-[#101334]">{ts("related.sources")}</span>
+                    <span className="block text-[12px] font-black text-[#101334]">{ts("related.sources")}</span>
                     <span className="block text-[9px] text-[#5A6478] font-semibold">{ts("related.sourcesDesc")}</span>
                   </span>
                 </span>
@@ -806,7 +806,7 @@ export default function SettingsPage() {
                 <span className="flex items-center gap-3">
                   <span className="text-[#5F6B94]"><Cloud size={16} /></span>
                   <span>
-                    <span className="block text-[11px] font-black text-[#101334]">{ts("related.exports")}</span>
+                    <span className="block text-[12px] font-black text-[#101334]">{ts("related.exports")}</span>
                     <span className="block text-[9px] text-[#5A6478] font-semibold">{ts("related.exportsDesc")}</span>
                   </span>
                 </span>
@@ -816,7 +816,7 @@ export default function SettingsPage() {
                 <span className="flex items-center gap-3">
                   <span className="text-[#5F6B94]"><Lock size={16} /></span>
                   <span>
-                    <span className="block text-[11px] font-black text-[#101334]">{ts("related.activity")}</span>
+                    <span className="block text-[12px] font-black text-[#101334]">{ts("related.activity")}</span>
                     <span className="block text-[9px] text-[#5A6478] font-semibold">{ts("related.activityDesc")}</span>
                   </span>
                 </span>
@@ -832,7 +832,7 @@ export default function SettingsPage() {
             </div>
           </div>
           <div>
-            <p className="mb-3 text-[11px] font-black text-[#101334]">{ts("workspaceInfo.sectionPassword")}</p>
+            <p className="mb-3 text-[12px] font-black text-[#101334]">{ts("workspaceInfo.sectionPassword")}</p>
               <div className="space-y-2.5">
                 <div>
                   <input
@@ -840,7 +840,7 @@ export default function SettingsPage() {
                     placeholder={ts("workspaceInfo.passwordCurrentPlaceholder")}
                     value={currentPassword}
                     onChange={(e) => { setCurrentPassword(e.target.value); setPasswordErrors((prev) => ({ ...prev, current: undefined })); }}
-                    className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[10px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.current ? "border-[#EF4444]" : "border-[#DDE3EF]")}
+                    className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[11px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.current ? "border-[#EF4444]" : "border-[#DDE3EF]")}
                   />
                   {passwordErrors.current && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{passwordErrors.current}</p>}
                 </div>
@@ -850,7 +850,7 @@ export default function SettingsPage() {
                     placeholder={ts("workspaceInfo.passwordNewPlaceholder")}
                     value={newPassword}
                     onChange={(e) => { setNewPassword(e.target.value); setPasswordErrors((prev) => ({ ...prev, newPass: undefined })); }}
-                    className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[10px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.newPass ? "border-[#EF4444]" : "border-[#DDE3EF]")}
+                    className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[11px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.newPass ? "border-[#EF4444]" : "border-[#DDE3EF]")}
                   />
                   {passwordErrors.newPass && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{passwordErrors.newPass}</p>}
                 </div>
@@ -875,7 +875,7 @@ export default function SettingsPage() {
                     changePasswordMutation.mutate({ currentPassword, newPassword });
                   }}
                   disabled={changePasswordMutation.isPending}
-                  className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#465FFF] text-[11px] font-black text-white transition hover:bg-[#3B4FE0] disabled:opacity-50"
+                  className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#465FFF] text-[12px] font-black text-white transition hover:bg-[#3B4FE0] disabled:opacity-50"
                 >
                   {changePasswordMutation.isPending ? ts("common.saving") : ts("changePassword")}
                 </button>
@@ -899,7 +899,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
                 <span className="block text-[11.5px] font-black text-slate-800">{ts(monitoringPaused ? "danger.resumeTitle" : "danger.pauseTitle")}</span>
-                <span className="mt-1 block text-[10px] text-[#5A6478] font-semibold leading-normal">
+                <span className="mt-1 block text-[11px] text-[#5A6478] font-semibold leading-normal">
                   {ts(monitoringPaused ? "danger.resumeDesc" : "danger.pauseDesc")}
                 </span>
               </div>
@@ -908,7 +908,7 @@ export default function SettingsPage() {
                 onClick={() => triggerConfirmAction("pause")}
                 disabled={pauseMutation.isPending || workspaceSettingsQuery.isLoading}
                 className={cn(
-                  "flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg px-3.5 text-[11px] font-black text-white transition shadow-sm disabled:opacity-60",
+                  "flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg px-3.5 text-[12px] font-black text-white transition shadow-sm disabled:opacity-60",
                   monitoringPaused ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700",
                 )}
               >
@@ -919,7 +919,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100/80 pt-4">
               <div className="min-w-0 flex-1">
                 <span className="block text-[11.5px] font-black text-[#D32F2F]">{ts("danger.deleteTitle")}</span>
-                <span className="mt-1 block text-[10px] text-[#5A6478] font-semibold leading-normal">
+                <span className="mt-1 block text-[11px] text-[#5A6478] font-semibold leading-normal">
                   {ts("danger.deleteDesc")}
                 </span>
               </div>
@@ -927,7 +927,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => triggerConfirmAction("delete")}
                 disabled={deleteWorkspaceMutation.isPending}
-                className="disabled:opacity-60 flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-[11px] font-black text-white transition hover:bg-rose-700 shadow-sm"
+                className="disabled:opacity-60 flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-[12px] font-black text-white transition hover:bg-rose-700 shadow-sm"
               >
                 {ts("danger.deleteButton")}
               </button>

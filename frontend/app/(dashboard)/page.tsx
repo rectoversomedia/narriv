@@ -67,8 +67,8 @@ function AlertFacts({ alert }: { alert: AlertRow }) {
   if (!overdueHours && !noOwner) return null;
   return (
     <span className="mt-1.5 flex flex-wrap gap-1.5">
-      {noOwner ? <span className="rounded-full bg-[#C81E1E] px-2 py-0.5 text-[11px] font-black text-white">{L("No Owner", "Belum Ada Pemilik")}</span> : null}
-      {overdueHours ? <span className="rounded-full bg-[#C81E1E] px-2 py-0.5 text-[11px] font-black text-white">{L(`${overdueHours}h Past Deadline`, `Lewat Tenggat ${overdueHours} Jam`)}</span> : null}
+      {noOwner ? <span className="rounded-full bg-[#C81E1E] px-2 py-0.5 text-[12px] font-black text-white">{L("No Owner", "Belum Ada Pemilik")}</span> : null}
+      {overdueHours ? <span className="rounded-full bg-[#C81E1E] px-2 py-0.5 text-[12px] font-black text-white">{L(`${overdueHours}h Past Deadline`, `Lewat Tenggat ${overdueHours} Jam`)}</span> : null}
     </span>
   );
 }
@@ -104,13 +104,13 @@ function Bar({ label, value, share, color, href, muted, right }: { label: React.
   const body = (
     <>
       <span className="flex items-baseline justify-between gap-3 text-[12px]">
-        <span className={cn("font-bold", muted ? "text-[#8A93AD]" : "text-[#101334]")}>{label}</span>
-        {right ? <span className={cn("tabular-nums font-black", muted ? "text-[#8A93AD]" : "text-[#101334]")}>{right}</span> : null}
+        <span className={cn("font-bold", muted ? "text-[#6B7591]" : "text-[#101334]")}>{label}</span>
+        {right ? <span className={cn("tabular-nums font-black", muted ? "text-[#6B7591]" : "text-[#101334]")}>{right}</span> : null}
       </span>
       <div className="relative mt-1 h-6 overflow-hidden rounded-[7px] bg-[#E8ECF6]">
         <div className="absolute inset-y-0 left-0 rounded-[7px] transition-[width] duration-500" style={{ width: `${Math.max(share, share > 0 ? 1.5 : 0)}%`, backgroundColor: color }} />
         <span
-          className={cn("absolute inset-y-0 flex items-center whitespace-nowrap text-[11px] font-black tabular-nums", inside ? "text-white" : muted ? "text-[#8A93AD]" : "text-[#101334]")}
+          className={cn("absolute inset-y-0 flex items-center whitespace-nowrap text-[12px] font-black tabular-nums", inside ? "text-white" : muted ? "text-[#6B7591]" : "text-[#101334]")}
           style={inside ? { right: `calc(${100 - share}% + 8px)` } : { left: `calc(${share}% + 8px)` }}
         >
           {value}
@@ -123,7 +123,7 @@ function Bar({ label, value, share, color, href, muted, right }: { label: React.
 
 /** A small 7-point line for a keyword's daily records. */
 function Tag({ tone, children }: { tone: string; children: React.ReactNode }) {
-  return <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-black", tone)}>{children}</span>;
+  return <span className={cn("rounded-full px-2 py-0.5 text-[12px] font-black", tone)}>{children}</span>;
 }
 
 const levelTone = (level: string) =>
@@ -172,7 +172,7 @@ function FirstRun() {
   if (active.length === 0) {
     return (
       <section className="rounded-[16px] bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] p-6 text-white">
-        <p className="text-[11px] font-black text-white/60">{L("First step", "Langkah pertama")}</p>
+        <p className="text-[12px] font-black text-white/60">{L("First step", "Langkah pertama")}</p>
         <p className="mt-1 text-[24px] font-black leading-tight">{L("Tell Narriv what to watch", "Beri tahu Narriv apa yang dipantau")}</p>
         <p className="mt-1 text-[13px] font-bold text-white/80">{L("Add your brand or product name. News starts coming in within a minute.", "Tambahkan nama brand atau produk Anda. Berita mulai masuk dalam satu menit.")}</p>
         <Link href="/workspace/settings#keywords" className="mt-4 inline-flex h-11 items-center rounded-[10px] bg-white px-5 text-[14px] font-black text-[#101334] hover:bg-[#EEF1FF]">{L("Add a keyword", "Tambah kata kunci")} →</Link>
@@ -188,7 +188,7 @@ function FirstRun() {
         : { tone: "waiting", title: canEdit ? L("The first collection is running", "Pengambilan pertama sedang berjalan") : L(`First data arrives by ${nextHour}`, `Data pertama masuk sebelum pukul ${nextHour}`), sub: L(`Narriv watches ${names} and checks every hour.`, `Narriv memantau ${names} dan mengecek setiap jam.`) };
   return (
     <section className={cn("rounded-[16px] p-6 text-white", status.tone === "error" ? "bg-gradient-to-br from-[#7C2D12] to-[#E8590C]" : status.tone === "done" ? "bg-gradient-to-br from-[#065F46] to-[#12A66A]" : "bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E]")}>
-      <p className="text-[11px] font-black text-white/60">{L("Getting started", "Memulai")}</p>
+      <p className="text-[12px] font-black text-white/60">{L("Getting started", "Memulai")}</p>
       <div className="mt-1 flex items-center gap-3">
         {status.tone === "working" ? <span className="size-5 animate-spin rounded-full border-[3px] border-white/30 border-t-white" aria-hidden="true" /> : null}
         <p className="text-[24px] font-black leading-tight">{status.title}</p>
@@ -316,6 +316,17 @@ export default function DashboardPage() {
         </div>
       </header>
 
+      {/* A paused workspace collects nothing, so quiet numbers would read as "all clear": say so above them. */}
+      {workspaceQuery.data?.monitoringPaused === true || workspaceQuery.data?.planStatus?.trialExpired === true ? (
+        <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border-[1.5px] border-[#F59E0B] bg-[#FFF8EB] px-5 py-4">
+          <div>
+            <p className="text-[15px] font-black text-[#7A3E00]">{workspaceQuery.data?.planStatus?.trialExpired ? L("Your trial has ended, so monitoring is paused.", "Masa trial berakhir, jadi pemantauan dijeda.") : L("Monitoring is paused.", "Pemantauan sedang dijeda.")}</p>
+            <p className="mt-0.5 text-[13.5px] font-semibold text-[#92400E]">{L("No new mentions are collected, so these numbers only cover what came in before the pause.", "Tidak ada percakapan baru yang dikumpulkan, jadi angka di bawah hanya dari sebelum jeda.")}</p>
+          </div>
+          <Link href="/workspace/settings" className="rounded-[10px] bg-[#101334] px-4 py-2.5 text-[13px] font-bold text-white transition hover:bg-[#252a5c]">{L("Resume in Settings", "Lanjutkan di Pengaturan")}</Link>
+        </div>
+      ) : null}
+
       {/* The brand, a verdict with the numbers behind it, and every active keyword, each opening its records. */}
       {showHero ? (
         <OverviewHero
@@ -335,7 +346,7 @@ export default function DashboardPage() {
       {liveError ? (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-transparent bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">
           <span>{liveError.status === 401 ? L("Session expired. Sign in again.", "Sesi berakhir. Silakan masuk lagi.") : liveError.status === 403 ? L("No access to this workspace.", "Tidak punya akses ke workspace ini.") : L("Data could not be loaded.", "Data gagal dimuat.")}</span>
-          <button type="button" onClick={() => void summaryQuery.refetch()} className="rounded-[6px] border border-[#E6EAF2] bg-white px-2.5 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100">{L("Retry", "Coba lagi")}</button>
+          <button type="button" onClick={() => void summaryQuery.refetch()} className="rounded-[6px] border border-[#E6EAF2] bg-white px-2.5 py-1 text-[12px] font-bold text-red-700 hover:bg-red-100">{L("Retry", "Coba lagi")}</button>
         </div>
       ) : null}
 
@@ -432,7 +443,7 @@ export default function DashboardPage() {
                         <span className="min-w-0">
                           <span className="flex items-center gap-2">
                             <Tag tone={levelTone(alert.severity ?? "low")}>{tLevel(`level.${["critical", "high", "medium", "low"].includes(alert.severity ?? "") ? alert.severity : "low"}`)}</Tag>
-                            <span className="text-[10px] font-bold text-[#5A6478]">{timeAgo(alertTime(alert))}</span>
+                            <span className="text-[11px] font-bold text-[#5A6478]">{timeAgo(alertTime(alert))}</span>
                           </span>
                           <span className="mt-1.5 block truncate text-[15px] font-black text-[#101334]">{alert.title}</span>
                           <AlertFacts alert={alert} />
@@ -447,7 +458,7 @@ export default function DashboardPage() {
                         <span className="min-w-0">
                           <span className="flex items-center gap-2">
                             <Tag tone={levelTone(rec.priority)}>{tLevel(`level.${rec.priority}`)}</Tag>
-                            <span className="text-[10px] font-bold text-[#5A6478]">{codes.urgency(rec.urgency)}</span>
+                            <span className="text-[11px] font-bold text-[#5A6478]">{codes.urgency(rec.urgency)}</span>
                           </span>
                           <span className="mt-1.5 block text-[15px] font-black text-[#101334]">{codes.action(rec.action)}</span>
                           {rec.observedIssue && (index === 0 || firstSentence(rec.observedIssue) !== firstSentence(recommendations[index - 1]?.observedIssue ?? "")) ? <span className="mt-0.5 block truncate text-[12px] font-semibold text-[#53608C]">{firstSentence(rec.observedIssue)}</span> : null}
@@ -478,14 +489,14 @@ export default function DashboardPage() {
                           <span className={cn("w-6 text-[20px] font-black tabular-nums", index === 0 ? "text-[#E5484D]" : "text-[#B8C0D6]")}>{index + 1}</span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-[15px] font-black text-[#101334]">{issue.title}</span>
-                            <span className="mt-0.5 flex items-center gap-2 text-[11px] font-bold">
-                              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black", tag.cls)}>{L(tag.en, tag.id)}</span>
+                            <span className="mt-0.5 flex items-center gap-2 text-[12px] font-bold">
+                              <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-black", tag.cls)}>{L(tag.en, tag.id)}</span>
                               {velocity ? <span className={velocity.startsWith("+") ? "text-[#B42318]" : "text-[#5A6478]"}>{velocity} {L("in 24h", "24 jam")}</span> : null}
                             </span>
                           </span>
                           <span className="shrink-0 text-right">
                             <span className="block text-[22px] font-black tabular-nums leading-none text-[#101334]">{fmt(issue.signalCount)}</span>
-                            <span className="text-[11px] font-bold text-[#5A6478]">{L("Mentions", "Percakapan")}</span>
+                            <span className="text-[12px] font-bold text-[#5A6478]">{L("Mentions", "Percakapan")}</span>
                           </span>
                         </Link>
                       </li>
@@ -523,7 +534,7 @@ export default function DashboardPage() {
                       return <Bar key={engine.key} label={<span className="flex items-center gap-2"><engine.Logo className="size-4" />{engine.name}</span>} value={value} share={result ? Math.min(100, Math.max(0, result.visibilityScore)) : 0} color={BAR_COLORS[index % BAR_COLORS.length]} href="/visibility" muted={!result} />;
                     })}
                   </div>
-                  <p className="mt-3 text-[11px] font-semibold text-[#5A6478]">
+                  <p className="mt-3 text-[12px] font-semibold text-[#5A6478]">
                     {geoLastChecked ? `${L("Last test", "Uji terakhir")}: ${timeAgo(geoLastChecked)}. ` : ""}
                     {useCase === "gov"
                       ? L("Score = how often AI mentions the office.", "Skor = seberapa sering AI menyebut instansi.")
@@ -567,7 +578,7 @@ export default function DashboardPage() {
                             <span className="min-w-0 truncate font-bold text-[#101334]">{pub.publisher}</span>
                           </span>
                           <span className="flex shrink-0 items-center gap-1.5 tabular-nums">
-                            {pub.negative > 0 ? <span className="rounded-full bg-[#FDECEC] px-2 py-0.5 text-[10px] font-black text-[#B42318]">{pub.negative} Neg</span> : null}
+                            {pub.negative > 0 ? <span className="rounded-full bg-[#FDECEC] px-2 py-0.5 text-[11px] font-black text-[#B42318]">{pub.negative} Neg</span> : null}
                             <span className="w-6 text-right font-black text-[#101334]">{pub.count}</span>
                           </span>
                         </li>

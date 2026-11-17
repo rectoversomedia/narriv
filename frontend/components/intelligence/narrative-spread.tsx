@@ -46,7 +46,7 @@ export function duration(hours: number) {
 export const compact = (n: number) => new Intl.NumberFormat(intlLocale(), { notation: "compact", maximumFractionDigits: 1 }).format(n);
 
 export const INKED = "rounded-[18px] border-[1.5px] border-[#101334] bg-white shadow-[0_3px_0_#101334]";
-export const KICKER = "font-mono text-[10.5px] font-bold uppercase tracking-[0.12em]";
+export const KICKER = "font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]";
 
 /** A numbered section heading: mono kicker, Title Case headline, an optional note. */
 export function SectionHead({ n, icon: Icon, title, note, right }: { n?: string; icon: typeof Radio; title: string; note?: ReactNode; right?: ReactNode }) {
@@ -86,7 +86,7 @@ function Origin({ origin }: { origin: NarrativeSpread["origin"] }) {
             </a>
           ) : <p className="mt-3.5 line-clamp-2 rounded-[12px] bg-white/[0.07] px-3.5 py-3 text-[14px] font-semibold leading-snug">“{origin.title}”</p>
         ) : null}
-        <p className="mt-3 text-[11px] font-medium leading-relaxed text-white/50">
+        <p className="mt-3 text-[12px] font-medium leading-relaxed text-white/50">
           {pickL("The earliest record Narriv collected. It may not be the very first post on the internet.", "Catatan paling awal yang dikumpulkan Narriv, belum tentu postingan pertama di internet.")}
         </p>
       </div>
@@ -110,7 +110,7 @@ function Path({ path }: { path: NarrativeSpread["path"] }) {
             </span>
             <span className="min-w-0">
               <span className="block text-[13.5px] font-black leading-tight text-[#101334]">{platformName(p.platform)}</span>
-              <span className="mt-0.5 block font-mono text-[11px] font-bold text-[#3B52F5]">{afterOrigin(p.hoursAfterOrigin)}</span>
+              <span className="mt-0.5 block font-mono text-[12px] font-bold text-[#3B52F5]">{afterOrigin(p.hoursAfterOrigin)}</span>
               <span className="block text-[11.5px] font-medium text-[#5A6478]">{p.records} {pickL(p.records === 1 ? "record" : "records", "catatan")}</span>
             </span>
           </li>
@@ -149,7 +149,7 @@ function Amplifiers({ spread }: { spread: NarrativeSpread }) {
             const bar = showBars && m.key === main;
             return (
               <li key={`${a.name}-${i}`} className="flex items-center gap-3 py-3">
-                <span className={cn("w-6 shrink-0 text-center font-mono text-[13px] font-bold", i === 0 ? "text-[#101334]" : "text-[#8A93AD]")}>{String(i + 1).padStart(2, "0")}</span>
+                <span className={cn("w-6 shrink-0 text-center font-mono text-[13px] font-bold", i === 0 ? "text-[#101334]" : "text-[#6B7591]")}>{String(i + 1).padStart(2, "0")}</span>
                 <span className={cn("inline-flex size-9 shrink-0 items-center justify-center rounded-full", a.kind === "outlet" ? "bg-[#EEF1FF] text-[#3B52F5]" : "bg-[#F4EEFF] text-[#6E44E8]")}>
                   {a.kind === "outlet" ? <Newspaper size={16} aria-hidden="true" /> : <User size={16} aria-hidden="true" />}
                 </span>
@@ -164,12 +164,12 @@ function Amplifiers({ spread }: { spread: NarrativeSpread }) {
                       <span className="h-full rounded-full bg-gradient-to-r from-[#465FFF] via-[#8B5CF6] to-[#EC4899]" style={{ width: `${Math.max(5, (m.value / max) * 100)}%` }} />
                     </span>
                   ) : (
-                    <span className="mt-0.5 block font-mono text-[11px] font-medium text-[#5A6478]">{a.kind === "outlet" ? `${pickL("News outlet", "Media berita")} · ` : ""}{a.isOrigin ? pickL("first to post", "yang pertama") : `${pickL("joined", "ikut")} ${afterOrigin(a.hoursAfterOrigin)}`}</span>
+                    <span className="mt-0.5 block font-mono text-[12px] font-medium text-[#5A6478]">{a.kind === "outlet" ? `${pickL("News outlet", "Media berita")} · ` : ""}{a.isOrigin ? pickL("first to post", "yang pertama") : `${pickL("joined", "ikut")} ${afterOrigin(a.hoursAfterOrigin)}`}</span>
                   )}
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="inline-flex items-center gap-1 text-[15px] font-black tabular-nums text-[#101334]">{Icon ? <Icon size={13} className="text-[#8A93AD]" aria-hidden="true" /> : null}{compact(m.value)}</p>
-                  <p className="text-[10.5px] font-medium text-[#5A6478]">{m.label}{bar ? ` · ${afterOrigin(a.hoursAfterOrigin)}` : ""}</p>
+                  <p className="inline-flex items-center gap-1 text-[15px] font-black tabular-nums text-[#101334]">{Icon ? <Icon size={13} className="text-[#6B7591]" aria-hidden="true" /> : null}{compact(m.value)}</p>
+                  <p className="text-[11.5px] font-medium text-[#5A6478]">{m.label}{bar ? ` · ${afterOrigin(a.hoursAfterOrigin)}` : ""}</p>
                 </div>
               </li>
             );
@@ -204,7 +204,7 @@ function Regions({ regions }: { regions: NarrativeSpread["regions"] }) {
   if (!regions.about.length && !regions.from.length) {
     return (
       <p className="flex items-start gap-2 rounded-[14px] border border-dashed border-[#C9D1E6] px-3.5 py-3 text-[12.5px] font-medium leading-relaxed text-[#5A6478]">
-        <MapPin size={15} className="mt-0.5 shrink-0 text-[#8A93AD]" aria-hidden="true" />
+        <MapPin size={15} className="mt-0.5 shrink-0 text-[#6B7591]" aria-hidden="true" />
         {pickL("No place yet: the records do not name a province and the accounts share no location. Places are read from text and platform labels, never from IP addresses.", "Belum ada data wilayah: catatan tidak menyebut provinsi dan akun tidak mencantumkan lokasi. Wilayah dibaca dari teks dan label platform, bukan dari alamat IP.")}
       </p>
     );
@@ -216,7 +216,7 @@ function Regions({ regions }: { regions: NarrativeSpread["regions"] }) {
         <RegionList title={pickL("Discussed", "Yang Dibahas")} items={regions.about} empty={pickL("No province named in the text.", "Tidak ada provinsi yang disebut dalam teks.")} tone="#465FFF" />
         <RegionList title={pickL("Account Location", "Lokasi Akun")} items={regions.from} empty={pickL("No account shared a location.", "Tidak ada akun yang mencantumkan lokasi.")} tone="#8B5CF6" />
       </div>
-      <p className="mt-2.5 text-[11px] font-medium text-[#8A93AD]">{pickL("From the text and platform location labels, never from IP addresses.", "Dari isi teks dan label lokasi platform, bukan dari alamat IP.")}</p>
+      <p className="mt-2.5 text-[12px] font-medium text-[#6B7591]">{pickL("From the text and platform location labels, never from IP addresses.", "Dari isi teks dan label lokasi platform, bukan dari alamat IP.")}</p>
     </div>
   );
 }
@@ -243,7 +243,7 @@ function TextClusters({ groups }: { groups: NarrativeSpread["textClusters"] }) {
                 : pickL("Likely from the same press release or a shared source.", "Kemungkinan dari siaran pers atau sumber yang sama.")}
             </p>
             {g.sample ? <p className="mt-2.5 line-clamp-2 rounded-[10px] bg-white/80 px-3 py-2 text-[13px] italic text-[#31406B]">“{g.sample}”</p> : null}
-            {g.accounts.length ? <p className="mt-2 truncate font-mono text-[11px] font-medium text-[#5A6478]">{g.accounts.join(" · ")}</p> : null}
+            {g.accounts.length ? <p className="mt-2 truncate font-mono text-[12px] font-medium text-[#5A6478]">{g.accounts.join(" · ")}</p> : null}
           </div>
         );
       })}
@@ -300,18 +300,18 @@ export function NarrativePrecedents({ precedents, expectation, n }: { precedents
           ].map(([v, l]) => (
             <div key={l} className="rounded-[12px] border border-white bg-white/80 p-2.5">
               <p className="text-[14px] font-black leading-tight text-[#101334]">{v}</p>
-              <p className="mt-0.5 text-[10.5px] font-medium text-[#5A6478]">{l}</p>
+              <p className="mt-0.5 text-[11.5px] font-medium text-[#5A6478]">{l}</p>
             </div>
           ))}
         </div>
-        <p className="mt-2.5 text-[11px] font-medium text-[#5A6478]">{pickL("A pattern from past issues, not a guarantee.", "Pola dari isu sebelumnya, bukan kepastian.")}</p>
+        <p className="mt-2.5 text-[12px] font-medium text-[#5A6478]">{pickL("A pattern from past issues, not a guarantee.", "Pola dari isu sebelumnya, bukan kepastian.")}</p>
       </div>
       <ul className="grid gap-2.5">
         {precedents.map((p) => (
           <li key={p.id} className="rounded-[14px] border border-[#E1E6F2] bg-white p-3.5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="text-[14px] font-black text-[#101334]">{p.title}</p>
-              <span className="font-mono text-[11px] font-medium text-[#5A6478]">{new Date(p.firstAt).toLocaleDateString(intlLocale(), { day: "numeric", month: "short", year: "numeric" })}</span>
+              <span className="font-mono text-[12px] font-medium text-[#5A6478]">{new Date(p.firstAt).toLocaleDateString(intlLocale(), { day: "numeric", month: "short", year: "numeric" })}</span>
             </div>
             <p className="mt-1 text-[12.5px] font-medium text-[#5A6478]">
               {pickL(`Peaked ${afterOrigin(p.hoursToPeak)} · active ${duration(p.activeHours)} · ${p.records} records`, `Puncak ${afterOrigin(p.hoursToPeak)} · aktif ${duration(p.activeHours)} · ${p.records} catatan`)}
@@ -319,7 +319,7 @@ export function NarrativePrecedents({ precedents, expectation, n }: { precedents
             </p>
             {p.actions.length ? (
               <p className="mt-2 inline-flex rounded-[8px] bg-[#E5F6EE] px-2.5 py-1 text-[12px] font-bold text-[#047857]">{pickL("What the team did", "Yang dilakukan tim")}: {p.actions.map((a) => a.title).join(" · ")}</p>
-            ) : <p className="mt-1.5 text-[12px] font-medium text-[#8A93AD]">{pickL("No action plan was recorded for it.", "Tidak ada rencana aksi yang tercatat untuk isu ini.")}</p>}
+            ) : <p className="mt-1.5 text-[12px] font-medium text-[#6B7591]">{pickL("No action plan was recorded for it.", "Tidak ada rencana aksi yang tercatat untuk isu ini.")}</p>}
           </li>
         ))}
       </ul>

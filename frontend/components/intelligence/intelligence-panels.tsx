@@ -53,7 +53,7 @@ export function useCodeLabels() {
 
 function Pill({ tone, children }: { tone: string; children: React.ReactNode }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide", tone)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-semibold tracking-wide", tone)}>
       {children}
     </span>
   );
@@ -63,7 +63,7 @@ function InsufficientData({ label }: { label: string }) {
   const t = useTranslations("IntelPanels");
   return (
     <div className="py-3 text-sm text-slate-600">
-      <div className="text-[11px] font-semibold text-[#5A6478]">{label}</div>
+      <div className="text-[12px] font-semibold text-[#5A6478]">{label}</div>
       <div className="mt-1.5 text-[15px] font-medium text-slate-700">{t("insufficientTitle")}</div>
       <p className="mt-1 text-[13px] text-[#5A6478]">{t("insufficientDesc")}</p>
     </div>
@@ -143,43 +143,43 @@ export function TodaysIntelligenceStrip({ windowHours = 24 }: { windowHours?: nu
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <div className="py-1">
-        <div className="text-[11px] font-semibold text-[#5A6478]">{t("riskScore")}</div>
-        <p className="mt-0.5 text-[11px] leading-snug text-[#5A6478]">{t("riskScoreDesc", { hours: windowHours })}</p>
+        <div className="text-[12px] font-semibold text-[#5A6478]">{t("riskScore")}</div>
+        <p className="mt-0.5 text-[12px] leading-snug text-[#5A6478]">{t("riskScoreDesc", { hours: windowHours })}</p>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-[28px] font-bold leading-none text-slate-900">{riskScore ?? "—"}</span>
           {riskScore !== null ? <span className="text-[12px] text-[#5A6478]">/100</span> : null}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {riskScore !== null ? <Pill tone={RISK_TONE[riskKey]}>{t(`risk.${riskKey}`)}</Pill> : <span className="text-[11px] text-[#5A6478]">{t("notEnoughData")}</span>}
+          {riskScore !== null ? <Pill tone={RISK_TONE[riskKey]}>{t(`risk.${riskKey}`)}</Pill> : <span className="text-[12px] text-[#5A6478]">{t("notEnoughData")}</span>}
           {riskScore !== null && narrative.data?.riskModel ? (
-            <span className="text-[11px] text-[#5A6478]">{t("uncertainty", { level: code.uncertainty(narrative.data.riskModel.uncertainty.level) })}</span>
+            <span className="text-[12px] text-[#5A6478]">{t("uncertainty", { level: code.uncertainty(narrative.data.riskModel.uncertainty.level) })}</span>
           ) : null}
         </div>
       </div>
 
       <div className="py-1">
-        <div className="text-[11px] font-semibold text-[#5A6478]">{t("reputation")}</div>
-        <p className="mt-0.5 text-[11px] leading-snug text-[#5A6478]">{t("reputationDesc")}</p>
+        <div className="text-[12px] font-semibold text-[#5A6478]">{t("reputation")}</div>
+        <p className="mt-0.5 text-[12px] leading-snug text-[#5A6478]">{t("reputationDesc")}</p>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-[28px] font-bold leading-none text-slate-900">{repScore ?? "—"}</span>
           {repScore !== null ? <span className="text-[12px] text-[#5A6478]">/100</span> : null}
         </div>
         <div className="mt-2">
-          {repScore !== null ? <Pill tone={REP_TONE[repKey]}>{t(`rep.${repKey}`)}</Pill> : <span className="text-[11px] text-[#5A6478]">{t("notEnoughData")}</span>}
+          {repScore !== null ? <Pill tone={REP_TONE[repKey]}>{t(`rep.${repKey}`)}</Pill> : <span className="text-[12px] text-[#5A6478]">{t("notEnoughData")}</span>}
         </div>
       </div>
 
       <div className="py-1">
-        <div className="text-[11px] font-semibold text-[#5A6478]">{t("whatChanged")}</div>
-        <p className="mt-0.5 text-[11px] leading-snug text-[#5A6478]">{t("whatChangedDesc", { hours: windowHours })}</p>
+        <div className="text-[12px] font-semibold text-[#5A6478]">{t("whatChanged")}</div>
+        <p className="mt-0.5 text-[12px] leading-snug text-[#5A6478]">{t("whatChangedDesc", { hours: windowHours })}</p>
         <p className="mt-2 text-[13px] leading-snug text-slate-700 line-clamp-3">
           {whatChanged || (grounded === false ? t("insufficientTitle") : t("noChanges"))}
         </p>
       </div>
 
       <div className="py-1">
-        <div className="text-[11px] font-semibold text-[#5A6478]">{t("topRec")}</div>
-        <p className="mt-0.5 text-[11px] leading-snug text-[#5A6478]">{t("topRecDesc")}</p>
+        <div className="text-[12px] font-semibold text-[#5A6478]">{t("topRec")}</div>
+        <p className="mt-0.5 text-[12px] leading-snug text-[#5A6478]">{t("topRecDesc")}</p>
         {topRec ? (
           <>
             <p className="mt-2 text-[13px] font-semibold leading-snug text-slate-900 first-letter:">{code.action(topRec.action)}</p>
@@ -215,7 +215,7 @@ export function NarrativeLandscapePanel({ windowHours = 168 }: { windowHours?: n
     <div className="py-1">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[11px] font-semibold text-[#5A6478]">{t("narrativeIntel")}</div>
+          <div className="text-[12px] font-semibold text-[#5A6478]">{t("narrativeIntel")}</div>
           <div className="mt-0.5 text-[15px] font-semibold text-slate-900">{t("lastHours", { hours: narrative.data.windowHours })}</div>
         </div>
         <Pill tone={RISK_TONE[band] || ""}>{RISK_TONE[band] ? t(`risk.${band}`) : "—"}</Pill>
@@ -245,7 +245,7 @@ export function NarrativeLandscapePanel({ windowHours = 168 }: { windowHours?: n
             {items.slice(0, 4).map((it) => (
               <li key={it.clusterId} className="flex items-center justify-between rounded-md border border-slate-100 bg-slate-50/60 px-3 py-2 text-[13px]">
                 <span className="truncate text-slate-800">{it.title}</span>
-                <span className="ml-3 shrink-0 text-[11px] font-semibold text-[#5A6478]">{t("velocity", { value: it.last24h ?? it.signalCount })}</span>
+                <span className="ml-3 shrink-0 text-[12px] font-semibold text-[#5A6478]">{t("velocity", { value: it.last24h ?? it.signalCount })}</span>
               </li>
             ))}
           </ul>
@@ -282,7 +282,7 @@ function RiskExplanation({ model, score }: { model: RiskModelExplanation; score:
               </div>
               <p className="mt-1 text-slate-600">{c.reason}</p>
               {c.evidenceIds.length > 0 ? (
-                <p className="mt-0.5 text-[11px] text-[#5A6478]">
+                <p className="mt-0.5 text-[12px] text-[#5A6478]">
                   {t("evidence")} {c.key === "active_alerts"
                     ? c.evidenceIds.map((id, i) => (
                         <span key={id}>{i > 0 ? ", " : ""}<Link href={`/alerts/${id}`} className="font-semibold text-[#3B52F5] hover:underline">{t("alertRef", { n: i + 1 })}</Link></span>
@@ -320,7 +320,7 @@ export function ReputationPanel({ windowHours = 24 }: { windowHours?: number }) 
     <div className="py-1">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[11px] font-semibold text-[#5A6478]">{t("reputation")}</div>
+          <div className="text-[12px] font-semibold text-[#5A6478]">{t("reputation")}</div>
           <div className="mt-0.5 text-[15px] font-semibold text-slate-900">{t("lastHours", { hours: r.windowHours })}</div>
         </div>
         <Pill tone={REP_TONE[band] || ""}>{REP_TONE[band] ? t(`rep.${band}`) : "—"}</Pill>
@@ -357,7 +357,7 @@ export function EntityPanel({ windowHours = 168, limit = 5 }: { windowHours?: nu
   if (!data || data.entities.length === 0) return <InsufficientData label={t("entityIntel")} />;
   return (
     <div className="py-1">
-      <div className="text-[11px] font-semibold text-[#5A6478]">{t("entityIntel")}</div>
+      <div className="text-[12px] font-semibold text-[#5A6478]">{t("entityIntel")}</div>
       <div className="mt-0.5 text-[15px] font-semibold text-slate-900">{t("lastHours", { hours: windowHours })}</div>
       <ul className="mt-3 space-y-1.5">
         {data.entities.slice(0, limit).map((e) => (
@@ -369,7 +369,7 @@ export function EntityPanel({ windowHours = 168, limit = 5 }: { windowHours?: nu
             >
               {e.entity}
             </a>
-            <span className="ml-3 flex items-center gap-2 text-[11px] font-semibold text-[#5A6478]">
+            <span className="ml-3 flex items-center gap-2 text-[12px] font-semibold text-[#5A6478]">
               <span>{t("mentions", { count: e.mentions })}</span>
               {e.avgSentiment < 0 ? <span className="text-rose-600">{t("neg")}</span> : e.avgSentiment > 0 ? <span className="text-emerald-700">{t("pos")}</span> : null}
             </span>
@@ -400,7 +400,7 @@ export function PredictiveSignalsPanel({ windowHours = 24 }: { windowHours?: num
   if (signals.length === 0) {
     return (
       <div className="py-3 text-sm text-slate-600">
-        <div className="text-[11px] font-semibold text-[#5A6478]">{t("predictive")}</div>
+        <div className="text-[12px] font-semibold text-[#5A6478]">{t("predictive")}</div>
         <p className="mt-1.5 text-[15px] font-medium text-slate-700">{t("noPredictiveTitle")}</p>
         <p className="mt-1 text-[13px] text-[#5A6478]">{t("noPredictiveDesc")}</p>
       </div>
@@ -408,13 +408,13 @@ export function PredictiveSignalsPanel({ windowHours = 24 }: { windowHours?: num
   }
   return (
     <div className="py-1">
-      <div className="text-[11px] font-semibold text-[#5A6478]">{t("predictive")}</div>
+      <div className="text-[12px] font-semibold text-[#5A6478]">{t("predictive")}</div>
       <p className="mt-1 text-[12px] text-[#5A6478]">{t("heuristicForecast")}</p>
       <ul className="mt-3 space-y-2">
         {signals.slice(0, 4).map((s, idx) => (
           <li key={`${s.signal}-${idx}`} className="rounded-md border border-slate-100 bg-slate-50/60 p-3 text-[13px]">
             <div className="font-semibold text-slate-800">{s.label}</div>
-            <div className="mt-1 flex items-center gap-3 text-[11px] text-[#5A6478]">
+            <div className="mt-1 flex items-center gap-3 text-[12px] text-[#5A6478]">
               <span>{t("confidence", { value: Math.round(s.confidence * 100) })}</span>
               <span>{t("timeframe", { value: s.timeframe })}</span>
             </div>
@@ -437,8 +437,8 @@ export function RecommendedActionsPanel({ windowHours = 24, limit = 5 }: { windo
   return (
     <div className="py-1">
       <div className="flex items-center justify-between">
-        <div className="text-[11px] font-semibold text-[#5A6478]">{t("recommended")}</div>
-        <span className="text-[11px] text-[#5A6478]">{t("humanApproval")}</span>
+        <div className="text-[12px] font-semibold text-[#5A6478]">{t("recommended")}</div>
+        <span className="text-[12px] text-[#5A6478]">{t("humanApproval")}</span>
       </div>
       <ul className="mt-3 space-y-2.5">
         {list.slice(0, limit).map((r, idx) => (
@@ -455,13 +455,13 @@ export function RecommendedActionsPanel({ windowHours = 24, limit = 5 }: { windo
             {r.expectedOutcome ? (
               <p className="mt-1 text-[12px] text-[#5A6478]">{t("expected", { value: r.expectedOutcome })}</p>
             ) : null}
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#5A6478]">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#5A6478]">
               <span>{t("confidence", { value: Math.round((r.confidence ?? 0) * 100) })}</span>
               {r.sourceIds ? <span>{r.sourceIds.length ? t("basedOnRecords", { count: r.sourceIds.length }) : t("basedOnAggregate")}</span> : null}
               {r.status === "suggested" ? <span>{t("suggestedNotActed")}</span> : null}
             </div>
-            {r.limitations?.length ? <p className="mt-1 text-[11px] text-amber-700">{r.limitations[0]}</p> : null}
-            {r.monitorNext ? <p className="mt-1 text-[11px] text-[#5A6478]">{t("watchNext", { value: r.monitorNext })}</p> : null}
+            {r.limitations?.length ? <p className="mt-1 text-[12px] text-amber-700">{r.limitations[0]}</p> : null}
+            {r.monitorNext ? <p className="mt-1 text-[12px] text-[#5A6478]">{t("watchNext", { value: r.monitorNext })}</p> : null}
           </li>
         ))}
       </ul>

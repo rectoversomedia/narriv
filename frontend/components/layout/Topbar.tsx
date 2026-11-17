@@ -136,15 +136,15 @@ function AccountMenu({ name, email, onLogout }: { name: string; email: string; o
         <span className="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-gradient-to-br from-[#465FFF] to-[#8B5CFF] text-[12px] font-black text-white">{initials(name)}</span>
         <span className="hidden min-w-0 max-w-[160px] text-left sm:block">
           <span className="block truncate text-[13px] font-black leading-tight text-[#101334]">{name}</span>
-          <span className="block truncate text-[11px] font-semibold leading-tight text-[#5A6478]">{role}</span>
+          <span className="block truncate text-[12px] font-semibold leading-tight text-[#5A6478]">{role}</span>
         </span>
-        <ChevronDown size={15} aria-hidden="true" className="hidden shrink-0 text-[#8A93AD] sm:block" />
+        <ChevronDown size={15} aria-hidden="true" className="hidden shrink-0 text-[#6B7591] sm:block" />
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={10} className="w-[min(300px,calc(100vw-2rem))] gap-0 rounded-[14px] border border-slate-200 bg-white p-1.5 text-slate-900 shadow-[0_18px_50px_rgba(15,23,42,0.14)] ring-0">
         <div className="px-2.5 pb-2.5 pt-1.5">
           <p className="truncate text-[14px] font-black text-[#101334]">{name}</p>
           {email ? <p className="truncate text-[12px] text-[#5A6478]">{email}</p> : null}
-          <span className="mt-1.5 inline-block rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[11px] font-bold text-[#3B52F5]">{role}</span>
+          <span className="mt-1.5 inline-block rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[12px] font-bold text-[#3B52F5]">{role}</span>
         </div>
         {!isDemo ? <div className="border-t border-slate-100 pt-1 lg:hidden"><WorkspaceOptions onDone={() => setOpen(false)} /></div> : null}
         {/* The language toggle is hidden in the bar on phones; it lives here instead. */}
@@ -405,18 +405,18 @@ export function Topbar() {
                   onClick={() => handleResultClick(result.href)}
                   className="group flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left transition hover:bg-slate-50"
                 >
-                  <span className={`shrink-0 rounded-lg px-2 py-1 text-[10px] font-black ${typeColor[result.type]}`}>
+                  <span className={`shrink-0 rounded-lg px-2 py-1 text-[11px] font-black ${typeColor[result.type]}`}>
                     {typeLabel[result.type]}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-bold text-slate-900 group-hover:text-[#3B52F5]">{result.title}</span>
-                    <span className="block truncate text-[11px] font-semibold text-[#5A6478]">{result.subtitle}</span>
+                    <span className="block truncate text-[12px] font-semibold text-[#5A6478]">{result.subtitle}</span>
                   </span>
                 </button>
               ))}
             </div>
             <div className="border-t border-slate-100 bg-slate-50/80 px-3 py-2">
-              <p className="text-center text-[11px] font-bold text-[#5A6478]">
+              <p className="text-center text-[12px] font-bold text-[#5A6478]">
                 {L(`${searchResults.length} results`, `${searchResults.length} hasil ditemukan`)}
               </p>
             </div>
@@ -426,7 +426,7 @@ export function Topbar() {
         {searchOpen && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
           <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-[14px] border border-slate-200 bg-white p-6 text-center shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
             <p className="mt-2 text-[13px] font-bold text-[#5A6478]">{L(`No results for "${searchQuery}"`, `Tidak ada hasil untuk "${searchQuery}"`)}</p>
-            <p className="mt-1 text-[11px] font-semibold text-[#5A6478]">{L("Try another word", "Coba kata kunci lain")}</p>
+            <p className="mt-1 text-[12px] font-semibold text-[#5A6478]">{L("Try another word", "Coba kata kunci lain")}</p>
           </div>
         )}
       </div>
@@ -467,7 +467,7 @@ export function Topbar() {
           >
             <Bell size={18} strokeWidth={2.2} />
             {unreadCount > 0 ? (
-              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C81E1E] px-1 text-[10px] font-black text-white ring-2 ring-white">
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C81E1E] px-1 text-[11px] font-black text-white ring-2 ring-white">
                 {unreadBadge}
               </span>
             ) : null}
@@ -487,7 +487,7 @@ export function Topbar() {
                   type="button"
                   onClick={() => markAllRead.mutate()}
                   disabled={unreadCount === 0 || markAllRead.isPending}
-                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold text-[#3B52F5] transition hover:bg-[#465FFF]/5 disabled:cursor-not-allowed disabled:text-slate-300"
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[12px] font-bold text-[#3B52F5] transition hover:bg-[#465FFF]/5 disabled:cursor-not-allowed disabled:text-slate-300"
                 >
                   {markAllRead.isPending ? t("notificationsMarking") : t("notificationsMarkAll")}
                 </button>
@@ -546,10 +546,10 @@ export function Topbar() {
                       <span className="mt-1 block text-xs font-semibold text-[#5A6478] line-clamp-2">{notification.message}</span>
                     </span>
                     <span className="shrink-0 text-right">
-                      <Badge variant={meta.badgeVariant} className="rounded-full text-[10px] font-black">
+                      <Badge variant={meta.badgeVariant} className="rounded-full text-[11px] font-black">
                         {meta.label}
                       </Badge>
-                      <span className="mt-2 block text-[11px] font-bold text-[#5A6478]">
+                      <span className="mt-2 block text-[12px] font-bold text-[#5A6478]">
                         {formatNotificationTime(notification.createdAt, notificationNow || Date.now(), language === "id" ? "id" : "en")}
                       </span>
                     </span>

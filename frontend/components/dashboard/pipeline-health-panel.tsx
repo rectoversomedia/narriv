@@ -22,7 +22,7 @@ export function PipelineHealthPanel({ className }: { className?: string }) {
             <h2 id="pipeline-health-title" className="text-[14px] font-black text-[#101334]">{t("title")}</h2>
           </div>
         </div>
-        <button type="button" onClick={() => query.refetch()} disabled={query.isFetching} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#DDE3EF] px-3 text-[11px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+        <button type="button" onClick={() => query.refetch()} disabled={query.isFetching} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#DDE3EF] px-3 text-[12px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-50">
           {t("refresh")}
         </button>
       </div>
@@ -41,7 +41,7 @@ export function PipelineHealthPanel({ className }: { className?: string }) {
 function Stat({ label, value, hint, tone = "default" }: { label: string; value: string; hint?: string; tone?: "default" | "warn" | "bad" }) {
   return (
     <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3" title={hint}>
-      <dt className="text-[10px] font-bold text-[#647099]">{label}</dt>
+      <dt className="text-[11px] font-bold text-[#647099]">{label}</dt>
       <dd className={cn("mt-1 text-[15px] font-black", tone === "bad" ? "text-rose-600" : tone === "warn" ? "text-amber-700" : "text-[#101334]")}>{value}</dd>
     </div>
   );
@@ -81,7 +81,7 @@ function PipelineHealthBody({ data }: { data: PipelineStatusPayload }) {
       {missed > 0 ? (
         <p className="mt-1 text-[12px] font-semibold text-amber-700">{t("missedSlots", { slots: health!.missedSlotsLast24h.map((iso) => new Date(iso).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" })).join(", ") })}</p>
       ) : null}
-      {data.partial ? <p className="mt-1 text-[11px] font-semibold text-[#5A6478]">{t("partial")}</p> : null}
+      {data.partial ? <p className="mt-1 text-[12px] font-semibold text-[#5A6478]">{t("partial")}</p> : null}
     </>
   );
 }

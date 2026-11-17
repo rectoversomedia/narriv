@@ -132,23 +132,23 @@ export default function VisibilityPage() {
               <div className="relative flex size-[132px] shrink-0 items-center justify-center rounded-full" style={{ background: `conic-gradient(${look.bar} ${score * 3.6}deg, rgba(255,255,255,0.12) 0deg)` }}>
                 <div className="flex size-[104px] flex-col items-center justify-center rounded-full bg-[#141A4F]">
                   <span className="text-[40px] font-black leading-none tracking-[-0.04em]">{score}</span>
-                  <span className="mt-1 text-[11px] font-bold text-white/60">/ 100</span>
+                  <span className="mt-1 text-[12px] font-bold text-white/60">/ 100</span>
                 </div>
               </div>
               <div>
-                <p className="text-[11px] font-black text-white/60">{L("AI visibility score", "Skor visibilitas AI")}</p>
+                <p className="text-[12px] font-black text-white/60">{L("AI visibility score", "Skor visibilitas AI")}</p>
                 <p className="mt-1 inline-block rounded-[10px] px-3 py-1 text-[22px] font-black" style={{ background: look.bg, color: look.color }}>{L(...look.word)}</p>
                 <p className="mt-2 text-[13px] font-bold text-white/80">{L(`Named in ${totals.brand_answers} of ${totals.answers} AI answers`, `Disebut di ${totals.brand_answers} dari ${totals.answers} jawaban AI`)}</p>
               </div>
             </div>
 
             <div className="rounded-[14px] bg-white/[0.07] p-4">
-              <p className="text-[11px] font-black text-white/60">{L("Who AI names", "Siapa yang disebut AI")}</p>
+              <p className="text-[12px] font-black text-white/60">{L("Who AI names", "Siapa yang disebut AI")}</p>
               <div className="mt-3 space-y-3">
                 {[{ name: brand, rate: brandRate, color: "#7C8CFF", you: true }, ...(topCompetitor ? [{ name: topCompetitor.name, rate: topCompetitorRate, color: "#FF6B6B", you: false }] : [])].map((row) => (
                   <div key={row.name}>
                     <div className="flex items-baseline justify-between gap-3 text-[13px] font-black">
-                      <span className="truncate">{row.name}{row.you ? <span className="ml-1.5 text-[11px] font-bold text-white/60">({L("you", "Anda")})</span> : null}</span>
+                      <span className="truncate">{row.name}{row.you ? <span className="ml-1.5 text-[12px] font-bold text-white/60">({L("you", "Anda")})</span> : null}</span>
                       <span className="text-[18px]">{row.rate}%</span>
                     </div>
                     <div className="mt-1.5 h-2.5 rounded-full bg-white/10"><div className="h-full rounded-full" style={{ width: `${row.rate}%`, background: row.color }} /></div>
@@ -158,7 +158,7 @@ export default function VisibilityPage() {
             </div>
 
             <div className="rounded-[14px] p-4" style={{ background: competitorAhead ? "rgba(229,72,77,0.25)" : "rgba(18,166,106,0.25)" }}>
-              <p className="text-[11px] font-black text-white/70">{L("What this means", "Artinya")}</p>
+              <p className="text-[12px] font-black text-white/70">{L("What this means", "Artinya")}</p>
               <p className="mt-2 text-[16px] font-black leading-snug">
                 {competitorAhead && topCompetitor
                   ? L(`${topCompetitor.name} is named more often than ${brand}.`, `${topCompetitor.name} lebih sering disebut daripada ${brand}.`)
@@ -190,7 +190,7 @@ export default function VisibilityPage() {
                     <>
                       <div className="mt-3 flex items-baseline gap-2">
                         <span className="text-[34px] font-black leading-none tracking-[-0.04em] text-[#101334]">{s}</span>
-                        <span className="rounded-full px-2 py-0.5 text-[11px] font-black" style={{ background: lk.bg, color: lk.color }}>{L(...lk.word)}</span>
+                        <span className="rounded-full px-2 py-0.5 text-[12px] font-black" style={{ background: lk.bg, color: lk.color }}>{L(...lk.word)}</span>
                       </div>
                       <div className="mt-3 h-2 w-full rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full" style={{ width: `${s}%`, background: lk.bar }} /></div>
                       <p className="mt-2 text-[12px] font-bold text-[#3A4566]">{L(`Names you in ${rate}% of answers`, `Menyebut Anda di ${rate}% jawaban`)}</p>
@@ -208,7 +208,7 @@ export default function VisibilityPage() {
             <Panel>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("Test questions, per assistant", "Pertanyaan uji, per asisten")}</h2>
-                <p className="text-[11px] font-bold text-[#5A6478]">{L("Yes = your brand is named", "Ya = brand Anda disebut")}</p>
+                <p className="text-[12px] font-bold text-[#5A6478]">{L("Yes = your brand is named", "Ya = brand Anda disebut")}</p>
               </div>
               {/* Phones: one card per question, the five assistants as logo + Yes/No under it. */}
               <ul className="mt-4 space-y-2.5 sm:hidden">
@@ -229,7 +229,7 @@ export default function VisibilityPage() {
                           return (
                             <div key={key} title={name} className={cn("flex flex-col items-center gap-1 rounded-[9px] py-1.5", !c ? "bg-white/60" : c.mentioned ? "bg-[#E5F6EE]" : "bg-[#F6D5D5]")}>
                               <Logo className="size-4" />
-                              <span className={cn("text-[11px] font-black", !c ? "text-[#B8C0D4]" : c.mentioned ? "text-[#047857]" : "text-[#9B1C1C]")}>{!c ? "—" : c.mentioned ? L("Yes", "Ya") : L("No", "Tidak")}</span>
+                              <span className={cn("text-[12px] font-black", !c ? "text-[#B8C0D4]" : c.mentioned ? "text-[#047857]" : "text-[#9B1C1C]")}>{!c ? "—" : c.mentioned ? L("Yes", "Ya") : L("No", "Tidak")}</span>
                             </div>
                           );
                         })}
@@ -242,7 +242,7 @@ export default function VisibilityPage() {
                 <table className="w-full table-fixed text-left">
                   <colgroup><col /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /></colgroup>
                   <thead>
-                    <tr className="bg-[#F4F6FC] text-[11px] font-black text-[#5A6478]">
+                    <tr className="bg-[#F4F6FC] text-[12px] font-black text-[#5A6478]">
                       <th className="px-3 py-2.5">{L("Question", "Pertanyaan")}</th>
                       {ENGINES.map(({ key, name, Logo }) => <th key={key} className="px-1 py-2.5 text-center" title={name}><Logo className="mx-auto size-4" /></th>)}
                       <th className="px-1 py-2.5 text-center">{L("Total", "Total")}</th>
@@ -260,7 +260,7 @@ export default function VisibilityPage() {
                           {cells.map((c, i) => (
                             <td key={ENGINES[i].key} className="px-1 py-3 text-center">
                               {c ? (
-                                <span className={cn("inline-flex h-7 w-11 items-center justify-center rounded-[8px] text-[11px] font-black", c.mentioned ? "bg-[#12A66A] text-white" : "bg-[#F6D5D5] text-[#9B1C1C]")}>{c.mentioned ? L("Yes", "Ya") : L("No", "Tidak")}</span>
+                                <span className={cn("inline-flex h-7 w-11 items-center justify-center rounded-[8px] text-[12px] font-black", c.mentioned ? "bg-[#12A66A] text-white" : "bg-[#F6D5D5] text-[#9B1C1C]")}>{c.mentioned ? L("Yes", "Ya") : L("No", "Tidak")}</span>
                               ) : <span className="text-[12px] font-bold text-[#B8C0D4]">—</span>}
                             </td>
                           ))}
@@ -277,15 +277,15 @@ export default function VisibilityPage() {
               {/* Brand vs competitors, share of answers */}
               <Panel>
                 <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("Named in AI answers", "Disebut di jawaban AI")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#5A6478]">{L(`Share of ${totals.answers} answers`, `Porsi dari ${totals.answers} jawaban`)}</p>
+                <p className="mt-1 text-[12px] font-bold text-[#5A6478]">{L(`Share of ${totals.answers} answers`, `Porsi dari ${totals.answers} jawaban`)}</p>
                 <div className="mt-4 space-y-3">
                   {[{ name: brand, count: totals.brand_answers, you: true }, ...competitors.slice(0, 5).map((c) => ({ ...c, you: false }))].map((row) => {
                     const rate = totals.answers > 0 ? Math.round((row.count / totals.answers) * 100) : 0;
                     return (
                       <div key={row.name}>
                         <div className="flex items-baseline justify-between gap-3 text-[13px] font-black text-[#101334]">
-                          <span className="truncate">{row.name}{row.you ? <span className="ml-1.5 text-[11px] font-bold text-[#5A6478]">({L("you", "Anda")})</span> : null}</span>
-                          <span>{rate}% <span className="text-[11px] font-bold text-[#5A6478]">· {row.count}</span></span>
+                          <span className="truncate">{row.name}{row.you ? <span className="ml-1.5 text-[12px] font-bold text-[#5A6478]">({L("you", "Anda")})</span> : null}</span>
+                          <span>{rate}% <span className="text-[12px] font-bold text-[#5A6478]">· {row.count}</span></span>
                         </div>
                         <div className="mt-1.5 h-2.5 rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full" style={{ width: `${rate}%`, background: row.you ? "#465FFF" : "#E5484D" }} /></div>
                       </div>
@@ -322,9 +322,9 @@ export default function VisibilityPage() {
               <div className="mt-4 flex h-[150px] items-end gap-2">
                 {trend.map((t) => (
                   <div key={t.date} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${t.date}: ${Math.round(t.avg_visibility_score)}`}>
-                    <span className="text-[11px] font-black text-[#101334]">{Math.round(t.avg_visibility_score)}</span>
+                    <span className="text-[12px] font-black text-[#101334]">{Math.round(t.avg_visibility_score)}</span>
                     <div className="w-full max-w-[42px] rounded-t-[6px]" style={{ height: `${Math.max(4, t.avg_visibility_score)}%`, background: scoreLook(t.avg_visibility_score).bar }} />
-                    <span className="text-[10px] font-bold text-[#5A6478]">{new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" }).format(new Date(t.date))}</span>
+                    <span className="text-[11px] font-bold text-[#5A6478]">{new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" }).format(new Date(t.date))}</span>
                   </div>
                 ))}
               </div>

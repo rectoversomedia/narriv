@@ -264,7 +264,7 @@ export default function ActivityPage() {
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {tiles.map((tile) => (
           <div key={tile.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
-            <p className="text-[11px] font-black" style={{ color: tile.color }}>{tile.label}</p>
+            <p className="text-[12px] font-black" style={{ color: tile.color }}>{tile.label}</p>
             {/* Numbers stay big; a name or event wraps at a smaller size instead of being cut off. */}
             <p className={cn("mt-2 font-black tracking-[-0.03em] text-[#101334]", /^[\d.,\s—]+$/.test(tile.value) ? "truncate text-[26px] leading-none" : "line-clamp-2 text-[17px] leading-tight sm:text-[20px]")} title={tile.value}>{tile.value}</p>
             <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{tile.sub}</p>
@@ -275,22 +275,22 @@ export default function ActivityPage() {
       <section className={BOX}>
         <div className="flex flex-wrap items-end gap-3 border-b border-[#F0F2F8] p-4">
           <label className="grid min-w-[220px] flex-1 gap-1">
-            <span className="text-[11px] font-black text-[#5A6478]">{t("filterEvent")}</span>
+            <span className="text-[12px] font-black text-[#5A6478]">{t("filterEvent")}</span>
             <select value={eventType} onChange={(e) => { setEventType(e.target.value); setPage(1); }} className={field}>
               {eventOptions.map((o) => <option key={o.value || "all"} value={o.value}>{o.label}</option>)}
             </select>
           </label>
           <label className="grid gap-1">
-            <span className="text-[11px] font-black text-[#5A6478]">{t("filterFrom")}</span>
+            <span className="text-[12px] font-black text-[#5A6478]">{t("filterFrom")}</span>
             <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className={field} />
           </label>
           <label className="grid gap-1">
-            <span className="text-[11px] font-black text-[#5A6478]">{t("filterTo")}</span>
+            <span className="text-[12px] font-black text-[#5A6478]">{t("filterTo")}</span>
             <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className={field} />
           </label>
           {isFiltered ? <button type="button" onClick={resetFilters} className="h-10 rounded-[10px] px-3 text-[12px] font-black text-[#3B52F5] hover:bg-[#EEF1FF]">{t("filterReset")}</button> : null}
           <div className="ml-auto hidden flex-wrap gap-2 lg:flex">
-            {GROUPS.map((g) => <span key={g.key} className="flex items-center gap-1.5 text-[11px] font-bold text-[#5A6478]"><span className="size-2.5 rounded-full" style={{ background: g.color }} />{pickL(...g.label)}</span>)}
+            {GROUPS.map((g) => <span key={g.key} className="flex items-center gap-1.5 text-[12px] font-bold text-[#5A6478]"><span className="size-2.5 rounded-full" style={{ background: g.color }} />{pickL(...g.label)}</span>)}
           </div>
         </div>
 
@@ -304,7 +304,7 @@ export default function ActivityPage() {
           <div className="p-5">
             {days.map((day) => (
               <div key={day.label} className="mb-5 last:mb-0">
-                <p className="mb-2 text-[11px] font-black text-[#8A93AD]">{day.label}</p>
+                <p className="mb-2 text-[12px] font-black text-[#6B7591]">{day.label}</p>
                 <ol className="relative space-y-1 before:absolute before:bottom-3 before:left-[19px] before:top-3 before:w-0.5 before:bg-[#EEF1F7]">
                   {day.items.map((log) => {
                     const g = groupOf(log.event);
@@ -318,13 +318,13 @@ export default function ActivityPage() {
                           <p className="text-[13px] leading-snug text-[#3A4566]">
                             <b className="font-black text-[#101334]">{who.name}</b> {verb}
                             {obj.title ? <> <b className="font-black text-[#101334]">«{obj.title}»</b></> : null}
-                            {obj.extra ? <span className="ml-1.5 rounded-full bg-[#EEF1F7] px-2 py-0.5 text-[10px] font-black text-[#31406B]">{obj.extra}</span> : null}
+                            {obj.extra ? <span className="ml-1.5 rounded-full bg-[#EEF1F7] px-2 py-0.5 text-[11px] font-black text-[#31406B]">{obj.extra}</span> : null}
                           </p>
-                          <p className="mt-0.5 text-[11px] font-bold text-[#8A93AD]">
+                          <p className="mt-0.5 text-[12px] font-bold text-[#6B7591]">
                             {who.role ? `${who.role} · ` : ""}{formatRelativeTime(log.createdAt, uiLanguage, t)} · {new Date(log.createdAt).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" })}
                           </p>
                         </div>
-                        <span className="mt-1 hidden shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black sm:inline" style={{ background: `${g.color}1A`, color: g.color === "#64748B" ? "#475569" : g.color }}>{pickL(...g.label)}</span>
+                        <span className="mt-1 hidden shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black sm:inline" style={{ background: `${g.color}1A`, color: g.color === "#64748B" ? "#475569" : g.color }}>{pickL(...g.label)}</span>
                       </li>
                     );
                   })}

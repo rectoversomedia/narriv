@@ -58,10 +58,10 @@ function EvidenceList({ items }: { items: OverviewEvidence[] }) {
                 <span className="font-semibold text-[#101334]">{e.title}</span>
               )}
               {e.kind === "signal" && e.relevance && e.relevance !== "direct" ? (
-                <span className="ml-2 rounded-full bg-amber-50 px-1.5 py-0.5 align-middle text-[10px] font-semibold text-[#9A5B00]">{t(`rel_${e.relevance}`)}</span>
+                <span className="ml-2 rounded-full bg-amber-50 px-1.5 py-0.5 align-middle text-[11px] font-semibold text-[#9A5B00]">{t(`rel_${e.relevance}`)}</span>
               ) : null}
               {e.kind === "signal" ? (
-                <p className="mt-0.5 text-[11px] text-[#5A6478]">
+                <p className="mt-0.5 text-[12px] text-[#5A6478]">
                   {[e.publisher, e.platform ? PLATFORM_NAME[e.platform]?.[lang] ?? e.platform : null].filter(Boolean).join(" · ")}
                   {" · "}
                   {e.publishedAt ? t("published", { date: fmtDateTime(e.publishedAt) }) : t("publishedUnknown")}
@@ -115,7 +115,7 @@ function FollowUpStatus({ followUp, unchanged }: { followUp?: OverviewFollowUp; 
       <span className="font-semibold">{t("followUpLabel")}: </span>
       {followUp.stage === "none" ? t("fu_none") : followUp.stage === "in_progress" ? t("fu_in_progress", { items }) : t("fu_completed", { items })}
       {followUp.stage === "in_progress" ? (
-        <span className="block text-[11px] text-[#5A6478]">{unchanged ? t("fu_unchanged", { date: fmtDate(followUp.openSince) }) : t("fu_newSince")}</span>
+        <span className="block text-[12px] text-[#5A6478]">{unchanged ? t("fu_unchanged", { date: fmtDate(followUp.openSince) }) : t("fu_newSince")}</span>
       ) : null}
     </div>
   );
@@ -217,14 +217,14 @@ export function ExecutiveOverview() {
               <>
                 <p className="text-[15px] font-semibold text-[#101334]">
                   {t("mainIssue", { title: main.title })}
-                  <span className={cn("ml-2 rounded-full px-2 py-0.5 align-middle text-[10px] font-bold", main.isNew ? "bg-[#8B5CFF]/10 text-[#6E44E8]" : "bg-slate-100 text-[#31406B]")}>{main.isNew ? t("newBadge") : t("continuingBadge")}</span>
+                  <span className={cn("ml-2 rounded-full px-2 py-0.5 align-middle text-[11px] font-bold", main.isNew ? "bg-[#8B5CFF]/10 text-[#6E44E8]" : "bg-slate-100 text-[#31406B]")}>{main.isNew ? t("newBadge") : t("continuingBadge")}</span>
                 </p>
                 <p className="mt-1 text-[12px] text-[#5A6478]">
                   {rel?.configured && main.brandSignals != null
                     ? t("mainStatsBrand", { signals: main.signals, brandSignals: main.brandSignals, brand, publishers: main.publishers, negative: main.negative, platforms: platformsText(main.platforms) })
                     : t("mainStats", { signals: main.signals, publishers: main.publishers, negative: main.negative, platforms: platformsText(main.platforms) })}
                 </p>
-                <p className="mt-1 text-[11px] text-[#5A6478]">{rel?.configured ? t("whyChosen", { brand }) : t("whyChosenVolume")}</p>
+                <p className="mt-1 text-[12px] text-[#5A6478]">{rel?.configured ? t("whyChosen", { brand }) : t("whyChosenVolume")}</p>
                 <EvidenceList items={main.evidence} />
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
                   <EvidenceLink href={monitoringHref({ hours, narrative: main.id })}>{t("viewIssueRecords", { count: main.signals })}</EvidenceLink>
@@ -260,7 +260,7 @@ export function ExecutiveOverview() {
                 const href = findingHref(m, hours, data);
                 return (
                   <li key={`${m.code}-${i}`} className="flex gap-2">
-                    <span className={cn("mt-0.5 h-fit shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", m.type === "fact" ? "bg-slate-100 text-[#31406B]" : "bg-[#F59E0B]/12 text-[#A04606]")}>{t(m.type)}</span>
+                    <span className={cn("mt-0.5 h-fit shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold", m.type === "fact" ? "bg-slate-100 text-[#31406B]" : "bg-[#F59E0B]/12 text-[#A04606]")}>{t(m.type)}</span>
                     <span className="min-w-0">
                       {t.has(`m_${m.code}`) ? t(`m_${m.code}`, values(m)) : m.code}
                       {m.values.small ? <span className="text-[#9A5B00]"> ({t("smallSample")})</span> : null}
@@ -320,8 +320,8 @@ export function ExecutiveOverview() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-semibold text-[#101334]">{t.has(`a_${a.action}`) ? t(`a_${a.action}`) : a.action}</p>
                       {a.unchangedSinceFollowUp ? (
-                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{t("alreadyHandled")}</span>
-                      ) : a.urgency && t.has(`urgency_${a.urgency}`) ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[10px] font-bold text-[#3B52F5]">{t(`urgency_${a.urgency}`)}</span> : null}
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">{t("alreadyHandled")}</span>
+                      ) : a.urgency && t.has(`urgency_${a.urgency}`) ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[11px] font-bold text-[#3B52F5]">{t(`urgency_${a.urgency}`)}</span> : null}
                     </div>
                     <p className="mt-1 text-[12px] text-[#5A6478]">{t.has(`w_${a.action}`) ? t(`w_${a.action}`) : a.whyItMatters} {t("basedOn", { count: a.evidenceCount })}.</p>
                     <EvidenceList items={a.evidence} />
@@ -330,9 +330,9 @@ export function ExecutiveOverview() {
                       {a.relatedNarrative ? <EvidenceLink href={monitoringHref({ hours, narrative: a.relatedNarrative.id })}>{t("viewIssueRecords", { count: a.evidenceCount })}</EvidenceLink> : <EvidenceLink href={monitoringHref({ hours, ...brandFilter })}>{t("viewRecords")}</EvidenceLink>}
                       <EvidenceLink href={`/action-center?hours=${hours}`}>{t("decide")}</EvidenceLink>
                     </div>
-                    {a.requiresApproval ? <p className="mt-1 text-[11px] text-[#5A6478]">{t("needsApproval")}</p> : null}
+                    {a.requiresApproval ? <p className="mt-1 text-[12px] text-[#5A6478]">{t("needsApproval")}</p> : null}
                     {/* Level 3: the engine's own wording and limitations. */}
-                    <details className="mt-2 text-[11px] text-[#5A6478]">
+                    <details className="mt-2 text-[12px] text-[#5A6478]">
                       <summary className="cursor-pointer font-semibold">{t("technical")}</summary>
                       <p className="mt-1">{a.observedIssue}</p>
                       {a.monitorNext ? <p className="mt-1">{a.monitorNext}</p> : null}

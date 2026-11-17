@@ -57,7 +57,7 @@ export function SectionTabs() {
               )}
             >
               {stepped ? (
-                <span className={cn("mr-2 grid h-5 w-5 place-items-center rounded-full text-[11px] font-black", active ? "bg-white text-[#101334]" : "bg-[#E3E7F1] text-[#5A6478]")}>{i + 1}</span>
+                <span className={cn("mr-2 grid h-5 w-5 place-items-center rounded-full text-[12px] font-black", active ? "bg-white text-[#101334]" : "bg-[#E3E7F1] text-[#5A6478]")}>{i + 1}</span>
               ) : null}
               {t(`nav.${tab.key}`)}
             </Link>

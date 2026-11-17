@@ -71,7 +71,7 @@ export function PlanWorkflowControls({ planId, status, assignedTo }: { planId: s
           </select>
         </label>
       </div>
-      {members.isError ? <p className="mt-2 text-[10px] font-semibold text-rose-600">{L("Workspace members could not be loaded.", "Daftar anggota workspace gagal dimuat.")}</p> : null}
+      {members.isError ? <p className="mt-2 text-[11px] font-semibold text-rose-600">{L("Workspace members could not be loaded.", "Daftar anggota workspace gagal dimuat.")}</p> : null}
       <button type="button" onClick={save} disabled={!dirty || saving} className="mt-3 h-11 w-full rounded-[12px] bg-[#465FFF] text-[14px] font-black text-white transition hover:bg-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50">
         {saving ? L("Saving…", "Menyimpan…") : L("Save", "Simpan")}
       </button>

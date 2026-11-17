@@ -187,7 +187,7 @@ function formatCompact(value: number) {
 function Tile({ label, value, sub, rgb: _rgb, color }: { label: string; value: string; sub: string; rgb: string; color: string }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
-      <p className="text-[11px] font-black" style={{ color }}>{label}</p>
+      <p className="text-[12px] font-black" style={{ color }}>{label}</p>
       <p className="mt-2 truncate text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
       <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{sub}</p>
     </div>
@@ -209,7 +209,7 @@ function CollectionBanner({ problems, active, total }: { problems: number; activ
   return (
     <section className="flex flex-wrap items-center justify-between gap-4 rounded-[16px] p-5 text-white shadow-[0_12px_32px_rgba(16,19,52,0.16)]" style={{ background: total === 0 ? "linear-gradient(135deg,#334155,#64748B)" : ok ? "linear-gradient(135deg,#065F46,#12A66A)" : "linear-gradient(135deg,#7F1D1D,#C81E1E)" }}>
       <div className="min-w-0">
-        <p className="text-[11px] font-black text-white/70">{pickL("Data collection", "Pengambilan data")}</p>
+        <p className="text-[12px] font-black text-white/70">{pickL("Data collection", "Pengambilan data")}</p>
         <p className="mt-1 text-[24px] font-black leading-tight">{headline}</p>
         <p className="mt-1 text-[13px] font-bold text-white/85">
           {ws
@@ -219,7 +219,7 @@ function CollectionBanner({ problems, active, total }: { problems: number; activ
         </p>
       </div>
       <div className="rounded-[12px] bg-white/[0.12] px-4 py-3 text-right">
-        <p className="text-[10px] font-black text-white/70">{pickL("Schedule", "Jadwal")}</p>
+        <p className="text-[11px] font-black text-white/70">{pickL("Schedule", "Jadwal")}</p>
         <p className="text-[15px] font-black">{pickL("Every hour", "Setiap jam")}</p>
       </div>
     </section>
@@ -236,21 +236,21 @@ function SocialAutoCard() {
     <div className="py-1">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("Social media, automatic", "Media sosial otomatis")}</h2>
-        <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-black", s.crisis ? "bg-[#C81E1E] text-white" : s.enabled ? "bg-[#12A66A] text-white" : "bg-[#EEF1F6] text-[#5A6478]")}>
+        <span className={cn("rounded-full px-2.5 py-1 text-[12px] font-black", s.crisis ? "bg-[#C81E1E] text-white" : s.enabled ? "bg-[#12A66A] text-white" : "bg-[#EEF1F6] text-[#5A6478]")}>
           {s.crisis ? pickL("Crisis mode", "Mode krisis") : s.enabled ? pickL("On", "Aktif") : pickL("Off", "Belum aktif")}
         </span>
       </div>
       {s.enabled ? (
         <>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {s.platforms.map((p) => <span key={p} className="inline-flex items-center gap-1.5 rounded-full bg-[#F4F6FC] px-2.5 py-1 text-[11px] font-black text-[#31406B]"><PlatformIcon platform={p === "x" ? "twitter" : p} className="size-3.5" />{names[p] ?? p}</span>)}
+            {s.platforms.map((p) => <span key={p} className="inline-flex items-center gap-1.5 rounded-full bg-[#F4F6FC] px-2.5 py-1 text-[12px] font-black text-[#31406B]"><PlatformIcon platform={p === "x" ? "twitter" : p} className="size-3.5" />{names[p] ?? p}</span>)}
           </div>
           <p className="mt-3 text-[12px] font-bold text-[#5A6478]">
             {s.crisis
               ? pickL("Collected every hour while a critical alert is open.", "Diambil tiap jam selama ada peringatan kritis.")
               : pickL("Collected 3 times a day (08:00, 12:00, 16:00 WIB), every hour during a crisis.", "Diambil 3× sehari (08.00, 12.00, 16.00 WIB), tiap jam saat krisis.")}
           </p>
-          {s.lastScheduledAt ? <p className="mt-1 text-[11px] font-bold text-[#8A93AD]">{pickL("last run", "terakhir")} {formatSourceTime(s.lastScheduledAt)}</p> : null}
+          {s.lastScheduledAt ? <p className="mt-1 text-[12px] font-bold text-[#6B7591]">{pickL("last run", "terakhir")} {formatSourceTime(s.lastScheduledAt)}</p> : null}
         </>
       ) : (
         <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{pickL("X, TikTok and Instagram are switched on by the Narriv team.", "X, TikTok, dan Instagram diaktifkan oleh tim Narriv.")}</p>
@@ -269,18 +269,18 @@ function SourceRow({ source, volume, maxVolume, onToggle, onDelete, onSync, sync
         <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[#F4F6FC]">{KNOWN_PLATFORMS.has(source.platform) ? <PlatformIcon platform={source.platform} className="size-[21px]" /> : <Icon className="size-[21px]" />}</span>
         <div className="min-w-0">
           <p className="truncate text-[14px] font-black text-[#101334]">{source.name}</p>
-          {source.targetKeyword ? <p className="truncate text-[11px] font-bold text-[#5A6478]">{pickL(`keyword: ${source.targetKeyword}`, `kata kunci: ${source.targetKeyword}`)}</p> : null}
+          {source.targetKeyword ? <p className="truncate text-[12px] font-bold text-[#5A6478]">{pickL(`keyword: ${source.targetKeyword}`, `kata kunci: ${source.targetKeyword}`)}</p> : null}
         </div>
       </div>
-      <span className={cn("w-fit rounded-full px-2.5 py-1 text-[11px] font-black", STATUS_BADGE[source.statusTone])} title={source.status}>{source.status.split(":")[0]}</span>
+      <span className={cn("w-fit rounded-full px-2.5 py-1 text-[12px] font-black", STATUS_BADGE[source.statusTone])} title={source.status}>{source.status.split(":")[0]}</span>
       <div className="min-w-0">
         <div className="flex items-baseline justify-between text-[12px] font-black text-[#101334]">
           <span>{volume} <span className="font-bold text-[#5A6478]">{pickL("records · 7 days", "percakapan · 7 hari")}</span></span>
         </div>
         <div className="mt-1 h-2 rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full bg-[#465FFF]" style={{ width: `${volume ? Math.max(4, (volume / maxVolume) * 100) : 0}%` }} /></div>
       </div>
-      <div className="text-[11px] font-bold text-[#5A6478]">
-        <p className="text-[10px] font-black text-[#8A93AD]">{pickL("Last ok", "Terakhir ok")}</p>
+      <div className="text-[12px] font-bold text-[#5A6478]">
+        <p className="text-[11px] font-black text-[#6B7591]">{pickL("Last ok", "Terakhir ok")}</p>
         <p className="text-[13px] font-black text-[#101334]">{source.health}</p>
       </div>
       <div className="flex items-center gap-1.5">
@@ -288,7 +288,7 @@ function SourceRow({ source, volume, maxVolume, onToggle, onDelete, onSync, sync
         <button type="button" role="switch" aria-checked={source.active} onClick={onToggle} title={source.active ? pickL("Pause", "Jeda") : pickL("Resume", "Aktifkan")} className={cn("relative h-6 w-11 rounded-full transition", source.active ? "bg-[#12A66A]" : "bg-[#CBD2E1]")}>
           <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-all", source.active ? "left-[22px]" : "left-0.5")} />
         </button>
-        <button type="button" onClick={onDelete} title={pickL("Remove", "Hapus")} className="flex size-9 items-center justify-center rounded-[9px] text-[#8A93AD] transition hover:bg-[#FDECEC] hover:text-[#C81E1E]"><Trash2 size={15} /></button>
+        <button type="button" onClick={onDelete} title={pickL("Remove", "Hapus")} className="flex size-9 items-center justify-center rounded-[9px] text-[#6B7591] transition hover:bg-[#FDECEC] hover:text-[#C81E1E]"><Trash2 size={15} /></button>
       </div>
     </li>
   );
@@ -510,7 +510,7 @@ export default function SourcesPage() {
             </div>
             <div className="flex items-center gap-2">
               {liveConnectors.length > 6 ? (
-                <input type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("searchPlaceholder")} className="h-9 w-[180px] rounded-[9px] bg-[#F4F6FC] px-3 text-[12px] font-bold text-[#101334] outline-none placeholder:text-[#8A93AD] focus:ring-2 focus:ring-[#465FFF]/30" />
+                <input type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("searchPlaceholder")} className="h-9 w-[180px] rounded-[9px] bg-[#F4F6FC] px-3 text-[12px] font-bold text-[#101334] outline-none placeholder:text-[#6B7591] focus:ring-2 focus:ring-[#465FFF]/30" />
               ) : null}
               <button
                 type="button"
@@ -562,7 +562,7 @@ export default function SourcesPage() {
                   <li key={platform}>
                     <div className="flex items-center justify-between text-[13px] font-black text-[#101334]">
                       <span className="flex items-center gap-2"><PlatformIcon platform={platform} className="size-4" />{platform === "news" ? pickL("Online news", "Berita online") : platform === "twitter" ? "X" : coverage?.platformLabels?.[platform] ?? platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
-                      <span>{n} <span className="text-[11px] font-bold text-[#5A6478]">· {Math.round((n / weekTotal) * 100)}%</span></span>
+                      <span>{n} <span className="text-[12px] font-bold text-[#5A6478]">· {Math.round((n / weekTotal) * 100)}%</span></span>
                     </div>
                     <div className="mt-1 h-2.5 rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full" style={{ width: `${Math.max(3, (n / weekTotal) * 100)}%`, background: i === 0 ? "#465FFF" : "#A5B4FC" }} /></div>
                   </li>
@@ -577,7 +577,7 @@ export default function SourcesPage() {
               {rules.map((r) => (
                 <li key={r.title} className="flex items-center justify-between gap-3 py-2.5">
                   <span className="text-[13px] font-bold text-[#101334]">{r.title}</span>
-                  {r.href ? <Link href={r.href} className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{r.value} →</Link> : <span className="shrink-0 rounded-full bg-[#E5F6EE] px-2.5 py-0.5 text-[11px] font-black text-[#047857]">{r.value}</span>}
+                  {r.href ? <Link href={r.href} className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{r.value} →</Link> : <span className="shrink-0 rounded-full bg-[#E5F6EE] px-2.5 py-0.5 text-[12px] font-black text-[#047857]">{r.value}</span>}
                 </li>
               ))}
             </ul>

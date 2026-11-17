@@ -111,7 +111,7 @@ export function SentimentTrendChart({ days, labels, locale = "en-GB" }: { days: 
         <div style={{ height }} />
       )}
       {activeDay ? (
-        <div className="pointer-events-none absolute top-0 z-dropdown w-[140px] rounded-control border border-line bg-white px-2.5 py-2 text-[11px] shadow-raised fade-in" style={{ left: tooltipLeft }} role="status">
+        <div className="pointer-events-none absolute top-0 z-dropdown w-[140px] rounded-control border border-line bg-white px-2.5 py-2 text-[12px] shadow-raised fade-in" style={{ left: tooltipLeft }} role="status">
           <p className="font-semibold text-navy">{shortDate(activeDay.date, locale)}</p>
           {activeDay.total === 0 ? (
             <p className="mt-1 text-subtle">{labels.noSignals}</p>

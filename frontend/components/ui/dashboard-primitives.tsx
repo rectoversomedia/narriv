@@ -21,7 +21,7 @@ export function SectionHeader({ eyebrow, title, description, action }: { eyebrow
     <div className="theme-card relative overflow-hidden rounded-[30px] border p-5 shadow-[var(--shadow)] sm:p-7 lg:flex lg:items-end lg:justify-between lg:gap-8">
       <div className="pointer-events-none absolute right-0 top-0 h-28 w-72 rounded-full bg-[#465FFF]/10 blur-3xl" />
       <div className="relative max-w-[760px] space-y-3">
-        {eyebrow ? <p className="text-[11px] font-bold text-[#3B52F5]">{eyebrow}</p> : null}
+        {eyebrow ? <p className="text-[12px] font-bold text-[#3B52F5]">{eyebrow}</p> : null}
         <h1 className="theme-text text-[32px] font-semibold leading-[1.05] tracking-[-0.04em] sm:text-[42px]">{title}</h1>
         {description ? <p className="theme-muted max-w-[680px] text-[15px] leading-7">{description}</p> : null}
       </div>
@@ -38,7 +38,7 @@ export function MetricCard({ label, value, delta, icon: _Icon }: { label: string
           <p className="theme-muted text-[12px] font-semibold">{label}</p>
           <div className="flex items-baseline gap-3">
             <p className="theme-text text-[34px] font-semibold tracking-[-0.04em]">{value}</p>
-            <span className="inline-flex items-center rounded-full border border-transparent bg-[#12B76A]/10 px-2 py-0.5 text-[11px] font-semibold text-[#027A48] dark:text-[#6CE9A6]">
+            <span className="inline-flex items-center rounded-full border border-transparent bg-[#12B76A]/10 px-2 py-0.5 text-[12px] font-semibold text-[#027A48] dark:text-[#6CE9A6]">
               {delta}
             </span>
           </div>
@@ -65,7 +65,7 @@ export function StatusBadge({ children, tone = "blue" }: { children: ReactNode; 
     slate: "theme-border theme-muted bg-[var(--badge-slate-bg)]",
   };
 
-  return <span className={`inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-[11px] font-semibold backdrop-blur-sm ${tones[tone]}`}>{children}</span>;
+  return <span className={`inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-[12px] font-semibold backdrop-blur-sm ${tones[tone]}`}>{children}</span>;
 }
 
 export function ProgressBar({ value, tone = "blue" }: { value: number; tone?: "blue" | "green" | "amber" | "red" }) {

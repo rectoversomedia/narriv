@@ -27,7 +27,7 @@ function JourneyProgress({ steps }: { steps: Step[] }) {
       {steps.map((step, i) => (
         <li key={step.title} className="min-w-0">
           <div className={cn("h-2 rounded-full", step.done ? "bg-[#12A66A]" : "bg-[#E3E7F1]")} />
-          <p className={cn("mt-1.5 truncate text-[10px] font-black", step.done ? "text-[#047857]" : "text-[#8A93AD]")} title={step.title}>{i + 1}. {step.title}</p>
+          <p className={cn("mt-1.5 truncate text-[11px] font-black", step.done ? "text-[#047857]" : "text-[#6B7591]")} title={step.title}>{i + 1}. {step.title}</p>
         </li>
       ))}
     </ol>
@@ -88,7 +88,7 @@ export default function ActionCenterPage() {
           <>
             <span className="font-semibold text-[#101334]">{to.has(`a_${a.action}`) ? to(`a_${a.action}`) : a.action}</span>
             {" · "}{to.has(`w_${a.action}`) ? to(`w_${a.action}`) : a.whyItMatters}
-            {a.urgency && to.has(`urgency_${a.urgency}`) ? <span className="ml-1 rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[10px] font-bold text-[#3B52F5]">{to(`urgency_${a.urgency}`)}</span> : null}
+            {a.urgency && to.has(`urgency_${a.urgency}`) ? <span className="ml-1 rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[11px] font-bold text-[#3B52F5]">{to(`urgency_${a.urgency}`)}</span> : null}
           </>
         ),
       },
@@ -105,7 +105,7 @@ export default function ActionCenterPage() {
               <button type="button" onClick={() => setPlanFor(a)} className="h-8 rounded-[8px] bg-[#465FFF] px-3 text-[12px] font-bold text-white hover:bg-[#3B52F5]">{t("createPlan")}</button>
               <button type="button" onClick={() => setCaseFor(a)} disabled={!a.signalIds?.length} className="h-8 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#31406B] hover:bg-slate-50 disabled:opacity-50">{t("createCase")}</button>
             </div>
-            <p className="mt-1 text-[11px] text-[#5A6478]">{to("needsApproval")}</p>
+            <p className="mt-1 text-[12px] text-[#5A6478]">{to("needsApproval")}</p>
           </>
         ),
       },
@@ -117,7 +117,7 @@ export default function ActionCenterPage() {
           <ul className="space-y-0.5">
             {plans.map((p) => <li key={p.id}><Link href="/action-plans" className="hover:text-[#3B52F5] hover:underline">{to("planItem", { title: p.title || to("untitled"), status: status("plan", p.status) })}</Link></li>)}
             {cases.map((c) => <li key={c.id}><Link href="/workspace/cases" className="hover:text-[#3B52F5] hover:underline">{to("caseItem", { title: c.title || to("untitled"), status: status("case", c.status) })}</Link></li>)}
-            {a.unchangedSinceFollowUp ? <li className="text-[11px] text-[#5A6478]">{to("fu_unchanged", { date: fmtDate(fu?.openSince) })}</li> : fu?.stage === "in_progress" ? <li className="text-[11px] text-[#9A5B00]">{to("fu_newSince")}</li> : null}
+            {a.unchangedSinceFollowUp ? <li className="text-[12px] text-[#5A6478]">{to("fu_unchanged", { date: fmtDate(fu?.openSince) })}</li> : fu?.stage === "in_progress" ? <li className="text-[12px] text-[#9A5B00]">{to("fu_newSince")}</li> : null}
           </ul>
         ) : t("followUpNone"),
       },
@@ -204,7 +204,7 @@ export default function ActionCenterPage() {
               <div className={cn("h-2", tone.band)} />
               <div className="p-5 sm:p-7">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={cn("rounded-[8px] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em]", tone.stamp)}>{tone.label}</span>
+                  <span className={cn("rounded-[8px] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.08em]", tone.stamp)}>{tone.label}</span>
                   {a.urgency && to.has(`urgency_${a.urgency}`) ? <span className="nv-stamp">{to(`urgency_${a.urgency}`)}</span> : null}
                   <span className="font-mono text-[11.5px] font-medium text-[#5F6B94]">{L(`${a.evidenceCount} evidence`, `${a.evidenceCount} bukti`)}</span>
                 </div>
@@ -243,7 +243,7 @@ export default function ActionCenterPage() {
 
                 {/* The decision bar. */}
                 <div className="mt-6 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:flex-wrap sm:items-center">
-                  <p className="px-1 font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF] sm:mr-2">
+                  <p className="px-1 font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF] sm:mr-2">
                     {kind === "decide" ? L("Decide Now", "Putuskan Sekarang") : kind === "recheck" ? L("Check Again", "Cek Ulang") : L("Keep It Moving", "Lanjutkan")}
                   </p>
                   {kind === "recheck" ? (
@@ -256,7 +256,7 @@ export default function ActionCenterPage() {
                   )}
                   <button type="button" onClick={() => setCaseFor(a)} disabled={!a.signalIds?.length} className={cn(ghost, "border-white/40 text-white/90")}>{t("createCase")}</button>
                 </div>
-                {kind === "decide" ? <p className="mt-2.5 text-[12px] font-medium text-[#8A93AD]">{to("needsApproval")}</p> : null}
+                {kind === "decide" ? <p className="mt-2.5 text-[12px] font-medium text-[#6B7591]">{to("needsApproval")}</p> : null}
               </div>
             </section>
           );

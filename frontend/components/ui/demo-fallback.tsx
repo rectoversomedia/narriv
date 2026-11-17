@@ -96,7 +96,7 @@ export function CompactInline({ message, onRetry, variant = "empty" }: CompactIn
         <button
           type="button"
           onClick={onRetry}
-          className="shrink-0 rounded-md bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 shadow-sm hover:bg-slate-100"
+          className="shrink-0 rounded-md bg-white px-3 py-1.5 text-[12px] font-bold text-slate-700 shadow-sm hover:bg-slate-100"
         >
           Retry
         </button>

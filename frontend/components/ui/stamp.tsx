@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 /** A mono, uppercase label above a block: the machine's voice naming what follows. */
 export function MonoLabel({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cn("font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]", className)}>{children}</p>;
+  return <p className={cn("font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]", className)}>{children}</p>;
 }
 
 export type Stat = { key: string; value: ReactNode; label: string; helper?: string; tone?: string; onClick?: () => void; active?: boolean };
@@ -23,7 +23,7 @@ export function StatStrip({ stats, className }: { stats: Stat[]; className?: str
           <>
             <span className={cn("block text-[30px] font-black leading-none tracking-[-0.03em] sm:text-[34px]", s.tone ?? "text-[#101334]")}>{s.value}</span>
             <span className="mt-2 block text-[13px] font-bold text-[#101334]">{s.label}</span>
-            {s.helper ? <span className="mt-0.5 block font-mono text-[11px] font-medium text-[#5F6B94]">{s.helper}</span> : null}
+            {s.helper ? <span className="mt-0.5 block font-mono text-[12px] font-medium text-[#5F6B94]">{s.helper}</span> : null}
           </>
         );
         const cell = cn(

@@ -49,17 +49,17 @@ const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(
 /** Plan pill: trial shows days left, a lapsed trial is red, a paid plan is green; no plan set is grey. */
 function PlanPill({ w }: { w: AdminWorkspace }) {
   const L = useL();
-  if (w.isDemo) return <span className="whitespace-nowrap rounded-full bg-[#EEF1FF] px-2.5 py-1 text-[11px] font-black text-[#3B52F5]">Demo</span>;
+  if (w.isDemo) return <span className="whitespace-nowrap rounded-full bg-[#EEF1FF] px-2.5 py-1 text-[12px] font-black text-[#3B52F5]">Demo</span>;
   if (w.plan === "trial") {
-    if (w.trialExpired) return <span className="whitespace-nowrap rounded-full bg-[#FDECEC] px-2.5 py-1 text-[11px] font-black text-[#B42318]">{L("Trial ended", "Uji coba habis")}</span>;
+    if (w.trialExpired) return <span className="whitespace-nowrap rounded-full bg-[#FDECEC] px-2.5 py-1 text-[12px] font-black text-[#B42318]">{L("Trial ended", "Uji coba habis")}</span>;
     const soon = (w.trialDaysLeft ?? 99) <= 3;
-    return <span className={cn("whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-black", soon ? "bg-[#FEF6E4] text-[#B45309]" : "bg-[#EEF1FF] text-[#3B52F5]")}>{L(`Trial · ${w.trialDaysLeft} days left`, `Uji coba · ${w.trialDaysLeft} hari lagi`)}</span>;
+    return <span className={cn("whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-black", soon ? "bg-[#FEF6E4] text-[#B45309]" : "bg-[#EEF1FF] text-[#3B52F5]")}>{L(`Trial · ${w.trialDaysLeft} days left`, `Uji coba · ${w.trialDaysLeft} hari lagi`)}</span>;
   }
   if (w.plan) {
     const p = PLANS.find((x) => x.key === w.plan);
-    return <span className="whitespace-nowrap rounded-full bg-[#E8F7F0] px-2.5 py-1 text-[11px] font-black text-[#047857]">{p ? L(p.en, p.id) : w.plan}</span>;
+    return <span className="whitespace-nowrap rounded-full bg-[#E8F7F0] px-2.5 py-1 text-[12px] font-black text-[#047857]">{p ? L(p.en, p.id) : w.plan}</span>;
   }
-  return <span className="whitespace-nowrap rounded-full bg-[#F1F3F8] px-2.5 py-1 text-[11px] font-black text-[#5F6B94]">{L("No plan", "Belum ada paket")}</span>;
+  return <span className="whitespace-nowrap rounded-full bg-[#F1F3F8] px-2.5 py-1 text-[12px] font-black text-[#5F6B94]">{L("No plan", "Belum ada paket")}</span>;
 }
 
 function MonitoringState({ w }: { w: AdminWorkspace }) {
@@ -172,7 +172,7 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
       <div className="flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white shadow-[0_-20px_60px_rgba(8,10,40,0.3)] sm:max-h-none sm:max-w-[460px] sm:rounded-none" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] px-5 pb-5 pt-5 text-white">
           <div className="min-w-0">
-            <p className="text-[11px] font-black text-[#A5B4FF]">{L("Client workspace", "Workspace klien")}</p>
+            <p className="text-[12px] font-black text-[#A5B4FF]">{L("Client workspace", "Workspace klien")}</p>
             <h2 id="ws-panel-title" className="mt-1 truncate text-[22px] font-black">{w.name}</h2>
             <p className="mt-0.5 truncate text-[13px] font-medium text-white/65">{w.owner?.email || L("No owner", "Tanpa pemilik")} · {L("since", "sejak")} {fmtDate(w.createdAt)}</p>
           </div>
@@ -188,7 +188,7 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
           ].map((s) => (
             <div key={s.l} className="rounded-xl bg-[#F5F7FF] px-2 py-2.5 text-center">
               <p className="text-[17px] font-black leading-none">{s.v}</p>
-              <p className="mt-1 text-[11px] font-semibold leading-tight text-[#5F6B94]">{s.l}</p>
+              <p className="mt-1 text-[12px] font-semibold leading-tight text-[#5F6B94]">{s.l}</p>
             </div>
           ))}
         </div>
@@ -554,7 +554,7 @@ export default function AdminPage() {
         <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-24 h-[260px] w-[420px] rounded-full bg-[#6D7CFF] opacity-30 blur-[90px]" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="flex items-center gap-1.5 text-[11px] font-black text-[#A5B4FF]"><ShieldCheck size={14} aria-hidden="true" /> {L("Narriv team", "Tim Narriv")}</p>
+            <p className="flex items-center gap-1.5 text-[12px] font-black text-[#A5B4FF]"><ShieldCheck size={14} aria-hidden="true" /> {L("Narriv team", "Tim Narriv")}</p>
             <h1 className="mt-1.5 text-[28px] font-black leading-tight tracking-[-0.02em] sm:text-[32px]">{L("Admin panel", "Admin panel")}</h1>
             <p className="mt-1 text-[14px] font-medium text-white/70">{L("Every client: plan, trial, usage and cost.", "Semua klien: paket, uji coba, pemakaian, dan biaya.")}</p>
           </div>
@@ -629,7 +629,7 @@ export default function AdminPage() {
           <div className="hidden overflow-hidden rounded-[22px] bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)] lg:block">
             <table className="w-full text-left">
               <thead>
-                <tr className="whitespace-nowrap bg-[#F5F7FF] text-[11px] font-black text-[#5F6B94]">
+                <tr className="whitespace-nowrap bg-[#F5F7FF] text-[12px] font-black text-[#5F6B94]">
                   <th className="px-5 py-3">{L("Client", "Klien")}</th>
                   <th className="px-3 py-3">{L("Plan", "Paket")}</th>
                   <th className="px-3 py-3">{L("Monitoring", "Pemantauan")}</th>
@@ -645,18 +645,18 @@ export default function AdminPage() {
                 {rows.map((w) => (
                   <tr key={w.id} className={cn("text-[14px] transition even:bg-[#FAFBFF]", w.isDemo ? "opacity-70" : "cursor-pointer hover:bg-[#F5F7FF]")} onClick={() => !w.isDemo && setOpenId(w.id)}>
                     <td className="max-w-[280px] px-5 py-3.5">
-                      <p className="flex items-center gap-2 truncate font-black text-[#101334]">{w.name}{w.isTest ? <span className="rounded-full bg-[#F1F3F8] px-2 py-0.5 text-[10px] font-black text-[#5F6B94]">{L("test", "tes")}</span> : null}</p>
+                      <p className="flex items-center gap-2 truncate font-black text-[#101334]">{w.name}{w.isTest ? <span className="rounded-full bg-[#F1F3F8] px-2 py-0.5 text-[11px] font-black text-[#5F6B94]">{L("test", "tes")}</span> : null}</p>
                       <p className="truncate text-[12px] font-medium text-[#5F6B94]">{w.owner?.email || "—"} · {fmtDate(w.createdAt)}</p>
                     </td>
                     <td className="px-3 py-3.5">
                       <PlanPill w={w} />
                       {w.billing?.status === "overdue" || w.billing?.status === "due" ? (
-                        <p className={cn("mt-1 text-[11px] font-black", w.billing.status === "overdue" ? "text-[#B42318]" : "text-[#B45309]")}>{w.billing.status === "overdue" ? L("Payment overdue", "Tagihan terlambat") : L("Payment due", "Tagihan jatuh tempo")}</p>
+                        <p className={cn("mt-1 text-[12px] font-black", w.billing.status === "overdue" ? "text-[#B42318]" : "text-[#B45309]")}>{w.billing.status === "overdue" ? L("Payment overdue", "Tagihan terlambat") : L("Payment due", "Tagihan jatuh tempo")}</p>
                       ) : null}
                     </td>
                     <td className="px-3 py-3.5">
                       <MonitoringState w={w} />
-                      <p className="whitespace-nowrap text-[11px] font-medium text-[#8A93B5]">{w.lastSignalAt ? L(`last data ${timeAgo(w.lastSignalAt)}`, `data terakhir ${timeAgo(w.lastSignalAt)}`) : L("no data yet", "belum ada data")}</p>
+                      <p className="whitespace-nowrap text-[12px] font-medium text-[#8A93B5]">{w.lastSignalAt ? L(`last data ${timeAgo(w.lastSignalAt)}`, `data terakhir ${timeAgo(w.lastSignalAt)}`) : L("no data yet", "belum ada data")}</p>
                     </td>
                     <td className="px-3 py-3.5 text-right font-black tabular-nums">{w.keywords}</td>
                     <td className="px-3 py-3.5 text-right font-black tabular-nums">{w.signals30d}</td>
@@ -717,7 +717,7 @@ export default function AdminPage() {
                     ].map((s) => (
                       <div key={s.l} className="rounded-xl bg-[#F5F7FF] px-1.5 py-2 text-center">
                         <p className="text-[15px] font-black leading-none tabular-nums">{s.v}</p>
-                        <p className="mt-1 text-[11px] font-semibold text-[#5F6B94]">{s.l}</p>
+                        <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{s.l}</p>
                       </div>
                     ))}
                   </div>

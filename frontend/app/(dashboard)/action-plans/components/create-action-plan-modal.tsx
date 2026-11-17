@@ -123,7 +123,7 @@ export function CreateActionPlanModal({
     >
       {basis ? (
         <div className="mb-5 rounded-[12px] border border-transparent bg-[#F5F7FF] px-4 py-3">
-          <p className="text-[11px] font-black text-[#3B52F5]">{L("Based on this", "Berdasarkan")} {basis.label}</p>
+          <p className="text-[12px] font-black text-[#3B52F5]">{L("Based on this", "Berdasarkan")} {basis.label}</p>
           <p className="mt-1 line-clamp-2 text-[14px] font-black leading-snug text-[#101334]" title={basis.title}>{basis.title}</p>
         </div>
       ) : null}
@@ -146,7 +146,7 @@ export function CreateActionPlanModal({
               <span className="min-w-0 flex-1">
                 <span className="flex items-center justify-between gap-2">
                   <span className="text-[14px] font-black text-[#101334]">{t(`strategy.${st.value}`)}</span>
-                  {st.value === suggested ? <span className="shrink-0 rounded-full bg-[#12A66A] px-2 py-0.5 text-[10px] font-black text-white">{L("Suggested", "Disarankan")}</span> : null}
+                  {st.value === suggested ? <span className="shrink-0 rounded-full bg-[#12A66A] px-2 py-0.5 text-[11px] font-black text-white">{L("Suggested", "Disarankan")}</span> : null}
                 </span>
                 <span className="mt-0.5 block text-[12px] font-semibold leading-snug text-[#5A6478]">{t(st.descriptionKey)}</span>
               </span>

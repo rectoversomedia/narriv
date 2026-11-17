@@ -66,7 +66,7 @@ export function AiProvidersPanel() {
         {data ? (
           <div className="flex gap-2">
             {([["OpenAI", data.providers.openai.configured], ["Claude", data.providers.anthropic.configured]] as const).map(([name, on]) => (
-              <span key={name} className={on ? "rounded-full bg-[#E5F6EE] px-2.5 py-1 text-[11px] font-black text-[#047857]" : "rounded-full bg-[#EEF1F6] px-2.5 py-1 text-[11px] font-black text-[#5A6478]"}>{name} {on ? L("connected", "terpasang") : L("not set", "belum")}</span>
+              <span key={name} className={on ? "rounded-full bg-[#E5F6EE] px-2.5 py-1 text-[12px] font-black text-[#047857]" : "rounded-full bg-[#EEF1F6] px-2.5 py-1 text-[12px] font-black text-[#5A6478]"}>{name} {on ? L("connected", "terpasang") : L("not set", "belum")}</span>
             ))}
           </div>
         ) : null}
@@ -82,9 +82,9 @@ export function AiProvidersPanel() {
               <li key={w.workflow} className="flex items-center justify-between gap-2 rounded-[12px] bg-[#F7F8FC] px-3.5 py-3">
                 <span className="text-[13px] font-black text-[#101334]">{WORKFLOW_LABEL[w.workflow] ? L(...WORKFLOW_LABEL[w.workflow]) : w.workflow}</span>
                 {w.provider ? (
-                  <span className="shrink-0 rounded-full bg-[#EEF1FF] px-2.5 py-1 text-[11px] font-black text-[#3B52F5]">{providerName(w.provider)} · {prettyModel(w.model)}</span>
+                  <span className="shrink-0 rounded-full bg-[#EEF1FF] px-2.5 py-1 text-[12px] font-black text-[#3B52F5]">{providerName(w.provider)} · {prettyModel(w.model)}</span>
                 ) : (
-                  <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#5A6478]">{L("Rules", "Aturan")}</span>
+                  <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[12px] font-black text-[#5A6478]">{L("Rules", "Aturan")}</span>
                 )}
               </li>
             ))}
@@ -95,10 +95,10 @@ export function AiProvidersPanel() {
                 {check.isPending ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : null}
                 {L("Test connections", "Tes koneksi")}
               </button>
-              <p className="mt-1.5 text-[11px] font-semibold text-[#5A6478]">{L("Sends a one-word test prompt to each configured AI provider (no client data; a fraction of a cent) and reads the Apify account status (no scraping).", "Mengirim prompt uji satu kata ke tiap penyedia AI yang terpasang (tanpa data klien; biaya sangat kecil) dan membaca status akun Apify (tanpa scraping).")}</p>
-              {check.isError ? <p role="alert" className="mt-2 text-[11px] font-semibold text-[#C81E1E]">{check.error instanceof Error ? check.error.message : L("The test failed.", "Tes gagal.")}</p> : null}
+              <p className="mt-1.5 text-[12px] font-semibold text-[#5A6478]">{L("Sends a one-word test prompt to each configured AI provider (no client data; a fraction of a cent) and reads the Apify account status (no scraping).", "Mengirim prompt uji satu kata ke tiap penyedia AI yang terpasang (tanpa data klien; biaya sangat kecil) dan membaca status akun Apify (tanpa scraping).")}</p>
+              {check.isError ? <p role="alert" className="mt-2 text-[12px] font-semibold text-[#C81E1E]">{check.error instanceof Error ? check.error.message : L("The test failed.", "Tes gagal.")}</p> : null}
               {check.data ? (
-                <ul className="mt-2 space-y-1 text-[11px] font-semibold text-[#31406B]" role="status">
+                <ul className="mt-2 space-y-1 text-[12px] font-semibold text-[#31406B]" role="status">
                   <CheckLine name="OpenAI" check={check.data.results.openai} />
                   <CheckLine name="Anthropic (Claude)" check={check.data.results.anthropic} />
                   {check.data.results.apify ? <ApifyLine check={check.data.results.apify} /> : null}

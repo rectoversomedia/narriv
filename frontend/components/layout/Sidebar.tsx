@@ -89,13 +89,13 @@ export function Sidebar() {
             <BrandMark small name={brandName} logoUrl={workspace?.logoUrl} />
             <span className={cn("min-w-0 flex-1", fade(collapsed))}>
               <span className="block truncate text-[14px] font-bold leading-tight">{brandName}</span>
-              <span className="mt-0.5 block truncate text-[11px] font-semibold text-white/50">{workspaceSubtitle}</span>
+              <span className="mt-0.5 block truncate text-[12px] font-semibold text-white/50">{workspaceSubtitle}</span>
             </span>
             {!isDemo && !collapsed ? <ChevronsUpDown size={15} aria-hidden="true" className="shrink-0 text-white/40" /> : null}
           </WorkspaceSwitcher>
 
           <nav aria-label={L("Main menu", "Menu utama")} className="mt-5 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
-            <p className={cn("mb-2 px-3 text-[10px] font-extrabold text-white/35", fade(collapsed))}>{L("Menu", "Menu")}</p>
+            <p className={cn("mb-2 px-3 text-[11px] font-extrabold text-white/35", fade(collapsed))}>{L("Menu", "Menu")}</p>
             <div className="grid gap-1">
               {navGroups.flatMap((group) => group.items).map((item) => {
                 const Icon = item.icon;
@@ -115,7 +115,7 @@ export function Sidebar() {
                       <Icon size={18} strokeWidth={2} className="shrink-0" />
                       <span className={fade(collapsed)}>{t(`nav.${item.key}`)}</span>
                       {badgeFor(item.key) ? (
-                        <span className={cn("ml-auto rounded-full bg-[#EF4444] px-2 py-0.5 text-[11px] font-black tabular-nums leading-none text-white", collapsed && "absolute ml-0 translate-x-3 -translate-y-3 px-1.5")}>{badgeFor(item.key)}</span>
+                        <span className={cn("ml-auto rounded-full bg-[#EF4444] px-2 py-0.5 text-[12px] font-black tabular-nums leading-none text-white", collapsed && "absolute ml-0 translate-x-3 -translate-y-3 px-1.5")}>{badgeFor(item.key)}</span>
                       ) : null}
                     </Link>
                     {/* The open menu shows its pages, so the structure is visible without reading the tab bar. */}
@@ -158,7 +158,7 @@ export function Sidebar() {
               </span>
               <span className={cn("min-w-0", fade(collapsed))}>
                 <span className="block text-[12px] font-bold leading-tight">{status.title}</span>
-                <span className="mt-0.5 block truncate text-[11px] font-medium text-white/50">{status.sub}</span>
+                <span className="mt-0.5 block truncate text-[12px] font-medium text-white/50">{status.sub}</span>
               </span>
             </Link>
             <button
@@ -192,7 +192,7 @@ export function Sidebar() {
                 <Icon size={19} />
                 {badgeFor(item.key) ? <span className="absolute -right-3 -top-2 rounded-full bg-[#EF4444] px-1.5 py-0.5 text-[9px] font-black leading-none text-white">{badgeFor(item.key)}</span> : null}
               </span>
-              <span className="w-full truncate text-center text-[10px] font-bold leading-none">{t(`navShort.${item.key}`)}</span>
+              <span className="w-full truncate text-center text-[11px] font-bold leading-none">{t(`navShort.${item.key}`)}</span>
             </Link>
           );
         })}
@@ -203,7 +203,7 @@ export function Sidebar() {
           className={`flex h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 transition ${pathname?.startsWith("/ask") ? "bg-[#465FFF] text-white" : "text-white/60 hover:text-white"}`}
         >
           <Image src="/brand/app-nv-round-192.png" alt="" width={20} height={20} unoptimized className="size-5 rounded-full" />
-          <span className="w-full truncate text-center text-[10px] font-bold leading-none">Ask</span>
+          <span className="w-full truncate text-center text-[11px] font-bold leading-none">Ask</span>
         </Link>
       </nav>
     </>

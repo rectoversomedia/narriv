@@ -242,7 +242,7 @@ function CaseDetailSidebar({
               <div className="flex flex-wrap gap-2">
                 <span
                   className={cn(
-                    "rounded-full px-3 py-1 text-[10px] font-black",
+                    "rounded-full px-3 py-1 text-[11px] font-black",
                     statusStyles[record.status as CaseStatus] ||
                       statusStyles.open,
                   )}
@@ -251,7 +251,7 @@ function CaseDetailSidebar({
                 </span>
                 <span
                   className={cn(
-                    "rounded-full px-3 py-1 text-[10px] font-black",
+                    "rounded-full px-3 py-1 text-[11px] font-black",
                     priorityStyles[
                       (record.priority as CasePriority) || "medium"
                     ],
@@ -312,7 +312,7 @@ function CaseDetailSidebar({
                     <span className="text-[12px] font-black text-[#101334]">
                       {record.sourceType}
                       {record.sourceId && (
-                        <span className="ml-1 text-[10px] font-bold text-[#5F6B94]">
+                        <span className="ml-1 text-[11px] font-bold text-[#5F6B94]">
                           #{record.sourceId.slice(0, 8)}
                         </span>
                       )}
@@ -323,7 +323,7 @@ function CaseDetailSidebar({
 
               {/* Resolution textarea */}
               <div>
-                <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">
+                <label className="mb-1.5 block text-[12px] font-bold text-[#31406B]">
                   {tDetail("resolution")}
                 </label>
                 <textarea
@@ -765,7 +765,7 @@ export default function CasesPage() {
                 <div key={item.id} className="py-1">
                   <button type="button" onClick={() => setDetailCaseId(item.id)} className="block w-full text-left">
                     <p className="text-[13px] font-black leading-snug text-[#101334]">{item.title}</p>
-                    {item.description && <p className="mt-0.5 line-clamp-2 text-[11px] font-bold text-[#5F6B94]">{item.description}</p>}
+                    {item.description && <p className="mt-0.5 line-clamp-2 text-[12px] font-bold text-[#5F6B94]">{item.description}</p>}
                   </button>
                   <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                     <select
@@ -773,7 +773,7 @@ export default function CasesPage() {
                       onChange={(e) => updateStatusMutation.mutate({ id: item.id, status: e.target.value })}
                       disabled={updateStatusMutation.isPending}
                       aria-label={t("table.updateStatus", { title: item.title })}
-                      className={cn("rounded-full border-0 px-2.5 py-1.5 text-[11px] font-black outline-none disabled:opacity-50", statusStyles[item.status as CaseStatus] || statusStyles.open)}
+                      className={cn("rounded-full border-0 px-2.5 py-1.5 text-[12px] font-black outline-none disabled:opacity-50", statusStyles[item.status as CaseStatus] || statusStyles.open)}
                     >
                       <option value="open">{tStatus("open")}</option>
                       <option value="in_progress">{tStatus("in_progress")}</option>
@@ -785,7 +785,7 @@ export default function CasesPage() {
                       onChange={(e) => updatePriorityMutation.mutate({ id: item.id, priority: e.target.value })}
                       disabled={updatePriorityMutation.isPending}
                       aria-label={t("table.updatePriority", { title: item.title })}
-                      className={cn("rounded-full border-0 px-2.5 py-1.5 text-[11px] font-black outline-none disabled:opacity-50", priorityStyles[(item.priority as CasePriority) || "medium"])}
+                      className={cn("rounded-full border-0 px-2.5 py-1.5 text-[12px] font-black outline-none disabled:opacity-50", priorityStyles[(item.priority as CasePriority) || "medium"])}
                     >
                       <option value="low">{tStatus("low")}</option>
                       <option value="medium">{tStatus("medium")}</option>
@@ -793,7 +793,7 @@ export default function CasesPage() {
                       <option value="critical">{tStatus("critical")}</option>
                     </select>
                   </div>
-                  <div className="mt-2.5 grid grid-cols-2 gap-2 text-[11px] font-bold">
+                  <div className="mt-2.5 grid grid-cols-2 gap-2 text-[12px] font-bold">
                     <div>
                       <p className="text-[9.5px] font-black text-[#647099]">{t("table.assignee")}</p>
                       <p className="mt-0.5 truncate text-[#31406B]">{owner}</p>
@@ -804,7 +804,7 @@ export default function CasesPage() {
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between border-t border-[#EDF1F7] pt-2.5">
-                    <span className="text-[10.5px] font-bold text-[#647099]">{formatRelativeTime(item.createdAt, locale)}</span>
+                    <span className="text-[11.5px] font-bold text-[#647099]">{formatRelativeTime(item.createdAt, locale)}</span>
                     <div className="flex items-center gap-1">
                       <button type="button" onClick={() => setDetailCaseId(item.id)} aria-label={t("table.viewCase", { title: item.title })} className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#647099] hover:bg-[#F0F3FF] hover:text-[#3B52F5]">
                         <Eye size={16} />
@@ -822,25 +822,25 @@ export default function CasesPage() {
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead className="border-b border-[#EEF0F6]">
                 <tr>
-                  <th className="px-6 py-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-6 py-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.case")}
                   </th>
-                  <th className="px-4 py-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-4 py-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.status")}
                   </th>
-                  <th className="px-4 py-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-4 py-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.priority")}
                   </th>
-                  <th className="px-4 py-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-4 py-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.assignee")}
                   </th>
-                  <th className="px-4 py-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-4 py-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.deadline")}
                   </th>
-                  <th className="px-4 py-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-4 py-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.created")}
                   </th>
-                  <th className="px-4 py-4 text-right font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-4 py-4 text-right font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
                     {t("table.action")}
                   </th>
                 </tr>
@@ -886,7 +886,7 @@ export default function CasesPage() {
                           aria-label={t("table.updateStatus", {
                             title: item.title,
                           })}
-                          className={cn("cursor-pointer rounded-full border-0 px-2.5 py-1 text-[11px] font-black outline-none disabled:cursor-not-allowed disabled:opacity-50", statusStyles[item.status as CaseStatus] || statusStyles.open)}
+                          className={cn("cursor-pointer rounded-full border-0 px-2.5 py-1 text-[12px] font-black outline-none disabled:cursor-not-allowed disabled:opacity-50", statusStyles[item.status as CaseStatus] || statusStyles.open)}
                         >
                           <option value="open">{tStatus("open")}</option>
                           <option value="in_progress">
@@ -913,7 +913,7 @@ export default function CasesPage() {
                           aria-label={t("table.updatePriority", {
                             title: item.title,
                           })}
-                          className={cn("cursor-pointer rounded-full border-0 px-2.5 py-1 text-[11px] font-black outline-none disabled:cursor-not-allowed disabled:opacity-50", priorityStyles[(item.priority as CasePriority) || "medium"])}
+                          className={cn("cursor-pointer rounded-full border-0 px-2.5 py-1 text-[12px] font-black outline-none disabled:cursor-not-allowed disabled:opacity-50", priorityStyles[(item.priority as CasePriority) || "medium"])}
                         >
                           <option value="low">{tStatus("low")}</option>
                           <option value="medium">{tStatus("medium")}</option>
@@ -927,7 +927,7 @@ export default function CasesPage() {
                       {/* Assignee */}
                       <td className="px-4 py-4 align-top">
                         <div className="flex items-center gap-2">
-                          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[10px] font-black text-[#6E44E8]">
+                          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[11px] font-black text-[#6E44E8]">
                             {(assigneeName(item.assignedTo, members) ||
                               item.assignedTeam ||
                               "?")[0].toUpperCase()}
@@ -945,7 +945,7 @@ export default function CasesPage() {
                         {deadlineInfo ? (
                           <div className="flex items-center gap-1.5">
                             {deadlineInfo.isPast && item.status !== "resolved" && item.status !== "closed" ? (
-                              <span className="inline-block rounded-[6px] bg-[#B42318] px-2 py-1 font-mono text-[10.5px] font-bold leading-tight text-white">
+                              <span className="inline-block rounded-[6px] bg-[#B42318] px-2 py-1 font-mono text-[11.5px] font-bold leading-tight text-white">
                                 <span className="block text-[9.5px] uppercase tracking-[0.06em] text-white/80">{pickL("Overdue", "Lewat tenggat")}</span>
                                 {deadlineInfo.formatted}
                               </span>
@@ -954,7 +954,7 @@ export default function CasesPage() {
                             )}
                           </div>
                         ) : (
-                          <span className="text-[11px] font-bold text-[#647099]">
+                          <span className="text-[12px] font-bold text-[#647099]">
                             {t("table.noDeadline")}
                           </span>
                         )}
@@ -965,7 +965,7 @@ export default function CasesPage() {
                         <p className="text-[12px] font-black text-slate-900">
                           {formatRelativeTime(item.createdAt, locale)}
                         </p>
-                        <p className="mt-1 font-mono text-[10.5px] font-medium text-[#5A6478]">
+                        <p className="mt-1 font-mono text-[11.5px] font-medium text-[#5A6478]">
                           {formatDateTime(item.createdAt, locale)}
                         </p>
                       </td>
@@ -1007,7 +1007,7 @@ export default function CasesPage() {
         {/* Footer — total + pagination */}
         {meta && (
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 p-4">
-            <span className="text-[11px] font-bold text-[#5A6478]">
+            <span className="text-[12px] font-bold text-[#5A6478]">
               {t("pagination.total", { total: meta.total })}
             </span>
             {meta.totalPages > 1 && (

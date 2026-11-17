@@ -66,7 +66,7 @@ function ago(iso: string | null | undefined) {
 }
 
 function Change({ m }: { m: NarrativeRecord["momentum"] }) {
-  if (!m) return <span className="font-mono text-[12px] font-bold text-[#8A93AD]">—</span>;
+  if (!m) return <span className="font-mono text-[12px] font-bold text-[#6B7591]">—</span>;
   const up = m.last24h > m.prior24h, down = m.last24h < m.prior24h;
   const Icon = up ? ArrowUpRight : down ? ArrowDownRight : Minus;
   const label = m.prior24h === 0 ? (m.last24h > 0 ? pickL("new", "baru") : "0") : `${m.changePct !== null && m.changePct > 0 ? "+" : ""}${m.changePct ?? 0}%`;
@@ -98,7 +98,7 @@ export function IssueLifecycle({ records, stageOf, days }: { records: NarrativeR
         <div className="flex items-start gap-3">
           <span className="mt-0.5 inline-flex size-10 shrink-0 items-center justify-center rounded-[12px] border-[1.5px] border-[#101334] bg-[#EEF1FF] text-[#3B52F5] shadow-[0_2px_0_#101334]"><Layers size={18} aria-hidden="true" /></span>
           <div>
-            <p className="font-mono text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#3B52F5]">{pickL("Where Each Issue Is", "Posisi Tiap Isu")}</p>
+            <p className="font-mono text-[11.5px] font-bold uppercase tracking-[0.12em] text-[#3B52F5]">{pickL("Where Each Issue Is", "Posisi Tiap Isu")}</p>
             <h3 className="text-[21px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{pickL("Issue Lifecycle", "Siklus Hidup Isu")}</h3>
             <p className="mt-0.5 text-[13px] font-medium text-[#5A6478]">{pickL("Every issue moves through five stages. Pick a stage to see its issues and what to do.", "Setiap isu melewati lima tahap. Pilih tahap untuk melihat isunya dan langkah yang perlu diambil.")}</p>
           </div>
@@ -127,7 +127,7 @@ export function IssueLifecycle({ records, stageOf, days }: { records: NarrativeR
                   {n}
                   {hot ? <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 size-3.5 rounded-full border-2 border-white bg-[#E5484D]" /> : null}
                 </button>
-                <span className={cn("mt-2.5 font-mono text-[10px] font-bold tracking-[0.08em]", on ? "text-[#3B52F5]" : "text-[#8A93AD]")}>{String(i + 1).padStart(2, "0")}</span>
+                <span className={cn("mt-2.5 font-mono text-[11px] font-bold tracking-[0.08em]", on ? "text-[#3B52F5]" : "text-[#6B7591]")}>{String(i + 1).padStart(2, "0")}</span>
                 <span className={cn("text-[12.5px] font-black leading-tight sm:text-[13.5px]", on ? "text-[#101334]" : n ? "text-[#31406B]" : "text-[#9AA3BC]")}>{pickL(s.en, s.id)}</span>
               </li>
             );
@@ -140,7 +140,7 @@ export function IssueLifecycle({ records, stageOf, days }: { records: NarrativeR
       <div className="mt-6 grid gap-4">
         <div className="rounded-[18px] border-[1.5px] border-[#101334] bg-[#101334] p-5 text-white shadow-[0_3px_0_#101334] md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] md:gap-5">
           <div>
-            <p className="font-mono text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#A5B4FF]">{pickL("Stage", "Tahap")} {String(idx + 1).padStart(2, "0")} · {pickL(stage.en, stage.id)}</p>
+            <p className="font-mono text-[11.5px] font-bold uppercase tracking-[0.12em] text-[#A5B4FF]">{pickL("Stage", "Tahap")} {String(idx + 1).padStart(2, "0")} · {pickL(stage.en, stage.id)}</p>
             <p className="mt-2 text-[15px] font-semibold leading-relaxed text-white/80">{pickL(...stage.mean)}</p>
             <p className="mt-3 text-[12.5px] font-medium text-white/60">
               {list.length
@@ -149,7 +149,7 @@ export function IssueLifecycle({ records, stageOf, days }: { records: NarrativeR
             </p>
           </div>
           <div className="mt-4 rounded-[14px] bg-white/[0.08] p-4 ring-1 ring-white/10 md:mt-0">
-            <p className="font-mono text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#A5B4FF]">{pickL("What To Do Now", "Yang Perlu Dilakukan")}</p>
+            <p className="font-mono text-[11.5px] font-bold uppercase tracking-[0.12em] text-[#A5B4FF]">{pickL("What To Do Now", "Yang Perlu Dilakukan")}</p>
             <p className="mt-1.5 text-[15.5px] font-bold leading-snug">{pickL(...stage.todo)}</p>
           </div>
         </div>
@@ -169,28 +169,28 @@ export function IssueLifecycle({ records, stageOf, days }: { records: NarrativeR
                   <li key={r.id}>
                     <Link href={issueHref(r.id, days * 24)} className="group block rounded-[18px] border-[1.5px] border-[#101334] bg-white p-4 shadow-[0_3px_0_#101334] transition hover:-translate-y-0.5 hover:shadow-[0_5px_0_#101334] sm:p-5">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className={cn("rounded-[7px] px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em]", s.tone)}>{pickL(s.en, s.id)}</span>
-                        {impact ? <span className="rounded-[7px] bg-[#F1F3F8] px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#31406B]">{pickL(...impact)}</span> : null}
+                        <span className={cn("rounded-[7px] px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em]", s.tone)}>{pickL(s.en, s.id)}</span>
+                        {impact ? <span className="rounded-[7px] bg-[#F1F3F8] px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#31406B]">{pickL(...impact)}</span> : null}
                       </div>
                       <p className="mt-2 text-[16.5px] font-black leading-snug tracking-[-0.01em] text-[#101334] group-hover:text-[#3B52F5]">{r.title}</p>
                       {r.description ? <p className="mt-1 line-clamp-2 text-[13.5px] font-medium leading-relaxed text-[#31406B]">{r.description}</p> : null}
 
                       <dl className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
                         <div className="rounded-[12px] bg-[#F6F7FC] px-3 py-2">
-                          <dt className="font-mono text-[9.5px] font-bold uppercase tracking-[0.1em] text-[#8A93AD]">{pickL("Mentions", "Percakapan")}</dt>
-                          <dd className="mt-0.5 text-[15px] font-black tabular-nums text-[#101334]">{r.signalCount} <span className="font-mono text-[11px] font-bold text-[#8A93AD]">· {share}%</span></dd>
+                          <dt className="font-mono text-[9.5px] font-bold uppercase tracking-[0.1em] text-[#6B7591]">{pickL("Mentions", "Percakapan")}</dt>
+                          <dd className="mt-0.5 text-[15px] font-black tabular-nums text-[#101334]">{r.signalCount} <span className="font-mono text-[12px] font-bold text-[#6B7591]">· {share}%</span></dd>
                         </div>
                         <div className="rounded-[12px] bg-[#F6F7FC] px-3 py-2">
-                          <dt className="font-mono text-[9.5px] font-bold uppercase tracking-[0.1em] text-[#8A93AD]">{pickL("Last 24h", "24 jam")}</dt>
+                          <dt className="font-mono text-[9.5px] font-bold uppercase tracking-[0.1em] text-[#6B7591]">{pickL("Last 24h", "24 jam")}</dt>
                           <dd className="mt-0.5 flex items-baseline gap-1.5 text-[15px] font-black tabular-nums text-[#101334]">{r.momentum ? r.momentum.last24h : "—"} <Change m={r.momentum} /></dd>
                         </div>
                         <div className="rounded-[12px] bg-[#F6F7FC] px-3 py-2">
-                          <dt className="font-mono text-[9.5px] font-bold uppercase tracking-[0.1em] text-[#8A93AD]">{pickL("Last Seen", "Terakhir")}</dt>
-                          <dd className="mt-0.5 inline-flex items-center gap-1 text-[13.5px] font-black text-[#101334]"><Clock size={12} className="text-[#8A93AD]" aria-hidden="true" />{ago(r.lastSeen)}</dd>
+                          <dt className="font-mono text-[9.5px] font-bold uppercase tracking-[0.1em] text-[#6B7591]">{pickL("Last Seen", "Terakhir")}</dt>
+                          <dd className="mt-0.5 inline-flex items-center gap-1 text-[13.5px] font-black text-[#101334]"><Clock size={12} className="text-[#6B7591]" aria-hidden="true" />{ago(r.lastSeen)}</dd>
                         </div>
                         <div className="rounded-[12px] bg-[#F6F7FC] px-3 py-2">
-                          <dt className="font-mono text-[9.5px] font-bold uppercase tracking-[0.1em] text-[#8A93AD]">{pickL("Sources", "Sumber")}</dt>
-                          <dd className="mt-0.5 inline-flex items-center gap-1 text-[13.5px] font-black text-[#101334]"><Radio size={12} className="text-[#8A93AD]" aria-hidden="true" />{r.sourceCount} {pickL(r.sourceCount === 1 ? "platform" : "platforms", "platform")}</dd>
+                          <dt className="font-mono text-[9.5px] font-bold uppercase tracking-[0.1em] text-[#6B7591]">{pickL("Sources", "Sumber")}</dt>
+                          <dd className="mt-0.5 inline-flex items-center gap-1 text-[13.5px] font-black text-[#101334]"><Radio size={12} className="text-[#6B7591]" aria-hidden="true" />{r.sourceCount} {pickL(r.sourceCount === 1 ? "platform" : "platforms", "platform")}</dd>
                         </div>
                       </dl>
 

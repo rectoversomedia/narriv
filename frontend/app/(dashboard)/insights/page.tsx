@@ -144,8 +144,8 @@ export default function InsightsPage() {
             <div className="grid gap-6 lg:grid-cols-2">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <MonoLabel>{L("Risk Score", "Skor Risiko")}</MonoLabel>
-                  {hasRisk ? <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em]", tone.stamp)}>{t(`risk.${band}`)}</span> : null}
+                  <MonoLabel>{L("Risk Score · ", "Skor Risiko · ")}{(() => { const [en, id] = (WINDOWS.find((w) => w.id === windowId) ?? WINDOWS[0]).label; return L(en, id); })()}</MonoLabel>
+                  {hasRisk ? <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em]", tone.stamp)}>{t(`risk.${band}`)}</span> : null}
                 </div>
                 <p className="mt-2 flex items-baseline gap-1.5">
                   <span className={cn("text-[56px] font-black leading-none tracking-[-0.04em]", hasRisk ? tone.text : "text-[#9AA3BC]")}>{hasRisk ? n.riskScore : "—"}</span>
@@ -204,7 +204,7 @@ export default function InsightsPage() {
 
             {/* Where to act on it. */}
             <div className="mt-6 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:flex-wrap sm:items-center">
-              <p className="px-1 font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF] sm:mr-2">{L("Act On It", "Tindak Lanjuti")}</p>
+              <p className="px-1 font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF] sm:mr-2">{L("Act On It", "Tindak Lanjuti")}</p>
               <Link href="/alerts" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5]">
                 {openCount > 0 ? L(`Handle ${openCount} Open Alerts`, `Tangani ${openCount} Peringatan Terbuka`) : L("Open Alerts", "Buka Peringatan")}
               </Link>
@@ -236,12 +236,12 @@ export default function InsightsPage() {
                   <li key={c.key} className="flex flex-col rounded-[16px] bg-[#F6F7FC] p-4" style={{ boxShadow: `inset 4px 0 0 ${color}` }}>
                     <div className="flex items-start justify-between gap-3 pl-1">
                       <div className="min-w-0">
-                        <p className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L(`Factor ${i + 1}`, `Faktor ${i + 1}`)}</p>
+                        <p className="font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L(`Factor ${i + 1}`, `Faktor ${i + 1}`)}</p>
                         <p className="mt-1 text-[16px] font-black leading-snug text-[#101334]">{driverName(c)}</p>
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-[24px] font-black leading-none tracking-[-0.02em]" style={{ color }}>+{c.contribution}</p>
-                        {share != null ? <p className="mt-1 font-mono text-[10.5px] font-bold text-[#5F6B94]">{L(`${share}% of score`, `${share}% dari skor`)}</p> : null}
+                        {share != null ? <p className="mt-1 font-mono text-[11.5px] font-bold text-[#5F6B94]">{L(`${share}% of score`, `${share}% dari skor`)}</p> : null}
                       </div>
                     </div>
                     <div className="ml-1 mt-3 h-1.5 overflow-hidden rounded-full bg-white">
@@ -275,7 +275,7 @@ export default function InsightsPage() {
                   <li key={it.clusterId}>
                     <Link href={issueHref(it.clusterId, hours)} className="group -mx-2 flex items-center gap-3 rounded-[10px] px-2 py-3 transition hover:bg-[#F7F8FC]">
                       <span className="min-w-0 flex-1 text-[14.5px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]">{it.title}</span>
-                      <span className="shrink-0 rounded-[6px] bg-[#FFF4E5] px-2 py-1 font-mono text-[10.5px] font-bold text-[#A04606]">+{it.last24h ?? it.signalCount} / 24{L("h", " jam")}</span>
+                      <span className="shrink-0 rounded-[6px] bg-[#FFF4E5] px-2 py-1 font-mono text-[11.5px] font-bold text-[#A04606]">+{it.last24h ?? it.signalCount} / 24{L("h", " jam")}</span>
                     </Link>
                   </li>
                 ))}
@@ -293,18 +293,18 @@ export default function InsightsPage() {
                     <p className="text-[14.5px] font-bold leading-snug text-[#101334]">{p.label}</p>
                     <div className="mt-1.5 flex items-center gap-2">
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#EEF0F6]"><div className="h-full rounded-full bg-[#465FFF]" style={{ width: `${Math.round(p.confidence * 100)}%` }} /></div>
-                      <span className="shrink-0 font-mono text-[11px] font-bold text-[#5F6B94]">{Math.round(p.confidence * 100)}% · {p.timeframe}</span>
+                      <span className="shrink-0 font-mono text-[12px] font-bold text-[#5F6B94]">{Math.round(p.confidence * 100)}% · {p.timeframe}</span>
                     </div>
                   </li>
                 ))}
-                <li className="text-[11.5px] font-medium text-[#8A93AD]">{t("heuristicForecast")}</li>
+                <li className="text-[11.5px] font-medium text-[#6B7591]">{t("heuristicForecast")}</li>
               </ul>
             )}
             <div className="mt-4 flex items-center justify-between rounded-[12px] bg-[#F6F7FC] px-4 py-3">
               <span className="text-[13px] font-bold text-[#31406B]">{L("Conversation Volume", "Volume Percakapan")}</span>
               {trend.isLoading ? <Skeleton className="h-5 w-20" /> : trendLabel ? (
                 <span className={cn("flex items-center gap-1.5 text-[14px] font-black", trendLabel.tone)}>
-                  <trendLabel.Icon size={15} /> {L(trendLabel.en, trendLabel.id)}{trend.data?.ratio != null ? <span className="font-mono text-[11px] text-[#5F6B94]"> · {trend.data.ratio.toFixed(1)}×</span> : null}
+                  <trendLabel.Icon size={15} /> {L(trendLabel.en, trendLabel.id)}{trend.data?.ratio != null ? <span className="font-mono text-[12px] text-[#5F6B94]"> · {trend.data.ratio.toFixed(1)}×</span> : null}
                 </span>
               ) : (
                 <span className="text-[12.5px] font-semibold text-[#5F6B94]">{L("Needs two periods", "Butuh dua periode")}</span>

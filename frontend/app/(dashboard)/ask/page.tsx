@@ -92,7 +92,7 @@ function ConfidenceChip({ confidence, t }: { confidence: Confidence; t: (key: st
   };
   const { label, className } = map[confidence];
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${className}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-bold ${className}`}>
       <span className="h-1 w-1 rounded-full bg-current" />
       {label}
     </span>
@@ -122,19 +122,19 @@ function AskPulse({ summary, topIssue, onAsk, language }: { summary: DashboardSu
       <div className="grid gap-3 sm:grid-cols-4">
         {tiles.map((t) => (
           <div key={t.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
-            <p className="text-[11px] font-black" style={{ color: t.color }}>{t.label}</p>
+            <p className="text-[12px] font-black" style={{ color: t.color }}>{t.label}</p>
             <p className="mt-1.5 text-[28px] font-black leading-none tracking-[-0.04em] text-[#101334]">{t.value}</p>
-            <p className="mt-1.5 text-[11px] font-bold text-[#5A6478]">{t.sub}</p>
+            <p className="mt-1.5 text-[12px] font-bold text-[#5A6478]">{t.sub}</p>
           </div>
         ))}
         <div className="rounded-[14px] bg-[#101334] p-4 text-white">
-          <p className="text-[11px] font-black text-[#A9B4FF]">{L("Top issue", "Isu utama")}</p>
+          <p className="text-[12px] font-black text-[#A9B4FF]">{L("Top issue", "Isu utama")}</p>
           <p className="mt-1.5 line-clamp-3 text-[14px] font-black leading-snug">{topIssue?.title ?? L("No issue yet", "Belum ada isu")}</p>
-          {topIssue ? <p className="mt-1.5 text-[11px] font-bold text-white/70">{topIssue.signalCount} {L("mentions", "percakapan")}</p> : null}
+          {topIssue ? <p className="mt-1.5 text-[12px] font-bold text-white/70">{topIssue.signalCount} {L("mentions", "percakapan")}</p> : null}
         </div>
       </div>
       <div>
-        <p className="mb-2 text-[11px] font-black text-[#5A6478]">{L("Ask in one tap", "Tanya sekali klik")}</p>
+        <p className="mb-2 text-[12px] font-black text-[#5A6478]">{L("Ask in one tap", "Tanya sekali klik")}</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {SUGGESTED_CATEGORIES.slice(0, 6).map((cat, i) => (
             <button key={cat.id} type="button" onClick={() => onAsk(cat.question[language])} className="flex items-center gap-3 rounded-[12px] bg-white px-4 py-3 text-left shadow-[0_2px_10px_rgba(16,24,40,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(16,24,40,0.08)]">
@@ -304,7 +304,7 @@ export default function AskPage() {
             {sidebarOpen && (
               <div>
                 <p className="text-[14px] font-black text-slate-900">{tAsk("title")}</p>
-                <p className="text-[11px] font-semibold text-[#5A6478]">{tAsk("subtitle")}</p>
+                <p className="text-[12px] font-semibold text-[#5A6478]">{tAsk("subtitle")}</p>
               </div>
             )}
           </div>
@@ -312,7 +312,7 @@ export default function AskPage() {
           {/* Suggested questions */}
           {sidebarOpen && (
             <div className="flex flex-col gap-1">
-              <p className="mb-1 px-1 text-[10px] font-black text-[#5A6478]">
+              <p className="mb-1 px-1 text-[11px] font-black text-[#5A6478]">
                 {pickL("Suggested questions", "Pertanyaan yang disarankan")}
               </p>
               {SUGGESTED_CATEGORIES.map((cat) => {
@@ -354,7 +354,7 @@ export default function AskPage() {
               <h1 className="text-[15px] font-black text-slate-900">{tAsk("title")}</h1>
             </div>
             {lastModel && (
-              <span title={language === "id" ? "Model yang menghasilkan jawaban terakhir" : "Model that produced the latest answer"} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-[#5A6478]">
+              <span title={language === "id" ? "Model yang menghasilkan jawaban terakhir" : "Model that produced the latest answer"} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[12px] font-bold text-[#5A6478]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#12B76A]" />
                 {lastModel}
               </span>
@@ -396,7 +396,7 @@ export default function AskPage() {
                         {msg.confidence && <ConfidenceChip confidence={msg.confidence} t={tAsk} />}
                       </div>
                       {msg.isDemo && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-transparent bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-bold text-[#6E44E8]">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-transparent bg-[#8B5CFF]/10 px-2 py-0.5 text-[11px] font-bold text-[#6E44E8]">
                           DEMO
                         </span>
                       )}
@@ -421,7 +421,7 @@ export default function AskPage() {
                     </div>
 
                     {msg.coverage ? (
-                      <p className="mt-2 text-[11px] font-semibold text-[#5A6478]">{msg.coverage}</p>
+                      <p className="mt-2 text-[12px] font-semibold text-[#5A6478]">{msg.coverage}</p>
                     ) : null}
 
                     {/* Metrics */}
@@ -429,7 +429,7 @@ export default function AskPage() {
                       <div className="mt-3 grid grid-cols-3 gap-2">
                         {msg.metrics.map((m, i) => (
                           <div key={i} className="rounded-xl bg-[#EEF1FF] px-3 py-2.5 text-center">
-                            <p className="text-[11px] font-bold text-[#3B52F5]">{m.label}</p>
+                            <p className="text-[12px] font-bold text-[#3B52F5]">{m.label}</p>
                             <p className="mt-0.5 text-[18px] font-black text-slate-900">{m.value || "—"}</p>
                           </div>
                         ))}
@@ -439,7 +439,7 @@ export default function AskPage() {
                     {/* Evidence bullets */}
                     {msg.evidence && msg.evidence.length > 0 && (
                       <ul className="mt-3 space-y-1.5">
-                        <li className="text-[10px] font-black text-[#5A6478]">{language === "id" ? "Sumber yang dikutip" : "Sources cited"}</li>
+                        <li className="text-[11px] font-black text-[#5A6478]">{language === "id" ? "Sumber yang dikutip" : "Sources cited"}</li>
                         {msg.evidence.map((e) => {
                           const label = e.title || e.id;
                           const kind = e.kind === "alert" ? "Alert" : e.kind === "narrative" ? "Narrative" : e.kind === "signal" ? "Signal" : "Record";
@@ -448,7 +448,7 @@ export default function AskPage() {
                             <li key={e.id} className="flex items-start gap-2 text-[12px] font-semibold text-[#5A6478]">
                               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#465FFF]/40" />
                               <span className="min-w-0">
-                                <span className="mr-1.5 text-[10px] font-black text-[#5A6478]">{kind}</span>
+                                <span className="mr-1.5 text-[11px] font-black text-[#5A6478]">{kind}</span>
                                 {href ? (
                                   <a href={href} {...(e.kind === "signal" ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="text-[#3B52F5] underline-offset-2 hover:underline">{label}</a>
                                 ) : (
@@ -532,7 +532,7 @@ export default function AskPage() {
               <Send size={16} />
             </button>
           </div>
-          <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] font-semibold text-[#5A6478]">
+          <p className="mx-auto mt-2 max-w-3xl text-center text-[12px] font-semibold text-[#5A6478]">
             {pickL("Press Enter to send · Shift+Enter for a new line", "Tekan Enter untuk kirim · Shift+Enter untuk baris baru")}
           </p>
         </div>

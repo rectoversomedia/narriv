@@ -141,7 +141,7 @@ export function CreateInvestigationModal({
       <div className="space-y-5">
         {basis ? (
           <div className="rounded-[12px] bg-[#EEF1FF] px-4 py-3">
-            <p className="text-[11px] font-black text-[#3B52F5]">{alertTitle ? L("From this alert", "Dari peringatan") : L("From this article", "Dari berita")}</p>
+            <p className="text-[12px] font-black text-[#3B52F5]">{alertTitle ? L("From this alert", "Dari peringatan") : L("From this article", "Dari berita")}</p>
             <p className="mt-1 line-clamp-2 text-[14px] font-black leading-snug text-[#101334]" title={basis}>{basis}</p>
           </div>
         ) : null}
@@ -166,7 +166,7 @@ export function CreateInvestigationModal({
                   style={active ? { background: p.bg, color: p.fg } : undefined}
                 >
                   <span className={cn("block text-[13px] font-black", active ? "" : "text-[#101334]")}>{t(`priority.${p.key}`)}</span>
-                  <span className={cn("mt-0.5 block text-[11px] font-bold", active ? "text-white/85" : "text-[#5A6478]")}>{L(...p.window)}</span>
+                  <span className={cn("mt-0.5 block text-[12px] font-bold", active ? "text-white/85" : "text-[#5A6478]")}>{L(...p.window)}</span>
                 </button>
               );
             })}

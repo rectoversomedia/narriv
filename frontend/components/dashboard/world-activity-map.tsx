@@ -173,12 +173,12 @@ export function WorldActivityMap({
                               <span className="text-xs font-black" style={{ color: readableTone(style.color) }}>
                                 {data.signals.toLocaleString()} signals
                               </span>
-                              <span className="text-[11px] font-semibold text-[#5A6478]">
+                              <span className="text-[12px] font-semibold text-[#5A6478]">
                                 {style.label} activity · {formatTime(data.latest_at)}
                               </span>
                             </>
                           ) : (
-                            <span className="text-[11px] font-semibold text-[#5A6478]">{emptyLabel}</span>
+                            <span className="text-[12px] font-semibold text-[#5A6478]">{emptyLabel}</span>
                           )}
                         </div>
                       );
@@ -225,7 +225,7 @@ export function WorldActivityMap({
                         <span className="text-xs font-black" style={{ color: readableTone(style.color) }}>
                           {marker.signals.toLocaleString()} signals
                         </span>
-                        <span className="text-[11px] font-semibold text-[#5A6478]">{formatTime(marker.latest_at)}</span>
+                        <span className="text-[12px] font-semibold text-[#5A6478]">{formatTime(marker.latest_at)}</span>
                       </div>
                     );
                   }}
@@ -268,7 +268,7 @@ export function WorldActivityMap({
       </div>
 
       {activity?.updated_at ? (
-        <div className="absolute right-4 top-4 rounded-full border border-slate-100 bg-white/90 px-3 py-1.5 text-[10px] font-black text-[#5A6478] shadow-sm">
+        <div className="absolute right-4 top-4 rounded-full border border-slate-100 bg-white/90 px-3 py-1.5 text-[11px] font-black text-[#5A6478] shadow-sm">
           Live · {formatTime(activity.updated_at)}
         </div>
       ) : null}
