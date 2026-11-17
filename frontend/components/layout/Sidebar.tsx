@@ -62,6 +62,9 @@ export function Sidebar() {
       ? { dot: "bg-[#22C55E]", title: L("Demo data", "Data demo"), sub: L("Sample data, reset nightly", "Data contoh, diperbarui tiap malam") }
       : activeKeywords.length
       ? { dot: "bg-[#22C55E]", title: L("Monitoring is on", "Pemantauan aktif"), sub: L(`${activeKeywords.length} keywords · checked ${lastRunAt ? timeAgo(lastRunAt) : "hourly"}`, `${activeKeywords.length} kata kunci · dicek ${lastRunAt ? timeAgo(lastRunAt) : "tiap jam"}`) }
+      : (keywords?.data ?? []).length
+      // Keywords exist but all are switched off: not "no keywords yet".
+      ? { dot: "bg-[#F59E0B]", title: L("All keywords paused", "Semua kata kunci dijeda"), sub: L("Turn one on in Settings", "Aktifkan di Pengaturan") }
       : { dot: "bg-white/40", title: L("No keywords yet", "Belum ada kata kunci"), sub: L("Add one in Settings", "Tambah di Pengaturan") };
 
   return (

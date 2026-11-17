@@ -120,7 +120,9 @@ export default function InsightsPage() {
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Analysis", "Analisis")}</h1>
           <p className="mt-1 text-[14px] text-[#5F6B94]">{L("Why the risk score is what it is, and where to act.", "Kenapa skor risikonya segini, dan di mana harus bertindak.")}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* The Daily Brief is no longer its own tab: it is the printable one-page version of this analysis. */}
+          <Link href="/brief" className="inline-flex h-10 items-center rounded-[12px] border-[1.5px] border-[#101334] bg-white px-3.5 text-[12.5px] font-bold text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#F7F8FC]">{L("Daily Brief / PDF", "Briefing Harian / PDF")}</Link>
           <div className="flex rounded-[12px] border-[1.5px] border-[#101334] bg-white p-1 shadow-[0_2px_0_#101334]" role="group" aria-label={L("Period", "Periode")}>
             {WINDOWS.map((w) => (
               <button key={w.id} type="button" aria-pressed={w.id === windowId} onClick={() => setWindowId(w.id)} className={cn("rounded-[8px] px-3 py-1.5 text-[12.5px] font-bold transition-colors", w.id === windowId ? "bg-[#101334] text-white" : "text-[#5F6B94] hover:text-[#101334]")}>

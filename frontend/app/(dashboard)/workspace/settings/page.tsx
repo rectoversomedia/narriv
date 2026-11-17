@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandMark } from "@/components/dashboard/brand-hero";
 import Link from "next/link";
 import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import Image from "next/image";
@@ -194,7 +195,7 @@ export default function SettingsPage() {
   const [timezone, setTimezone] = useState<string | null>(null);
   const [language, setLanguage] = useState<"id" | "en" | null>(null);
   const [workspaceLogo, setWorkspaceLogo] = useState<string | null>(null);
-  const activeLogo = workspaceLogo || (workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "/brand/logo-h-nv.webp");
+  const activeLogo = workspaceLogo || (workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "");
   const [logoError, setLogoError] = useState("");
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const isSavingInfo = updateSettingsMutation.isPending;
@@ -528,7 +529,12 @@ export default function SettingsPage() {
               {/* Logo on a light tile, with the change button and the format beside it. */}
               <div className="flex items-center gap-4 rounded-[14px] bg-[#F7F8FC] p-3">
                 <div className="relative flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white shadow-[0_2px_8px_rgba(16,24,40,0.08)]">
-                  <Image src={activeLogo} alt={ts("workspaceInfo.logoAlt")} width={56} height={56} unoptimized={activeLogo.startsWith("http")} className={cn("max-h-14 w-auto object-contain transition-opacity", uploadLogoMutation.isPending && "opacity-45")} />
+                  {/* No logo yet: the workspace initials, as in the sidebar, never the Narriv logo as if it were theirs. */}
+                  {activeLogo ? (
+                    <Image src={activeLogo} alt={ts("workspaceInfo.logoAlt")} width={56} height={56} unoptimized={activeLogo.startsWith("http")} className={cn("max-h-14 w-auto object-contain transition-opacity", uploadLogoMutation.isPending && "opacity-45")} />
+                  ) : (
+                    <BrandMark name={workspaceSettingsQuery.data?.brandName || "W"} small className="size-14 rounded-[12px]" />
+                  )}
                   {uploadLogoMutation.isPending ? <span className="absolute inset-0 flex items-center justify-center bg-white/70"><RefreshCw size={16} className="animate-spin text-[#3B52F5]" /></span> : null}
                 </div>
                 <input
@@ -887,15 +893,8 @@ export default function SettingsPage() {
       {/* Row 3: Danger Zone (plan and usage are in the subscription card at the top) */}
       <div className="grid grid-cols-1 gap-6">
         
-        {/* Card B: Danger Zone */}
-        <Panel className="flex flex-col gap-6">
-          <div className="flex items-start gap-4">
-            <div>
-              <h2 className="text-base font-black text-rose-600">{ts("danger.title")}</h2>
-            </div>
-          </div>
-
-          <div className="space-y-5">
+        {/* Pausing is reversible and keeps every record, so it is not a danger: its own card, a quiet button. */}
+        <Panel className="flex flex-col gap-4">
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
                 <span className="block text-[11.5px] font-black text-slate-800">{ts(monitoringPaused ? "danger.resumeTitle" : "danger.pauseTitle")}</span>
@@ -909,14 +908,25 @@ export default function SettingsPage() {
                 disabled={pauseMutation.isPending || workspaceSettingsQuery.isLoading}
                 className={cn(
                   "flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg px-3.5 text-[12px] font-black text-white transition shadow-sm disabled:opacity-60",
-                  monitoringPaused ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700",
+                  monitoringPaused ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#101334] hover:bg-[#252a5c]",
                 )}
               >
                 {monitoringPaused ? <Play size={13} /> : <Pause size={13} />} {ts(monitoringPaused ? "danger.resumeButton" : "danger.pauseButton")}
               </button>
             </div>
 
-            <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100/80 pt-4">
+        </Panel>
+
+        {/* Card B: Danger Zone */}
+        <Panel className="flex flex-col gap-6">
+          <div className="flex items-start gap-4">
+            <div>
+              <h2 className="text-base font-black text-rose-600">{ts("danger.title")}</h2>
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
                 <span className="block text-[11.5px] font-black text-[#D32F2F]">{ts("danger.deleteTitle")}</span>
                 <span className="mt-1 block text-[11px] text-[#5A6478] font-semibold leading-normal">

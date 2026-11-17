@@ -139,8 +139,13 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
   const pos = Math.round(k?.positive_percentage ?? 0);
   const other = Math.max(0, 100 - neg - pos);
   const net = pos - neg;
+  const d = dashboard?.sentiment_distribution;
+  const scored = d ? d.positive + d.neutral + d.mixed + d.negative : null;
   const verdict = !k || (k.total_signals ?? 0) === 0
     ? { word: L("No data", "Belum ada data"), color: "#5A6478", bg: "#F1F4FA" }
+    // Mentions in but none scored yet: no tone to report, not "Balanced".
+    : scored === 0
+    ? { word: L("Being analysed", "Sedang dianalisis"), color: "#3B52F5", bg: "#EEF1FF" }
     // 40% negative is "Needs Attention" on the Overview, so it can never read as "Balanced" here.
     : net <= -15 || neg >= 40 ? { word: L("Negative", "Negatif"), color: "#C81E1E", bg: "#FDECEC" }
       : net >= 15 ? { word: L("Positive", "Positif"), color: "#047857", bg: "#E5F6EE" }

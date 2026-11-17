@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Newspaper, Send, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
+import { BarChart3, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
 
 // Four menus, each answering one question a director has:
 //   Hari Ini — what is happening and what do I decide today?
@@ -33,7 +33,6 @@ export const SECTION_TABS = {
   today: [
     { key: "todayTab", href: "/", icon: LayoutDashboard },
     { key: "actionsTab", href: "/action-center", icon: Lightbulb },
-    { key: "brief", href: "/brief", icon: Newspaper },
     { key: "analysis", href: "/insights", icon: BarChart3 },
   ],
   issues: [
