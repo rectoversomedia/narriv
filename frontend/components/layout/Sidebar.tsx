@@ -69,9 +69,13 @@ export function Sidebar() {
       <aside className={cn("sidebar-gradient fixed inset-y-0 left-0 z-30 hidden flex-col overflow-hidden text-white transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:flex", collapsed ? "w-[72px]" : "w-[240px]")}>
         {/* Same height and divider as the top bar, so the logo sits on the same line as the search box. */}
         <div className="relative flex h-[88px] shrink-0 items-center border-b border-white/10 px-4">
-          <Link href="/" aria-label="Narriv" className="relative block h-10 w-full">
-            <Image src="/brand/favicon-nv-96.png" alt="" width={40} height={40} priority className={cn("absolute left-0 top-0 size-10 transition-opacity duration-200", collapsed ? "opacity-100" : "opacity-0")} />
-            <Image src="/brand/logo-p-nv.webp" alt="Narriv" width={128} height={48} priority className={cn("absolute left-1 top-1 h-8 w-auto transition-opacity duration-200", collapsed ? "opacity-0" : "opacity-100")} />
+          <Link href="/" aria-label="Narriv" className="relative block h-12 w-full">
+            <Image src="/brand/favicon-nv-96.png" alt="" width={40} height={40} priority className={cn("absolute left-0 top-1 size-10 transition-opacity duration-200", collapsed ? "opacity-100" : "opacity-0")} />
+            {/* The wordmark with "Narrative Intelligence" right under it (the image has ~14% empty space below the letters). */}
+            <span className={cn("absolute left-1 top-0 flex flex-col transition-opacity duration-200", collapsed ? "opacity-0" : "opacity-100")}>
+              <Image src="/brand/logo-p-nv.webp" alt="Narriv" width={128} height={48} priority className="h-11 w-auto" />
+              <span className="-mt-[2px] pl-[2px] font-mono text-[9.5px] font-bold uppercase leading-none tracking-[0.14em] text-white/60">Narrative Intelligence</span>
+            </span>
           </Link>
         </div>
 
