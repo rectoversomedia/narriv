@@ -11,12 +11,14 @@ const at = (h) => Date.UTC(2026, 10, 4, h, 30);
 const run = (preset, extra = {}) => ({ status: 'completed', metadata: { preset, scheduled: true, ...extra } });
 
 describe('social schedule', () => {
-  test('one round a day at 08:00 WIB, three during a crisis', () => {
+  test('three rounds a day (08:00, 12:00, 16:00 WIB), every hour during a crisis', () => {
     expect(roundsDue(at(0), false)).toBe(0);
     expect(roundsDue(at(1), false)).toBe(1);
-    expect(roundsDue(at(20), false)).toBe(1);
-    expect(roundsDue(at(6), true)).toBe(2);
-    expect(roundsDue(at(10), true)).toBe(3);
+    expect(roundsDue(at(6), false)).toBe(2);
+    expect(roundsDue(at(20), false)).toBe(3);
+    expect(roundsDue(at(0), true)).toBe(1);
+    expect(roundsDue(at(10), true)).toBe(11);
+    expect(roundsDue(at(23), true)).toBe(24);
   });
 
   test('starts every platform once when the day round is due', () => {
@@ -31,7 +33,7 @@ describe('social schedule', () => {
 
   test('stops at the workspace cap and at the global cap', () => {
     expect(planWorkspace({ now: at(1), crisis: false, todayScheduledRuns: [], monthSpendUsd: 25, totalSpendUsd: 25, capUsd: 25 }).reason).toBe('cap_reached');
-    expect(planWorkspace({ now: at(1), crisis: false, todayScheduledRuns: [], monthSpendUsd: 1, totalSpendUsd: 75 }).reason).toBe('cap_reached');
+    expect(planWorkspace({ now: at(1), crisis: false, todayScheduledRuns: [], monthSpendUsd: 1, totalSpendUsd: 450 }).reason).toBe('cap_reached');
     // Room for only one more run: only one platform starts.
     expect(planWorkspace({ now: at(1), crisis: false, todayScheduledRuns: [], monthSpendUsd: 9.7, totalSpendUsd: 9.7, capUsd: 10 }).start).toHaveLength(1);
   });
@@ -46,6 +48,6 @@ describe('social schedule', () => {
     expect(socialConfig({}).enabled).toBe(false);
     const cfg = socialConfig({ socialAuto: true, socialConfig: { platforms: ['x', 'bogus'], monthlyCapUsd: 10, crisisMode: false } });
     expect(cfg).toMatchObject({ enabled: true, platforms: ['x'], presets: ['twitter-x-latest'], monthlyCapUsd: 10, crisisMode: false });
-    expect(socialConfig({ socialAuto: true, socialConfig: { monthlyCapUsd: 999 } }).monthlyCapUsd).toBe(75);
+    expect(socialConfig({ socialAuto: true, socialConfig: { monthlyCapUsd: 999 } }).monthlyCapUsd).toBe(450);
   });
 });

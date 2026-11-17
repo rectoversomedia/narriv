@@ -4,8 +4,8 @@
  *
  * Runs from an hourly cron (:30). Each tick:
  *   1. finishes collections that are done (stores their posts, analysis, alerts);
- *   2. starts today's due rounds: one round a day at 08:00 WIB, three (08:00, 12:00, 16:00 WIB) while the workspace
- *      has an open critical alert from the last 72 hours ("crisis mode");
+ *   2. starts today's due rounds: three a day (08:00, 12:00, 16:00 WIB), and every hour while the workspace has an
+ *      open critical alert from the last 72 hours ("crisis mode");
  *   3. never spends past the monthly caps. A run without a final bill yet counts at its full per-run cap, so the
  *      caps hold even before Apify reports the cost.
  */
@@ -39,11 +39,12 @@ export function socialConfig(settings = {}) {
 
 /** Emergency stop for every workspace at once (env SOCIAL_AUTO_PAUSED=1). */
 export const globallyPaused = () => ["1", "true", "yes"].includes(String(process.env.SOCIAL_AUTO_PAUSED || "").toLowerCase());
-export const ROUND_HOURS_UTC = { normal: [1], crisis: [1, 5, 9] }; // 08:00 / 12:00 / 16:00 WIB
+// Normal: 08:00 / 12:00 / 16:00 WIB. Crisis: every hourly tick (the cron runs at :30 each hour).
+export const ROUND_HOURS_UTC = { normal: [1, 5, 9], crisis: Array.from({ length: 24 }, (_, h) => h) };
 const CRISIS_WINDOW_MS = 72 * 3600 * 1000;
 
-export const workspaceCapUsd = () => Number(process.env.SOCIAL_MONTHLY_CAP_PER_WORKSPACE_USD || 25);
-export const totalCapUsd = () => Number(process.env.SOCIAL_MONTHLY_CAP_TOTAL_USD || 75);
+export const workspaceCapUsd = () => Number(process.env.SOCIAL_MONTHLY_CAP_PER_WORKSPACE_USD || 150);
+export const totalCapUsd = () => Number(process.env.SOCIAL_MONTHLY_CAP_TOTAL_USD || 450);
 const perRunCapUsd = () => Math.min(Number(process.env.APIFY_COLLECTION_MAX_CHARGE_USD || 0.25), Number(process.env.APIFY_MAX_CHARGE_USD || 0.5));
 
 /** Spend of one collection row: the billed cost, or the per-run cap while it has none. */
@@ -85,7 +86,7 @@ export async function socialStatus(workspaceId, now = Date.now()) {
     const mine = (rows || []).filter((r) => r.metadata?.workspaceId === workspaceId);
     const crisis = enabled && cfg.crisisMode ? await inCrisis(workspaceId, now) : false;
     const lastScheduled = mine.filter((r) => r.metadata?.scheduled).map((r) => r.created_at).sort().at(-1) || null;
-    return { enabled, crisis, crisisMode: cfg.crisisMode, platforms: cfg.platforms, roundsPerDay: crisis ? 3 : 1, monthSpendUsd: Math.round(mine.reduce((n, r) => n + runSpend(r), 0) * 100) / 100, monthCapUsd: cfg.monthlyCapUsd, lastScheduledAt: lastScheduled };
+    return { enabled, crisis, crisisMode: cfg.crisisMode, platforms: cfg.platforms, roundsPerDay: (crisis ? ROUND_HOURS_UTC.crisis : ROUND_HOURS_UTC.normal).length, monthSpendUsd: Math.round(mine.reduce((n, r) => n + runSpend(r), 0) * 100) / 100, monthCapUsd: cfg.monthlyCapUsd, lastScheduledAt: lastScheduled };
 }
 
 async function inCrisis(workspaceId, now) {

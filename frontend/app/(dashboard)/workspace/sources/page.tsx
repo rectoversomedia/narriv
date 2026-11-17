@@ -247,8 +247,8 @@ function SocialAutoCard() {
           </div>
           <p className="mt-3 text-[12px] font-bold text-[#5A6478]">
             {s.crisis
-              ? pickL("Collected 3 times a day (08:00, 12:00, 16:00 WIB) while a critical alert is open.", "Diambil 3× sehari (08.00, 12.00, 16.00 WIB) selama ada peringatan kritis.")
-              : pickL("Collected every day at 08:00 WIB.", "Diambil setiap hari pukul 08.00 WIB.")}
+              ? pickL("Collected every hour while a critical alert is open.", "Diambil tiap jam selama ada peringatan kritis.")
+              : pickL("Collected 3 times a day (08:00, 12:00, 16:00 WIB), every hour during a crisis.", "Diambil 3× sehari (08.00, 12.00, 16.00 WIB), tiap jam saat krisis.")}
           </p>
           {s.lastScheduledAt ? <p className="mt-1 text-[11px] font-bold text-[#8A93AD]">{pickL("last run", "terakhir")} {formatSourceTime(s.lastScheduledAt)}</p> : null}
         </>

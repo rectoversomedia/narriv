@@ -9,8 +9,8 @@
  *   node --env-file=.env scripts/social-auto.mjs off <workspace>
  *
  * <workspace> is the workspace id or (part of) its name. Spend counts a run without a bill yet at its full cap.
- * Global limits live in the backend env on Vercel: SOCIAL_MONTHLY_CAP_TOTAL_USD (all clients, default 75),
- * SOCIAL_MONTHLY_CAP_PER_WORKSPACE_USD (default per client, 25) and SOCIAL_AUTO_PAUSED=1 (emergency stop).
+ * Global limits live in the backend env on Vercel: SOCIAL_MONTHLY_CAP_TOTAL_USD (all clients, default 450),
+ * SOCIAL_MONTHLY_CAP_PER_WORKSPACE_USD (default per client, 150) and SOCIAL_AUTO_PAUSED=1 (emergency stop).
  */
 
 import { createClient } from "@supabase/supabase-js";
