@@ -316,30 +316,6 @@ export function ForMandiri({ en }: P) {
   );
 }
 
-export function TrackRecord({ en }: P) {
-  const t = tr(en);
-  const cases: Array<[string, string, string]> = [
-    ["FIFGROUP", "89%", t("sentimen positif, 3,2 juta+ views organik", "positive sentiment, 3.2M+ organic views")],
-    ["Prudential", "3.000+", t("leads dari kampanye digital", "leads from digital campaigns")],
-    ["BRImo · UOB · AstraPay", t("Akuisisi", "Acquisition"), t("kampanye digital untuk aplikasi keuangan", "digital campaigns for finance apps")],
-    [t("Aplikasi fintech", "Fintech app"), "2,7 → 4,5", t("rating aplikasi lewat program app growth", "app rating through an app growth programme")],
-  ];
-  return (
-    <Light tag={t("Tim di balik Narriv", "The team behind Narriv")} v={2}>
-      <Head kicker="Rectoverso Media" title={t(<>Sudah terbiasa menjaga <Brush>reputasi brand keuangan.</Brush></>, <>Used to guarding <Brush>finance brands.</Brush></>)} sub={t("Narriv dibangun oleh Rectoverso Media, yang sejak 2020 menangani 100+ brand. Ini hasil kerja tim, bukan hasil Narriv.", "Narriv is built by Rectoverso Media, working with 100+ brands since 2020. These are the team's results, not Narriv's.")} />
-      <div style={{ position: "absolute", left: 96, right: 96, top: 560, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 28 }}>
-        {cases.map(([who, big, d]) => (
-          <Card key={who} style={{ padding: "36px 34px 40px" }}>
-            <p style={{ margin: 0, fontFamily: MONO, fontSize: 20, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: BLUE }}>{who}</p>
-            <p style={{ margin: "22px 0 0", fontSize: 64, lineHeight: 1, fontWeight: 800, letterSpacing: "-0.04em" }}>{big}</p>
-            <p style={{ margin: "16px 0 0", fontSize: 24, lineHeight: 1.45, color: MUTED }}>{d}</p>
-          </Card>
-        ))}
-      </div>
-    </Light>
-  );
-}
-
 export function Faq({ en }: P) {
   const t = tr(en);
   const qa: Array<[string, string]> = [
@@ -382,7 +358,6 @@ export function mandiriDeck(en: boolean) {
     <AiVisibility key="ai" en={en} />,
     <Reports key="reports" en={en} img={`/pitch/report-mandiri-${en ? "en" : "id"}.jpg`} />,
     <Trust key="trust" en={en} />,
-    <TrackRecord key="track" en={en} />,
     <Faq key="faq" en={en} />,
     <Pilot key="pilot" en={en} />,
     <Closing key="closing" en={en} />,
