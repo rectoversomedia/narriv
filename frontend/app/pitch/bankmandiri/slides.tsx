@@ -1,7 +1,7 @@
 // /pitch/bankmandiri: the Narriv deck prepared for a Bank Mandiri meeting. The data slides use Narriv's real
 // monitoring of public news and YouTube about Bank Mandiri, 19 Oct to 18 Nov 2026 (workspace "Narriv Demo — Bank
 // Mandiri"); the feature slides reuse the main deck. No Bank Mandiri logo or branding: the name only.
-import { AlertTriangle, Ear, FileText, Layers, Megaphone, ShieldAlert, Sparkles, Zap } from "lucide-react";
+import { AlertTriangle, Ear, Plus, FileText, Layers, Megaphone, ShieldAlert, Sparkles, Zap } from "lucide-react";
 import { AMBER, BLUE, Brush, Card, Dark, Dot, INK, INKED, Light, MONO, MUTED, NEG, NEU, Num, POS, Ribbon, Stamp, Head } from "../kit";
 import { Alerts, AiVisibility, Bar, Closing, Reports, Solution, Trust } from "../slides";
 
@@ -190,11 +190,20 @@ export function Sources({ en }: P) {
   const media: Array<[string, number]> = [["Demokratis.co.id", 9], ["Mandiri Sekuritas (YouTube)", 7], ["kontan.co.id", 6], ["investor.id", 6], ["CNBC Indonesia", 6], ["Kompas.com", 4], ["CNN Indonesia", 4]];
   return (
     <Dark tag={t("Sumber", "Sources")} glow="right">
-      <Head dark top={170} width={800} kicker={t("Dari mana percakapannya", "Where the talk comes from")} title={t(<>Berita online <Brush>memimpin.</Brush></>, <>Online news <Brush>leads.</Brush></>)} sub={t("109 dari 122 percakapan berasal dari media online, 13 dari YouTube. Media sosial bisa ditambahkan sesuai paket.", "109 of 122 mentions come from online media, 13 from YouTube. Social media can be added by plan.")} />
+      <Head dark top={170} width={800} kicker={t("Dari mana percakapannya", "Where the talk comes from")} title={t(<>Berita online <Brush>memimpin.</Brush></>, <>Online news <Brush>leads.</Brush></>)} sub={t("109 dari 122 percakapan berasal dari media online, 13 dari YouTube.", "109 of 122 mentions come from online media, 13 from YouTube.")} />
       <div className="pc" style={{ position: "absolute", left: 1000, top: 200, width: 824, padding: "40px 48px", borderRadius: 30, background: "#fff", color: INK, ...INKED }}>
         <p style={{ margin: "0 0 24px", fontFamily: MONO, fontSize: 20, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: MUTED }}>{t("Media teratas · jumlah percakapan", "Top outlets · mentions")}</p>
         <div style={{ display: "grid", gap: 20 }}>
           {media.map(([name, n]) => <Bar key={name} label={name} n={n} c={BLUE} max={9} />)}
+        </div>
+      </div>
+      <div className="pc" style={{ position: "absolute", left: 96, top: 600, width: 800, padding: 4, borderRadius: 30, background: "linear-gradient(110deg,#465FFF,#8B5CF6 55%,#EC4899)" }}>
+        <div style={{ padding: "30px 36px", borderRadius: 26, background: "#0B0E24" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "8px 18px", borderRadius: 999, background: "linear-gradient(110deg,#465FFF,#EC4899)", fontFamily: MONO, fontSize: 19, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#fff" }}>
+            <Plus size={20} aria-hidden /> Add-on
+          </span>
+          <p style={{ margin: "20px 0 0", fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", color: "#fff" }}>{t("Media sosial", "Social media")}</p>
+          <p style={{ margin: "10px 0 0", fontSize: 25, lineHeight: 1.5, color: "rgba(255,255,255,.72)" }}>{t("Instagram, TikTok, X, dan Facebook bisa ditambahkan sesuai paket, supaya keluhan nasabah di sosmed ikut terpantau.", "Instagram, TikTok, X and Facebook can be added by plan, so customer complaints on social are tracked too.")}</p>
         </div>
       </div>
       <Source en={en} dark />
@@ -366,7 +375,9 @@ export function mandiriDeck(en: boolean) {
     <Sources key="sources" en={en} />,
     <Solution key="solution" en={en} />,
     <IfItGrows key="grows" en={en} />,
-    <Alerts key="alerts" en={en} />,
+    <Alerts key="alerts" en={en} sample={en
+      ? { title: "KUR-to-civil-servant story is spreading", text: "Coverage of alleged KUR loans to civil servants doubled in 24 hours and is now quoted by national outlets.", owner: "Corporate Communication", due: "In 4 hours", todo: "Prepare a statement on KUR verification, brief the spokesperson, check coverage every hour.", note: "Example · simulated alert, not a real event", level: "High" }
+      : { title: "Sorotan KUR ke ASN mulai menyebar", text: "Pemberitaan dugaan penyaluran KUR ke ASN naik 2× dalam 24 jam dan mulai dikutip media nasional.", owner: "Corporate Communication", due: "4 jam lagi", todo: "Siapkan pernyataan soal verifikasi KUR, brief juru bicara, pantau pemberitaan tiap jam.", note: "Contoh · simulasi, bukan kejadian nyata", level: "Tinggi" }} />,
     <AiVisibility key="ai" en={en} />,
     <Reports key="reports" en={en} />,
     <Trust key="trust" en={en} />,

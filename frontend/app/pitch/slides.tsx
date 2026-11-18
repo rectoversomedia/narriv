@@ -197,7 +197,8 @@ export function RiskMap({ en }: P) {
   );
 }
 
-export function Alerts({ en }: P) {
+type AlertSample = { title: string; text: string; owner: string; due: string; todo: string; note: string; level?: string };
+export function Alerts({ en, sample }: P & { sample?: AlertSample }) {
   const t = tr(en);
   return (
     <Dark tag={t("Fitur · Peringatan", "Feature · Alerts")} glow="left">
@@ -211,13 +212,14 @@ export function Alerts({ en }: P) {
         <div style={{ height: 14, background: NEG }} />
         <div style={{ padding: "36px 44px 44px" }}>
           <div style={{ display: "flex", gap: 14 }}>
-            <Stamp tone={NEG}>{t("Kritis", "Critical")}</Stamp>
+            <Stamp tone={NEG}>{sample?.level ?? t("Kritis", "Critical")}</Stamp>
+            {sample ? <Stamp tone={AMBER}>{t("Contoh", "Example")}</Stamp> : null}
             <Stamp>{t("Dikirim via email", "Sent by email")}</Stamp>
           </div>
-          <p style={{ margin: "30px 0 0", fontSize: 44, fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.02em" }}>{t("Gangguan Arunika Mobile di jam sibuk", "Arunika Mobile outage at peak hours")}</p>
-          <p style={{ margin: "18px 0 0", fontSize: 25, lineHeight: 1.5, color: MUTED }}>{t("Keluhan login dan transfer gagal naik 3× dalam 24 jam, mulai diangkat media online.", "Complaints about failed logins and transfers up 3× in 24 hours, now picked up by online media.")}</p>
+          <p style={{ margin: "30px 0 0", fontSize: 44, fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.02em" }}>{sample?.title ?? t("Gangguan Arunika Mobile di jam sibuk", "Arunika Mobile outage at peak hours")}</p>
+          <p style={{ margin: "18px 0 0", fontSize: 25, lineHeight: 1.5, color: MUTED }}>{sample?.text ?? t("Keluhan login dan transfer gagal naik 3× dalam 24 jam, mulai diangkat media online.", "Complaints about failed logins and transfers up 3× in 24 hours, now picked up by online media.")}</p>
           <div style={{ marginTop: 30, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-            {[[t("PIC", "Owner"), t("Tim Digital", "Digital Team")], [t("Tenggat", "Due"), t("4 jam lagi", "In 4 hours")]].map(([k, v]) => (
+            {[[t("PIC", "Owner"), sample?.owner ?? t("Tim Digital", "Digital Team")], [t("Tenggat", "Due"), sample?.due ?? t("4 jam lagi", "In 4 hours")]].map(([k, v]) => (
               <div key={k} style={{ padding: "18px 22px", borderRadius: 18, background: "#F3F5FB" }}>
                 <p style={{ margin: 0, fontFamily: MONO, fontSize: 19, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED }}>{k}</p>
                 <p style={{ margin: "6px 0 0", fontSize: 28, fontWeight: 800 }}>{v}</p>
@@ -226,9 +228,9 @@ export function Alerts({ en }: P) {
           </div>
           <div style={{ marginTop: 26, padding: "22px 26px", borderRadius: 20, background: INK, color: "#fff" }}>
             <p style={{ margin: 0, fontFamily: MONO, fontSize: 19, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#A5B4FF" }}>{t("Lakukan sekarang", "Do this now")}</p>
-            <p style={{ margin: "8px 0 0", fontSize: 26, lineHeight: 1.45 }}>{t("Rilis status pemulihan, perbarui tiap 2 jam, balas keluhan teratas di X.", "Publish a recovery status, update every 2 hours, reply to the top complaints on X.")}</p>
+            <p style={{ margin: "8px 0 0", fontSize: 26, lineHeight: 1.45 }}>{sample?.todo ?? t("Rilis status pemulihan, perbarui tiap 2 jam, balas keluhan teratas di X.", "Publish a recovery status, update every 2 hours, reply to the top complaints on X.")}</p>
           </div>
-          <div style={{ marginTop: 22 }}><SampleTag text={t("Contoh peringatan · brand fiktif", "Sample alert · fictional brand")} /></div>
+          <div style={{ marginTop: 22 }}><SampleTag text={sample?.note ?? t("Contoh peringatan · brand fiktif", "Sample alert · fictional brand")} /></div>
         </div>
       </div>
     </Dark>
