@@ -339,6 +339,35 @@ export function Faq({ en }: P) {
   );
 }
 
+export function ReportingPlan({ en }: P) {
+  const t = tr(en);
+  const rows: Array<[string, string, string, string, string]> = [
+    [NEG, t("Saat ada isu", "When an issue hits"), t("Peringatan + bukti + langkah pertama", "Alert with evidence and a first step"), t("PIC Corporate Communication", "Corporate Communication owner"), t("Email, dalam hitungan jam", "Email, within hours")],
+    [BLUE, t("Harian · 07.00", "Daily · 07:00"), t("Briefing pagi: apa yang berubah sejak kemarin", "Morning brief: what changed since yesterday"), t("Tim komunikasi", "Comms team"), t("Dashboard & email", "Dashboard & email")],
+    ["#8B5CF6", t("Mingguan · Senin", "Weekly · Monday"), t("Ringkasan eksekutif 1 halaman: status, isu utama, yang perlu diputuskan", "One-page executive summary: status, top issues, decisions"), t("Kepala divisi", "Division head"), "PDF"],
+    ["#EC4899", t("Bulanan", "Monthly"), t("Laporan bulanan: tren 30 hari, isu besar, perbandingan bulan lalu, rekomendasi", "Monthly report: 30-day trend, major issues, month-on-month, recommendations"), t("Direksi & manajemen", "Board & management"), t("PDF/Excel + meeting review 60 menit", "PDF/Excel + 60-min review meeting")],
+  ];
+  return (
+    <Light tag={t("Format pelaporan", "Reporting plan")} v={2}>
+      <Head kicker={t("Ritme pelaporan untuk Bank Mandiri", "Reporting rhythm for Bank Mandiri")} title={t(<>Jelas kapan, apa, dan <Brush>untuk siapa.</Brush></>, <>Clear when, what and <Brush>for whom.</Brush></>)} />
+      <div className="pc" style={{ position: "absolute", left: 96, right: 96, top: 390, borderRadius: 30, background: "#fff", overflow: "hidden", ...INKED }}>
+        <div style={{ display: "grid", gridTemplateColumns: "300px 1fr 320px 360px", padding: "22px 40px", background: INK, color: "#C7D0FF", fontFamily: MONO, fontSize: 19, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+          <span>{t("Kapan", "When")}</span><span>{t("Isi", "What")}</span><span>{t("Untuk", "For")}</span><span>{t("Bentuk", "Format")}</span>
+        </div>
+        {rows.map(([c, when, what, who, how], k) => (
+          <div key={when} style={{ display: "grid", gridTemplateColumns: "300px 1fr 320px 360px", alignItems: "center", gap: 0, padding: "26px 40px", borderTop: k ? "2px solid #E6E9F4" : "none", background: k === 3 ? "#FBF4FA" : "#fff" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 28, fontWeight: 800 }}><Dot c={c} s={18} />{when}</span>
+            <span style={{ paddingRight: 28, fontSize: 25, lineHeight: 1.4, color: INK }}>{what}</span>
+            <span style={{ fontSize: 24, fontWeight: 700, color: MUTED }}>{who}</span>
+            <span style={{ fontSize: 24, fontWeight: 700, color: MUTED }}>{how}</span>
+          </div>
+        ))}
+      </div>
+      <p style={{ position: "absolute", left: 96, top: 990, margin: 0, fontSize: 24, fontWeight: 600, color: MUTED }}>{t("Format, jadwal, dan penerima bisa disesuaikan dengan struktur tim Bank Mandiri.", "Format, schedule and recipients can follow Bank Mandiri's team structure.")}</p>
+    </Light>
+  );
+}
+
 export function mandiriDeck(en: boolean) {
   return [
     <MandiriCover key="cover" en={en} />,
@@ -357,6 +386,7 @@ export function mandiriDeck(en: boolean) {
       : { title: "Sorotan KUR ke ASN mulai menyebar", text: "Pemberitaan dugaan penyaluran KUR ke ASN naik 2× dalam 24 jam dan mulai dikutip media nasional.", owner: "Corporate Communication", due: "4 jam lagi", todo: "Siapkan pernyataan soal verifikasi KUR, brief juru bicara, pantau pemberitaan tiap jam.", note: "Contoh · simulasi, bukan kejadian nyata", level: "Tinggi" }} />,
     <AiVisibility key="ai" en={en} />,
     <Reports key="reports" en={en} img={`/pitch/report-mandiri-${en ? "en" : "id"}.jpg`} />,
+    <ReportingPlan key="plan" en={en} />,
     <Trust key="trust" en={en} />,
     <Faq key="faq" en={en} />,
     <Pilot key="pilot" en={en} />,
