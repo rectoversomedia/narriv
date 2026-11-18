@@ -19,7 +19,6 @@ used.
 | Email | Resend (`RESEND_API_KEY`, `EMAIL_FROM`) | `narriv.digital` has no MX record, so there is no inbound mailbox. |
 | DNS | Hostinger (`dns-parking.com` nameservers) | Owner access only. |
 
-Vercel project `narriv` is a stale duplicate whose builds fail; ignore it.
 
 ## Deploy
 

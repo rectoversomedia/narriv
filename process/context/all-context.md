@@ -195,7 +195,7 @@ Frontend:
 
 ## Production Operations (verified 2026-10-09)
 
-- Vercel team `rectoverso-media`, Hobby plan. Projects `narriv-api` (backend) and `frontend` (serves `www.narriv.digital` / `app.narriv.digital`). Git pushes do not deploy: release only with `npm run release` (see `process/general-plans/references/production-operations-handoff.md`). Project `narriv` is a stale duplicate.
+- Vercel team `rectoverso-media`, Hobby plan. Projects `narriv-api` (backend) and `frontend` (serves `www.narriv.digital` / `app.narriv.digital`). Git pushes do not deploy: release only with `npm run release` (see `process/general-plans/references/production-operations-handoff.md`)..
 - Scheduler: the Cloudflare Worker `rectoverso-scheduler` calls `/api/cron/ingest` every 2 hours and `/api/cron/social` hourly; Vercel Cron runs only `/api/cron/daily` once a day (Hobby limit). Due report schedules (daily brief, weekly board report) are sent from both. Runs are recorded in `cron_ingestion_logs`.
 - `GET /api/pipeline/status` gives per-workspace pipeline health (last ingestion/analysis/clustering/alert, failures, AI usage) plus `scheduler.health` (scheduled vs manual runs, missed UTC slots in the last 24h; see `backend/src/lib/scheduler-health.js`). Ingest runs record `trigger` as `vercel-cron:<slot>` only when the caller's user agent is `vercel-cron/*`.
 - Ask Narriv (`POST /api/ai/ask`) runs through the AI gateway (`runAiTask`): budget-gated, token-metered, returns `meta.model`, keeps only citations present in the workspace context, and never returns unparsed model text or raw provider errors.
