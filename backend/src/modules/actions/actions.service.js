@@ -4,6 +4,7 @@ import { logStructured } from "../../lib/logger.js";
 import { buildTemplateContext } from "./action-templates.js";
 import { checkBudgetAllowance } from "../../lib/cost-management.js";
 import { recordTokenUsage } from "../../lib/token-tracking.js";
+import { workspaceLanguage } from "../../lib/workspace-language.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -598,11 +599,17 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
     if (templateContext) contextParts.push(templateContext);
     const fullContext = contextParts.join("\n\n");
 
+    // The plan is stored and shared by the whole team, so it is written in the workspace's content language.
+    const lang = deps.lang || await workspaceLanguage(workspaceId);
+    const langNote = lang === "id"
+        ? "\n\nWrite every text value in the JSON in Bahasa Indonesia (natural, professional). Keep the JSON keys in English."
+        : "";
+
     // 5. Generate 3 strategic options in parallel
     const results = await Promise.all([
-        generateOption(strategyType, promptConfig, fullContext, "Option A (Conservative/Safe)", complete),
-        generateOption(strategyType, promptConfig, fullContext, "Option B (Balanced/Recommended)", complete),
-        generateOption(strategyType, promptConfig, fullContext, "Option C (Bold/Aggressive)", complete)
+        generateOption(strategyType, promptConfig, fullContext + langNote, "Option A (Conservative/Safe)", complete),
+        generateOption(strategyType, promptConfig, fullContext + langNote, "Option B (Balanced/Recommended)", complete),
+        generateOption(strategyType, promptConfig, fullContext + langNote, "Option C (Bold/Aggressive)", complete)
     ]);
     const options = results.map((r) => r?.option || null);
     const usage = results.reduce((acc, r) => ({ input: acc.input + (r?.usage?.input || 0), output: acc.output + (r?.usage?.output || 0) }), { input: 0, output: 0 });
@@ -637,7 +644,7 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
             alert_id: scopedAlertId || null,
             cluster_id: scopedClusterId || null,
             signal_id: scopedSignalId,
-            title: `${formatStrategyName(strategyType)} Action Plan`,
+            title: lang === "id" ? `Rencana ${formatStrategyName(strategyType, "id")}` : `${formatStrategyName(strategyType)} Action Plan`,
             type: strategyType,
             strategy: JSON.stringify(strategyPayload),
             priority: "medium",
@@ -697,7 +704,17 @@ async function generateOption(strategyType, promptConfig, context, toneSuffix, c
 /**
  * Formats strategy type into a human-readable name.
  */
-function formatStrategyName(type) {
+function formatStrategyName(type, lang = "en") {
+    const id = {
+        pr_response: "Respons PR",
+        content_strategy: "Strategi Konten",
+        influencer_strategy: "Strategi Influencer",
+        crisis_response: "Respons Krisis",
+        social_response: "Respons Media Sosial",
+        stakeholder_update: "Kabar untuk Pemangku Kepentingan",
+        data_driven: "Berbasis Data",
+    };
+    if (lang === "id" && id[type]) return id[type];
     const names = {
         pr_response: "PR Response",
         content_strategy: "Content Strategy",

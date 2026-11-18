@@ -247,6 +247,18 @@ export const runClustering = async (workspaceId) => {
             : `${cluster.length} percakapan tentang ${allClusterKeywords.slice(0, 5).join(", ")}.`);
         const mainNarrative = aiAnalysis?.description || description;
 
+        // Two ingest runs can cluster the same new records at once (both read them as unclustered while the AI
+        // label call is in flight), which made twin issues. Re-check right before insert and skip if another run
+        // already took these records.
+        const { data: takenLinks } = await supabase
+            .from("narrative_cluster_signals")
+            .select("signal_id")
+            .in("signal_id", cluster.map((s) => s.id));
+        if ((takenLinks || []).length) {
+            logStructured("info", "clustering_skip_taken", { taken: takenLinks.length, size: cluster.length });
+            continue;
+        }
+
         // Insert new cluster into DB
         const { data: dbCluster, error: clusterError } = await supabase
             .from("narrative_clusters")

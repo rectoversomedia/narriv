@@ -489,7 +489,71 @@ async function detectAlertsNow(workspaceId) {
         }
     }
 
+    try {
+        alerts.push(...await detectOpportunities(workspaceId));
+    } catch (err) {
+        logStructured("warn", "opportunity_detection_failed", { workspaceId, error: err.message });
+    }
+
     return alerts;
+}
+
+/**
+ * Opportunities: an issue the media tell positively (2+ records in the last 14 days) becomes one "opportunity"
+ * alert, so the team can amplify it. Rule-based and written from the issue's own title/description: no AI call.
+ * One per issue (metadata.cluster_id); not pushed as a notification, it waits on the Opportunities page.
+ */
+export async function detectOpportunities(workspaceId, db = supabase) {
+    const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: clusters } = await db
+        .from("narrative_clusters")
+        .select("id, title, description, signal_count, sentiment, updated_at")
+        .eq("workspace_id", workspaceId)
+        .eq("sentiment", "positive")
+        .gte("signal_count", 2)
+        .gte("updated_at", since);
+    if (!clusters?.length) return [];
+
+    const { data: existing } = await db
+        .from("alerts")
+        .select("metadata")
+        .eq("workspace_id", workspaceId)
+        .eq("type", "opportunity");
+    const done = new Set((existing || []).map((a) => a.metadata?.cluster_id).filter(Boolean));
+    const id = (await workspaceLanguage(workspaceId)) === "id";
+    const created = [];
+    for (const c of clusters) {
+        if (done.has(c.id)) continue;
+        const { data: links } = await db.from("narrative_cluster_signals").select("signal_id").eq("cluster_id", c.id).limit(20);
+        const signalIds = (links || []).map((l) => l.signal_id);
+        const { data: alert } = await db
+            .from("alerts")
+            .insert({
+                workspace_id: workspaceId,
+                type: "opportunity",
+                severity: c.signal_count >= 4 ? "medium" : "low",
+                title: c.title,
+                description: c.description,
+                what_happened: id
+                    ? `${c.signal_count} pemberitaan bernada positif tentang "${c.title}". ${c.description || ""}`.trim()
+                    : `${c.signal_count} positive stories about "${c.title}". ${c.description || ""}`.trim(),
+                why_it_matters: id
+                    ? "Cerita positif yang sudah dibawa media lebih murah diperkuat daripada membangun cerita baru, dan bisa mengimbangi isu negatif yang sedang berjalan."
+                    : "A positive story the media already carry is cheaper to amplify than a new one, and it can balance negative issues in play.",
+                what_to_do: id
+                    ? "Perkuat lewat kanal milik sendiri (media sosial, siaran pers lanjutan), siapkan juru bicara atau data pendukung, dan tawarkan sudut lanjutan ke media yang sudah meliput."
+                    : "Amplify it on owned channels (social, a follow-up release), prepare a spokesperson or supporting data, and pitch a follow-up angle to the outlets already covering it.",
+                status: "open",
+                sources: ["news"],
+                source: "news",
+                metadata: { cluster_id: c.id, signal_ids: signalIds, rule_triggered: "positive_issue", detected_at: new Date().toISOString() },
+            })
+            .select()
+            .single();
+        if (alert) created.push(alert);
+    }
+    if (created.length) logStructured("info", "opportunities_created", { workspaceId, count: created.length });
+    return created;
 }
 
 export async function escalateAlertsForWorkspace(workspaceId) {

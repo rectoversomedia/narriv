@@ -19,6 +19,10 @@ const ROUTINE_PATTERNS = [
     /\bbunga deposito\b.*\bterbaru\b/i,
     /\b(usd|dollar) exchange rates?\b/i,
     /\bstock picks?\b/i,
+    // How-to videos ("Cara Cek Saldo ATM Mandiri", "Tutorial Livin'"): product help, not reputation.
+    /^[^\p{L}]*(cara|tutorial|panduan|tips)\b/iu,
+    /\btutorial\b/i,
+    /\bcara (cek|daftar|buat|bikin|transfer|kirim|top ?up|bayar|aktivasi|reset|ganti|buka|tarik|setor|isi)\b/i,
 ];
 
 export function isRoutineContent(record) {
