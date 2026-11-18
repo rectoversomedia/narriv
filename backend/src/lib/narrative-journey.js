@@ -33,7 +33,7 @@ export function buildJourney(rows, { privacy = false } = {}) {
         steps,
         firstNegative: firstNeg ? { at: new Date(firstNeg.t).toISOString(), hoursAfterStart: hours(firstNeg.t), outlet: outlet(firstNeg.r) } : null,
         peak: { day: peakDay, count: peakCount },
-        negativeShare: { early, late, trend: late > early + 10 ? "rising" : late < early - 10 ? "falling" : "steady" },
+        negativeShare: { early, late, trend: timed.length < 4 ? "few" : late > early + 10 ? "rising" : late < early - 10 ? "falling" : "steady" },
         spanHours: hours(timed[timed.length - 1].t),
     };
 }

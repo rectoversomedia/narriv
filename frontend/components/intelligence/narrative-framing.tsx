@@ -44,7 +44,11 @@ export function NarrativeJourneyPanel({ journey, n }: { journey: NarrativeJourne
     ? pickL(`Getting more negative: ${journey.negativeShare.early}% negative early on, ${journey.negativeShare.late}% later.`, `Makin negatif: ${journey.negativeShare.early}% negatif di awal, ${journey.negativeShare.late}% belakangan.`)
     : trend === "falling"
       ? pickL(`Cooling down: ${journey.negativeShare.early}% negative early on, ${journey.negativeShare.late}% later.`, `Mereda: ${journey.negativeShare.early}% negatif di awal, ${journey.negativeShare.late}% belakangan.`)
-      : pickL(`Tone steady: about ${journey.negativeShare.late}% negative throughout.`, `Nada stabil: sekitar ${journey.negativeShare.late}% negatif sepanjang waktu.`);
+      : trend === "few"
+        ? pickL("Too few records yet to read a direction.", "Catatan masih terlalu sedikit untuk membaca arah nada.")
+        : journey.negativeShare.late === 0 && journey.negativeShare.early === 0
+          ? pickL("No negative coverage so far.", "Belum ada pemberitaan negatif sejauh ini.")
+          : pickL(`Tone steady: about ${journey.negativeShare.late}% negative throughout.`, `Nada stabil: sekitar ${journey.negativeShare.late}% negatif sepanjang waktu.`);
   const peakDay = new Date(`${journey.peak.day}T00:00:00`).toLocaleDateString(pickL("en-GB", "id-ID"), { day: "numeric", month: "short" });
   return (
     <section className="grid gap-4">
@@ -53,7 +57,7 @@ export function NarrativeJourneyPanel({ journey, n }: { journey: NarrativeJourne
         <div className="grid gap-2 sm:grid-cols-3">
           <Moment label={pickL("First negative", "Negatif pertama")} value={journey.firstNegative ? (journey.firstNegative.outlet ?? "—") : pickL("None", "Tidak ada")} note={journey.firstNegative ? pickL(`${duration(journey.firstNegative.hoursAfterStart)} after the start`, `${duration(journey.firstNegative.hoursAfterStart)} setelah awal`) : undefined} />
           <Moment label={pickL("Busiest day", "Hari paling ramai")} value={peakDay} note={pickL(`${journey.peak.count} records`, `${journey.peak.count} catatan`)} />
-          <Moment label={pickL("Tone trend", "Arah nada")} value={trend === "rising" ? pickL("More negative", "Makin negatif") : trend === "falling" ? pickL("Cooling", "Mereda") : pickL("Steady", "Stabil")} tone={trend === "rising" ? "negative" : trend === "falling" ? "positive" : undefined} />
+          <Moment label={pickL("Tone trend", "Arah nada")} value={trend === "rising" ? pickL("More negative", "Makin negatif") : trend === "falling" ? pickL("Cooling", "Mereda") : trend === "few" ? pickL("Not enough data", "Belum cukup data") : pickL("Steady", "Stabil")} tone={trend === "rising" ? "negative" : trend === "falling" ? "positive" : undefined} />
         </div>
         <p className="text-[13px] font-semibold text-[#31406B]">{trendText}</p>
         <ol className="grid gap-1.5 border-l-2 border-[#E2E6F2] pl-4">

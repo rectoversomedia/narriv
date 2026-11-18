@@ -320,7 +320,7 @@ export interface NarrativeJourney {
   steps: Array<{ id: string; at: string; hoursAfterStart: number; tone: Tone; outlet: string | null; title: string | null; url: string | null }>;
   firstNegative: { at: string; hoursAfterStart: number; outlet: string | null } | null;
   peak: { day: string; count: number };
-  negativeShare: { early: number; late: number; trend: "rising" | "falling" | "steady" };
+  negativeShare: { early: number; late: number; trend: "rising" | "falling" | "steady" | "few" };
   spanHours: number;
 }
 
