@@ -52,7 +52,7 @@ export const ARTICLES: Article[] = [
         {
           heading: "From monitoring to decisions",
           paragraphs: [
-            "The most common failure of media monitoring is not missing a mention; it is seeing it and doing nothing. Dashboards full of charts do not tell anyone what to do on a Monday morning. A monitoring practice works when every significant issue ends with a named owner, a clear next step and a deadline, and when leadership receives a short, regular summary of what changed and what was decided.",
+            "The most common failure of media monitoring is not missing a mention. It is seeing it and doing nothing. Dashboards full of charts do not tell anyone what to do on a Monday morning. A monitoring practice works when every significant issue ends with a named owner, a clear next step and a deadline, and when leadership receives a short, regular summary of what changed and what was decided.",
             "A simple rhythm works for most teams: hourly collection, an alert when an issue crosses a risk threshold, a daily brief for the communications team and a weekly one-page report for the board.",
           ],
         },
@@ -276,7 +276,7 @@ export const ARTICLES: Article[] = [
         {
           heading: "Hour 1 to 3: assign one owner and prepare a holding statement",
           paragraphs: [
-            "Every crisis needs one person accountable for the response, with a clear deadline for each step. Committees decide slowly; owners decide on time. In parallel, prepare a short holding statement that acknowledges the issue, says what you are doing about it and when you will update. It should not speculate about causes you have not confirmed.",
+            "Every crisis needs one person accountable for the response, with a clear deadline for each step. Committees decide slowly. Owners decide on time. In parallel, prepare a short holding statement that acknowledges the issue, says what you are doing about it and when you will update. It should not speculate about causes you have not confirmed.",
           ],
         },
         {
@@ -338,7 +338,7 @@ export const ARTICLES: Article[] = [
         {
           heading: "Jam 1 sampai 3: tetapkan satu penanggung jawab dan siapkan pernyataan awal",
           paragraphs: [
-            "Setiap krisis butuh satu orang yang bertanggung jawab atas penanganannya, dengan tenggat yang jelas untuk setiap langkah. Komite memutuskan dengan lambat; penanggung jawab memutuskan tepat waktu. Bersamaan dengan itu, siapkan pernyataan awal (holding statement) yang singkat: mengakui isunya, menjelaskan apa yang sedang dilakukan, dan kapan akan ada kabar berikutnya. Jangan berspekulasi tentang penyebab yang belum dipastikan.",
+            "Setiap krisis butuh satu orang yang bertanggung jawab atas penanganannya, dengan tenggat yang jelas untuk setiap langkah. Komite memutuskan dengan lambat. Penanggung jawab memutuskan tepat waktu. Bersamaan dengan itu, siapkan pernyataan awal (holding statement) yang singkat: mengakui isunya, menjelaskan apa yang sedang dilakukan, dan kapan akan ada kabar berikutnya. Jangan berspekulasi tentang penyebab yang belum dipastikan.",
           ],
         },
         {
@@ -416,7 +416,7 @@ export const ARTICLES: Article[] = [
         {
           heading: "What you can do about it",
           paragraphs: [
-            "You cannot edit an AI answer, but you can improve the material it is built from. Publish clear, factual and up-to-date information about your products, policies and prices on your own website; respond publicly and on the record when an issue is resolved, so the resolution exists as a source; make important pages easy for crawlers to read, including structured data; and keep monitoring, because answers change as models and sources change.",
+            "You cannot edit an AI answer, but you can improve the material it is built from. Publish clear, factual and up-to-date information about your products, policies and prices on your own website. Respond publicly and on the record when an issue is resolved, so the resolution exists as a source. Make important pages easy for crawlers to read, including structured data. And keep monitoring, because answers change as models and sources change.",
           ],
         },
         {
@@ -461,7 +461,7 @@ export const ARTICLES: Article[] = [
         {
           heading: "Yang bisa Anda lakukan",
           paragraphs: [
-            "Anda tidak bisa mengedit jawaban AI, tetapi bisa memperbaiki bahan yang menjadi dasarnya. Publikasikan informasi yang jelas, faktual, dan terbaru tentang produk, kebijakan, dan harga di situs Anda sendiri; tanggapi secara terbuka dan resmi ketika sebuah isu sudah selesai, supaya penyelesaiannya tersedia sebagai sumber; buat halaman penting mudah dibaca crawler, termasuk dengan data terstruktur; dan terus pantau, karena jawaban berubah seiring perubahan model dan sumbernya.",
+            "Anda tidak bisa mengedit jawaban AI, tetapi bisa memperbaiki bahan yang menjadi dasarnya. Publikasikan informasi yang jelas, faktual, dan terbaru tentang produk, kebijakan, dan harga di situs Anda sendiri. Tanggapi secara terbuka dan resmi ketika sebuah isu sudah selesai, supaya penyelesaiannya tersedia sebagai sumber. Buat halaman penting mudah dibaca crawler, termasuk dengan data terstruktur. Dan terus pantau, karena jawaban berubah seiring perubahan model dan sumbernya.",
           ],
         },
         {

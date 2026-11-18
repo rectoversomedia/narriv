@@ -141,7 +141,7 @@ function Amplifiers({ spread }: { spread: NarrativeSpread }) {
     <div className={cn(INKED, "p-4 sm:p-5")}>
       <p className={cn(KICKER, "text-[#5A6478]")}>{pickL("Who Amplified It", "Siapa yang Memperbesar")}</p>
       {!rows.length ? (
-        <p className="mt-3 text-[13px] font-medium text-[#5A6478]">{spread.hiddenAccounts ? pickL(`${spread.hiddenAccounts} accounts took part; their names are hidden by privacy mode.`, `${spread.hiddenAccounts} akun ikut membahas; namanya disembunyikan oleh mode privasi.`) : pickL("No author names were recorded for this narrative.", "Belum ada nama penulis yang tercatat untuk narasi ini.")}</p>
+        <p className="mt-3 text-[13px] font-medium text-[#5A6478]">{spread.hiddenAccounts ? pickL(`${spread.hiddenAccounts} accounts took part. Their names are hidden by privacy mode.`, `${spread.hiddenAccounts} akun ikut membahas. Namanya disembunyikan oleh mode privasi.`) : pickL("No author names were recorded for this narrative.", "Belum ada nama penulis yang tercatat untuk narasi ini.")}</p>
       ) : (
         <ul className="mt-2 divide-y divide-[#EEF0F6]">
           {rows.map(({ a, m }, i) => {

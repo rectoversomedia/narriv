@@ -61,7 +61,7 @@ export function AiProvidersPanel() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("AI behind Narriv", "AI di balik Narriv")}</h3>
-          <p className="text-[12px] font-bold text-[#5A6478]">{data ? L(`${usingAi} of ${data.workflows.length} features use an AI model; the rest run on rules.`, `${usingAi} dari ${data.workflows.length} fitur memakai model AI; sisanya berbasis aturan.`) : "…"}</p>
+          <p className="text-[12px] font-bold text-[#5A6478]">{data ? L(`${usingAi} of ${data.workflows.length} features use an AI model. The rest run on rules.`, `${usingAi} dari ${data.workflows.length} fitur memakai model AI. Sisanya berbasis aturan.`) : "…"}</p>
         </div>
         {data ? (
           <div className="flex gap-2">

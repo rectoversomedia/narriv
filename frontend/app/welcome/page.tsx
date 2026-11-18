@@ -590,7 +590,7 @@ export default function WelcomePage() {
           title={L("Built for Every Organisation", "Dirancang untuk Setiap Organisasi")}
           accent={L("Whose Reputation Matters.", "yang Menjaga Reputasinya.")}
           lead={L(
-            "Brands, government, extremism prevention, banks, state-owned companies, public figures and agencies. The issue changes; the need to know first and act fast does not.",
+            "Brands, government, extremism prevention, banks, state-owned companies, public figures and agencies. The issue changes. The need to know first and act fast does not.",
             "Brand, pemerintah, pencegahan ekstremisme, perbankan, BUMN, tokoh publik, hingga agensi. Isunya berbeda, tetapi kebutuhannya sama: tahu lebih dulu dan bertindak lebih cepat.",
           )}
         />

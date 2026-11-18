@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyTitle } from "@/lib/tidy-text";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Clock, FileText, Lightbulb, Loader2, RefreshCcw, ShieldAlert, TrendingUp, Waves } from "lucide-react";
@@ -63,7 +64,7 @@ function Ideas({ ideas }: { ideas: ContentIdeas }) {
         {ideas.angles.map((a, i) => (
           <li key={i} className="rounded-[12px] bg-white/[0.07] p-3">
             <p className="text-[11.5px] font-bold text-[#A5B4FF]">0{i + 1} · {a.format}{a.platform ? ` · ${a.platform}` : ""}</p>
-            <p className="mt-1.5 text-[14px] font-black leading-snug">{a.title}</p>
+            <p className="mt-1.5 text-[14px] font-black leading-snug">{tidyTitle(a.title)}</p>
             <p className="mt-1.5 text-[12.5px] font-medium leading-relaxed text-white/75">{a.hook}</p>
           </li>
         ))}

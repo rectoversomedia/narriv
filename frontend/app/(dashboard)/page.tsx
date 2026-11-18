@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyTitle } from "@/lib/tidy-text";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -465,7 +466,7 @@ export default function DashboardPage() {
                             <Tag tone={levelTone(alert.severity ?? "low")}>{tLevel(`level.${["critical", "high", "medium", "low"].includes(alert.severity ?? "") ? alert.severity : "low"}`)}</Tag>
                             <span className="text-[11px] font-bold text-[#5A6478]">{timeAgo(alertTime(alert))}</span>
                           </span>
-                          <span className="mt-1.5 block truncate text-[15px] font-black text-[#101334]">{alert.title}</span>
+                          <span className="mt-1.5 block truncate text-[15px] font-black text-[#101334]">{tidyTitle(alert.title)}</span>
                           <AlertFacts alert={alert} />
                         </span>
                         <span className="inline-flex h-9 shrink-0 items-center rounded-full bg-[#465FFF] px-4 text-[12.5px] font-bold text-white">{L("Handle", "Tangani")}</span>

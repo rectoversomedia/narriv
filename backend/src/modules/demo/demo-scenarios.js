@@ -72,7 +72,7 @@ export const GOV_SCENARIO = {
     criticalKey: "bansos",
     alerts: (people, owner) => [
         { key: "bansos", title: "Hoaks bansos mencatut nama Pemkot Lestari", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 26 * H, ago: 4 * H, level: "critical",
-          what: "Tautan pendaftaran bansos palsu menyebar di grup Facebook warga dan TikTok dalam 36 jam terakhir.", why: "Warga bisa tertipu dan kehilangan uang; kepercayaan pada program bansos resmi ikut turun.", todo: "Terbitkan klarifikasi resmi dalam 2 jam, sebarkan kanal pendaftaran yang benar, dan laporkan tautan palsu ke platform." },
+          what: "Tautan pendaftaran bansos palsu menyebar di grup Facebook warga dan TikTok dalam 36 jam terakhir.", why: "Warga bisa tertipu dan kehilangan uang. Kepercayaan pada program bansos resmi ikut turun.", todo: "Terbitkan klarifikasi resmi dalam 2 jam, sebarkan kanal pendaftaran yang benar, dan laporkan tautan palsu ke platform." },
         { key: "flood", title: "Keluhan banjir rob Lestari Utara meningkat", type: "risk", severity: "high", status: "acknowledged", team: "BPBD & Dinas PU", to: people.maya, deadlineIn: -2 * H, ago: 26 * H, level: "high",
           what: "Keluhan banjir rob dan pompa yang tidak berfungsi naik setiap hari di Lestari Utara.", why: "Penanganan yang dinilai lambat menjadi sorotan DPRD dan media.", todo: "Umumkan jadwal penanganan, pasang posko informasi, dan perbarui status setiap 6 jam." },
         { key: "ktp", title: "Gangguan layanan KTP digital", type: "risk", severity: "medium", status: "open", team: "Disdukcapil", to: null, deadlineIn: 2 * D, ago: 3 * D, level: "medium",
@@ -95,7 +95,7 @@ export const GOV_SCENARIO = {
           summary: "Ringkasan dampak dan sentimen warga untuk Wali Kota.",
           steps: ["Rangkum volume keluhan per kelurahan", "Usulkan langkah jangka pendek dan panjang"] },
         { key: "parking", type: "pr_response", title: "FAQ parkir elektronik", priority: "medium", status: "blocked", to: people.maya,
-          summary: "Penjelasan kebijakan parkir elektronik; menunggu data dari Dinas Perhubungan.",
+          summary: "Penjelasan kebijakan parkir elektronik. Menunggu data dari Dinas Perhubungan.",
           steps: ["Susun FAQ", "Jadwalkan dialog dengan pedagang"] },
         { key: "scholarship", type: "content_strategy", title: "Seri cerita penerima beasiswa", priority: "medium", status: "in_progress", to: people.nisa,
           summary: "Konten mingguan cerita penerima Beasiswa Lestari Cerdas.",
@@ -113,8 +113,8 @@ export const GOV_SCENARIO = {
     ],
     reports: [
         { title: "Ringkasan Mingguan untuk Wali Kota", type: "executive_brief", status: "ready", ago: 1 * D, span: 7 * D,
-          summary: "Hoaks bansos dan banjir rob mendominasi percakapan; beasiswa menjadi penyeimbang positif.",
-          sections: [["Yang terjadi", "Hoaks bansos menyebar di grup warga; keluhan rob meningkat."], ["Risiko", "Warga tertipu tautan palsu."], ["Peluang", "Testimoni beasiswa positif."], ["Rekomendasi", "Klarifikasi bansos hari ini."]] },
+          summary: "Hoaks bansos dan banjir rob mendominasi percakapan. Beasiswa menjadi penyeimbang positif.",
+          sections: [["Yang terjadi", "Hoaks bansos menyebar di grup warga. Keluhan rob meningkat."], ["Risiko", "Warga tertipu tautan palsu."], ["Peluang", "Testimoni beasiswa positif."], ["Rekomendasi", "Klarifikasi bansos hari ini."]] },
         { title: "Laporan insiden hoaks bansos", type: "incident", status: "draft", ago: 3 * H, span: 2 * D,
           summary: "Draf kronologi dan sebaran hoaks bansos.", sections: [["Kronologi", "Tautan pertama muncul 36 jam lalu di grup Facebook."], ["Sebaran", "Facebook dan TikTok."]] },
         { title: "Ringkasan Bulanan Layanan Publik", type: "monthly", status: "ready", ago: 4 * D, span: 30 * D,
@@ -294,12 +294,12 @@ export const CVE_SCENARIO = {
     ],
     reports: [
         { title: "Ringkasan Mingguan Kerukunan", type: "executive_brief", status: "ready", ago: 1 * D, span: 7 * D,
-          summary: "Narasi 'pemerintah thogut' dan glorifikasi pelaku naik setelah penangkapan; penjelasan ulama dan kesaksian mantan napiter menjadi kontra-narasi terkuat.",
+          summary: "Narasi 'pemerintah thogut' dan glorifikasi pelaku naik setelah penangkapan. Penjelasan ulama dan kesaksian mantan napiter menjadi kontra-narasi terkuat.",
           sections: [["Yang terjadi", "Narasi 'thogut' naik 3× di Jawa Barat dan Jawa Timur."], ["Risiko", "Seruan 'amaliyah' terhadap pos polisi di Jawa Tengah."], ["Yang berhasil", "Video ulama soal Pancasila ditonton 200 ribu kali."], ["Rekomendasi", "Perkuat kontra-narasi di Banten dan Jawa Barat."]] },
         { title: "Laporan insiden seruan serangan terhadap aparat", type: "incident", status: "draft", ago: 3 * H, span: 2 * D,
           summary: "Draf kronologi dan sebaran seruan serangan setelah penangkapan.", sections: [["Kronologi", "Seruan pertama muncul 5 jam setelah penangkapan."], ["Sebaran", "X dan grup Facebook terbuka di Jawa Tengah dan Banten."]] },
         { title: "Peta Narasi per Provinsi", type: "risk_review", status: "review", ago: 2 * D, span: 14 * D,
-          summary: "Narasi 'thogut' terbanyak di Jawa Barat; glorifikasi di Jawa Timur; kontra-narasi terkuat di DKI Jakarta.", sections: [["Per provinsi", "Jawa Barat, Jawa Timur, Jawa Tengah, Banten, DKI Jakarta, Sumatera Utara."]] },
+          summary: "Narasi 'thogut' terbanyak di Jawa Barat. Glorifikasi di Jawa Timur. Kontra-narasi terkuat di DKI Jakarta.", sections: [["Per provinsi", "Jawa Barat, Jawa Timur, Jawa Tengah, Banten, DKI Jakarta, Sumatera Utara."]] },
     ],
     weeklyScheduleName: "Ringkasan mingguan untuk pimpinan",
     // AI visibility here asks whether assistants repeat the extremist framing or give the mainstream religious view.

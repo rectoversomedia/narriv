@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyTitle } from "@/lib/tidy-text";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -169,7 +170,7 @@ export function CreateActionPlanModal({
               <select id="modal-alert-select" value={selectedAlertId} onChange={(e) => setSelectedAlertId(e.target.value)} className={inputClass}>
                 <option value="">{L("None", "Tidak ada")}</option>
                 {selectedAlertId && !alertsData?.data?.some((a) => a.id === selectedAlertId) ? <option value={selectedAlertId}>{initialAlertTitle || L("Selected alert", "Peringatan terpilih")}</option> : null}
-                {alertsData?.data?.map((alert) => <option key={alert.id} value={alert.id}>{alert.title}</option>)}
+                {alertsData?.data?.map((alert) => <option key={alert.id} value={alert.id}>{tidyTitle(alert.title)}</option>)}
               </select>
             </Field>
             <Field label={L("Issue", "Isu")} htmlFor="modal-cluster-select">

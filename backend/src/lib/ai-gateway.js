@@ -25,6 +25,10 @@ import supabase from "./supabase.js";
 
 const PREMIUM_MONTHLY_BUDGET_USD = Number(process.env.AI_PREMIUM_MONTHLY_BUDGET_USD || 10);
 
+// Every text the product shows goes through here: short separate sentences read better on a dashboard than one
+// long sentence joined with a semicolon or a "Label: rest" colon.
+const READABLE_STYLE = "Style for any text a person will read: short, separate sentences. Do not join clauses with a semicolon. Write titles as a short plain phrase, never as \"Label: name\".";
+
 export function providerConfigured(provider) {
     if (provider === "anthropic") return isAnthropicConfigured();
     return Boolean(process.env.OPENAI_API_KEY) && process.env.OPENAI_API_KEY !== "sk-placeholder";
@@ -146,7 +150,7 @@ async function runRoute({ task, route, fallbackReason, workspaceId, user, system
                 temperature: route.temperature,
                 max_tokens: route.maxTokens,
                 ...(json ? { response_format: { type: "json_object" } } : {}),
-                messages: [...(system ? [{ role: "system", content: system }] : []), { role: "user", content: user }],
+                messages: [{ role: "system", content: `${system ? `${system}\n\n` : ""}${READABLE_STYLE}` }, { role: "user", content: user }],
             });
             servedModel = resp.model || route.model;
             usage = { input: resp.usage?.prompt_tokens || 0, output: resp.usage?.completion_tokens || 0 };

@@ -510,7 +510,7 @@ export function getMockReports(): PaginatedResponse<{
         id: "demo-report-1",
         title: L("Weekly Sentiment Overview", "Ringkasan Sentimen Mingguan"),
         sections: L("4 sections", "4 bagian"),
-        summary: L("Negative mentions fell 12% after the service update; complaints now centre on transfer delays.", "Sebutan negatif turun 12% setelah pembaruan layanan; keluhan kini berpusat pada transfer yang tertunda."),
+        summary: L("Negative mentions fell 12% after the service update. Complaints now centre on transfer delays.", "Sebutan negatif turun 12% setelah pembaruan layanan. Keluhan kini berpusat pada transfer yang tertunda."),
         type: "weekly",
         periodStart: ago(7), periodEnd: ago(0), createdAt: ago(0),
         status: "ready",

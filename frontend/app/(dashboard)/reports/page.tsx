@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyTitle } from "@/lib/tidy-text";
 import { STATUS_COLOR, STATUS_WORD, statusFromMentions } from "@/lib/status";
 import { humanReportSummary } from "@/lib/report-summary";
 import Link from "next/link";
@@ -183,7 +184,7 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
               <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#3B52F5]">{Math.round((top.signalCount / totalInIssues) * 100)}%</p>
                 <p className="mt-2 text-[11.5px] font-bold text-[#5F6B94]">{L("Main Issue", "Isu Utama")}</p>
-                <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{top.title}</p>
+                <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{tidyTitle(top.title)}</p>
               </div>
               <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#C81E1E]">{risk ? risk.signalCount : 0}</p>
@@ -469,7 +470,7 @@ function ReportsTable({
           <div key={report.id} className="rounded-[12px] border border-[#E6EAF2] bg-white p-3.5">
             <div className="flex items-start justify-between gap-3">
               <Link href={`/reports/${report.id}`} className="min-w-0 text-[13px] font-black leading-snug text-[#101334] hover:text-[#3B52F5]">
-                {report.title}
+                {tidyTitle(report.title)}
               </Link>
               <StatusBadge status={report.status} />
             </div>
@@ -525,7 +526,7 @@ function ReportsTable({
                   <div className="flex items-start gap-3">
                     <div className="min-w-0">
                       <Link href={`/reports/${report.id}`} className="text-[14.5px] font-black leading-snug text-[#101334] hover:text-[#3B52F5] transition-colors">
-                        {report.title}
+                        {tidyTitle(report.title)}
                       </Link>
                       <p className="mt-1 line-clamp-2 text-[12.5px] font-medium leading-snug text-[#5F6B94]">{report.description}</p>
                     </div>
@@ -700,7 +701,7 @@ function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; 
                 {idx + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <span className="block truncate text-[12px] font-black text-[#101334]">{report.title}</span>
+                <span className="block truncate text-[12px] font-black text-[#101334]">{tidyTitle(report.title)}</span>
               </div>
               <span className="text-[12px] font-bold text-[#5F6B94] shrink-0">{report.views}</span>
             </div>
@@ -1369,7 +1370,7 @@ export default function ReportsPage() {
                         {idx + 1}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] font-black text-[#101334]">{report.title}</span>
+                        <span className="block truncate text-[13px] font-black text-[#101334]">{tidyTitle(report.title)}</span>
                       </div>
                       <span className="text-[12px] font-bold text-[#5F6B94] shrink-0">{report.views}</span>
                     </div>

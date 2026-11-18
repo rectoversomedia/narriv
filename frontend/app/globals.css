@@ -490,11 +490,9 @@ html.narriv-revealing main { animation: narrivLaunchPage 1s cubic-bezier(0.22, 1
   border-radius: 8px;
   background: #fff;
   padding: 3px 9px;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
+  /* Sentence case in the body font: mono capitals ("SISA 19 JAM") read as shouting and were hard to scan. */
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--ink);
   box-shadow: 0 2px 0 var(--ink);
 }

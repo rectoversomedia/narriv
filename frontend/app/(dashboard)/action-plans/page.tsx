@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyTitle } from "@/lib/tidy-text";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -179,7 +180,7 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
     >
       <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1.5" style={{ backgroundColor: style.color }} />
       <StatusPill status={action.status} t={t} />
-      <h3 className="mt-2 text-[15px] font-black leading-snug text-[#101334]">{action.title}</h3>
+      <h3 className="mt-2 text-[15px] font-black leading-snug text-[#101334]">{tidyTitle(action.title)}</h3>
       {/* The issue in one line, impact as a chip; owner by name only (the role lives on the plan). */}
       <p className="mt-1.5 line-clamp-2 text-[13px] font-medium text-[#3A4566]" title={action.issue}>{action.issue}</p>
       <div className="mt-3 flex flex-wrap items-center gap-1.5">

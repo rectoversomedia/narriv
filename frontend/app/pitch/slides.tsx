@@ -69,7 +69,7 @@ export function GoldenHours({ en }: P) {
   const steps = [
     { h: t("Jam 0", "Hour 0"), title: t("Satu unggahan", "One post"), text: t("Keluhan atau tuduhan muncul di satu akun.", "A complaint or claim appears on one account."), c: NEU },
     { h: t("Jam 3", "Hour 3"), title: t("Dibagikan ulang", "Shared on"), text: t("Akun lain ikut menanggapi dan membagikan.", "Other accounts react and share it."), c: AMBER },
-    { h: t("Jam 6", "Hour 6"), title: t("Diangkat media", "Picked up by press"), text: t("Media online menulis, pencarian mulai naik.", "Online media write about it; searches climb."), c: NEG },
+    { h: t("Jam 6", "Hour 6"), title: t("Diangkat media", "Picked up by press"), text: t("Media online menulis, pencarian mulai naik.", "Online media write about it. Searches climb."), c: NEG },
     { h: t("Jam 24", "Hour 24"), title: t("Narasi terkunci", "The story sets"), text: t("Versi yang paling keras yang diingat publik.", "The loudest version is what people remember."), c: "#B42318" },
   ];
   return (
@@ -391,7 +391,7 @@ export function ADay({ en }: P) {
   const t = tr(en);
   const steps: Array<[string, string, string, string]> = [
     ["07.00", t("Briefing harian masuk", "Daily brief arrives"), t("Apa yang berubah semalam dan 3 langkah hari ini.", "What changed overnight and three steps for today."), BLUE],
-    ["10.12", t("Peringatan kritis", "Critical alert"), t("Keluhan aplikasi melonjak, dikirim ke Tim Digital.", "App complaints spike; sent to the Digital Team."), NEG],
+    ["10.12", t("Peringatan kritis", "Critical alert"), t("Keluhan aplikasi melonjak, dikirim ke Tim Digital.", "App complaints spike. Sent to the Digital Team."), NEG],
     ["10.30", t("PIC menerima & bertindak", "The owner takes it"), t("Status dan tenggat tercatat di kasus.", "Status and deadline logged in the case."), AMBER],
     ["14.00", t("Pernyataan dirilis", "Statement published"), t("Narriv memantau apakah sentimen mereda.", "Narriv tracks whether sentiment settles."), "#8B5CF6"],
     [t("Senin", "Monday"), t("Laporan ke direksi", "Report to the board"), t("Apa yang terjadi dan apa yang diputuskan.", "What happened and what was decided."), POS],

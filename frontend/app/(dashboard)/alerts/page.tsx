@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyTitle } from "@/lib/tidy-text";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -371,7 +372,7 @@ function CriticalIncident({
               <span className="text-[11.5px] font-medium text-[#5F6B94]">{ta("v2.incident.since", { time: alert.time })}</span>
             </div>
             <Link href={`/alerts/${alert.id}`} className="group mt-4 block">
-              <h2 className="line-clamp-2 max-w-4xl text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] group-hover:text-[#3B52F5] sm:text-[32px]">{alert.title}</h2>
+              <h2 className="line-clamp-2 max-w-4xl text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] group-hover:text-[#3B52F5] sm:text-[32px]">{tidyTitle(alert.title)}</h2>
               {alert.description ? <p className="mt-2 line-clamp-2 max-w-3xl text-[15px] font-medium leading-relaxed text-[#31406B]">{alert.description}</p> : null}
             </Link>
             <dl className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -612,7 +613,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                   <span className={cn("rounded-[6px] px-2 py-0.5 text-[12px] font-black", alert.tone === "red" ? "bg-[#C81E1E] text-white" : alert.tone === "amber" ? "bg-[#F59E0B] text-white" : "bg-[#E5F6EE] text-[#047857]")}>{alert.tags[0]}</span>
                   <StatusBadge status={alert.status} />
                 </div>
-                <p className="mt-2 line-clamp-2 text-[14px] font-black leading-snug text-[#101334]">{alert.title}</p>
+                <p className="mt-2 line-clamp-2 text-[14px] font-black leading-snug text-[#101334]">{tidyTitle(alert.title)}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-bold">
                   <span className={alert.sourceLabel === ta("table.unassigned") ? "rounded-full bg-[#C81E1E] px-2 py-0.5 text-white" : "rounded-full bg-white px-2 py-0.5 text-[#31406B]"}>{alert.sourceLabel}</span>
                   <span className={alert.overdue ? "rounded-full bg-[#C81E1E] px-2 py-0.5 text-white" : "rounded-full bg-white px-2 py-0.5 text-[#31406B]"}>{alert.overdue ? pickL("Overdue · ", "Lewat tenggat · ") : ""}{alert.deadline}</span>
@@ -698,7 +699,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 </td>
                 <td className="px-3 py-3">
                   <div className="min-w-0">
-                    <Link href={`/alerts/${alert.id}`} className="text-[14.5px] font-black leading-snug text-[#101334] hover:text-[#3B52F5]">{alert.title}</Link>
+                    <Link href={`/alerts/${alert.id}`} className="text-[14.5px] font-black leading-snug text-[#101334] hover:text-[#3B52F5]">{tidyTitle(alert.title)}</Link>
                     {alert.description ? <p className="mt-1 line-clamp-2 text-[12.5px] font-medium leading-snug text-[#3A4566]">{alert.description}</p> : null}
                     {alert.time ? <p className="mt-1 text-[12px] font-medium text-[#6B7591]">{alert.time}</p> : null}
                   </div>

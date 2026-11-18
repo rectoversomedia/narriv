@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyTitle, tidyText } from "@/lib/tidy-text";
 import Link from "next/link";
 import { intlLocale } from "@/store/useUiStore";
 import { useState, type ReactNode } from "react";
@@ -346,10 +347,10 @@ export default function AlertDetailPage() {
   const liveData = alertQuery.data;
 
   const L = useL();
-  const title = liveData?.title ?? td("empty.title");
-  const whatHappened = liveData?.whatHappened || (liveData as any)?.what_happened || (liveData as any)?.description || td("section.empty");
-  const whyItMatters = liveData?.whyItMatters || (liveData as any)?.why_it_matters || td("section.empty");
-  const whatToDo = liveData?.whatToDo || (liveData as any)?.what_to_do || td("section.empty");
+  const title = liveData?.title ? tidyTitle(liveData.title) : td("empty.title");
+  const whatHappened = tidyText(liveData?.whatHappened || (liveData as any)?.what_happened || (liveData as any)?.description) || td("section.empty");
+  const whyItMatters = tidyText(liveData?.whyItMatters || (liveData as any)?.why_it_matters) || td("section.empty");
+  const whatToDo = tidyText(liveData?.whatToDo || (liveData as any)?.what_to_do) || td("section.empty");
   const currentStatus: Status = liveData?.status === "acknowledged" || liveData?.status === "resolved" ? liveData.status : "open";
   const members = membersQuery.data ?? [];
   const owner = liveData ? assigneeName(liveData.assignedTo || (liveData as any)?.assigned_to, members) || liveData.assignedTeam || null : null;
@@ -418,7 +419,7 @@ export default function AlertDetailPage() {
                     </button>
                   )}
                 </div>
-                <p className="mt-3 text-[12px] font-medium text-white/50">{L("AI drafts the plan. Nothing is sent without your approval.", "Rencana disusun AI; tidak ada yang dikirim tanpa persetujuan Anda.")}</p>
+                <p className="mt-3 text-[12px] font-medium text-white/50">{L("AI drafts the plan. Nothing is sent without your approval.", "Rencana disusun AI. Tidak ada yang dikirim tanpa persetujuan Anda.")}</p>
               </div>
             </div>
           </section>

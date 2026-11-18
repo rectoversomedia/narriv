@@ -110,7 +110,7 @@ const groups: Group[] = [
         q: ["Which Export Formats Are Available?", "Format Ekspor Apa Saja yang Tersedia?"],
         a: [
           "Mentions: CSV or Excel from the Mentions page. Reports: CSV, Excel or PDF from the Reports page; PDF and JSON downloads use a secure link that expires after one hour. The Daily Brief can be printed or saved as PDF from your browser.",
-          "Percakapan: CSV atau Excel dari halaman Percakapan. Laporan: CSV, Excel, atau PDF dari halaman Laporan; unduhan PDF dan JSON memakai tautan aman yang berlaku satu jam. Briefing Harian dapat dicetak atau disimpan sebagai PDF dari browser.",
+          "Percakapan: CSV atau Excel dari halaman Percakapan. Laporan: CSV, Excel, atau PDF dari halaman Laporan. Unduhan PDF dan JSON memakai tautan aman yang berlaku satu jam. Briefing Harian dapat dicetak atau disimpan sebagai PDF dari browser.",
         ],
       },
     ],
@@ -124,8 +124,8 @@ const groups: Group[] = [
       {
         q: ["How Do I Add Team Members?", "Bagaimana Cara Menambah Anggota Tim?"],
         a: [
-          "Go to Settings → User & Access Management and add a registered user by email. Roles are Owner, Admin and Analyst; only owners and admins can change members, settings and monitoring keywords.",
-          "Buka Pengaturan → Manajemen Pengguna & Akses lalu tambahkan pengguna terdaftar lewat email. Tersedia peran Pemilik, Admin, dan Analis; hanya pemilik dan admin yang dapat mengubah anggota, pengaturan, dan kata kunci.",
+          "Go to Settings → User & Access Management and add a registered user by email. Roles are Owner, Admin and Analyst. Only owners and admins can change members, settings and monitoring keywords.",
+          "Buka Pengaturan → Manajemen Pengguna & Akses lalu tambahkan pengguna terdaftar lewat email. Tersedia peran Pemilik, Admin, dan Analis. Hanya pemilik dan admin yang dapat mengubah anggota, pengaturan, dan kata kunci.",
         ],
       },
       {

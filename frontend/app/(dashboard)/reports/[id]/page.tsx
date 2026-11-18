@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyTitle } from "@/lib/tidy-text";
 import Link from "next/link";
 import { useState } from "react";
 import { useParams } from "next/navigation";
@@ -67,7 +68,7 @@ function Freshness({ data }: { data: ReportView }) {
           <Info size={17} className="mt-0.5 shrink-0 text-[#3B52F5]" aria-hidden="true" />
           <p className="text-[13px] font-semibold leading-relaxed text-[#1F2B6B]">
             {L(
-              `${f.lateArrivals} mention${f.lateArrivals === 1 ? "" : "s"} from this period arrived after the report was created. The numbers on this page already include them; the PDF sent earlier does not. Download the PDF again for the latest version.`,
+              `${f.lateArrivals} mention${f.lateArrivals === 1 ? "" : "s"} from this period arrived after the report was created. The numbers on this page already include them. The PDF sent earlier does not. Download the PDF again for the latest version.`,
               `${f.lateArrivals} percakapan dari periode ini baru masuk setelah laporan dibuat. Angka di halaman ini sudah termasuk data tersebut, sedangkan PDF yang terkirim sebelumnya belum. Unduh ulang PDF untuk versi terbaru.`,
             )}
           </p>
@@ -211,7 +212,7 @@ function ReportBody({ data }: { data: ReportView }) {
                     <span className="rounded-full px-2.5 py-0.5 text-[12px] font-black text-white" style={{ background: sev.bg }}>{L(sev.en, sev.id)}</span>
                     <span className="text-[12px] font-bold text-[#5A6478]">{L(...(STATUS[a.status] ?? [a.status, a.status]))} · {fmtDate(a.createdAt)}</span>
                   </div>
-                  <p className="mt-2 text-[14px] font-black leading-snug text-[#101334]">{a.title}</p>
+                  <p className="mt-2 text-[14px] font-black leading-snug text-[#101334]">{tidyTitle(a.title)}</p>
                   {a.whatHappened ? <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-snug text-[#3A4566]">{a.whatHappened}</p> : null}
                   {a.whatToDo ? (
                     <div className="mt-auto pt-3">
