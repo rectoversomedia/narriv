@@ -329,8 +329,8 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
       <div className="h-2" style={{ backgroundColor: risk ? "#B42318" : topTone.color }} />
       <CardContent className="p-5 sm:p-7">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("What Is Happening", "Yang Sedang Terjadi")}</p>
-          <p className="font-mono text-[12px] font-bold text-[#5A6478]">{L(`From ${formatSignals(total)} mentions in ${live.length} issues`, `Dari ${formatSignals(total)} percakapan dalam ${live.length} isu`)}</p>
+          <p className="text-[12px] font-bold text-[#5F6B94]">{L("What Is Happening", "Yang Sedang Terjadi")}</p>
+          <p className="text-[12px] font-bold text-[#5A6478]">{L(`From ${formatSignals(total)} mentions in ${live.length} issues`, `Dari ${formatSignals(total)} percakapan dalam ${live.length} isu`)}</p>
         </div>
 
         <button
@@ -376,7 +376,7 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
 
         <div className="mt-5 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:flex-wrap sm:items-center">
           <p className="min-w-0 flex-1 px-1 text-[15px] font-bold leading-snug text-white">
-            <span className="mb-1 block font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{L("Next Step", "Langkah Berikutnya")}</span>
+            <span className="mb-1 block text-[12px] font-bold text-[#A5B4FF]">{L("Next Step", "Langkah Berikutnya")}</span>
             {topIsRisk || risk
               ? L(`Prepare a response for "${name(risk || top)}".`, `Siapkan respons untuk "${name(risk || top)}".`)
               : top.sentiment === "positive"
@@ -864,7 +864,7 @@ export default function IntelligencePage() {
           <Panel className="!border-[#465FFF] shadow-[0_4px_0_#465FFF]">
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3 relative" ref={actionsMenuRef}>
-                <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#3B52F5]">{ti("selectedNarrative.title")}</p>
+                <p className="text-[12px] font-bold text-[#3B52F5]">{ti("selectedNarrative.title")}</p>
                 <button type="button" onClick={() => setIsSelectedActionsOpen((v) => !v)} disabled={!selectedNarrativeId} aria-label={ti("selectedNarrative.moreActions")} aria-expanded={isSelectedActionsOpen} className="rounded-full p-1 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C] disabled:cursor-not-allowed disabled:opacity-40">
                   <MoreHorizontal size={16} />
                 </button>

@@ -228,6 +228,7 @@ export default function DashboardPage() {
     if (workspaceQuery.data && workspaceQuery.data.onboarding_completed !== true) router.push("/onboarding");
   }, [isDemoSession, workspaceQuery.data, workspaceQuery.isLoading, router]);
 
+  const [showMore, setShowMore] = useState(false);
   const summaryQuery = useQuery({
     queryKey: ["dashboard-summary", period],
     // Live sessions use the strict fetch so a failure shows as an error instead of an empty board.
@@ -235,6 +236,18 @@ export default function DashboardPage() {
     retry: (count, err) => ![401, 403].includes((err as { status?: number })?.status ?? 0) && count < 2,
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000,
+  });
+  // The same-length window just before, for the "up / down from" line under the negative share.
+  const prevSummaryQuery = useQuery({
+    queryKey: ["dashboard-summary-prev", period],
+    queryFn: () => {
+      const cur = getDateRangeOptions(period);
+      const start = new Date(cur.startDate as string), end = new Date(cur.endDate as string);
+      const prevStart = new Date(start.getTime() - (end.getTime() - start.getTime()));
+      return getDashboardSummary({ startDate: prevStart.toISOString(), endDate: start.toISOString() });
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !isDemoSession,
   });
   const pipelineQuery = useQuery({ queryKey: ["pipeline-status"], queryFn: getPipelineStatus, staleTime: 60 * 1000, retry: 1 });
   const issuesQuery = useQuery({ queryKey: ["overview-issues", period], queryFn: () => getNarratives({ limit: 20, days: PERIOD_DAYS[period] }), staleTime: 60 * 1000 });
@@ -346,6 +359,11 @@ export default function DashboardPage() {
           periodLabel={periodWord[period]}
           lastDataLabel={lastDataAt ? timeAgo(lastDataAt) : null}
           analysed={analysed}
+          prevNegativeShare={(() => {
+            const d = prevSummaryQuery.data?.sentiment_distribution;
+            const n = d ? d.positive + d.neutral + d.mixed + d.negative : 0;
+            return d && n >= 5 ? Math.round((d.negative / n) * 100) : null;
+          })()}
         />
       ) : null}
 
@@ -428,7 +446,7 @@ export default function DashboardPage() {
                       <SentimentTrendChart
                         days={summary.sentiment_trend}
                         locale={intlLocale()}
-                        labels={{ positive: L("Positive", "Positif"), neutral: L("Neutral", "Netral"), negative: L("Negative", "Negatif"), mixed: L("Mixed", "Campuran"), unanalyzed: L("Not analysed", "Belum dianalisis"), noSignals: L("No records", "Tidak ada data") }}
+                        labels={{ positive: L("Positive", "Positif"), neutral: L("Neutral", "Netral"), negative: L("Negative", "Negatif"), mixed: L("Mixed", "Campuran"), unanalyzed: L("Not analysed", "Belum dianalisis"), noSignals: L("No records", "Tidak ada data"), peak: L("Most negative day", "Hari paling negatif") }}
                       />
                     </div>
                   ) : null}
@@ -478,6 +496,9 @@ export default function DashboardPage() {
             </Card>
           </div>
 
+          {/* The first screen stays short (verdict, sentiment, today's decisions); the rest opens on request. */}
+          {showMore ? (
+            <>
           <div className="grid gap-5 xl:grid-cols-2">
           <Card title={L("Top Issues", "Isu Teratas")} link={{ href: `/intelligence?days=${PERIOD_DAYS[period]}`, label: L("See All Issues", "Lihat Semua Isu") }}>
               {issuesQuery.isLoading ? (
@@ -595,6 +616,12 @@ export default function DashboardPage() {
               </div>
             )}
           </Card>
+            </>
+          ) : (
+            <button type="button" onClick={() => setShowMore(true)} className="w-full rounded-[14px] border-[1.5px] border-dashed border-[#C9D0E3] bg-white py-4 text-[14px] font-bold text-[#31406B] transition hover:border-[#465FFF] hover:text-[#3B52F5]">
+              {L("Show more: top issues, AI answers and sources", "Lihat lainnya: isu teratas, jawaban AI, dan sumber")} ↓
+            </button>
+          )}
         </>
       )}
       <CreateActionPlanModal open={planOpen} onOpenChange={setPlanOpen} />

@@ -362,7 +362,7 @@ function CriticalIncident({
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-[8px] bg-[#B42318] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-white">
+              <span className="rounded-[8px] bg-[#B42318] px-2.5 py-1 text-[12px] font-bold text-white">
                 {pickL("Critical Incident", "Insiden Kritis")}{totalCritical > 1 ? ` · ${pickL(`${totalCritical} open`, `${totalCritical} aktif`)}` : ""}
               </span>
               {left ? (
@@ -377,7 +377,7 @@ function CriticalIncident({
             <dl className="mt-5 grid gap-3 sm:grid-cols-3">
               {facts.map((f) => (
                 <div key={f.label} className={cn("min-w-0 rounded-[14px] px-4 py-3", f.bad ? "bg-[#FFF5F4] shadow-[inset_0_0_0_1.5px_#F5B5B0]" : "bg-[#F6F7FC]")}>
-                  <dt className="font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{f.label}</dt>
+                  <dt className="text-[11.5px] font-bold text-[#5F6B94]">{f.label}</dt>
                   <dd className={cn("mt-1 truncate text-[20px] font-black leading-tight", f.bad ? "text-[#B42318]" : "text-[#101334]")} title={f.value}>{f.value}</dd>
                   <dd className={cn("mt-0.5 truncate text-[12px] font-bold", f.bad ? "text-[#B42318]" : "text-[#5F6B94]")}>{f.sub}</dd>
                 </div>
@@ -703,7 +703,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                     {alert.time ? <p className="mt-1 font-mono text-[12px] font-medium text-[#6B7591]">{alert.time}</p> : null}
                   </div>
                 </td>
-                <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em]", alert.tone === "red" ? "bg-[#B42318] text-white" : alert.tone === "amber" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#E8F7EF] text-[#047857]")}>{alert.tags[0]}</span></td>
+                <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[11.5px] font-bold", alert.tone === "red" ? "bg-[#B42318] text-white" : alert.tone === "amber" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#E8F7EF] text-[#047857]")}>{alert.tags[0]}</span></td>
                 <td className="px-3 py-3 align-middle">{alert.sourceLabel === ta("table.unassigned") ? <span className="text-[12px] font-black text-[#C81E1E]">{alert.sourceLabel}</span> : <span className="line-clamp-2 text-[12px] font-black text-[#31406B]">{alert.sourceLabel}</span>}</td>
                 <td className="px-3 py-3 align-middle">{alert.overdue ? <span className="inline-block rounded-[6px] bg-[#C81E1E] px-2 py-1 text-[12px] font-black leading-tight text-white"><span className="block text-[11px] text-white/80">{pickL("Overdue", "Lewat tenggat")}</span>{alert.deadline}</span> : <span className="text-[12px] font-black text-[#31406B]">{alert.deadline}</span>}</td>
                 <td className="px-3 py-3 align-middle"><StatusBadge status={alert.status} /><p className="mt-1 text-[11px] font-bold text-[#5A6478]">{alert.ack}</p></td>

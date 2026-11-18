@@ -104,9 +104,9 @@ function Row({ entry, last }: { entry: Entry; last: boolean }) {
       </span>
       <div className="min-w-0 flex-1 pb-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em]", kind.chip)}>{L(kind.en, kind.id)}</span>
+          <span className={cn("rounded-[6px] px-2 py-0.5 text-[11.5px] font-bold", kind.chip)}>{L(kind.en, kind.id)}</span>
           <span className="text-[13px] font-bold text-[#31406B]">{entry.label}</span>
-          {sev ? <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em]", hot ? "bg-[#B42318] text-white" : "bg-[#F1F3F8] text-[#5F6B94]")}>{L(sev[0], sev[1])}</span> : null}
+          {sev ? <span className={cn("rounded-[6px] px-2 py-0.5 text-[11.5px] font-bold", hot ? "bg-[#B42318] text-white" : "bg-[#F1F3F8] text-[#5F6B94]")}>{L(sev[0], sev[1])}</span> : null}
         </div>
         {entry.title ? <p className="mt-1.5 text-[16px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]">{entry.title}</p> : null}
         {entry.detail ? <p className="mt-0.5 line-clamp-2 text-[13.5px] text-[#5F6B94]">{entry.detail}</p> : null}
@@ -191,7 +191,7 @@ export default function TimelinePage() {
         ) : byDay.length ? (
           byDay.map((group) => (
             <section key={group.day} className="mb-2 last:mb-0">
-              <h2 className="sticky top-0 z-10 -mx-1 mb-1 mt-3 inline-flex rounded-[8px] border-[1.5px] border-[#101334] bg-white px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.06em] text-[#101334] first:mt-0">{group.day}</h2>
+              <h2 className="sticky top-0 z-10 -mx-1 mb-1 mt-3 inline-flex rounded-[8px] border-[1.5px] border-[#101334] bg-white px-2.5 py-1 text-[12px] font-bold text-[#101334] first:mt-0">{group.day}</h2>
               <div>{group.items.map((e, i) => <Row key={e.id} entry={e} last={i === group.items.length - 1} />)}</div>
             </section>
           ))

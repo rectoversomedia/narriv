@@ -187,7 +187,8 @@ export async function bulkCreateAlertsFromSignals(workspaceId, signalIds, alertD
                 alerts.push(alert);
 
                 // Dispatch webhook
-                dispatchWebhookEvent(workspaceId, "alert.created", alert);
+                // Awaited: Vercel freezes the function after the response, so an unawaited send could be lost.
+                await dispatchWebhookEvent(workspaceId, "alert.created", alert).catch(() => {});
 
                 // Broadcast to workspace
                 broadcastToWorkspace(workspaceId, SSE_EVENTS.ALERT_CREATED, {
@@ -225,7 +226,7 @@ export async function bulkUpdateAlerts(workspaceId, alertIds, updates) {
     // Dispatch events for each updated alert
     for (const alert of data || []) {
         if (updates.status) {
-            dispatchWebhookEvent(workspaceId, "alert.status_changed", alert);
+            await dispatchWebhookEvent(workspaceId, "alert.status_changed", alert).catch(() => {});
         }
         broadcastToWorkspace(workspaceId, SSE_EVENTS.ALERT_UPDATED, { data: alert });
     }

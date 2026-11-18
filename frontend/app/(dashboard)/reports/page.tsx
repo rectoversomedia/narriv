@@ -1,5 +1,6 @@
 "use client";
 
+import { STATUS_COLOR, STATUS_WORD, statusFromMentions } from "@/lib/status";
 import { humanReportSummary } from "@/lib/report-summary";
 import Link from "next/link";
 import { type ComponentPropsWithoutRef, type ReactNode, useState, useEffect } from "react";
@@ -138,7 +139,6 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
   const neg = Math.round(k?.negative_percentage ?? 0);
   const pos = Math.round(k?.positive_percentage ?? 0);
   const other = Math.max(0, 100 - neg - pos);
-  const net = pos - neg;
   const d = dashboard?.sentiment_distribution;
   const scored = d ? d.positive + d.neutral + d.mixed + d.negative : null;
   const verdict = !k || (k.total_signals ?? 0) === 0
@@ -147,9 +147,8 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
     : scored === 0
     ? { word: L("Being analysed", "Sedang dianalisis"), color: "#3B52F5", bg: "#EEF1FF" }
     // 40% negative is "Needs Attention" on the Overview, so it can never read as "Balanced" here.
-    : net <= -15 || neg >= 40 ? { word: L("Negative", "Negatif"), color: "#C81E1E", bg: "#FDECEC" }
-      : net >= 15 ? { word: L("Positive", "Positif"), color: "#047857", bg: "#E5F6EE" }
-        : { word: L("Balanced", "Seimbang"), color: "#31406B", bg: "#EEF1F8" };
+    // The shared status (lib/status), from the same negative share the Overview uses.
+    : (() => { const st = statusFromMentions({ negativeShare: neg }); return { word: L(...STATUS_WORD[st]), color: STATUS_COLOR[st].text, bg: st === "action" ? "#FDECEC" : st === "watch" ? "#FFF4E5" : "#E5F6EE" }; })();
   const list = narratives ?? [];
   const top = list[0];
   const totalInIssues = list.reduce((sum, n) => sum + (n.signalCount || 0), 0) || 1;
@@ -183,17 +182,17 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#3B52F5]">{Math.round((top.signalCount / totalInIssues) * 100)}%</p>
-                <p className="mt-2 font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Main Issue", "Isu Utama")}</p>
+                <p className="mt-2 text-[11.5px] font-bold text-[#5F6B94]">{L("Main Issue", "Isu Utama")}</p>
                 <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{top.title}</p>
               </div>
               <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#C81E1E]">{risk ? risk.signalCount : 0}</p>
-                <p className="mt-2 font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Biggest Risk", "Risiko Terbesar")}</p>
+                <p className="mt-2 text-[11.5px] font-bold text-[#5F6B94]">{L("Biggest Risk", "Risiko Terbesar")}</p>
                 <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{risk ? risk.title : L("No negative issue", "Tidak ada isu negatif")}</p>
               </div>
               <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#A04606]">{fastest?.velocity || "—"}</p>
-                <p className="mt-2 font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Fastest Rising", "Naik Paling Cepat")}</p>
+                <p className="mt-2 text-[11.5px] font-bold text-[#5F6B94]">{L("Fastest Rising", "Naik Paling Cepat")}</p>
                 <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{fastest?.title}</p>
               </div>
             </div>
@@ -505,7 +504,7 @@ function ReportsTable({
       <div className="mt-4 hidden overflow-x-auto md:block">
         <table className="w-full min-w-[780px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-[#EEF0F6] font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+            <tr className="border-b border-[#EEF0F6] text-[11.5px] font-bold text-[#5F6B94]">
               <th className="px-3 py-3 w-[280px]">{tr("table.report")}</th>
               <th className="px-3 py-3">{tr("table.type")}</th>
               <th className="px-3 py-3">{tr("table.period")}</th>

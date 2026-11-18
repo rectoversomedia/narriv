@@ -4197,11 +4197,11 @@
       "insufficient_data": "Data Belum Cukup"
     },
     "component": {
-      "negative_share": "Sentimen Negatif",
-      "severity": "Tingkat Keparahan Isu",
-      "volume_change": "Perubahan Volume",
-      "active_alerts": "Peringatan Belum Selesai",
-      "narrative_momentum": "Momentum Narasi"
+      "negative_share": "Obrolan negatif",
+      "severity": "Keluhan serius",
+      "volume_change": "Lonjakan obrolan",
+      "active_alerts": "Peringatan belum ditangani",
+      "narrative_momentum": "Isu yang makin cepat menyebar"
     },
     "insufficientTitle": "Data Belum Cukup",
     "insufficientDesc": "Data belum cukup. Diperbarui otomatis saat data masuk.",

@@ -822,25 +822,25 @@ export default function CasesPage() {
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead className="border-b border-[#EEF0F6]">
                 <tr>
-                  <th className="px-6 py-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-6 py-4 text-[11.5px] font-bold text-[#5F6B94]">
                     {t("table.case")}
                   </th>
-                  <th className="px-4 py-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-4 py-4 text-[11.5px] font-bold text-[#5F6B94]">
                     {t("table.status")}
                   </th>
-                  <th className="px-4 py-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-4 py-4 text-[11.5px] font-bold text-[#5F6B94]">
                     {t("table.priority")}
                   </th>
-                  <th className="px-4 py-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-4 py-4 text-[11.5px] font-bold text-[#5F6B94]">
                     {t("table.assignee")}
                   </th>
-                  <th className="px-4 py-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-4 py-4 text-[11.5px] font-bold text-[#5F6B94]">
                     {t("table.deadline")}
                   </th>
-                  <th className="px-4 py-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-4 py-4 text-[11.5px] font-bold text-[#5F6B94]">
                     {t("table.created")}
                   </th>
-                  <th className="px-4 py-4 text-right font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+                  <th className="px-4 py-4 text-right text-[11.5px] font-bold text-[#5F6B94]">
                     {t("table.action")}
                   </th>
                 </tr>

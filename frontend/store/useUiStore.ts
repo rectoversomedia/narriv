@@ -14,7 +14,7 @@ type UiState = {
 export const useUiStore = create<UiState>()(
   persist(
     (set) => ({
-      language: "en", // English first; the language switch keeps a user's own choice
+      language: "id", // Indonesian first: most workspaces are Indonesian; the switch keeps a user's own choice
       sidebarCollapsed: false,
       setLanguage: (language) => set({ language }),
       toggleLanguage: () =>

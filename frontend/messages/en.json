@@ -4197,11 +4197,11 @@
       "insufficient_data": "Not Enough Data"
     },
     "component": {
-      "negative_share": "Negative Sentiment",
-      "severity": "Issue Severity",
-      "volume_change": "Volume Change",
-      "active_alerts": "Unresolved Alerts",
-      "narrative_momentum": "Narrative Momentum"
+      "negative_share": "Negative talk",
+      "severity": "Serious complaints",
+      "volume_change": "Sudden rise in talk",
+      "active_alerts": "Alerts not yet handled",
+      "narrative_momentum": "Issues picking up speed"
     },
     "insufficientTitle": "Insufficient Data",
     "insufficientDesc": "Not enough data yet. Updates automatically as data arrives.",

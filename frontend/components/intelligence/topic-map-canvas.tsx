@@ -144,7 +144,7 @@ function MapNodeButton({ node, placed, rank, selected, onSelect, signalLabel }: 
       >
         <span className="flex flex-col items-center text-center text-white" style={{ width: r * 1.55 }}>
           <span className="font-black tabular-nums leading-none [text-shadow:0_2px_4px_rgba(16,19,52,0.25)]" style={{ fontSize: numberSize }}>{node.signals}</span>
-          <span className="mt-0.5 font-mono font-bold uppercase tracking-[0.06em] text-white/85" style={{ fontSize: Math.max(8, titleSize - 3.5) }}>{signalLabel(node.signals).replace(/^\d+\s*/, "")}</span>
+          <span className="mt-0.5 font-bold text-white/85" style={{ fontSize: Math.max(8, titleSize - 3.5) }}>{signalLabel(node.signals).replace(/^\d+\s*/, "")}</span>
           {showTitle ? (
             <span
               className="mt-1.5 font-bold leading-[1.18] text-white [text-shadow:0_1px_3px_rgba(16,19,52,0.3)]"

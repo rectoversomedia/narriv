@@ -84,7 +84,7 @@ function Summary({ detail }: { detail: NarrativeDetailRecord }) {
           {tiles.map(([v, l]) => (
             <div key={l} className="rounded-[14px] bg-white/[0.07] px-3.5 py-3 ring-1 ring-white/10">
               <p className="text-[15px] font-black leading-tight tabular-nums">{v}</p>
-              <p className="mt-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-white/55">{l}</p>
+              <p className="mt-1 text-[11px] font-bold text-white/55">{l}</p>
             </div>
           ))}
         </div>

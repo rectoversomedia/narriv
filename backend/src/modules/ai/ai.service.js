@@ -478,10 +478,13 @@ function buildFallbackSummary(signals = [], contextInfo = {}) {
     const mostlyNegative = negative > positive;
     return {
         title: "AI Signal Summary",
-        content: {
-            en: `${negative} of ${total} signals today are negative${short ? `, led by "${short}"` : ""}.`,
-            id: `${negative} dari ${total} percakapan hari ini negatif${short ? `, terbanyak soal "${short}"` : ""}.`,
-        },
+        // The verdict first, in plain words; the headline that leads it comes after, only when there is one.
+        content: negative === 0
+            ? { en: `A calm day: none of today's ${total} mentions is negative.`, id: `Hari ini tenang: tidak ada yang negatif dari ${total} percakapan.` }
+            : {
+                en: `${negative} of today's ${total} mentions are negative.${short && topNegative ? ` Most are about "${short}".` : ""}`,
+                id: `${negative} dari ${total} percakapan hari ini negatif.${short && topNegative ? ` Terbanyak soal "${short}".` : ""}`,
+            },
         // "Amplify the positive stories" only when there are some; a tie at zero is an unread or quiet day.
         insight: mostlyNegative
             ? { en: "Prepare a holding statement and answer the main complaint on the busiest channel.", id: "Siapkan pernyataan sementara dan jawab keluhan utama di kanal yang paling ramai." }

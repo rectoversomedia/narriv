@@ -11,7 +11,7 @@ const SERIES = [
   { key: "negative", color: "#EF4444" },
 ] as const;
 
-const M = { top: 8, right: 8, bottom: 20, left: 26 };
+const M = { top: 18, right: 8, bottom: 22, left: 28 };
 
 function shortDate(iso: string, locale: string) {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -23,11 +23,12 @@ function shortDate(iso: string, locale: string) {
  * value, never overshoots). Days with no signals break the lines and are
  * labelled as such in the tooltip; values shown are the stored counts.
  */
-export function SentimentTrendChart({ days, labels, locale = "en-GB" }: { days: SentimentDay[]; labels: { positive: string; neutral: string; negative: string; mixed: string; unanalyzed: string; noSignals: string }; locale?: string }) {
+export function SentimentTrendChart({ days, labels, locale = "en-GB" }: { days: SentimentDay[]; labels: { positive: string; neutral: string; negative: string; mixed: string; unanalyzed: string; noSignals: string; peak?: string }; locale?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [active, setActive] = useState<number | null>(null);
-  const height = 120;
+  // Tall enough to read a day-to-day change at a glance (was 120px).
+  const height = 200;
 
   useEffect(() => {
     const el = ref.current;
@@ -40,7 +41,7 @@ export function SentimentTrendChart({ days, labels, locale = "en-GB" }: { days: 
   }, []);
 
   const maxCount = Math.max(0, ...days.flatMap((d) => [d.positive, d.neutral, d.negative]));
-  const ticks = niceTicks(maxCount, 2, true);
+  const ticks = niceTicks(maxCount, 3, true);
   const top = ticks[ticks.length - 1];
   const plotW = Math.max(0, width - M.left - M.right);
   const plotH = height - M.top - M.bottom;
@@ -54,6 +55,8 @@ export function SentimentTrendChart({ days, labels, locale = "en-GB" }: { days: 
   );
 
   const activeDay = active !== null ? days[active] : null;
+  // The busiest negative day, when there is one worth pointing at.
+  const peak = (() => { let i = -1, v = 0; days.forEach((d, j) => { if (d.negative > v) { v = d.negative; i = j; } }); return v >= 2 ? i : null; })();
   // Sit beside the guide line, on the side with more room, so the active values stay visible.
   const tooltipLeft = active !== null ? Math.min(Math.max(xFor(active) > width / 2 ? xFor(active) - 148 : xFor(active) + 8, 0), Math.max(0, width - 140)) : 0;
 
@@ -64,18 +67,25 @@ export function SentimentTrendChart({ days, labels, locale = "en-GB" }: { days: 
           {ticks.map((t) => (
             <g key={t}>
               <line x1={M.left} x2={width - M.right} y1={yFor(t)} y2={yFor(t)} stroke="#EEF1F7" strokeWidth={1} />
-              <text x={M.left - 6} y={yFor(t)} dy="0.32em" textAnchor="end" className="fill-[#8A94B8] text-[9px] font-medium">{t}</text>
+              <text x={M.left - 6} y={yFor(t)} dy="0.32em" textAnchor="end" className="fill-[#6B7591] text-[11px] font-medium">{t}</text>
             </g>
           ))}
           {days.map((d, i) => (
-            <text key={d.date} x={xFor(i)} y={height - 5} textAnchor={i === 0 ? "start" : i === days.length - 1 ? "end" : "middle"} className="fill-[#8A94B8] text-[9px] font-medium">
+            <text key={d.date} x={xFor(i)} y={height - 5} textAnchor={i === 0 ? "start" : i === days.length - 1 ? "end" : "middle"} className="fill-[#6B7591] text-[11px] font-medium">
               {i % 2 === 0 || days.length <= 4 ? shortDate(d.date, locale) : ""}
             </text>
           ))}
+          {/* The day negative talk peaked, marked on the line so the eye knows where to look. */}
+          {peak !== null && active === null ? (
+            <g>
+              <line x1={xFor(peak)} x2={xFor(peak)} y1={M.top} y2={M.top + plotH} stroke="#F3B4B4" strokeDasharray="3 3" />
+              <text x={xFor(peak)} y={M.top - 2} textAnchor={peak === 0 ? "start" : peak === days.length - 1 ? "end" : "middle"} className="fill-[#C81E1E] text-[11px] font-bold">{labels.peak ?? "Peak negative"}</text>
+            </g>
+          ) : null}
           {active !== null ? <line x1={xFor(active)} x2={xFor(active)} y1={M.top} y2={M.top + plotH} stroke="#CBD3E4" strokeWidth={1} /> : null}
           <g className="chart-line-draw">
             {paths.map((p) => (
-              <path key={p.key} d={p.d} fill="none" stroke={p.color} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
+              <path key={p.key} d={p.d} fill="none" stroke={p.color} strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" />
             ))}
           </g>
           {days.map((d, i) =>

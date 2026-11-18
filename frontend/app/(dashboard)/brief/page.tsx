@@ -1,5 +1,6 @@
 "use client";
 
+import { STATUS_COLOR, STATUS_WORD, statusFromRisk } from "@/lib/status";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
@@ -63,24 +64,24 @@ type BriefDriver = { key: string; contribution: number; reason: string; evidence
 type EvidenceCount = { type?: string; count?: number };
 
 const DRIVER_LABELS: Record<string, [string, string]> = {
-  negative_share: ["Share of negative mentions", "Porsi percakapan negatif"],
-  severity: ["Mentions rated high / critical", "Percakapan berbobot tinggi / kritis"],
-  active_alerts: ["Alerts raised in this window", "Peringatan baru di periode ini"],
-  volume_change: ["Volume spike", "Lonjakan volume"],
-  narrative_momentum: ["Issue momentum", "Momentum isu"],
+  negative_share: ["negative talk", "obrolan negatif"],
+  severity: ["serious complaints", "keluhan serius"],
+  active_alerts: ["new alerts", "peringatan baru"],
+  volume_change: ["a sudden rise in talk", "lonjakan obrolan"],
+  narrative_momentum: ["issues picking up speed", "isu yang makin cepat menyebar"],
 };
 
+// The shared status words (lib/status), so the brief says what the Overview says.
 function riskLook(score: number) {
-  if (score >= 70) return { color: "#9B1C1C", bar: "#C81E1E", word: ["Critical", "Kritis"] as [string, string] };
-  if (score >= 50) return { color: "#C81E1E", bar: "#E5484D", word: ["High", "Tinggi"] as [string, string] };
-  if (score >= 30) return { color: "#A04606", bar: "#F59E0B", word: ["Moderate", "Sedang"] as [string, string] };
-  return { color: "#047857", bar: "#12A66A", word: ["Low", "Rendah"] as [string, string] };
+  const st = statusFromRisk(score);
+  return { color: STATUS_COLOR[st].text, bar: STATUS_COLOR[st].bar, word: STATUS_WORD[st] };
 }
 
 function reputationLook(score: number) {
-  if (score >= 70) return { color: "#047857", bar: "#12A66A", word: ["Healthy", "Sehat"] as [string, string] };
-  if (score >= 45) return { color: "#A04606", bar: "#F59E0B", word: ["Watch", "Waspada"] as [string, string] };
-  return { color: "#C81E1E", bar: "#E5484D", word: ["At risk", "Berisiko"] as [string, string] };
+  // Good / Fair / Poor: not "Watch", which is a status word.
+  if (score >= 70) return { color: "#047857", bar: "#12A66A", word: ["Good", "Baik"] as [string, string] };
+  if (score >= 45) return { color: "#A04606", bar: "#F59E0B", word: ["Fair", "Cukup"] as [string, string] };
+  return { color: "#C81E1E", bar: "#E5484D", word: ["Poor", "Buruk"] as [string, string] };
 }
 
 function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
@@ -126,7 +127,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
         <div className="p-5 sm:p-7">
           <MonoLabel>{L(`Brief · ${today} · last ${data.windowHours} hours`, `Briefing · ${today} · ${data.windowHours} jam terakhir`)}</MonoLabel>
           <h2 className="mt-3 max-w-4xl text-balance text-[26px] font-black leading-[1.18] tracking-[-0.03em] text-[#101334] sm:text-[32px]">
-            {risk ? <>{L("Risk is ", "Risiko ")}<span style={{ color: risk.color }}>{L(...risk.word)}</span></> : L("Risk not scored yet", "Risiko belum dinilai")}
+            {risk ? <>{L("Status: ", "Status: ")}<span style={{ color: risk.color }}>{L(...risk.word)}</span></> : L("Not scored yet", "Belum dinilai")}
             {drivers[0] ? <>{L(", driven by ", ", didorong oleh ")}{L(...(DRIVER_LABELS[drivers[0].key] ?? [drivers[0].key, drivers[0].key])).toLowerCase()}</> : null}
             {repLook ? <>{L(". Reputation: ", ". Reputasi: ")}<span style={{ color: repLook.color }}>{L(...repLook.word)}</span>.</> : "."}
           </h2>
@@ -139,16 +140,16 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
               { label: L("Reputation", "Reputasi"), value: repLook ? `${repScore}` : "—", sub: repLook ? `/100 · ${L(...repLook.word)}` : L("not enough data", "data belum cukup"), color: repLook?.color ?? "#5A6478", bar: repLook ? repScore : undefined, barColor: repLook?.bar },
             ].map((m) => (
               <div key={m.label} className="rounded-[14px] bg-[#F6F7FC] px-4 py-3.5">
-                <dt className="font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{m.label}</dt>
+                <dt className="text-[11.5px] font-bold text-[#5F6B94]">{m.label}</dt>
                 <dd className="mt-1 text-[30px] font-black leading-none tracking-[-0.03em]" style={{ color: m.color }}>{m.value}</dd>
                 {typeof m.bar === "number" ? <div className="mt-2 h-1.5 w-full rounded-full bg-[#E3E7F1]"><div className="h-full rounded-full" style={{ width: `${Math.max(2, Math.min(100, m.bar))}%`, background: m.barColor }} /></div> : null}
-                <dd className="mt-1.5 font-mono text-[12px] font-bold text-[#5F6B94]">{m.sub}</dd>
+                <dd className="mt-1.5 text-[12px] font-bold text-[#5F6B94]">{m.sub}</dd>
               </div>
             ))}
           </dl>
 
           <div className="mt-5 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:flex-wrap sm:items-center">
-            <p className="px-1 font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF] sm:mr-2">{L("Start Here", "Mulai dari Sini")}</p>
+            <p className="px-1 text-[12px] font-bold text-[#A5B4FF] sm:mr-2">{L("Start Here", "Mulai dari Sini")}</p>
             {first ? (
               <button type="button" onClick={() => runStep(first)} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5] sm:w-auto">
                 {code.action(first.action)}: {stepButton(first)}
@@ -176,12 +177,12 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
                 return (
                   <li key={`${a.action}-${i}`} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center">
                     <div className="flex min-w-0 flex-1 gap-3">
-                      <span className={cn("grid size-8 shrink-0 place-items-center rounded-full font-mono text-[12px] font-bold", hot ? "bg-[#101334] text-white" : "border-[1.5px] border-[#101334] text-[#101334]")}>{String(i + 1).padStart(2, "0")}</span>
+                      <span className={cn("grid size-8 shrink-0 place-items-center rounded-full text-[12px] font-bold", hot ? "bg-[#101334] text-white" : "border-[1.5px] border-[#101334] text-[#101334]")}>{String(i + 1).padStart(2, "0")}</span>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span className="text-[16px] font-black text-[#101334]">{code.action(a.action)}</span>
-                          <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em]", levelTone(a.priority))}>{code.level(a.priority)}</span>
-                          <span className="rounded-[6px] bg-[#EEF1FF] px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#3B52F5]">{code.urgency(a.urgency)}</span>
+                          <span className={cn("rounded-[6px] px-2 py-0.5 text-[11.5px] font-bold", levelTone(a.priority))}>{code.level(a.priority)}</span>
+                          <span className="rounded-[6px] bg-[#EEF1FF] px-2 py-0.5 text-[11.5px] font-bold text-[#3B52F5]">{code.urgency(a.urgency)}</span>
                         </div>
                         <p className="mt-1 text-[14px] font-medium leading-relaxed text-[#31406B]">{a.reason}</p>
                       </div>
@@ -189,7 +190,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
                     {button ? (
                       <button type="button" onClick={() => runStep(a)} className={cn("h-10 w-full shrink-0 rounded-[12px] px-4 text-[13px] font-black text-white transition sm:w-auto", STEP_STRATEGY[a.action] ? "bg-[#465FFF] hover:bg-[#3B52F5]" : "bg-[#101334] hover:bg-[#1F2452]")}>{button}</button>
                     ) : (
-                      <span className="shrink-0 font-mono text-[12px] font-bold uppercase tracking-[0.06em] text-[#5F6B94] sm:pl-2">{L("Keep watching", "Pantau terus")}</span>
+                      <span className="shrink-0 text-[12px] font-bold text-[#5F6B94] sm:pl-2">{L("Keep watching", "Pantau terus")}</span>
                     )}
                   </li>
                 );
@@ -210,7 +211,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
                   <li key={d.key}>
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="text-[14px] font-black text-[#101334]">{L(...(DRIVER_LABELS[d.key] ?? [d.key.replace(/_/g, " "), d.key.replace(/_/g, " ")]))}</span>
-                      <span className="shrink-0 font-mono text-[13px] font-bold text-[#B42318]">+{Math.round(d.contribution * 10) / 10}</span>
+                      <span className="shrink-0 text-[13px] font-bold text-[#B42318]">+{Math.round(d.contribution * 10) / 10}</span>
                     </div>
                     <div className="mt-1.5 h-2 rounded-full bg-[#EEF0F6]"><div className="h-full rounded-full bg-gradient-to-r from-[#465FFF] to-[#B42318]" style={{ width: `${(d.contribution / maxDriver) * 100}%` }} /></div>
                     <p className="mt-1 text-[12.5px] font-medium text-[#5F6B94]">{d.reason}</p>
@@ -225,7 +226,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
             <section className="rounded-[18px] border-[1.5px] border-[#101334] bg-[#0B0F2E] p-5 text-white shadow-[0_4px_0_#465FFF] sm:p-6">
               {emerging.length ? (
                 <>
-                  <p className="font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#FBBF24]">{L("Gaining Momentum", "Sedang Naik")}</p>
+                  <p className="text-[12px] font-bold text-[#FBBF24]">{L("Gaining Momentum", "Sedang Naik")}</p>
                   <ul className="mt-2 space-y-1.5">
                     {emerging.slice(0, 3).map((i) => <li key={i.title} className="text-[15px] font-black leading-snug">{i.title}</li>)}
                   </ul>
@@ -233,7 +234,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
               ) : null}
               {watch.length ? (
                 <div className={cn(emerging.length && "mt-5 border-t border-white/10 pt-4")}>
-                  <p className="font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{L("Watch Next", "Pantau Berikutnya")}</p>
+                  <p className="text-[12px] font-bold text-[#A5B4FF]">{L("Watch Next", "Pantau Berikutnya")}</p>
                   <ul className="mt-2 space-y-2">
                     {watch.map((w, i) => (
                       <li key={i} className="flex gap-2 text-[14px] font-semibold leading-snug text-white/85"><span className="text-[#A5B4FF]">→</span>{w.label}</li>

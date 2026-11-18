@@ -46,7 +46,7 @@ export function duration(hours: number) {
 export const compact = (n: number) => new Intl.NumberFormat(intlLocale(), { notation: "compact", maximumFractionDigits: 1 }).format(n);
 
 export const INKED = "rounded-[18px] border-[1.5px] border-[#101334] bg-white shadow-[0_3px_0_#101334]";
-export const KICKER = "font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]";
+export const KICKER = "text-[11.5px] font-bold";
 
 /** A numbered section heading: mono kicker, Title Case headline, an optional note. */
 export function SectionHead({ n, icon: Icon, title, note, right }: { n?: string; icon: typeof Radio; title: string; note?: ReactNode; right?: ReactNode }) {
@@ -156,7 +156,7 @@ function Amplifiers({ spread }: { spread: NarrativeSpread }) {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="truncate text-[14px] font-black text-[#101334]">{a.name}</span>
-                    {a.isOrigin ? <span className="rounded-[6px] bg-[#101334] px-1.5 py-0.5 font-mono text-[9.5px] font-bold uppercase tracking-[0.08em] text-white">{pickL("Started It", "Pemicu")}</span> : null}
+                    {a.isOrigin ? <span className="rounded-[6px] bg-[#101334] px-1.5 py-0.5 text-[9.5px] font-bold text-white">{pickL("Started It", "Pemicu")}</span> : null}
                     {a.platforms.slice(0, 3).map((p) => <PlatformIcon key={p} platform={p} className="size-3.5" />)}
                   </div>
                   {bar ? (

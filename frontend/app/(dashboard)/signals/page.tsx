@@ -365,8 +365,8 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
       <div className="h-2" style={{ backgroundColor: band }} />
       <div className="p-5 sm:p-7">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Last 24 Hours", "24 Jam Terakhir")}</p>
-          <span className="rounded-[6px] px-2 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em]" style={{ backgroundColor: verdict.bg, color: verdict.color }}>{verdict.word}</span>
+          <p className="text-[12px] font-bold text-[#5F6B94]">{L("Last 24 Hours", "24 Jam Terakhir")}</p>
+          <span className="rounded-[6px] px-2 py-0.5 text-[11.5px] font-bold" style={{ backgroundColor: verdict.bg, color: verdict.color }}>{verdict.word}</span>
         </div>
 
         <div className="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-end">
@@ -385,7 +385,7 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
                   {segments.map((seg) => (
                     <span key={seg.key} className="inline-flex items-center gap-1.5">
                       <span className="size-2.5 rounded-full" style={{ background: seg.color }} />
-                      {seg.label} <b className="font-mono font-bold text-[#101334]">{pct(seg.value)}%</b>
+                      {seg.label} <b className="font-bold text-[#101334]">{pct(seg.value)}%</b>
                     </span>
                   ))}
                 </div>
@@ -395,7 +395,7 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
             {tiles.map((tile) => (
               <div key={tile.key} className="rounded-[14px] bg-[#F6F7FC] px-4 py-3">
-                <dt className="font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{tile.label}</dt>
+                <dt className="text-[11.5px] font-bold text-[#5F6B94]">{tile.label}</dt>
                 <dd className="mt-1 text-[28px] font-black leading-none tracking-[-0.03em] tabular-nums" style={{ color: tile.tone }}>{tile.value}</dd>
               </div>
             ))}
@@ -405,7 +405,7 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
         {advice || onPlan ? (
           <div className="mt-5 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:items-center">
             <p className="min-w-0 flex-1 px-1 text-[15px] font-bold leading-snug text-white">
-              <span className="mb-1 block font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{L("Next Step", "Langkah Berikutnya")}</span>
+              <span className="mb-1 block text-[12px] font-bold text-[#A5B4FF]">{L("Next Step", "Langkah Berikutnya")}</span>
               {advice ?? L("Review today's negative mentions and decide on a response.", "Tinjau percakapan negatif hari ini dan putuskan responsnya.")}
             </p>
             {onPlan ? <button type="button" onClick={onPlan} className="inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5] sm:w-auto">{L("Create Action Plan", "Buat Rencana Aksi")}</button> : null}
@@ -627,7 +627,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
               <col className="w-[11%]" />
             </colgroup>
             <thead>
-              <tr className="border-b border-[#EEF0F6] font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#5F6B94]">
+              <tr className="border-b border-[#EEF0F6] text-[11.5px] font-bold text-[#5F6B94]">
                 <th className="px-2.5 py-3">
                   <button
                     type="button"
@@ -686,7 +686,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     )}
                   </td>
                   <td className="px-2.5 py-3 align-middle"><AnalysisBadge status={row.analysisStatus} confidence={row.analysisConfidence} /></td>
-                  <td className="px-2.5 py-3 align-middle font-mono text-[11.5px] font-medium leading-snug text-[#5F6B94]">{row.time}</td>
+                  <td className="px-2.5 py-3 align-middle text-[11.5px] font-medium leading-snug text-[#5F6B94]">{row.time}</td>
                   <td className="px-2.5 py-3 align-middle">
                     {/* One button per row: a negative or mixed record needs checking, a positive or neutral one a plan. */}
                     {row.sentiment === "NEGATIVE" || row.sentiment === "MIXED" ? (
@@ -772,10 +772,10 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
     <Panel className="flex h-full flex-col">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("timeframe")}</p>
+          <p className="text-[12px] font-bold text-[#5F6B94]">{t("timeframe")}</p>
           <h3 className="mt-1.5 !text-[19px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
         </div>
-        {totalSignals ? <p className="shrink-0 text-right"><b className="block text-[24px] font-black leading-none text-[#101334]">{totalSignals.toLocaleString()}</b><span className="font-mono text-[11.5px] font-bold text-[#5F6B94]">{t("totalLabel")}</span></p> : null}
+        {totalSignals ? <p className="shrink-0 text-right"><b className="block text-[24px] font-black leading-none text-[#101334]">{totalSignals.toLocaleString()}</b><span className="text-[11.5px] font-bold text-[#5F6B94]">{t("totalLabel")}</span></p> : null}
       </div>
       {items.length === 0 ? (
         <div className="mt-5 flex flex-col items-center justify-center gap-1 py-6 text-center">
@@ -792,7 +792,7 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
                     <PlatformIcon platform={item.name} className="size-4" />
                     <span className="truncate text-[14px] font-bold text-[#101334] group-hover:text-[#3B52F5]">{PLATFORM_NAMES[item.name.toLowerCase()] ?? item.name}</span>
                   </span>
-                  <span className="shrink-0 font-mono text-[12px] font-bold text-[#101334]">{item.pct}%{Number.isFinite(item.count) ? <span className="text-[#5F6B94]"> · {item.count}</span> : null}</span>
+                  <span className="shrink-0 text-[12px] font-bold text-[#101334]">{item.pct}%{Number.isFinite(item.count) ? <span className="text-[#5F6B94]"> · {item.count}</span> : null}</span>
                 </span>
                 <span className="mt-1.5 block h-2 overflow-hidden rounded-full bg-[#EEF0F6]">
                   <span className="block h-full rounded-full" style={{ width: `${(item.pct / max) * 100}%`, backgroundColor: item.color }} />
@@ -821,10 +821,10 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
     <Panel className="flex h-full flex-col">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{t("period").replace(/[()]/g, "")}</p>
+          <p className="text-[12px] font-bold text-[#5F6B94]">{t("period").replace(/[()]/g, "")}</p>
           <h3 className="mt-1.5 !text-[19px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
         </div>
-        {hasNonZero ? <p className="shrink-0 text-right"><b className="block text-[24px] font-black leading-none text-[#101334]">{total.toLocaleString(uiLanguage)}</b><span className="font-mono text-[11.5px] font-bold text-[#5F6B94]">{t("signalsLabel")}</span></p> : null}
+        {hasNonZero ? <p className="shrink-0 text-right"><b className="block text-[24px] font-black leading-none text-[#101334]">{total.toLocaleString(uiLanguage)}</b><span className="text-[11.5px] font-bold text-[#5F6B94]">{t("signalsLabel")}</span></p> : null}
       </div>
 
       {isLoading ? (
@@ -838,7 +838,7 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
         <div className="mt-4 flex flex-1 flex-col">
           {peakIndex >= 0 ? (
             <p className="mb-3 inline-flex w-fit items-center gap-2 rounded-[8px] bg-[#EEF1FF] px-2.5 py-1 text-[12.5px] font-bold text-[#31406B]">
-              {pickL("Busiest hour", "Jam tersibuk")} <b className="font-mono font-bold text-[#3B52F5]">{labels?.[peakIndex] ?? ""}</b> · {values[peakIndex].toLocaleString(uiLanguage)} {t("signalsLabel")}
+              {pickL("Busiest hour", "Jam tersibuk")} <b className="font-bold text-[#3B52F5]">{labels?.[peakIndex] ?? ""}</b> · {values[peakIndex].toLocaleString(uiLanguage)} {t("signalsLabel")}
             </p>
           ) : null}
           <div className="flex min-h-[160px] flex-1 items-end gap-[3px] rounded-[12px] bg-[#F7F8FC] px-2 pt-3">
@@ -851,7 +851,7 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
               </div>
             ))}
           </div>
-          <div className="mt-1.5 flex gap-[3px] px-2 font-mono text-[11px] font-bold text-[#5F6B94]">
+          <div className="mt-1.5 flex gap-[3px] px-2 text-[11px] font-bold text-[#5F6B94]">
             {values.map((_, i) => <span key={i} className="flex-1 text-center">{i % every === 0 ? labels?.[i] ?? "" : ""}</span>)}
           </div>
         </div>
@@ -868,7 +868,7 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
     <Panel className="flex h-full flex-col">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{pickL("Being Investigated", "Sedang Diselidiki")}</p>
+          <p className="text-[12px] font-bold text-[#5F6B94]">{pickL("Being Investigated", "Sedang Diselidiki")}</p>
           <h3 className="mt-1.5 !text-[19px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
         </div>
         <Link href="/workspace/cases" className="shrink-0 text-[13px] font-bold text-[#3B52F5] hover:underline">{t("viewAll")} →</Link>
@@ -889,9 +889,9 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
                   <span className={cn("mt-1.5 size-2.5 shrink-0 rounded-full", open ? "bg-[#465FFF]" : "bg-[#F59E0B]")} />
                   <span className="min-w-0 flex-1">
                     <span className="line-clamp-2 block text-[14px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]" title={item.title}>{item.title}</span>
-                    <span className="mt-0.5 block font-mono text-[12px] font-medium text-[#5F6B94]">{item.meta}</span>
+                    <span className="mt-0.5 block text-[12px] font-medium text-[#5F6B94]">{item.meta}</span>
                   </span>
-                  <span className={cn("shrink-0 rounded-[6px] px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em]", open ? "bg-[#EEF1FF] text-[#3B52F5]" : "bg-[#FFF4E5] text-[#A04606]")}>{codeLabel(item.badge)}</span>
+                  <span className={cn("shrink-0 rounded-[6px] px-2 py-0.5 text-[11px] font-bold", open ? "bg-[#EEF1FF] text-[#3B52F5]" : "bg-[#FFF4E5] text-[#A04606]")}>{codeLabel(item.badge)}</span>
                 </Link>
               </li>
             );
@@ -916,15 +916,15 @@ function RelatedNarrativeCard({ n }: { n: { id: string; title: string; signalCou
     <Link href={issueHref(n.id)} className="group flex flex-col justify-between rounded-[16px] bg-[#F6F7FC] p-4 transition hover:bg-[#EEF1FF]" style={{ boxShadow: `inset 4px 0 0 ${look.edge}` }}>
       <div className="pl-1">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em]", look.chip)}>{look.word}</span>
-          {n.velocity ? <span className={cn("rounded-[6px] bg-white px-2 py-0.5 font-mono text-[11px] font-bold", rising ? "text-[#B45309]" : "text-[#5F6B94]")}>{n.velocity} / 24{pickL("h", " jam")}</span> : null}
+          <span className={cn("rounded-[6px] px-2 py-0.5 text-[11px] font-bold", look.chip)}>{look.word}</span>
+          {n.velocity ? <span className={cn("rounded-[6px] bg-white px-2 py-0.5 text-[11px] font-bold", rising ? "text-[#B45309]" : "text-[#5F6B94]")}>{n.velocity} / 24{pickL("h", " jam")}</span> : null}
         </div>
         <p className="mt-2.5 line-clamp-2 text-[16px] font-black leading-snug text-[#101334] group-hover:text-[#3B52F5]">{n.title}</p>
       </div>
       <div className="mt-4 flex items-end justify-between gap-2 pl-1">
         <span>
           <b className="block text-[30px] font-black leading-none tracking-[-0.03em] text-[#101334]">{n.signalCount}</b>
-          <span className="font-mono text-[11.5px] font-bold text-[#5F6B94]">{pickL("mentions", "percakapan")}</span>
+          <span className="text-[11.5px] font-bold text-[#5F6B94]">{pickL("mentions", "percakapan")}</span>
         </span>
         <span className="text-[13px] font-bold text-[#3B52F5]">{pickL("Open Issue →", "Buka Isu →")}</span>
       </div>
@@ -941,7 +941,7 @@ function LiveRelatedNarratives() {
     <div className={cn("mt-6", BOX)}>
       <div className="mb-4 flex items-end justify-between gap-2">
         <div>
-          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{pickL("Issues Behind These Mentions", "Isu di Balik Percakapan Ini")}</p>
+          <p className="text-[12px] font-bold text-[#5F6B94]">{pickL("Issues Behind These Mentions", "Isu di Balik Percakapan Ini")}</p>
           <h3 className="mt-1.5 text-[19px] font-black tracking-[-0.02em] text-[#101334]">{t("relatedNarratives")}</h3>
         </div>
         <Link href="/intelligence" className="shrink-0 text-[13px] font-bold text-[#3B52F5] hover:underline">{pickL("Issue Map →", "Peta Isu →")}</Link>

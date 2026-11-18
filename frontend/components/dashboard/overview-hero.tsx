@@ -1,5 +1,6 @@
 "use client";
 
+import { STATUS_WORD, statusFromMentions } from "@/lib/status";
 import Link from "next/link";
 import { BrandMark } from "@/components/dashboard/brand-hero";
 import { monitoringHref, type MonitoringPeriod } from "@/lib/evidence-links";
@@ -69,13 +70,13 @@ function KeywordRowItem({ k, hours }: { k: KeywordRow; hours: MonitoringPeriod }
           <p className="mt-0.5 text-[12px] font-bold text-[#3B52F5] opacity-0 transition group-hover:opacity-100">{L("See Mentions →", "Lihat Percakapan →")}</p>
         </div>
         {/* Negative share (top right on phones, last column on wide screens) */}
-        <span className={cn("justify-self-end rounded-[8px] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.04em] lg:order-last", shareTone(share))}>
+        <span className={cn("justify-self-end rounded-[8px] px-2.5 py-1 text-[12px] font-bold lg:order-last", shareTone(share))}>
           {share}% {L("Negative", "Negatif")}
         </span>
         {/* Trend */}
         <div className="col-span-2 lg:col-span-1">
           {k.daily?.some((v) => v > 0) ? <Sparkline values={k.daily} /> : <p className="text-[12px] font-semibold text-[#6B7591]">{L("No Trend Yet", "Belum Ada Tren")}</p>}
-          <p className="mt-0.5 font-mono text-[11px] font-medium text-[#6B7591]">{L("Last 7 Days", "7 Hari Terakhir")}</p>
+          <p className="mt-0.5 text-[11px] font-medium text-[#6B7591]">{L("Last 7 Days", "7 Hari Terakhir")}</p>
         </div>
         {/* Sentiment split */}
         <div className="col-span-2 lg:col-span-1">
@@ -94,11 +95,11 @@ function KeywordRowItem({ k, hours }: { k: KeywordRow; hours: MonitoringPeriod }
         {/* Volume and new in 24 hours */}
         <div className="lg:text-right">
           <p className="text-[24px] font-black leading-none tabular-nums text-[#101334]">{fmt(k.count)}</p>
-          <p className="mt-1 font-mono text-[11.5px] font-medium text-[#5F6B94]">{L("mentions", "percakapan")}</p>
+          <p className="mt-1 text-[11.5px] font-medium text-[#5F6B94]">{L("mentions", "percakapan")}</p>
         </div>
         <div className="text-right">
           <p className={cn("text-[24px] font-black leading-none tabular-nums", k.last24h > 0 ? "text-[#3B52F5]" : "text-[#C9D0E3]")}>{k.last24h > 0 ? `+${fmt(k.last24h)}` : "0"}</p>
-          <p className="mt-1 font-mono text-[11.5px] font-medium text-[#5F6B94]">{L("new in 24h", "baru 24 jam")}</p>
+          <p className="mt-1 text-[11.5px] font-medium text-[#5F6B94]">{L("new in 24h", "baru 24 jam")}</p>
         </div>
       </Link>
     </li>
@@ -121,6 +122,7 @@ export function OverviewHero({
   periodLabel,
   lastDataLabel,
   analysed,
+  prevNegativeShare,
 }: {
   brandName: string;
   logoUrl?: string | null;
@@ -134,6 +136,8 @@ export function OverviewHero({
   lastDataLabel: string | null;
   /** Mentions with a sentiment label; 0 while the first batch is still being read. */
   analysed?: number;
+  /** Negative share in the same-length period just before, or null when it had no scored mentions. */
+  prevNegativeShare?: number | null;
 }) {
   const L = useL();
   const fmt = (n: number) => n.toLocaleString(intlLocale());
@@ -144,8 +148,10 @@ export function OverviewHero({
   // No mentions yet is not "under control": it says the first data is still on its way.
   // Mentions in but none read yet: 0% negative would say "Under Control" before anything was judged.
   const analysing = total > 0 && analysed === 0 && criticalAlerts === 0;
-  const level: Level = (total === 0 && openAlerts === 0) || analysing ? "waiting" : criticalAlerts > 0 || negativeShare >= 40 || worstShare >= 60 ? "attention" : negativeShare >= 25 || openAlerts > 0 ? "watch" : "calm";
-  const levelLabel = { attention: L("Needs Attention", "Perlu Perhatian"), watch: L("Watch Closely", "Pantau Ketat"), calm: L("Under Control", "Terkendali"), waiting: analysing ? L("Being Analysed", "Sedang Dianalisis") : L("Waiting for Data", "Menunggu Data") }[level];
+  // The shared status (lib/status): the same three words as the Daily Brief, Analysis and Reports.
+  const status = statusFromMentions({ negativeShare, worstShare, criticalAlerts, openAlerts });
+  const level: Level = (total === 0 && openAlerts === 0) || analysing ? "waiting" : status === "action" ? "attention" : status === "watch" ? "watch" : "calm";
+  const levelLabel = { attention: L(...STATUS_WORD.action), watch: L(...STATUS_WORD.watch), calm: L(...STATUS_WORD.safe), waiting: analysing ? L("Being Analysed", "Sedang Dianalisis") : L("Waiting for Data", "Menunggu Data") }[level];
   const headline = analysing
     ? L(`${fmt(total)} mentions are in; Narriv is reading their tone now.`, `${fmt(total)} percakapan sudah masuk; Narriv sedang membaca nadanya.`)
     : level === "waiting"
@@ -165,7 +171,8 @@ export function OverviewHero({
 
   const kpis = [
     { v: fmt(total), l: L("Mentions", "Percakapan"), sub: L(`last ${periodLabel}`, `${periodLabel} terakhir`), href: monitoringHref({ hours }), tone: "text-[#101334]" },
-    { v: `${negativeShare}%`, l: L("Negative", "Negatif"), sub: L("of all mentions", "dari semua percakapan"), href: monitoringHref({ hours, sentiment: "negative" }), tone: negativeShare >= 30 ? "text-[#B42318]" : "text-[#101334]" },
+    // Compared with the period before, so "41%" can be read as better or worse.
+    { v: `${negativeShare}%`, l: L("Negative", "Negatif"), sub: prevNegativeShare == null ? L("of all mentions", "dari semua percakapan") : negativeShare === prevNegativeShare ? L(`same as the period before`, `sama dengan periode sebelumnya`) : L(`${negativeShare > prevNegativeShare ? "▲ up" : "▼ down"} from ${prevNegativeShare}% before`, `${negativeShare > prevNegativeShare ? "▲ naik" : "▼ turun"} dari ${prevNegativeShare}% sebelumnya`), href: monitoringHref({ hours, sentiment: "negative" }), tone: negativeShare >= 30 ? "text-[#B42318]" : "text-[#101334]" },
     { v: fmt(openAlerts), l: L("Open Alerts", "Peringatan Aktif"), sub: criticalAlerts > 0 ? L(`${criticalAlerts} critical`, `${criticalAlerts} kritis`) : L("none critical", "tidak ada yang kritis"), href: "/alerts", tone: criticalAlerts > 0 ? "text-[#B42318]" : openAlerts > 0 ? "text-[#B45309]" : "text-[#101334]" },
   ];
   const style = LEVEL_STYLE[level];
@@ -184,12 +191,12 @@ export function OverviewHero({
             <BrandMark name={brandName} logoUrl={logoUrl} small className="size-12 shrink-0 rounded-[14px] shadow-[0_0_0_1.5px_#101334]" />
             <div className="min-w-0">
               <h2 className="truncate text-[20px] font-black leading-tight tracking-[-0.02em] sm:text-[22px]">{brandName}</h2>
-              <p className="font-mono text-[12px] font-medium text-[#5F6B94]">
+              <p className="text-[12px] font-medium text-[#5F6B94]">
                 {L(`Last ${periodLabel}`, `${periodLabel} terakhir`)}{lastDataLabel ? L(` · latest data ${lastDataLabel}`, ` · data terbaru ${lastDataLabel}`) : ""}
               </p>
             </div>
           </div>
-          <span className={cn("inline-flex items-center gap-1.5 rounded-[8px] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.08em]", style.chip)}>
+          <span className={cn("inline-flex items-center gap-1.5 rounded-[8px] px-2.5 py-1 text-[12px] font-bold", style.chip)}>
             <span className={cn("size-1.5 rounded-full", style.dot)} />
             {levelLabel}
             {/* The window the verdict covers, so it is not read against the 24-hour Daily Brief. */}
@@ -205,16 +212,16 @@ export function OverviewHero({
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {kpis.map((k) => (
             <Link key={k.l} href={k.href} className="group rounded-[14px] bg-[#F6F7FC] px-4 py-3.5 transition hover:bg-[#EEF1FF]">
-              <p className="font-mono text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{k.l}</p>
+              <p className="text-[11.5px] font-bold text-[#5F6B94]">{k.l}</p>
               <p className={cn("mt-1 text-[32px] font-black leading-none tracking-[-0.03em] tabular-nums", k.tone)}>{k.v}</p>
-              <p className="mt-1.5 flex items-center justify-between font-mono text-[12px] font-bold text-[#5F6B94]">{k.sub}<span className="text-[#3B52F5] opacity-0 transition group-hover:opacity-100">→</span></p>
+              <p className="mt-1.5 flex items-center justify-between text-[12px] font-bold text-[#5F6B94]">{k.sub}<span className="text-[#3B52F5] opacity-0 transition group-hover:opacity-100">→</span></p>
             </Link>
           ))}
         </div>
 
         {/* Where to act. */}
         <div className="mt-5 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:flex-wrap sm:items-center">
-          <p className="px-1 font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF] sm:mr-2">{L("Act On It", "Tindak Lanjuti")}</p>
+          <p className="px-1 text-[12px] font-bold text-[#A5B4FF] sm:mr-2">{L("Act On It", "Tindak Lanjuti")}</p>
           <Link href="/alerts" className="inline-flex h-11 items-center justify-center rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5]">
             {criticalAlerts > 0 ? L(`Handle ${criticalAlerts} Critical ${criticalAlerts === 1 ? "Alert" : "Alerts"}`, `Tangani ${criticalAlerts} Peringatan Kritis`) : openAlerts > 0 ? L(`Review ${openAlerts} Open Alerts`, `Tinjau ${openAlerts} Peringatan Aktif`) : L("Open Alerts", "Buka Peringatan")}
           </Link>
@@ -231,10 +238,10 @@ export function OverviewHero({
           <div className="mt-7">
             <div className="flex flex-wrap items-end justify-between gap-2 border-b border-[#EEF0F6] pb-3">
               <div>
-                <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("Monitored Keywords", "Kata Kunci yang Dipantau")}</p>
+                <p className="text-[12px] font-bold text-[#5F6B94]">{L("Monitored Keywords", "Kata Kunci yang Dipantau")}</p>
                 <h3 className="mt-1 text-[19px] font-black tracking-[-0.02em]">{L("Where The Pressure Is", "Di Mana Tekanannya")}</h3>
               </div>
-              <p className="font-mono text-[12px] font-medium text-[#5F6B94]">{L("highest negative share first", "urut dari porsi negatif tertinggi")}</p>
+              <p className="text-[12px] font-medium text-[#5F6B94]">{L("highest negative share first", "urut dari porsi negatif tertinggi")}</p>
             </div>
             <ul className="mt-1 divide-y divide-[#EEF0F6]">
               {sorted.map((k) => <KeywordRowItem key={k.keyword} k={k} hours={hours} />)}

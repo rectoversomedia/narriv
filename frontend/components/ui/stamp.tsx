@@ -5,7 +5,8 @@ import { cn } from "@/lib/utils";
 
 /** A mono, uppercase label above a block: the machine's voice naming what follows. */
 export function MonoLabel({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cn("font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]", className)}>{children}</p>;
+  // Plain sentence case: the old mono capitals with wide tracking were hard to read for a small label.
+  return <p className={cn("text-[13px] font-bold text-[#5F6B94]", className)}>{children}</p>;
 }
 
 export type Stat = { key: string; value: ReactNode; label: string; helper?: string; tone?: string; onClick?: () => void; active?: boolean };

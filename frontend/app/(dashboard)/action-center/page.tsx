@@ -204,7 +204,7 @@ export default function ActionCenterPage() {
               <div className={cn("h-2", tone.band)} />
               <div className="p-5 sm:p-7">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={cn("rounded-[8px] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.08em]", tone.stamp)}>{tone.label}</span>
+                  <span className={cn("rounded-[8px] px-2.5 py-1 text-[12px] font-bold", tone.stamp)}>{tone.label}</span>
                   {a.urgency && to.has(`urgency_${a.urgency}`) ? <span className="nv-stamp">{to(`urgency_${a.urgency}`)}</span> : null}
                   <span className="font-mono text-[11.5px] font-medium text-[#5F6B94]">{L(`${a.evidenceCount} evidence`, `${a.evidenceCount} bukti`)}</span>
                 </div>
@@ -243,7 +243,7 @@ export default function ActionCenterPage() {
 
                 {/* The decision bar. */}
                 <div className="mt-6 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:flex-wrap sm:items-center">
-                  <p className="px-1 font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF] sm:mr-2">
+                  <p className="px-1 text-[12px] font-bold text-[#A5B4FF] sm:mr-2">
                     {kind === "decide" ? L("Decide Now", "Putuskan Sekarang") : kind === "recheck" ? L("Check Again", "Cek Ulang") : L("Keep It Moving", "Lanjutkan")}
                   </p>
                   {kind === "recheck" ? (

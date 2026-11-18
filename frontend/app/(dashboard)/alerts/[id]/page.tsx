@@ -108,7 +108,7 @@ function sentimentDot(sentiment: string | null | undefined) {
 
 /** A small mono label above a block, the Narriv "stamp" voice. */
 function Label({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cn("font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]", className)}>{children}</p>;
+  return <p className={cn("text-[12px] font-bold text-[#5F6B94]", className)}>{children}</p>;
 }
 
 const STATUS_STEPS: Status[] = ["open", "acknowledged", "resolved"];
@@ -373,7 +373,7 @@ export default function AlertDetailPage() {
             <div className={cn("h-2", tone.band)} />
             <div className="p-5 sm:p-7">
               <div className="flex flex-wrap items-center gap-2">
-                <span className={cn("rounded-[8px] px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-[0.08em]", tone.stamp)}>{severityLabel(liveData.severity, L)}</span>
+                <span className={cn("rounded-[8px] px-2.5 py-1 text-[12px] font-bold", tone.stamp)}>{severityLabel(liveData.severity, L)}</span>
                 <span className="nv-stamp">{currentStatus === "open" ? td("status.new") : currentStatus === "acknowledged" ? td("status.investigating") : td("status.resolved")}</span>
                 {left && !resolved ? (
                   <span className={cn("nv-stamp", left.overdue && "!border-[#B42318] !bg-[#B42318] !text-white !shadow-[0_2px_0_#7A1610]")}>
@@ -395,7 +395,7 @@ export default function AlertDetailPage() {
 
               {/* What to do: the most important block on the page. */}
               <div className="mt-5 rounded-[18px] bg-[#101334] p-5 text-white sm:p-6">
-                <p className="flex items-center gap-2 font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">
+                <p className="flex items-center gap-2 text-[12px] font-bold text-[#A5B4FF]">
                   <Sparkles size={13} /> {L("What To Do Now", "Yang Perlu Dilakukan")}
                 </p>
                 <p className="mt-2.5 max-w-3xl text-[18px] font-bold leading-[1.5] sm:text-[20px]">{whatToDo}</p>
