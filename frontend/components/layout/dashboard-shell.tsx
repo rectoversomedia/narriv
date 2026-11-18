@@ -8,7 +8,9 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { TrialBanner } from "@/components/layout/trial-banner";
 import { DemoBlockedNotice } from "@/components/ui/demo-blocked-notice";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { useUiStore } from "@/store/useUiStore";
 import { signalDashboardReady } from "@/lib/launch";
 
@@ -20,10 +22,24 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [checked, setChecked] = useState(false);
 
-  // Mark as mounted after client-side hydration
+  const queryClient = useQueryClient();
+  const setSelectedWorkspaceId = useWorkspaceStore((s) => s.setSelectedWorkspaceId);
+
+  // Mark as mounted after client-side hydration. A link with ?ws=<workspace id> (used by pitch decks to open a
+  // client's dashboard directly) selects that workspace first, then drops the parameter from the address bar.
   useEffect(() => {
+    const ws = new URLSearchParams(window.location.search).get("ws");
+    if (ws && /^[0-9a-f-]{36}$/i.test(ws)) {
+      if (useWorkspaceStore.getState().selectedWorkspaceId !== ws) {
+        setSelectedWorkspaceId(ws);
+        queryClient.clear();
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.delete("ws");
+      window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+    }
     setMounted(true);
-  }, []);
+  }, [queryClient, setSelectedWorkspaceId]);
 
   // Auth redirect — runs AFTER Zustand rehydrates from localStorage (mounted=true guard)
   // Skip redirect if we're already on the login page to prevent redirect loops

@@ -1,12 +1,15 @@
 // /pitch/bankmandiri: the Narriv deck prepared for a Bank Mandiri meeting. The data slides use Narriv's real
 // monitoring of public news and YouTube about Bank Mandiri, 19 Oct to 18 Nov 2026 (workspace "Narriv Demo — Bank
 // Mandiri"); the feature slides reuse the main deck. No Bank Mandiri logo or branding: the name only.
-import { AlertTriangle, BellRing, Bot, ClipboardList, Ear, Eye, Plus, Radar, Users, FileText, Layers, Megaphone, ShieldAlert, Sparkles, Zap } from "lucide-react";
+import { AlertTriangle, BellRing, ExternalLink, Bot, ClipboardList, Ear, Eye, Plus, Radar, Users, FileText, Layers, Megaphone, ShieldAlert, Sparkles, Zap } from "lucide-react";
 import { AMBER, BLUE, Brush, Card, Dark, Dot, INK, INKED, Light, MONO, MUTED, NEG, NEU, Num, POS, Ribbon, Stamp, Head } from "../kit";
-import { Alerts, AiVisibility, Bar, Closing, Reports, Solution, Trust } from "../slides";
+import { Alerts, AiVisibility, Bar, Reports } from "../slides";
 
 type P = { en: boolean };
 const tr = (en: boolean) => <T,>(id: T, e: T): T => (en ? e : id);
+const WS_ID = "d3590304-bd83-4a7c-b4f9-b61a45f1ec25";
+/** Opens the live app on Bank Mandiri's workspace (the dashboard reads ?ws= and switches to it). */
+const appLink = (path: string) => `https://app.narriv.digital${path}?ws=${WS_ID}`;
 const PERIOD = ["19 Okt – 18 Nov 2026", "19 Oct – 18 Nov 2026"] as const;
 
 /** Small note on every data slide: where the numbers come from. */
@@ -28,12 +31,12 @@ export function MandiriCover({ en }: P) {
       <span aria-hidden style={{ position: "absolute", left: 1170, top: 150, width: 720, height: 720, borderRadius: 999, border: "2px solid rgba(165,180,255,.22)" }} />
       <span aria-hidden style={{ position: "absolute", left: 1090, top: 70, width: 880, height: 880, borderRadius: 999, border: "2px dashed rgba(165,180,255,.14)" }} />
       <div className="ph" style={{ position: "absolute", left: 96, top: 230, width: 1120 }}>
-        <Stamp dark>{t("Disiapkan untuk Bank Mandiri", "Prepared for Bank Mandiri")}</Stamp>
+        <Stamp dark>{t("Monthly review · Bank Mandiri", "Monthly review · Bank Mandiri")}</Stamp>
         <h1 style={{ margin: "40px 0 0", fontSize: 108, lineHeight: 1.03, fontWeight: 800, letterSpacing: "-0.045em" }}>
-          {t(<>30 hari percakapan tentang Bank Mandiri, <Brush>dalam satu layar.</Brush></>, <>30 days of talk about Bank Mandiri, <Brush>on one screen.</Brush></>)}
+          {t(<>Laporan bulanan <Brush>Bank Mandiri.</Brush></>, <>Bank Mandiri <Brush>monthly report.</Brush></>)}
         </h1>
         <p style={{ margin: "40px 0 0", width: 980, fontSize: 34, lineHeight: 1.45, fontWeight: 500, color: "rgba(255,255,255,.72)" }}>
-          {t("Hasil pemantauan Narriv atas berita dan video publik, lalu bagaimana tim Anda bisa memakainya setiap hari.", "What Narriv found in public news and video, and how your team could use it every day.")}
+          {t("Review bulanan bersama tim komunikasi: apa yang terjadi 30 hari terakhir, apa artinya, dan apa yang dilakukan bulan depan.", "Monthly review with the comms team: what happened in the last 30 days, what it means, and what to do next month.")}
         </p>
       </div>
       <Ribbon items={t(["122 percakapan", "3 kata kunci", "7 isu", PERIOD[0]], ["122 mentions", "3 keywords", "7 issues", PERIOD[1]])} />
@@ -387,8 +390,9 @@ export function DashboardView({ en }: P) {
   const issues: Array<[string, number, string]> = [[t("Rekomendasi saham & kurs harian", "Daily stock & FX picks"), 13, NEU], [t("Citra sosial & kinerja", "Social image & results"), 5, POS], [t("Perluasan layanan & inklusi", "Service reach & inclusion"), 4, POS], [t("Sorotan KUR ASN", "KUR civil-servant story"), 2, AMBER]];
   return (
     <Light tag={t("Tampilan dashboard", "The dashboard")} v={1}>
-      <Head kicker={t("Yang tim Anda lihat setiap hari", "What your team sees every day")} title={t(<>Semua dalam <Brush>satu layar.</Brush></>, <>Everything on <Brush>one screen.</Brush></>)} />
-      <div className="pc" style={{ position: "absolute", left: 96, right: 96, top: 350, bottom: 130, borderRadius: 30, background: "#fff", overflow: "hidden", ...INKED }}>
+      <Head kicker={t("Dashboard Bank Mandiri", "Bank Mandiri dashboard")} title={t(<>Tren 30 hari, <Brush>satu layar.</Brush></>, <>30-day trend, <Brush>one screen.</Brush></>)} />
+      <a href={appLink("/")} target="_blank" rel="noreferrer" className="pc pitch-link" style={{ position: "absolute", left: 96, right: 96, top: 350, bottom: 130, borderRadius: 30, background: "#fff", overflow: "hidden", color: INK, textDecoration: "none", display: "block", ...INKED }}>
+        <span style={{ position: "absolute", right: 28, top: 12, display: "inline-flex", alignItems: "center", gap: 10, padding: "8px 18px", borderRadius: 999, background: BLUE, color: "#fff", fontSize: 19, fontWeight: 800 }}>{t("Buka dashboard live", "Open live dashboard")} <ExternalLink size={20} aria-hidden /></span>
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 28px", background: "#EEF1F9", borderBottom: "2px solid #E2E6F2" }}>
           {["#F87171", "#FBBF24", "#34D399"].map((c) => <span key={c} style={{ width: 14, height: 14, borderRadius: 99, background: c }} />)}
           <span style={{ marginLeft: 18, padding: "6px 18px", borderRadius: 10, background: "#fff", fontFamily: MONO, fontSize: 17, color: MUTED }}>app.narriv.digital</span>
@@ -430,33 +434,83 @@ export function DashboardView({ en }: P) {
             </div>
           </div>
         </div>
-      </div>
-      <p style={{ position: "absolute", left: 96, bottom: 26, margin: 0, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B93B0" }}>{t("Ilustrasi tampilan dengan data asli Bank Mandiri · 19 Okt – 18 Nov 2026", "Layout illustration with real Bank Mandiri data · 19 Oct – 18 Nov 2026")}</p>
+      </a>
+      <p style={{ position: "absolute", left: 96, bottom: 26, margin: 0, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B93B0" }}>{t("Data asli Bank Mandiri · 19 Okt – 18 Nov 2026 · klik untuk membuka dashboard", "Real Bank Mandiri data · 19 Oct – 18 Nov 2026 · click to open the dashboard")}</p>
     </Light>
   );
 }
 
 export function Capabilities({ en }: P) {
   const t = tr(en);
-  const caps: Array<[typeof Ear, string, string]> = [
-    [Radar, t("Pemantauan per jam", "Hourly monitoring"), t("Berita online dan YouTube, media sosial sebagai add-on.", "Online news and YouTube; social media as an add-on.")],
-    [Layers, t("Isu & nada otomatis", "Issues & tone"), t("Berita dikelompokkan jadi isu, dinilai positif/negatif.", "Stories grouped into issues and scored for tone.")],
-    [BellRing, t("Peringatan dini", "Early alerts"), t("Lonjakan negatif langsung dikirim ke PIC dengan tenggat.", "Negative spikes go straight to an owner with a deadline.")],
-    [ClipboardList, t("Rencana aksi", "Action plans"), t("Draf langkah respons yang bisa dibagi dan dipantau tim.", "Draft response steps the team can assign and track.")],
-    [Bot, t("Briefing & Ask Narriv", "Brief & Ask Narriv"), t("Ringkasan pagi dan tanya jawab dengan sumber dikutip.", "Morning summary and Q&A with cited sources.")],
-    [Eye, t("AI Visibility", "AI Visibility"), t("Cara ChatGPT dan AI lain menjawab soal Bank Mandiri.", "How ChatGPT and other AIs answer about Bank Mandiri.")],
-    [FileText, t("Laporan otomatis", "Automatic reports"), t("PDF, Excel, CSV; Bahasa Indonesia atau English.", "PDF, Excel, CSV; Indonesian or English.")],
-    [Users, t("Tim & akses", "Team & access"), t("Banyak anggota, peran, dan workspace per merek.", "Several members, roles, and a workspace per brand.")],
+  const caps: Array<[typeof Ear, string, string, string]> = [
+    [Radar, t("Pemantauan per jam", "Hourly monitoring"), t("Berita online dan YouTube, media sosial sebagai add-on.", "Online news and YouTube; social media as an add-on."), "/signals"],
+    [Layers, t("Isu & nada otomatis", "Issues & tone"), t("Berita dikelompokkan jadi isu, dinilai positif/negatif.", "Stories grouped into issues and scored for tone."), "/intelligence"],
+    [BellRing, t("Peringatan dini", "Early alerts"), t("Lonjakan negatif langsung dikirim ke PIC dengan tenggat.", "Negative spikes go straight to an owner with a deadline."), "/alerts"],
+    [ClipboardList, t("Rencana aksi", "Action plans"), t("Draf langkah respons yang bisa dibagi dan dipantau tim.", "Draft response steps the team can assign and track."), "/action-plans"],
+    [Bot, t("Briefing & Ask Narriv", "Brief & Ask Narriv"), t("Ringkasan pagi dan tanya jawab dengan sumber dikutip.", "Morning summary and Q&A with cited sources."), "/brief"],
+    [Eye, t("AI Visibility", "AI Visibility"), t("Cara ChatGPT dan AI lain menjawab soal Bank Mandiri.", "How ChatGPT and other AIs answer about Bank Mandiri."), "/visibility"],
+    [FileText, t("Laporan otomatis", "Automatic reports"), t("PDF, Excel, CSV; Bahasa Indonesia atau English.", "PDF, Excel, CSV; Indonesian or English."), "/reports"],
+    [Users, t("Tim & akses", "Team & access"), t("Banyak anggota, peran, dan workspace per merek.", "Several members, roles, and a workspace per brand."), "/workspace/settings"],
   ];
   return (
     <Dark tag={t("Kemampuan", "Capabilities")} glow="top">
-      <Head dark kicker={t("Semua yang termasuk", "Everything included")} title={t(<>Satu platform, <Brush>dari deteksi sampai laporan.</Brush></>, <>One platform, <Brush>from detection to report.</Brush></>)} />
+      <Head dark kicker={t("Kemampuan · klik untuk membuka", "Capabilities · click to open")} title={t(<>Satu platform, <Brush>dari deteksi sampai laporan.</Brush></>, <>One platform, <Brush>from detection to report.</Brush></>)} />
       <div style={{ position: "absolute", left: 96, right: 96, top: 420, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24 }}>
-        {caps.map(([I, h, d]) => (
-          <div key={h} className="pc" style={{ padding: "30px 30px 34px", borderRadius: 26, background: "#fff", color: INK, ...INKED }}>
+        {caps.map(([I, h, d, path]) => (
+          <a key={h} href={appLink(path)} target="_blank" rel="noreferrer" className="pc pitch-link" style={{ position: "relative", display: "block", textDecoration: "none", padding: "30px 30px 34px", borderRadius: 26, background: "#fff", color: INK, ...INKED }}>
+            <ExternalLink size={22} color={MUTED} aria-hidden style={{ position: "absolute", right: 24, top: 24 }} />
             <span style={{ display: "inline-flex", width: 56, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center", background: BLUE }}><I size={30} color="#fff" aria-hidden /></span>
             <p style={{ margin: "20px 0 0", fontSize: 29, fontWeight: 800, letterSpacing: "-0.02em" }}>{h}</p>
             <p style={{ margin: "10px 0 0", fontSize: 22, lineHeight: 1.45, color: MUTED }}>{d}</p>
+          </a>
+        ))}
+      </div>
+    </Dark>
+  );
+}
+
+export function Agenda({ en }: P) {
+  const t = tr(en);
+  const items = [
+    t("Ringkasan bulan ini", "This month in brief"),
+    t("Tren, kata kunci, dan sumber", "Trend, keywords and sources"),
+    t("Isu yang perlu diwaspadai", "Issues to watch"),
+    t("Peluang cerita positif", "Positive stories to use"),
+    t("Rekomendasi dan rencana bulan depan", "Recommendations and next month"),
+    t("Kemampuan, dashboard, dan laporan (live)", "Capabilities, dashboard and reports (live)"),
+  ];
+  return (
+    <Light tag="Agenda" v={3}>
+      <Head kicker={t("Monthly review · 60 menit", "Monthly review · 60 minutes")} title={t(<>Agenda <Brush>hari ini.</Brush></>, <>Today&apos;s <Brush>agenda.</Brush></>)} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 400, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 24 }}>
+        {items.map((it, k) => (
+          <Card key={it} style={{ display: "flex", alignItems: "center", gap: 26, padding: "30px 36px" }}>
+            <Num n={k + 1} c={k === 5 ? INK : BLUE} s={60} />
+            <span style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em" }}>{it}</span>
+          </Card>
+        ))}
+      </div>
+    </Light>
+  );
+}
+
+export function Recommendations({ en }: P) {
+  const t = tr(en);
+  const recs: Array<[string, string, string, string]> = [
+    [NEG, t("Prioritas", "Priority"), t("Isu KUR ke ASN", "KUR civil-servant story"), t("Siapkan holding statement soal proses verifikasi KUR dan tunjuk juru bicara, supaya siap jika isu naik lagi.", "Prepare a holding statement on KUR verification and name a spokesperson, ready if it flares up again.")],
+    [AMBER, t("Pantau", "Watch"), t("Kredit jumbo & tata kelola", "Jumbo loans & governance"), t("Perkuat narasi manajemen risiko lewat media bisnis yang paling aktif: Kontan, Investor.id, CNBC Indonesia.", "Reinforce the risk-management story in the most active business media: Kontan, Investor.id, CNBC Indonesia.")],
+    [POS, t("Perkuat", "Amplify"), t("ATM Emas & BSU lewat Livin'", "Gold ATMs & BSU via Livin'"), t("Kabar positif sedang naik. Dorong konten lanjutan selagi masih ramai dibicarakan.", "Good news is rising. Push follow-up content while it is still being talked about.")],
+    [BLUE, t("Pertahankan", "Keep"), t("Livin' & Mandiri Sekuritas", "Livin' & Mandiri Sekuritas"), t("0% negatif bulan ini. Lanjutkan konten edukasi produk yang sudah berjalan.", "0% negative this month. Keep the product education content going.")],
+  ];
+  return (
+    <Dark tag={t("Rekomendasi", "Recommendations")} glow="left">
+      <Head dark kicker={t("Dari data bulan ini", "From this month's data")} title={t(<>Empat hal untuk <Brush>dikerjakan.</Brush></>, <>Four things <Brush>to act on.</Brush></>)} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 400, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 26 }}>
+        {recs.map(([c, tag, h, d]) => (
+          <div key={h} className="pc" style={{ padding: "32px 38px 36px", borderRadius: 28, background: "#fff", color: INK, ...INKED }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 10, fontFamily: MONO, fontSize: 19, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: c }}><Dot c={c} s={14} />{tag}</span>
+            <p style={{ margin: "14px 0 0", fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em" }}>{h}</p>
+            <p style={{ margin: "10px 0 0", fontSize: 24, lineHeight: 1.5, color: MUTED }}>{d}</p>
           </div>
         ))}
       </div>
@@ -464,30 +518,75 @@ export function Capabilities({ en }: P) {
   );
 }
 
+export function NextMonth({ en }: P) {
+  const t = tr(en);
+  const plan: Array<[string, string]> = [
+    [t("Tambah kata kunci", "Add keywords"), t("Produk utama dan nama eksekutif kunci, plus bank pembanding untuk benchmark.", "Key products and executives, plus peer banks for benchmarking.")],
+    [t("Aktifkan media sosial", "Turn on social media"), t("Add-on Instagram, TikTok, X, dan Facebook untuk menangkap keluhan nasabah.", "Instagram, TikTok, X and Facebook add-on to catch customer complaints.")],
+    [t("Atur PIC & tenggat", "Set owners & deadlines"), t("Peringatan langsung ke PIC Corporate Communication, target respons di bawah 4 jam.", "Alerts go straight to the Corporate Communication owner, response target under 4 hours.")],
+  ];
+  const targets: Array<[string, string]> = [["< 10%", t("porsi negatif", "negative share")], ["< 4 jam", t("waktu respons peringatan", "alert response time")], ["4", t("laporan mingguan + 1 bulanan", "weekly reports + 1 monthly")]];
+  return (
+    <Light tag={t("Bulan depan", "Next month")} v={2}>
+      <Head kicker={t("Rencana 19 Nov – 18 Des 2026", "Plan for 19 Nov – 18 Dec 2026")} title={t(<>Yang kita lakukan <Brush>bulan depan.</Brush></>, <>What we do <Brush>next month.</Brush></>)} />
+      <div style={{ position: "absolute", left: 96, width: 1060, top: 400, display: "grid", gap: 22 }}>
+        {plan.map(([h, d], k) => (
+          <Card key={h} style={{ display: "flex", gap: 26, alignItems: "flex-start", padding: "28px 34px" }}>
+            <Num n={k + 1} s={56} />
+            <span><span style={{ display: "block", fontSize: 32, fontWeight: 800 }}>{h}</span><span style={{ display: "block", marginTop: 8, fontSize: 24, lineHeight: 1.45, color: MUTED }}>{d}</span></span>
+          </Card>
+        ))}
+      </div>
+      <div className="pc" style={{ position: "absolute", left: 1210, right: 96, top: 400, padding: "34px 38px", borderRadius: 30, background: INK, color: "#fff", ...INKED }}>
+        <p style={{ margin: 0, fontFamily: MONO, fontSize: 19, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#A5B4FF" }}>{t("Target bulan depan", "Next month's targets")}</p>
+        {targets.map(([v, l]) => (
+          <div key={l} style={{ marginTop: 26 }}>
+            <p style={{ margin: 0, fontSize: 58, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.03em" }}>{v}</p>
+            <p style={{ margin: "8px 0 0", fontSize: 22, color: "rgba(255,255,255,.7)" }}>{l}</p>
+          </div>
+        ))}
+      </div>
+      <p style={{ position: "absolute", left: 96, bottom: 26, margin: 0, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B93B0" }}>{t("Usulan · disepakati bersama di meeting ini", "Proposal · agreed together in this meeting")}</p>
+    </Light>
+  );
+}
+
+export function MandiriClosing({ en }: P) {
+  const t = tr(en);
+  return (
+    <Dark glow="top">
+      <div className="ph" style={{ position: "absolute", left: 160, right: 160, top: 300, textAlign: "center" }}>
+        <h2 style={{ margin: 0, fontSize: 104, lineHeight: 1.04, fontWeight: 800, letterSpacing: "-0.045em" }}>{t(<>Terima kasih. <Brush>Sampai review berikutnya.</Brush></>, <>Thank you. <Brush>See you next review.</Brush></>)}</h2>
+        <p style={{ margin: "34px auto 0", maxWidth: 1200, fontSize: 32, lineHeight: 1.45, color: "rgba(255,255,255,.7)" }}>{t("Review bulanan berikutnya: 18 Desember 2026. Laporan mingguan tetap dikirim setiap Senin.", "Next monthly review: 18 December 2026. Weekly reports keep arriving every Monday.")}</p>
+      </div>
+      <a href={appLink("/")} target="_blank" rel="noreferrer" className="pc pitch-link" style={{ position: "absolute", left: 520, right: 520, top: 720, display: "flex", alignItems: "center", justifyContent: "center", gap: 14, padding: "28px 32px", borderRadius: 26, background: "#fff", color: INK, textDecoration: "none", fontSize: 34, fontWeight: 800, ...INKED }}>
+        {t("Buka dashboard Bank Mandiri", "Open the Bank Mandiri dashboard")} <ExternalLink size={30} aria-hidden />
+      </a>
+    </Dark>
+  );
+}
+
 export function mandiriDeck(en: boolean) {
   return [
     <MandiriCover key="cover" en={en} />,
-    <WhatIsNI key="what" en={en} />,
-    <ForMandiri key="for" en={en} />,
+    <Agenda key="agenda" en={en} />,
     <Snapshot key="snapshot" en={en} />,
-    <Keywords key="keywords" en={en} />,
-    <WatchList key="watch" en={en} />,
-    <Issues key="issues" en={en} />,
-    <GoodNews key="good" en={en} />,
-    <Sources key="sources" en={en} />,
-    <Solution key="solution" en={en} />,
     <DashboardView key="dash" en={en} />,
-    <Capabilities key="caps" en={en} />,
+    <Keywords key="keywords" en={en} />,
+    <Sources key="sources" en={en} />,
+    <Issues key="issues" en={en} />,
+    <WatchList key="watch" en={en} />,
+    <GoodNews key="good" en={en} />,
     <IfItGrows key="grows" en={en} />,
+    <Recommendations key="recs" en={en} />,
+    <NextMonth key="next" en={en} />,
+    <Capabilities key="caps" en={en} />,
     <Alerts key="alerts" en={en} sample={en
       ? { title: "KUR-to-civil-servant story is spreading", text: "Coverage of alleged KUR loans to civil servants doubled in 24 hours and is now quoted by national outlets.", owner: "Corporate Communication", due: "In 4 hours", todo: "Prepare a statement on KUR verification, brief the spokesperson, check coverage every hour.", note: "Example · simulated alert, not a real event", level: "High" }
       : { title: "Sorotan KUR ke ASN mulai menyebar", text: "Pemberitaan dugaan penyaluran KUR ke ASN naik 2× dalam 24 jam dan mulai dikutip media nasional.", owner: "Corporate Communication", due: "4 jam lagi", todo: "Siapkan pernyataan soal verifikasi KUR, brief juru bicara, pantau pemberitaan tiap jam.", note: "Contoh · simulasi, bukan kejadian nyata", level: "Tinggi" }} />,
     <AiVisibility key="ai" en={en} />,
     <Reports key="reports" en={en} img={`/pitch/report-mandiri-${en ? "en" : "id"}.jpg`} />,
     <ReportingPlan key="plan" en={en} />,
-    <Trust key="trust" en={en} />,
-    <Faq key="faq" en={en} />,
-    <Pilot key="pilot" en={en} />,
-    <Closing key="closing" en={en} />,
+    <MandiriClosing key="closing" en={en} />,
   ];
 }

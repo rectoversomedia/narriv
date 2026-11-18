@@ -148,6 +148,8 @@ const CSS = `
 @keyframes tx-drop { from { opacity: 0; transform: translateY(-110px) } to { opacity: 1; transform: none } }
 /* build-in: heading first, then cards/points one after another */
 .pitch-slide[data-active="true"] .ph { animation: b-in .7s .12s cubic-bezier(.2,.7,.2,1) both; }
+.pitch-link { cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+.pitch-link:hover { transform: translateY(-4px); }
 .pitch-slide[data-active="true"] .pc { animation: b-in .6s cubic-bezier(.2,.7,.2,1) both; animation-delay: .3s; }
 .pitch-slide[data-active="true"] .pc:nth-child(2) { animation-delay: .4s; }
 .pitch-slide[data-active="true"] .pc:nth-child(3) { animation-delay: .5s; }
