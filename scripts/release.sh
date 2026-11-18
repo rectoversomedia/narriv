@@ -27,10 +27,14 @@ ship() {
   # posted to the app's own domain). Drop them: secrets are read at runtime on Vercel, never from this file.
   sed -i '' '/="\[SENSITIVE\]"/d' .vercel/.env.production.local
   if grep -q '\[SENSITIVE\]' .vercel/.env.production.local; then echo "sensitive placeholders left in .vercel/.env.production.local" >&2; exit 1; fi
+  # next build reads frontend/.env.local (local dev: API on localhost:4100) before .env.production, so a release
+  # built with it in place called localhost from production. Set it aside for the build and always put it back.
+  if [[ -f frontend/.env.local ]]; then mv frontend/.env.local frontend/.env.local.release-hold; trap 'mv -f frontend/.env.local.release-hold frontend/.env.local 2>/dev/null || true' EXIT; fi
   VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$1 $V build --prod
+  if [[ -f frontend/.env.local.release-hold ]]; then mv -f frontend/.env.local.release-hold frontend/.env.local; trap - EXIT; fi
   # The frontend must call the API by its real address; refuse to ship a build that does not.
-  if [[ "$1" == "$WEB_PROJECT" ]] && ! grep -rqs "narriv-api.vercel.app" .vercel/output/static; then
-    echo "frontend build does not contain the API address; not deploying" >&2; exit 1
+  if [[ "$1" == "$WEB_PROJECT" ]] && { ! grep -rqs "narriv-api.vercel.app" .vercel/output/static || grep -rqsE "localhost:4[0-9]{3}|\[SENSITIVE\]" .vercel/output/static; }; then
+    echo "frontend build points at the wrong API (localhost or placeholder); not deploying" >&2; exit 1
   fi
   VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$1 $V deploy --prebuilt --prod --yes
 }
