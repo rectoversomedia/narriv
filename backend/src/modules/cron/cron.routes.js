@@ -223,6 +223,20 @@ const runDaily = async (req, res) => {
 router.get("/daily", runDaily);
 router.post("/daily", runDaily);
 
+// Report schedules (daily brief, Monday board report) that are due. Run from the frequent ingest call as well as the
+// once-a-day Vercel cron, so a 07:00 or Monday 08:00 schedule goes out within the next ingest run, not at 10:00 WIB.
+async function runDueSchedules() {
+    try {
+        const { runDueReportSchedules } = await import("../reports/report-schedules.js");
+        const { generateReport } = await import("../reports/report-generation.js");
+        const run = await runDueReportSchedules({ generate: generateReport });
+        return { ran: run.ran, failed: (run.results || []).filter((r) => r.status === "failed").length, error: run.error };
+    } catch (error) {
+        logStructured("warn", "cron_report_schedules_failed", { error: error.message });
+        return { error: error.message };
+    }
+}
+
 // High alerts wait for the next run and go out as one email per workspace (see sendPendingAlertDigests).
 async function sendDigests() {
     try {
@@ -242,6 +256,7 @@ const runIngest = async (req, res) => {
         const perKeywordLimit = Math.min(Math.max(parseInt(req.query.limit, 10) || 8, 1), 15);
         const summary = await runScheduledIngestion({ budgetMs: INGEST_BUDGET_MS, perKeywordLimit, trigger: ingestTrigger({ userAgent: req.headers["user-agent"], slot: req.query.slot ?? null }) });
         summary.alertDigests = await sendDigests();
+        summary.reportSchedules = await runDueSchedules();
         res.status(summary.status === "failed" ? 500 : 200).json(summary);
     } catch (error) {
         logStructured("error", "cron_ingest_failed", { error: error.message });

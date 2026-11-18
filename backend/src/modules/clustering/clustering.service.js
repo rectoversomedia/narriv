@@ -1,3 +1,4 @@
+import { isRoutineContent } from "../../lib/routine-content.js";
 import supabase from "../../lib/supabase.js";
 import { analyzeCluster } from "../ai/ai.service.js";
 import { workspaceLanguage } from "../../lib/workspace-language.js";
@@ -72,6 +73,9 @@ export const runClustering = async (workspaceId) => {
         throw signalsError;
     }
 
+    // Daily FX tables and stock-pick lists are mentions, not issues: keep them out of clustering.
+    const routine = (signals || []).filter(isRoutineContent).length;
+    if (routine) signals.splice(0, signals.length, ...signals.filter((sig) => !isRoutineContent(sig)));
     if (!signals || signals.length === 0) {
         logStructured("info", "clustering_no_signals", { workspaceId });
         return { message: "No signals found to cluster", clustersCreated: 0, clustersUpdated: 0 };

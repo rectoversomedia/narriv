@@ -199,21 +199,18 @@ NEXT_PUBLIC_API_URL=http://localhost:3000
 
 ---
 
-## 🐳 Docker Deployment
+## 🚀 Production (Vercel Hobby + Supabase)
 
-### Development
-
-```bash
-cd narriv
-docker-compose -f docker-compose.dev.yml up -d
-```
-
-### Production
+Production runs on Vercel (projects `frontend` and `narriv-api`, Hobby plan) with Supabase Postgres. A git push does
+not deploy: release from the repo root with
 
 ```bash
-cd narriv
-docker-compose -f docker-compose.production.yml up -d
+npm run release    # tests, lint, typecheck, local build, prebuilt deploy of backend + frontend
 ```
+
+Hourly jobs (news ingest, social rounds) are triggered by the Cloudflare Worker `rectoverso-scheduler`; Vercel cron
+runs only the once-a-day job. The old VPS/Docker setup (`docker-compose.production.yml`, `nginx/`) is no longer used.
+Brand files are in `docs/brand/`; past audit reports in `docs/archive/`.
 
 ---
 

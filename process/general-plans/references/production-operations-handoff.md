@@ -1,6 +1,6 @@
 # Narriv Production Operations Handoff
 
-Last verified: 2026-10-14
+Last verified: 2026-11-18
 
 How Narriv actually runs in production, how to deploy and verify it, and what
 is still blocked. This supersedes the VPS/Prisma sections of
@@ -12,10 +12,10 @@ used.
 | Layer | Production | Notes |
 |---|---|---|
 | Frontend | Vercel project `frontend` (team `rectoverso-media`) | Serves `www.narriv.digital` and `narriv.digital`. Not Git-connected. |
-| Backend API | Vercel project `narriv-api` | Root `backend`, Git-connected, auto-deploys `main`. Serves `narriv-api.vercel.app`. |
+| Backend API | Vercel project `narriv-api` | Root `backend`. Git pushes do NOT deploy (deploymentEnabled=false). Serves `narriv-api.vercel.app`. |
 | Database | Supabase PostgreSQL via `@supabase/supabase-js` | Migrations in `supabase/migrations/`. No Prisma. |
-| Scheduler | Vercel Cron | `/api/cron/ingest?slot=0|6|12|18` and `/api/cron/daily`. Runs logged in `cron_ingestion_logs`. |
-| AI | OpenAI (default routing) | `ANTHROPIC_API_KEY` is set but unused: `AI_ROUTING_PROFILE` and `AI_MODEL_PREMIUM` are unset by owner decision. |
+| Scheduler | Cloudflare Worker `rectoverso-scheduler` + one daily Vercel Cron | Worker calls `/api/cron/ingest` every 2 h and `/api/cron/social` hourly (SCHEDULER_SECRET); Vercel Cron runs `/api/cron/daily` at 03:00 UTC only (Hobby). Due report schedules run on both. |
+| AI | Claude Haiku first (`AI_PRIMARY_PROVIDER=anthropic`, `AI_CLAUDE_MODEL(_LOCK)=claude-haiku-5-5`), OpenAI fallback | Monthly cap `NARRIV_AI_MONTHLY_CALL_CAP` (default 3000). OpenAI credits ran out 2026-11-18. Claude credit is a promo that expires 2026-12-06. |
 | Email | Resend (`RESEND_API_KEY`, `EMAIL_FROM`) | `narriv.digital` has no MX record, so there is no inbound mailbox. |
 | DNS | Hostinger (`dns-parking.com` nameservers) | Owner access only. |
 
@@ -23,17 +23,11 @@ Vercel project `narriv` is a stale duplicate whose builds fail; ignore it.
 
 ## Deploy
 
-Backend: push to `main`. Vercel builds `narriv-api` automatically. A READY
-deployment is not proof that it works; check `/health` and the runtime logs.
-
-Frontend: deploy with the CLI from the repo root, pinning the project (the root
-`.vercel` links to the stale `narriv` project):
-
-```bash
-VERCEL_ORG_ID=team_foB6dX8df6bz7yGUBafyrlcO \
-VERCEL_PROJECT_ID=prj_b8bqgEPqryI3Sg7TuXa4nSpznnRL \
-node_modules/.bin/vercel deploy --prod --yes
-```
+Only `npm run release` from the repo root (scripts/release.sh): backend tests, frontend unit tests, lint, typecheck
+and a local build, then `vercel deploy --prebuilt` of `narriv-api` and `frontend`, then a /health check. The script
+strips `[SENSITIVE]` placeholders from `vercel pull` and keeps `frontend/.env.local` out of the build (either one broke
+live login once). After a deploy, sign in on live and check API calls go to `narriv-api.vercel.app`. Hobby can only
+`vercel rollback` one step; use `vercel promote <url>` for older deployments.
 
 Preview deployments cannot be signed into: `JWT_SECRET` and
 `NEXT_PUBLIC_API_URL` are Production-only, and the backend CORS allowlist only

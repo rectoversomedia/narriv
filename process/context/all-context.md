@@ -1,6 +1,6 @@
 # Narriv - All Context
 
-Last updated: 2026-10-12
+Last updated: 2026-11-18
 
 This file is the root context entrypoint for the repo. Start here before substantial research, planning, review, testing, or implementation work.
 
@@ -104,7 +104,7 @@ The root `package.json` is an npm workspaces monorepo (`frontend`, `backend`); d
 - **Framework:** Express `5.2.1` REST API.
 - **Database:** Supabase PostgreSQL via `@supabase/supabase-js` (no Prisma). Always check real table/column names against the live schema; several historical bugs came from queries against columns that do not exist (e.g. `signal_analysis` vs `signal_analyses`, `momentum` vs `velocity`, `finished_at` vs `completed_at`).
 - **Queue/cache:** Redis via `ioredis`, BullMQ workers and scheduled jobs.
-- **AI:** OpenAI SDK `6.34.0`.
+- **AI:** `lib/chat-client.js` (OpenAI-shaped) runs Claude Haiku first with OpenAI as fallback; monthly call cap `NARRIV_AI_MONTHLY_CALL_CAP`. Stored analyses follow the workspace language.
 - **Data collection:** Apify client.
 - **Auth:** JWT + bcrypt access/refresh-token flow.
 - **Validation:** Zod request schemas.
@@ -195,8 +195,8 @@ Frontend:
 
 ## Production Operations (verified 2026-10-09)
 
-- Vercel team `rectoverso-media`. Backend project `narriv-api` (root `backend`, Git-connected, auto-deploys `main`, serves `narriv-api.vercel.app`). Frontend project `frontend` (root `frontend`, serves `narriv.digital`/`www`) is NOT Git-connected: deploy with the Vercel CLI from the repo root, pinning the project (the root `.vercel` links to the stale `narriv` project): `VERCEL_ORG_ID=team_foB6dX8df6bz7yGUBafyrlcO VERCEL_PROJECT_ID=prj_b8bqgEPqryI3Sg7TuXa4nSpznnRL node_modules/.bin/vercel deploy --prod --yes`. The backend CORS allowlist only includes `www.narriv.digital`, so preview deployments cannot call the API from a browser. Project `narriv` is a stale duplicate whose builds fail.
-- Scheduler: Vercel Cron is the intended single scheduler — `/api/cron/ingest?slot=0|6|12|18` (real Google News RSS ingestion for workspaces with active `monitoring_keywords`) and `/api/cron/daily` (alerts, escalation, notification retries, backfill, clustering). Runs are recorded in `cron_ingestion_logs` (`job_name = scheduled-rss-ingestion`). Supabase `pg_cron` still runs a stub job and an hourly SQL alert engine until migration 028 is applied.
+- Vercel team `rectoverso-media`, Hobby plan. Projects `narriv-api` (backend) and `frontend` (serves `www.narriv.digital` / `app.narriv.digital`). Git pushes do not deploy: release only with `npm run release` (see `process/general-plans/references/production-operations-handoff.md`). Project `narriv` is a stale duplicate.
+- Scheduler: the Cloudflare Worker `rectoverso-scheduler` calls `/api/cron/ingest` every 2 hours and `/api/cron/social` hourly; Vercel Cron runs only `/api/cron/daily` once a day (Hobby limit). Due report schedules (daily brief, weekly board report) are sent from both. Runs are recorded in `cron_ingestion_logs`.
 - `GET /api/pipeline/status` gives per-workspace pipeline health (last ingestion/analysis/clustering/alert, failures, AI usage) plus `scheduler.health` (scheduled vs manual runs, missed UTC slots in the last 24h; see `backend/src/lib/scheduler-health.js`). Ingest runs record `trigger` as `vercel-cron:<slot>` only when the caller's user agent is `vercel-cron/*`.
 - Ask Narriv (`POST /api/ai/ask`) runs through the AI gateway (`runAiTask`): budget-gated, token-metered, returns `meta.model`, keeps only citations present in the workspace context, and never returns unparsed model text or raw provider errors.
 - Tests: `cd backend && NODE_ENV=test node --experimental-vm-modules ../node_modules/jest/bin/jest.js` (tests/helpers/memory-db.js is the in-memory Supabase fake; it resolves embedded relations by naming convention, which can hide missing FKs in production, e.g. `audit_logs` has no FK to `users`). The obsolete Prisma-mocked suites are quarantined in `backend/tests/legacy/` (excluded by `jest.config.js`; README lists ported vs uncovered cases).

@@ -39,7 +39,7 @@ export function MandiriCover({ en }: P) {
           {t("Review bulanan bersama tim komunikasi: apa yang terjadi 30 hari terakhir, apa artinya, dan apa yang dilakukan bulan depan.", "Monthly review with the comms team: what happened in the last 30 days, what it means, and what to do next month.")}
         </p>
       </div>
-      <Ribbon items={t(["122 percakapan", "3 kata kunci", "7 isu", PERIOD[0]], ["122 mentions", "3 keywords", "7 issues", PERIOD[1]])} />
+      <Ribbon items={t(["122 percakapan", "3 kata kunci", "6 isu", PERIOD[0]], ["122 mentions", "3 keywords", "6 issues", PERIOD[1]])} />
     </Dark>
   );
 }
@@ -137,27 +137,27 @@ export function WatchList({ en }: P) {
 export function Issues({ en }: P) {
   const t = tr(en);
   const rows: Array<[string, number, string]> = [
-    [t("Rekomendasi saham dan kurs harian", "Daily stock picks and rates"), 13, NEU],
     [t("Bank Mandiri perkuat citra sosial dan kinerja", "Bank Mandiri strengthens social image and results"), 5, POS],
     [t("Bank Mandiri perluas layanan dan inklusi", "Bank Mandiri widens services and inclusion"), 4, POS],
     [t("Panduan pengembalian dana salah transfer", "Guides to recovering mistaken transfers"), 3, NEU],
     [t("Sorotan KUR ASN dan program bantuan", "KUR-to-civil-servants spotlight and aid programmes"), 2, AMBER],
     [t("Bank Mandiri hadirkan ATM Emas", "Bank Mandiri launches gold ATMs"), 2, POS],
-    [t("Kurs dolar AS hari ini di bank", "Today's US dollar rates at banks"), 2, NEU],
+    [t("Bank Mandiri dorong lelang dan kredit", "Bank Mandiri pushes auctions and lending"), 2, POS],
   ];
   return (
     <Light tag={t("Peta isu", "Issue map")}>
-      <Head top={170} width={700} kicker={t("Ratusan berita jadi 7 isu", "Hundreds of articles, 7 issues")} title={t(<>Yang dibicarakan, <Brush>sudah dikelompokkan.</Brush></>, <>What people discuss, <Brush>already grouped.</Brush></>)} sub={t("Narriv mengelompokkan berita yang membahas hal sama, lalu menilai nada dan arah setiap isu.", "Narriv groups articles about the same thing, then scores each issue's tone and direction.")} />
+      <Head top={170} width={700} kicker={t("Ratusan berita jadi 6 isu", "Hundreds of articles, 6 issues")} title={t(<>Yang dibicarakan, <Brush>sudah dikelompokkan.</Brush></>, <>What people discuss, <Brush>already grouped.</Brush></>)} sub={t("Narriv mengelompokkan berita yang membahas hal sama, lalu menilai nada dan arah setiap isu.", "Narriv groups articles about the same thing, then scores each issue's tone and direction.")} />
       <Card style={{ position: "absolute", left: 900, top: 190, width: 924, padding: "40px 48px" }}>
         <p style={{ margin: "0 0 26px", fontFamily: MONO, fontSize: 20, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: MUTED }}>{t("Isu · jumlah percakapan · 14 hari", "Issues · mentions · 14 days")}</p>
         <div style={{ display: "grid", gap: 22 }}>
-          {rows.map(([label, n, c]) => <Bar key={label} label={label} n={n} c={c} max={13} />)}
+          {rows.map(([label, n, c]) => <Bar key={label} label={label} n={n} c={c} max={5} />)}
         </div>
         <div style={{ marginTop: 26, display: "flex", gap: 28, fontSize: 21, fontWeight: 700, color: MUTED }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}><Dot c={POS} />{t("Positif", "Positive")}</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}><Dot c={NEU} />{t("Netral", "Neutral")}</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}><Dot c={AMBER} />{t("Campuran", "Mixed")}</span>
         </div>
+        <p style={{ margin: "22px 0 0", fontSize: 21, lineHeight: 1.45, color: MUTED }}>{t("Kurs harian dan saham pilihan (15 percakapan) dipisah sebagai konten rutin, bukan isu.", "Daily FX rates and stock picks (15 mentions) are kept apart as routine content, not issues.")}</p>
       </Card>
       <Source en={en} />
     </Light>
@@ -384,7 +384,7 @@ export function DashboardView({ en }: P) {
   const pts = series.map((v, i) => [(i / (series.length - 1)) * W, H - (v / max) * (H - 16)] as const);
   const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   const kpis: Array<[string, string, string]> = [["122", t("Percakapan", "Mentions"), INK], ["7%", t("Negatif", "Negative"), NEG], ["60%", t("Positif", "Positive"), POS], ["0", t("Peringatan terbuka", "Open alerts"), INK]];
-  const issues: Array<[string, number, string]> = [[t("Rekomendasi saham & kurs harian", "Daily stock & FX picks"), 13, NEU], [t("Citra sosial & kinerja", "Social image & results"), 5, POS], [t("Perluasan layanan & inklusi", "Service reach & inclusion"), 4, POS], [t("Sorotan KUR ASN", "KUR civil-servant story"), 2, AMBER]];
+  const issues: Array<[string, number, string]> = [[t("Citra sosial & kinerja", "Social image & results"), 5, POS], [t("Perluasan layanan & inklusi", "Service reach & inclusion"), 4, POS], [t("Panduan salah transfer", "Mistaken-transfer guides"), 3, NEU], [t("Sorotan KUR ASN", "KUR civil-servant story"), 2, AMBER]];
   return (
     <Light tag={t("Tampilan dashboard", "The dashboard")} v={1}>
       <Head kicker={t("Dashboard Bank Mandiri", "Bank Mandiri dashboard")} title={t(<>Tren 30 hari, <Brush>satu layar.</Brush></>, <>30-day trend, <Brush>one screen.</Brush></>)} />
