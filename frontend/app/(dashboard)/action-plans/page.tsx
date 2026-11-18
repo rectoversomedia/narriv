@@ -184,7 +184,7 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
       <p className="mt-1.5 line-clamp-2 text-[13px] font-medium text-[#3A4566]" title={action.issue}>{action.issue}</p>
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <span className="text-[12px] font-bold" style={{ color: readableTone(style.color) }}>{action.impact}</span>
-        <span className="font-mono text-[12px] font-medium text-[#5F6B94]">· {action.due}</span>
+        <span className="text-[12px] font-medium text-[#5F6B94]">· {action.due}</span>
       </div>
       <div className="mt-3 flex items-center gap-2">
         <Avatar name={action.owner} />
@@ -528,7 +528,7 @@ export default function ActionPlansPage() {
             <div className="flex flex-wrap items-center gap-2">
               <span className={cn("rounded-[8px] px-2.5 py-1 text-[12px] font-bold", selectedPriority === "high" ? "bg-[#B42318] text-white" : selectedPriority === "medium" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#E8F7EF] text-[#047857]")}>{t(`lanes.${selectedPriority}`)}</span>
               <span className="nv-stamp">{selectedStatusLabel}</span>
-              <span className="font-mono text-[11.5px] font-medium text-[#5F6B94]">{t("dueDateLabel")} {selectedDue}</span>
+              <span className="text-[11.5px] font-medium text-[#5F6B94]">{t("dueDateLabel")} {selectedDue}</span>
             </div>
             <h2 className="mt-4 max-w-3xl text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] sm:text-[30px]">{selectedAction?.title ?? latestPlan?.id ?? t("detail")}</h2>
             {latestPlan?.inputNarrative ? <p className="mt-2 max-w-3xl text-[15.5px] font-medium leading-relaxed text-[#31406B]">{latestPlan.inputNarrative}</p> : null}
@@ -550,7 +550,7 @@ export default function ActionPlansPage() {
               <ol className="mt-2 divide-y divide-[#EEF0F6]">
                 {(detailSteps ?? []).map(([item, when], stepIndex) => (
                   <li key={`${stepIndex}:${item}`} className="flex items-start gap-3 py-3">
-                    <span className="grid size-7 shrink-0 place-items-center rounded-full border-[1.5px] border-[#101334] font-mono text-[12px] font-bold text-[#101334]">{String(stepIndex + 1).padStart(2, "0")}</span>
+                    <span className="grid size-7 shrink-0 place-items-center rounded-full border-[1.5px] border-[#101334] text-[12px] font-bold text-[#101334]">{String(stepIndex + 1).padStart(2, "0")}</span>
                     <span className="min-w-0 flex-1 pt-0.5 text-[15px] font-bold leading-snug text-[#101334]">{item}</span>
                     {when ? <span className="shrink-0 rounded-[6px] bg-[#EEF1FF] px-2 py-1 text-[11.5px] font-bold text-[#3B52F5]">{when}</span> : null}
                   </li>
@@ -611,7 +611,7 @@ export default function ActionPlansPage() {
                       {Object.entries(accuracy.by_type).map(([key, value]) => (
                         <li key={key} className="flex items-center justify-between text-[12.5px]">
                           <span className="font-bold capitalize text-[#101334]">{key.replace(/_/g, " ")}</span>
-                          <span className="font-mono font-bold text-[#5F6B94]">{value.total}× · <span className="text-[#047857]">{Math.round(value.accuracy * 100)}%</span></span>
+                          <span className="font-bold text-[#5F6B94]">{value.total}× · <span className="text-[#047857]">{Math.round(value.accuracy * 100)}%</span></span>
                         </li>
                       ))}
                     </ul>
@@ -636,7 +636,7 @@ export default function ActionPlansPage() {
                       return (
                         <li key={insight.type} className="flex items-center justify-between gap-3 text-[13px]">
                           <span className="flex min-w-0 items-center gap-2"><row.Icon size={15} className="shrink-0 text-[#3B52F5]" /><span className="min-w-0"><span className="block font-bold text-[#101334]">{row.label}</span>{row.hint ? <span className="block text-[11.5px] text-[#647099]">{row.hint}</span> : null}</span></span>
-                          <b className="shrink-0 font-mono text-[#101334]">{row.value}</b>
+                          <b className="shrink-0 text-[#101334]">{row.value}</b>
                         </li>
                       );
                     })}

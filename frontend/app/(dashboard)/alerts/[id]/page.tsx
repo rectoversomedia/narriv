@@ -181,7 +181,7 @@ function HandlingDesk({
                     current ? "bg-[#101334] text-white" : done ? "bg-[#E8EBFF] text-[#3B52F5]" : "bg-[#F3F5FA] text-[#5F6B94] hover:bg-[#E8EBFF] hover:text-[#101334]",
                   )}
                 >
-                  <span className="block font-mono text-[11px] opacity-70">0{i + 1}</span>
+                  <span className="block text-[11px] opacity-70">0{i + 1}</span>
                   {step === "open" ? td("status.new") : step === "acknowledged" ? td("status.investigating") : td("status.resolved")}
                 </button>
               </li>
@@ -272,7 +272,7 @@ function Evidence({ items, missing, auto, L }: { items: AlertEvidence[]; missing
                 <span className={cn("mt-1.5 size-2.5 shrink-0 rounded-full", sentimentDot(sig.sentiment))} title={sentimentLabel(sig.sentiment, L)} />
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]">{sig.title}</span>
-                  <span className="mt-1 block font-mono text-[11.5px] font-medium text-[#5F6B94]">
+                  <span className="mt-1 block text-[11.5px] font-medium text-[#5F6B94]">
                     {sig.publisher || sig.platform || L("Unknown source", "Sumber tidak diketahui")} · {formatDateTime(sig.publishedAt || sig.capturedAt)} · {sentimentLabel(sig.sentiment, L)}
                   </span>
                 </span>
@@ -380,7 +380,7 @@ export default function AlertDetailPage() {
                     <Clock3 size={12} /> {left.text}
                   </span>
                 ) : null}
-                <span className="font-mono text-[11.5px] font-medium text-[#5F6B94]">{L("Raised", "Muncul")} {formatDateTime(liveData.createdAt)}</span>
+                <span className="text-[11.5px] font-medium text-[#5F6B94]">{L("Raised", "Muncul")} {formatDateTime(liveData.createdAt)}</span>
               </div>
 
               <h1 className="mt-4 max-w-4xl text-balance text-[28px] font-black leading-[1.12] tracking-[-0.03em] text-[#101334] sm:text-[36px]">{title}</h1>
@@ -418,7 +418,7 @@ export default function AlertDetailPage() {
                     </button>
                   )}
                 </div>
-                <p className="mt-3 text-[12px] font-medium text-white/50">{L("AI drafts the plan; nothing is sent without your approval.", "Rencana disusun AI; tidak ada yang dikirim tanpa persetujuan Anda.")}</p>
+                <p className="mt-3 text-[12px] font-medium text-white/50">{L("AI drafts the plan. Nothing is sent without your approval.", "Rencana disusun AI; tidak ada yang dikirim tanpa persetujuan Anda.")}</p>
               </div>
             </div>
           </section>

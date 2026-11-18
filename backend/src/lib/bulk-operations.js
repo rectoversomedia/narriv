@@ -169,7 +169,7 @@ export async function bulkCreateAlertsFromSignals(workspaceId, signalIds, alertD
                 .from("alerts")
                 .insert({
                     workspace_id: workspaceId,
-                    title: `Trend Alert: ${topic}`,
+                    title: `Trend rising: ${topic}`,
                     description: `${groupSignals.length} related signals detected`,
                     type: "risk",
                     severity: alertData.severity || "medium",

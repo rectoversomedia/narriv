@@ -22,7 +22,7 @@ function Hero({ lang, kicker, title, lead }: { lang: Lang; kicker: string; title
       <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.35),transparent)]" />
       <SiteHeader />
       <div className="relative mx-auto max-w-3xl px-4 pt-10 text-center sm:px-6">
-        <p className="font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-[#A5B4FF]">{kicker}</p>
+        <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#A5B4FF]">{kicker}</p>
         <h1 className={cn("mt-4 text-[32px] leading-[1.1] sm:text-[44px]", SERIF)} lang={lang}>{title}</h1>
         {lead ? <p className="mx-auto mt-4 max-w-2xl text-[16px] font-medium leading-7 text-white/65">{lead}</p> : null}
       </div>
@@ -73,7 +73,7 @@ export function BlogIndex({ lang }: { lang: Lang }) {
           {ARTICLES.map((a) => (
             <li key={a.slug}>
               <Link href={localizedPath(`/blog/${a.slug}`, lang)} className="group flex h-full flex-col rounded-[18px] border-[1.5px] border-[#101334] bg-white p-5 shadow-[0_4px_0_#101334] transition hover:-translate-y-0.5 sm:p-6">
-                <p className="font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">
+                <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">
                   {date(a.published, lang)} · {a.minutes} {w(lang, "min read", "menit baca")}
                 </p>
                 <h2 className="mt-2 text-[19px] font-black leading-snug tracking-[-0.015em] group-hover:text-[#465FFF]">{a[lang].title}</h2>
@@ -152,7 +152,7 @@ export function ArticlePage({ article, lang }: { article: Article; lang: Lang })
         </article>
         <Cta lang={lang} />
         <nav aria-label={w(lang, "More guides", "Panduan lainnya")} className="mt-10">
-          <p className="font-mono text-[12px] font-bold uppercase tracking-[0.1em] text-[#5F6B94]">{w(lang, "More Guides", "Panduan Lainnya")}</p>
+          <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#5F6B94]">{w(lang, "More Guides", "Panduan Lainnya")}</p>
           <ul className="mt-3 grid gap-3">
             {others.map((a) => (
               <li key={a.slug}>

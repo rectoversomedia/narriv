@@ -42,8 +42,8 @@ export function RegionPanel({ data, days, selected, onSelect, loading }: { data?
         loading ? null : accounts.length === 0 ? (
           <p className="mt-4 text-[12px] font-medium leading-relaxed text-[#5A6478]">
             {L(
-              "No account in this period shares a location in Indonesia yet. This comes from location labels that TikTok, YouTube and some marketplaces show; most social accounts do not share one.",
-              "Belum ada akun pada periode ini yang mencantumkan lokasi di Indonesia. Data ini berasal dari label lokasi yang ditampilkan TikTok, YouTube, dan sebagian marketplace; kebanyakan akun media sosial tidak mencantumkannya.",
+              "No account in this period shares a location in Indonesia yet. This comes from location labels that TikTok, YouTube and some marketplaces show. Most social accounts do not share one.",
+              "Belum ada akun pada periode ini yang mencantumkan lokasi di Indonesia. Data ini berasal dari label lokasi yang ditampilkan TikTok, YouTube, dan sebagian marketplace. Kebanyakan akun media sosial tidak mencantumkannya.",
             )}
           </p>
         ) : (

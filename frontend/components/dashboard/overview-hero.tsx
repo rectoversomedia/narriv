@@ -162,7 +162,7 @@ export function OverviewHero({
   const followUp = analysing
     ? L("The verdict appears here once they are scored, usually within the hour.", "Kesimpulan muncul di sini setelah dinilai, biasanya dalam satu jam.")
     : level === "waiting"
-    ? L("Narriv checks your keywords every hour; results appear here as they arrive.", "Narriv memeriksa kata kunci Anda setiap jam; hasilnya muncul di sini begitu masuk.")
+    ? L("Narriv checks your keywords every hour. Results appear here as they arrive.", "Narriv memeriksa kata kunci Anda setiap jam. Hasilnya muncul di sini begitu masuk.")
     : criticalAlerts > 0
     ? L(`${criticalAlerts} critical ${criticalAlerts === 1 ? "alert is" : "alerts are"} waiting for an owner.`, `${criticalAlerts} peringatan kritis menunggu ditangani.`)
     : openAlerts > 0

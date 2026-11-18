@@ -47,7 +47,7 @@ function Reasons({ wave }: { wave: ContentWave }) {
             ? L(`${r.value}% of the conversation is negative.`, `${r.value}% percakapannya negatif.`)
             : r.code === "sensitive"
               ? L(`Touches on ${SENSITIVE[String(r.value)]?.[0] ?? r.value}.`, `Menyentuh topik ${SENSITIVE[String(r.value)]?.[1] ?? r.value}.`)
-              : L("Several accounts posted near-identical text; it may be coordinated.", "Beberapa akun memposting teks hampir sama; bisa jadi terkoordinasi.")}
+              : L("Several accounts posted near-identical text. It may be coordinated.", "Beberapa akun memposting teks hampir sama. Bisa jadi terkoordinasi.")}
         </li>
       ))}
     </ul>
@@ -62,7 +62,7 @@ function Ideas({ ideas }: { ideas: ContentIdeas }) {
       <ol className="mt-3 grid gap-2.5 md:grid-cols-3">
         {ideas.angles.map((a, i) => (
           <li key={i} className="rounded-[12px] bg-white/[0.07] p-3">
-            <p className="font-mono text-[11.5px] font-bold text-[#A5B4FF]">0{i + 1} · {a.format}{a.platform ? ` · ${a.platform}` : ""}</p>
+            <p className="text-[11.5px] font-bold text-[#A5B4FF]">0{i + 1} · {a.format}{a.platform ? ` · ${a.platform}` : ""}</p>
             <p className="mt-1.5 text-[14px] font-black leading-snug">{a.title}</p>
             <p className="mt-1.5 text-[12.5px] font-medium leading-relaxed text-white/75">{a.hook}</p>
           </li>
@@ -101,7 +101,7 @@ function WaveCard({ wave }: { wave: ContentWave }) {
     <li className="rounded-[18px] border-[1.5px] border-[#101334] bg-white p-4 shadow-[0_4px_0_#101334] sm:p-5">
       <div className="flex flex-wrap items-center gap-2">
         <span className={cn("inline-flex items-center gap-1 rounded-[8px] px-2.5 py-1 text-[12px] font-bold", risk.tone)}><RiskIcon size={13} aria-hidden="true" /> {L(risk.en, risk.id)}</span>
-        <span className="inline-flex items-center gap-1 rounded-[8px] bg-[#EEF1FF] px-2.5 py-1 font-mono text-[12px] font-bold text-[#3B52F5]"><TrendingUp size={13} aria-hidden="true" /> {growth} · {m.last24h} {L("in 24h", "dalam 24 jam")}</span>
+        <span className="inline-flex items-center gap-1 rounded-[8px] bg-[#EEF1FF] px-2.5 py-1 text-[12px] font-bold text-[#3B52F5]"><TrendingUp size={13} aria-hidden="true" /> {growth} · {m.last24h} {L("in 24h", "dalam 24 jam")}</span>
         <span className="flex items-center gap-1">{wave.platforms.slice(0, 5).map((p) => <PlatformIcon key={p} platform={p} className="size-4" />)}</span>
       </div>
       <h3 className="mt-3 text-[19px] font-black leading-snug tracking-[-0.015em] text-[#101334]">{wave.title}</h3>

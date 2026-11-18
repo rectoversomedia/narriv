@@ -54,7 +54,7 @@ function FeaturedOpportunity({ alert, onPlan }: { alert: Alert; onPlan: () => vo
           <span className="rounded-[8px] bg-[#047857] px-2.5 py-1 text-[12px] font-bold text-white">{L("Opportunity", "Peluang")}</span>
           <span className={cn("rounded-[8px] px-2.5 py-1 text-[12px] font-bold", priority.tone)}>{L(priority.en, priority.id)}</span>
           <span className="nv-stamp">{L(...status)}</span>
-          <span className="font-mono text-[11.5px] font-medium text-[#5F6B94]">{shortDate(alert.createdAt)}</span>
+          <span className="text-[11.5px] font-medium text-[#5F6B94]">{shortDate(alert.createdAt)}</span>
         </div>
         <h2 className="mt-4 max-w-4xl text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] sm:text-[32px]">{alert.title}</h2>
         {alert.whatHappened ? <p className="mt-2 max-w-3xl text-[15.5px] font-medium leading-relaxed text-[#31406B]">{alert.whatHappened}</p> : null}
@@ -89,7 +89,7 @@ function OpportunityRow({ alert }: { alert: Alert }) {
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]">{alert.title}</span>
         {alert.whatToDo ? <span className="mt-1 block line-clamp-2 text-[13.5px] font-medium text-[#31406B]">{alert.whatToDo}</span> : null}
-        <span className="mt-1 block font-mono text-[11.5px] font-medium text-[#5F6B94]">
+        <span className="mt-1 block text-[11.5px] font-medium text-[#5F6B94]">
           {L(priority.en, priority.id)} · {shortDate(alert.createdAt)} · {owner || <span className="text-[#B45309]">{L("No owner yet", "Belum ada penanggung jawab")}</span>}
         </span>
       </span>
@@ -111,7 +111,7 @@ function GoodNewsRow({ signal, onAmplify }: { signal: Signal; onAmplify: (signal
       <PlatformIcon platform={signal.platform || "news"} className="mt-0.5 size-6" />
       <span className="min-w-0 flex-1">
         <span className={cn("line-clamp-2 block text-[15px] font-bold leading-snug text-[#101334]", signal.url && "group-hover:text-[#3B52F5]")}>{text}</span>
-        <span className="mt-1 block font-mono text-[11.5px] font-medium text-[#5F6B94]">
+        <span className="mt-1 block text-[11.5px] font-medium text-[#5F6B94]">
           {[signal.author, shortDate(signal.publishedAt || signal.capturedAt)].filter(Boolean).join(" · ")}
           {narrative ? <> · <span className="font-semibold text-[#31406B]">{narrative.title}</span></> : null}
         </span>

@@ -532,11 +532,11 @@ function ReportsTable({
                   </div>
                 </td>
                 <td className="px-3 py-3.5 align-middle text-[12.5px] font-bold text-[#31406B]">{report.type}</td>
-                <td className="px-3 py-3.5 align-middle font-mono text-[12px] font-medium text-[#5F6B94]">{report.period}</td>
+                <td className="px-3 py-3.5 align-middle text-[12px] font-medium text-[#5F6B94]">{report.period}</td>
                 <td className="px-3 py-3.5 align-middle"><StatusBadge status={report.status} /></td>
                 <td className="px-3 py-3.5 align-middle">
-                  <span className="block font-mono text-[11.5px] font-bold text-[#31406B]">{report.created}</span>
-                  <span className="mt-0.5 block font-mono text-[11.5px] font-medium text-[#647099]">{report.createdTime}</span>
+                  <span className="block text-[11.5px] font-bold text-[#31406B]">{report.created}</span>
+                  <span className="mt-0.5 block text-[11.5px] font-medium text-[#647099]">{report.createdTime}</span>
                 </td>
                 <td className="px-3 py-3.5 text-right align-middle">
                   <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
@@ -549,7 +549,7 @@ function ReportsTable({
                           type="button"
                           onClick={() => (format === "pdf" ? onExport(String(report.id)) : onExportFile?.(String(report.id), format))}
                           disabled={isFetching}
-                          className="rounded-[8px] px-2 py-1.5 font-mono text-[11.5px] font-bold text-[#5F6B94] transition hover:bg-white hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-[8px] px-2 py-1.5 text-[11.5px] font-bold text-[#5F6B94] transition hover:bg-white hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label={format === "pdf" ? tr("exportAria", { title: report.title }) : undefined}
                           title={`${tr("downloadReady")} ${label}`}
                         >

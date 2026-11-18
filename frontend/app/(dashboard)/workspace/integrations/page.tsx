@@ -281,7 +281,7 @@ export default function IntegrationsPage() {
           ) : integrationsQuery.isPending ? (
             <div className="p-5"><TableSkeleton rows={4} columns={3} /></div>
           ) : integrations.length === 0 ? (
-            <div className="p-5"><DashboardEmptyState title={pickL("No channel connected yet", "Belum ada saluran terhubung")} description={pickL("Pick Slack, Teams, Google Chat or WhatsApp above; it takes about a minute.", "Pilih Slack, Teams, Google Chat, atau WhatsApp di atas; cukup sekitar satu menit.")} icon="inbox" minHeight="min-h-[220px]" /></div>
+            <div className="p-5"><DashboardEmptyState title={pickL("No channel connected yet", "Belum ada saluran terhubung")} description={pickL("Pick Slack, Teams, Google Chat or WhatsApp above. It takes about a minute.", "Pilih Slack, Teams, Google Chat, atau WhatsApp di atas. Cukup sekitar satu menit.")} icon="inbox" minHeight="min-h-[220px]" /></div>
           ) : (
             <ul className="mt-3 divide-y divide-[#F0F2F8]">
               {integrations.map((item) => {

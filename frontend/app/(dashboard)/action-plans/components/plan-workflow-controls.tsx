@@ -55,7 +55,7 @@ export function PlanWorkflowControls({ planId, status, assignedTo }: { planId: s
 
   return (
     <div className="mt-3">
-      <p className="text-[12px] font-semibold text-[#647099]">{L("Draft only; nothing is sent for you.", "Hanya draf; tidak ada yang dikirim otomatis.")}</p>
+      <p className="text-[12px] font-semibold text-[#647099]">{L("Draft only. Nothing is sent for you.", "Hanya draf. Tidak ada yang dikirim otomatis.")}</p>
       <div className="mt-3 grid gap-3">
         <label className="text-[12px] font-bold text-[#31406B]">
           {L("Status", "Status")}

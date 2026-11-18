@@ -187,7 +187,7 @@ function FirstRun() {
   const status = run.isPending
     ? { tone: "working", title: L("Collecting the first news…", "Mengambil berita pertama…"), sub: L(`For ${names}. This usually takes about a minute.`, `Untuk ${names}. Biasanya sekitar satu menit.`) }
     : run.isSuccess
-      ? { tone: "done", title: L(`${run.data?.totals?.fetched ?? 0} articles found`, `${run.data?.totals?.fetched ?? 0} berita ditemukan`), sub: (run.data?.totals?.fetched ?? 0) > 0 ? L("Analysing them now; the board fills in a moment.", "Sedang dianalisis; dashboard terisi sebentar lagi.") : L("Nothing yet for these keywords. Try a more common name, or wait for the next hourly check.", "Belum ada berita untuk kata kunci ini. Coba nama yang lebih umum, atau tunggu pengecekan jam berikutnya.") }
+      ? { tone: "done", title: L(`${run.data?.totals?.fetched ?? 0} articles found`, `${run.data?.totals?.fetched ?? 0} berita ditemukan`), sub: (run.data?.totals?.fetched ?? 0) > 0 ? L("Analysing them now. The board fills in a moment.", "Sedang dianalisis. Dashboard terisi sebentar lagi.") : L("Nothing yet for these keywords. Try a more common name, or wait for the next hourly check.", "Belum ada berita untuk kata kunci ini. Coba nama yang lebih umum, atau tunggu pengecekan jam berikutnya.") }
       : err && err.code !== "CLIENT_TIMEOUT" && err.status !== 429
         ? { tone: "error", title: L("The first collection did not run", "Pengambilan pertama belum berjalan"), sub: L(`It will run automatically at ${nextHour}. You can also try again now.`, `Akan berjalan otomatis pukul ${nextHour}. Anda juga bisa mencoba lagi sekarang.`) }
         : { tone: "waiting", title: canEdit ? L("The first collection is running", "Pengambilan pertama sedang berjalan") : L(`First data arrives by ${nextHour}`, `Data pertama masuk sebelum pukul ${nextHour}`), sub: L(`Narriv watches ${names} and checks every hour.`, `Narriv memantau ${names} dan mengecek setiap jam.`) };
@@ -407,20 +407,16 @@ export default function DashboardPage() {
                     // which side is ahead by how much.
                     const gap = Math.abs(dist.negative - dist.positive);
                     const lead = dist.negative > dist.positive
-                      ? <>{L("Negative leads by ", "Negatif unggul ")}<b className="text-[#B42318]">{fmt(gap)}</b>.</>
+                      ? <><b className="text-[#B42318]">{L(`${fmt(gap)} more negative`, `${fmt(gap)} lebih banyak negatif`)}</b>{L(" than positive.", " daripada positif.")}</>
                       : dist.positive > dist.negative
-                        ? <>{L("Positive leads by ", "Positif unggul ")}<b className="text-[#047857]">{fmt(gap)}</b>.</>
+                        ? <><b className="text-[#047857]">{L(`${fmt(gap)} more positive`, `${fmt(gap)} lebih banyak positif`)}</b>{L(" than negative.", " daripada negatif.")}</>
                         : L("Positive and negative are even.", "Positif dan negatif seimbang.");
                     return (
                       <div className="mb-5">
                         <p className={cn("text-[34px] font-black leading-none tracking-[-0.03em]", verdict.cls)}>{verdict.text}</p>
-                        <p className="mt-2.5 text-[15px] font-medium leading-relaxed text-[#31406B]">
-                          <b className="text-[#B42318]">{fmt(dist.negative)} {L("negative", "negatif")}</b>
-                          {L(" vs ", " vs ")}
-                          <b className="text-[#047857]">{fmt(dist.positive)} {L("positive", "positif")}</b>
-                          {L(` out of ${fmt(total)} mentions. `, ` dari ${fmt(total)} percakapan. `)}
-                          {analysed > 0 ? lead : null}
-                        </p>
+                        {/* One short line; the exact counts are in the bars right below. */}
+                        {analysed > 0 ? <p className="mt-2.5 text-[16px] font-medium leading-snug text-[#31406B]">{lead}</p> : null}
+                        <p className="mt-1 text-[13px] font-medium text-[#5F6B94]">{L(`From ${fmt(total)} mentions`, `Dari ${fmt(total)} percakapan`)}</p>
                       </div>
                     );
                   })()}

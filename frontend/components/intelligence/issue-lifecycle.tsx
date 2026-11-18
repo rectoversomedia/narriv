@@ -66,12 +66,12 @@ function ago(iso: string | null | undefined) {
 }
 
 function Change({ m }: { m: NarrativeRecord["momentum"] }) {
-  if (!m) return <span className="font-mono text-[12px] font-bold text-[#6B7591]">—</span>;
+  if (!m) return <span className="text-[12px] font-bold text-[#6B7591]">—</span>;
   const up = m.last24h > m.prior24h, down = m.last24h < m.prior24h;
   const Icon = up ? ArrowUpRight : down ? ArrowDownRight : Minus;
   const label = m.prior24h === 0 ? (m.last24h > 0 ? pickL("new", "baru") : "0") : `${m.changePct !== null && m.changePct > 0 ? "+" : ""}${m.changePct ?? 0}%`;
   return (
-    <span className={cn("inline-flex items-center gap-0.5 font-mono text-[12px] font-bold", up ? "text-[#B42318]" : down ? "text-[#047857]" : "text-[#5A6478]")}>
+    <span className={cn("inline-flex items-center gap-0.5 text-[12px] font-bold", up ? "text-[#B42318]" : down ? "text-[#047857]" : "text-[#5A6478]")}>
       <Icon size={13} aria-hidden="true" /> {label}
     </span>
   );
@@ -127,7 +127,7 @@ export function IssueLifecycle({ records, stageOf, days }: { records: NarrativeR
                   {n}
                   {hot ? <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 size-3.5 rounded-full border-2 border-white bg-[#E5484D]" /> : null}
                 </button>
-                <span className={cn("mt-2.5 font-mono text-[11px] font-bold tracking-[0.08em]", on ? "text-[#3B52F5]" : "text-[#6B7591]")}>{String(i + 1).padStart(2, "0")}</span>
+                <span className={cn("mt-2.5 text-[11px] font-bold tracking-[0.08em]", on ? "text-[#3B52F5]" : "text-[#6B7591]")}>{String(i + 1).padStart(2, "0")}</span>
                 <span className={cn("text-[12.5px] font-black leading-tight sm:text-[13.5px]", on ? "text-[#101334]" : n ? "text-[#31406B]" : "text-[#9AA3BC]")}>{pickL(s.en, s.id)}</span>
               </li>
             );
@@ -178,7 +178,7 @@ export function IssueLifecycle({ records, stageOf, days }: { records: NarrativeR
                       <dl className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
                         <div className="rounded-[12px] bg-[#F6F7FC] px-3 py-2">
                           <dt className="text-[9.5px] font-bold text-[#6B7591]">{pickL("Mentions", "Percakapan")}</dt>
-                          <dd className="mt-0.5 text-[15px] font-black tabular-nums text-[#101334]">{r.signalCount} <span className="font-mono text-[12px] font-bold text-[#6B7591]">· {share}%</span></dd>
+                          <dd className="mt-0.5 text-[15px] font-black tabular-nums text-[#101334]">{r.signalCount} <span className="text-[12px] font-bold text-[#6B7591]">· {share}%</span></dd>
                         </div>
                         <div className="rounded-[12px] bg-[#F6F7FC] px-3 py-2">
                           <dt className="text-[9.5px] font-bold text-[#6B7591]">{pickL("Last 24h", "24 jam")}</dt>

@@ -368,7 +368,7 @@ function CriticalIncident({
               {left ? (
                 <span className={cn("nv-stamp", alert.overdue && "!border-[#B42318] !bg-[#B42318] !text-white !shadow-[0_2px_0_#7A1610]")}><Clock3 size={12} /> {left}</span>
               ) : null}
-              <span className="font-mono text-[11.5px] font-medium text-[#5F6B94]">{ta("v2.incident.since", { time: alert.time })}</span>
+              <span className="text-[11.5px] font-medium text-[#5F6B94]">{ta("v2.incident.since", { time: alert.time })}</span>
             </div>
             <Link href={`/alerts/${alert.id}`} className="group mt-4 block">
               <h2 className="line-clamp-2 max-w-4xl text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] group-hover:text-[#3B52F5] sm:text-[32px]">{alert.title}</h2>
@@ -700,7 +700,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                   <div className="min-w-0">
                     <Link href={`/alerts/${alert.id}`} className="text-[14.5px] font-black leading-snug text-[#101334] hover:text-[#3B52F5]">{alert.title}</Link>
                     {alert.description ? <p className="mt-1 line-clamp-2 text-[12.5px] font-medium leading-snug text-[#3A4566]">{alert.description}</p> : null}
-                    {alert.time ? <p className="mt-1 font-mono text-[12px] font-medium text-[#6B7591]">{alert.time}</p> : null}
+                    {alert.time ? <p className="mt-1 text-[12px] font-medium text-[#6B7591]">{alert.time}</p> : null}
                   </div>
                 </td>
                 <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[11.5px] font-bold", alert.tone === "red" ? "bg-[#B42318] text-white" : alert.tone === "amber" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#E8F7EF] text-[#047857]")}>{alert.tags[0]}</span></td>

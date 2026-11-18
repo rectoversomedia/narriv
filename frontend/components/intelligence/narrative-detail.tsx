@@ -72,7 +72,7 @@ function Summary({ detail }: { detail: NarrativeDetailRecord }) {
         <div className="flex flex-wrap items-center gap-2">
           <span className={cn(KICKER, "text-[#A5B4FF]")}>{pickL("The Story So Far", "Ringkasan Cerita")}</span>
           {m ? (
-            <span className={cn("inline-flex items-center gap-1 rounded-[7px] px-2 py-0.5 font-mono text-[11.5px] font-bold", alarming ? "bg-[#E5484D] text-white" : up ? "bg-[#465FFF] text-white" : "bg-white/10 text-white/75")}>
+            <span className={cn("inline-flex items-center gap-1 rounded-[7px] px-2 py-0.5 text-[11.5px] font-bold", alarming ? "bg-[#E5484D] text-white" : up ? "bg-[#465FFF] text-white" : "bg-white/10 text-white/75")}>
               {up ? <TrendingUp size={12} aria-hidden="true" /> : <TrendingDown size={12} aria-hidden="true" />}
               {up ? pickL("Growing", "Naik") : m.last24h === 0 ? pickL("Quiet", "Tenang") : m.last24h === m.prior24h ? pickL("Steady", "Stabil") : pickL("Slowing", "Melambat")}
             </span>
@@ -98,7 +98,7 @@ function Summary({ detail }: { detail: NarrativeDetailRecord }) {
               {entries.map(([k, v]) => (
                 <span key={k} className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white/80">
                   <span className="size-2 rounded-full" style={{ background: SENTIMENT[k]?.color ?? "#94A3B8" }} />
-                  {sentimentWord(k)} <span className="font-mono text-white/55">{Math.round((v / total) * 100)}% · {v}</span>
+                  {sentimentWord(k)} <span className="text-white/55">{Math.round((v / total) * 100)}% · {v}</span>
                 </span>
               ))}
             </div>
@@ -136,7 +136,7 @@ function Evidence({ detail, n }: { detail: NarrativeDetailRecord; n: string }) {
                 <span className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-[#F1F4FA]"><PlatformIcon platform={sig.platform || "news"} className="size-4" /></span>
                 <span className="min-w-0 flex-1">
                   <span className={cn("block text-[14px] font-bold leading-snug text-[#101334]", sig.url && "group-hover:text-[#3B52F5]")}>{sig.title}</span>
-                  <span className="mt-1 flex flex-wrap items-center gap-1.5 font-mono text-[12px] font-medium text-[#5A6478]">
+                  <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px] font-medium text-[#5A6478]">
                     <span className={cn("rounded-[6px] px-1.5 py-0.5 font-sans text-[11.5px] font-black", tone.chip)}>{sentimentWord(sig.sentiment)}{typeof sig.analysisConfidence === "number" ? ` · ${Math.round(sig.analysisConfidence * 100)}%` : ""}</span>
                     {platformName(sig.platform)} · {when(sig.publishedAt || sig.capturedAt)}
                   </span>

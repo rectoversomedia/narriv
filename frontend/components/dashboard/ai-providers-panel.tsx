@@ -95,7 +95,7 @@ export function AiProvidersPanel() {
                 {check.isPending ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : null}
                 {L("Test connections", "Tes koneksi")}
               </button>
-              <p className="mt-1.5 text-[12px] font-semibold text-[#5A6478]">{L("Sends a one-word test prompt to each configured AI provider (no client data; a fraction of a cent) and reads the Apify account status (no scraping).", "Mengirim prompt uji satu kata ke tiap penyedia AI yang terpasang (tanpa data klien; biaya sangat kecil) dan membaca status akun Apify (tanpa scraping).")}</p>
+              <p className="mt-1.5 text-[12px] font-semibold text-[#5A6478]">{L("Sends a one-word test prompt to each configured AI provider (no client data, a fraction of a cent) and reads the Apify account status (no scraping).", "Mengirim prompt uji satu kata ke tiap penyedia AI yang terpasang (tanpa data klien, biaya sangat kecil) dan membaca status akun Apify (tanpa scraping).")}</p>
               {check.isError ? <p role="alert" className="mt-2 text-[12px] font-semibold text-[#C81E1E]">{check.error instanceof Error ? check.error.message : L("The test failed.", "Tes gagal.")}</p> : null}
               {check.data ? (
                 <ul className="mt-2 space-y-1 text-[12px] font-semibold text-[#31406B]" role="status">

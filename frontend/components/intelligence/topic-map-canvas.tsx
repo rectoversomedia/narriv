@@ -156,9 +156,9 @@ function MapNodeButton({ node, placed, rank, selected, onSelect, signalLabel }: 
         </span>
       </span>
       {/* Rank and growth as stamps on the rim. */}
-      <span className="absolute -left-1 top-[8%] grid size-6 place-items-center rounded-full border-[1.5px] border-[#101334] bg-white font-mono text-[11.5px] font-bold text-[#101334]">{rank}</span>
+      <span className="absolute -left-1 top-[8%] grid size-6 place-items-center rounded-full border-[1.5px] border-[#101334] bg-white text-[11.5px] font-bold text-[#101334]">{rank}</span>
       {growth ? (
-        <span className={cn("absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-[6px] border-[1.5px] border-[#101334] px-1.5 py-0.5 font-mono text-[11px] font-bold", rising ? "bg-[#FFF4E5] text-[#A04606]" : "bg-white text-[#5F6B94]")}>
+        <span className={cn("absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-[6px] border-[1.5px] border-[#101334] px-1.5 py-0.5 text-[11px] font-bold", rising ? "bg-[#FFF4E5] text-[#A04606]" : "bg-white text-[#5F6B94]")}>
           {growth}
         </span>
       ) : null}

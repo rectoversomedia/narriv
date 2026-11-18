@@ -76,7 +76,7 @@ function Origin({ origin }: { origin: NarrativeSpread["origin"] }) {
           <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-white ring-2 ring-white/20"><PlatformIcon platform={origin.platform || "news"} className="size-6" /></span>
           <div className="min-w-0">
             <p className="truncate text-[18px] font-black leading-tight">{who}</p>
-            <p className="mt-0.5 font-mono text-[11.5px] font-medium text-white/65">{platformName(origin.platform)} · {when(origin.at)}{origin.timeBasis === "collected" ? ` · ${pickL("collection time", "waktu dikumpulkan")}` : ""}</p>
+            <p className="mt-0.5 text-[11.5px] font-medium text-white/65">{platformName(origin.platform)} · {when(origin.at)}{origin.timeBasis === "collected" ? ` · ${pickL("collection time", "waktu dikumpulkan")}` : ""}</p>
           </div>
         </div>
         {origin.title ? (
@@ -110,7 +110,7 @@ function Path({ path }: { path: NarrativeSpread["path"] }) {
             </span>
             <span className="min-w-0">
               <span className="block text-[13.5px] font-black leading-tight text-[#101334]">{platformName(p.platform)}</span>
-              <span className="mt-0.5 block font-mono text-[12px] font-bold text-[#3B52F5]">{afterOrigin(p.hoursAfterOrigin)}</span>
+              <span className="mt-0.5 block text-[12px] font-bold text-[#3B52F5]">{afterOrigin(p.hoursAfterOrigin)}</span>
               <span className="block text-[11.5px] font-medium text-[#5A6478]">{p.records} {pickL(p.records === 1 ? "record" : "records", "catatan")}</span>
             </span>
           </li>
@@ -149,7 +149,7 @@ function Amplifiers({ spread }: { spread: NarrativeSpread }) {
             const bar = showBars && m.key === main;
             return (
               <li key={`${a.name}-${i}`} className="flex items-center gap-3 py-3">
-                <span className={cn("w-6 shrink-0 text-center font-mono text-[13px] font-bold", i === 0 ? "text-[#101334]" : "text-[#6B7591]")}>{String(i + 1).padStart(2, "0")}</span>
+                <span className={cn("w-6 shrink-0 text-center text-[13px] font-bold", i === 0 ? "text-[#101334]" : "text-[#6B7591]")}>{String(i + 1).padStart(2, "0")}</span>
                 <span className={cn("inline-flex size-9 shrink-0 items-center justify-center rounded-full", a.kind === "outlet" ? "bg-[#EEF1FF] text-[#3B52F5]" : "bg-[#F4EEFF] text-[#6E44E8]")}>
                   {a.kind === "outlet" ? <Newspaper size={16} aria-hidden="true" /> : <User size={16} aria-hidden="true" />}
                 </span>
@@ -164,7 +164,7 @@ function Amplifiers({ spread }: { spread: NarrativeSpread }) {
                       <span className="h-full rounded-full bg-gradient-to-r from-[#465FFF] via-[#8B5CF6] to-[#EC4899]" style={{ width: `${Math.max(5, (m.value / max) * 100)}%` }} />
                     </span>
                   ) : (
-                    <span className="mt-0.5 block font-mono text-[12px] font-medium text-[#5A6478]">{a.kind === "outlet" ? `${pickL("News outlet", "Media berita")} · ` : ""}{a.isOrigin ? pickL("first to post", "yang pertama") : `${pickL("joined", "ikut")} ${afterOrigin(a.hoursAfterOrigin)}`}</span>
+                    <span className="mt-0.5 block text-[12px] font-medium text-[#5A6478]">{a.kind === "outlet" ? `${pickL("News outlet", "Media berita")} · ` : ""}{a.isOrigin ? pickL("first to post", "yang pertama") : `${pickL("joined", "ikut")} ${afterOrigin(a.hoursAfterOrigin)}`}</span>
                   )}
                 </div>
                 <div className="shrink-0 text-right">
@@ -239,11 +239,11 @@ function TextClusters({ groups }: { groups: NarrativeSpread["textClusters"] }) {
             </p>
             <p className="mt-1 text-[12.5px] font-medium leading-relaxed text-[#5A6478]">
               {coord
-                ? pickL("A possible sign of coordinated posting. Check the accounts before concluding anything; fans or a viral template can look the same.", "Bisa jadi tanda unggahan terkoordinasi. Periksa akunnya sebelum menyimpulkan apa pun; penggemar atau template viral bisa terlihat serupa.")
+                ? pickL("A possible sign of coordinated posting. Check the accounts before concluding anything. Fans or a viral template can look the same.", "Bisa jadi tanda unggahan terkoordinasi. Periksa akunnya sebelum menyimpulkan apa pun. Penggemar atau template viral bisa terlihat serupa.")
                 : pickL("Likely from the same press release or a shared source.", "Kemungkinan dari siaran pers atau sumber yang sama.")}
             </p>
             {g.sample ? <p className="mt-2.5 line-clamp-2 rounded-[10px] bg-white/80 px-3 py-2 text-[13px] italic text-[#31406B]">“{g.sample}”</p> : null}
-            {g.accounts.length ? <p className="mt-2 truncate font-mono text-[12px] font-medium text-[#5A6478]">{g.accounts.join(" · ")}</p> : null}
+            {g.accounts.length ? <p className="mt-2 truncate text-[12px] font-medium text-[#5A6478]">{g.accounts.join(" · ")}</p> : null}
           </div>
         );
       })}
@@ -311,7 +311,7 @@ export function NarrativePrecedents({ precedents, expectation, n }: { precedents
           <li key={p.id} className="rounded-[14px] border border-[#E1E6F2] bg-white p-3.5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="text-[14px] font-black text-[#101334]">{p.title}</p>
-              <span className="font-mono text-[12px] font-medium text-[#5A6478]">{new Date(p.firstAt).toLocaleDateString(intlLocale(), { day: "numeric", month: "short", year: "numeric" })}</span>
+              <span className="text-[12px] font-medium text-[#5A6478]">{new Date(p.firstAt).toLocaleDateString(intlLocale(), { day: "numeric", month: "short", year: "numeric" })}</span>
             </div>
             <p className="mt-1 text-[12.5px] font-medium text-[#5A6478]">
               {pickL(`Peaked ${afterOrigin(p.hoursToPeak)} · active ${duration(p.activeHours)} · ${p.records} records`, `Puncak ${afterOrigin(p.hoursToPeak)} · aktif ${duration(p.activeHours)} · ${p.records} catatan`)}

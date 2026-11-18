@@ -78,7 +78,7 @@ export function Sidebar() {
             {/* items-start: a flex column stretches children to its widest one (the tagline), which squashed the logo wide. */}
             <span className={cn("absolute left-1 top-0 flex flex-col items-start transition-opacity duration-200", collapsed ? "opacity-0" : "opacity-100")}>
               <Image src="/brand/logo-p-nv.webp" alt="Narriv" width={128} height={48} priority className="h-12 w-auto max-w-none object-contain" />
-              <span className="-mt-[3px] pl-[1px] font-mono text-[8.5px] font-bold uppercase leading-none tracking-[0.06em] text-white/60">Narrative Intelligence</span>
+              <span className="-mt-[3px] pl-[1px] text-[8.5px] font-bold uppercase leading-none tracking-[0.06em] text-white/60">Narrative Intelligence</span>
             </span>
           </Link>
         </div>

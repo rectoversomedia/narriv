@@ -173,7 +173,7 @@ export default function InsightsPage() {
                   {!hasRisk
                     ? L("Not enough conversations in this period to score the risk.", "Percakapan di periode ini belum cukup untuk menilai risiko.")
                     : drivers.length
-                      ? <>{L("Driven mostly by ", "Paling banyak didorong oleh ")}<b className="text-[#101334]">{driverName(drivers[0])}</b>{drivers[1] ? <>{L(" and ", " dan ")}<b className="text-[#101334]">{driverName(drivers[1])}</b></> : null}.{negShare ? L(` ${Math.round(Number(negShare.value) * 100)}% of mentions are negative.`, ` ${Math.round(Number(negShare.value) * 100)}% percakapan bernada negatif.`) : ""}</>
+                      ? <>{L("Driven mostly by ", "Paling banyak didorong oleh ")}<b className="text-[#101334]">{driverName(drivers[0]).toLowerCase()}</b>{drivers[1] ? <>{L(" and ", " dan ")}<b className="text-[#101334]">{driverName(drivers[1]).toLowerCase()}</b></> : null}.{negShare ? L(` ${Math.round(Number(negShare.value) * 100)}% of mentions are negative.`, ` ${Math.round(Number(negShare.value) * 100)}% percakapan bernada negatif.`) : ""}</>
                       : L("No single factor stands out.", "Tidak ada faktor yang menonjol.")}
                 </p>
               </div>

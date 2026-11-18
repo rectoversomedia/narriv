@@ -34,8 +34,8 @@ function ConsentBanner() {
     <div role="dialog" aria-live="polite" aria-label={L("Cookie preferences", "Preferensi cookie")} className="fixed inset-x-3 bottom-3 z-[90] mx-auto max-w-xl rounded-[18px] border-[1.5px] border-[#101334] bg-white p-4 text-[#101334] shadow-[0_4px_0_#101334] sm:bottom-5 sm:p-5">
       <p className="text-[14px] font-semibold leading-6">
         {L(
-          "We use cookies to measure visits and the results of our ads. You can accept or decline; the site works the same either way.",
-          "Kami memakai cookie untuk mengukur kunjungan dan hasil iklan kami. Anda bisa menerima atau menolak; situs tetap berfungsi sama.",
+          "We use cookies to measure visits and the results of our ads. You can accept or decline. The site works the same either way.",
+          "Kami memakai cookie untuk mengukur kunjungan dan hasil iklan kami. Anda bisa menerima atau menolak. Situs tetap berfungsi sama.",
         )}
       </p>
       <div className="mt-3 flex justify-end gap-2">

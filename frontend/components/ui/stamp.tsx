@@ -24,7 +24,7 @@ export function StatStrip({ stats, className }: { stats: Stat[]; className?: str
           <>
             <span className={cn("block text-[30px] font-black leading-none tracking-[-0.03em] sm:text-[34px]", s.tone ?? "text-[#101334]")}>{s.value}</span>
             <span className="mt-2 block text-[13px] font-bold text-[#101334]">{s.label}</span>
-            {s.helper ? <span className="mt-0.5 block font-mono text-[12px] font-medium text-[#5F6B94]">{s.helper}</span> : null}
+            {s.helper ? <span className="mt-0.5 block text-[12px] font-medium text-[#5F6B94]">{s.helper}</span> : null}
           </>
         );
         const cell = cn(

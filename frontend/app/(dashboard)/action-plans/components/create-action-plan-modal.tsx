@@ -110,7 +110,7 @@ export function CreateActionPlanModal({
       open={open}
       onClose={close}
       title={t("title")}
-      description={L("Pick the kind of response. Narriv drafts the plan; you review it before anything is used.", "Pilih jenis respons. Narriv menyusun drafnya; Anda yang meninjau sebelum dipakai.")}
+      description={L("Pick the kind of response. Narriv drafts the plan. You review it before anything is used.", "Pilih jenis respons. Narriv menyusun drafnya; Anda yang meninjau sebelum dipakai.")}
       closeLabel={L("Close", "Tutup")}
       footer={
         <>

@@ -371,8 +371,19 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
 
         <div className="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-end">
           <div className="min-w-0">
+            {/* The verdict as the heading; anything after its first sentence (what most of it is about) on a calmer line. */}
             {headline ? (
-              <p className="text-balance text-[22px] font-black leading-[1.25] tracking-[-0.02em] text-[#101334] sm:text-[26px]" title={headline}>{headline}</p>
+              (() => {
+                const cut = headline.indexOf(". ");
+                const lead = cut > 0 ? headline.slice(0, cut + 1) : headline;
+                const rest = cut > 0 ? headline.slice(cut + 2) : "";
+                return (
+                  <div title={headline}>
+                    <p className="text-balance text-[22px] font-black leading-[1.25] tracking-[-0.02em] text-[#101334] sm:text-[26px]">{lead}</p>
+                    {rest ? <p className="mt-1.5 line-clamp-2 text-[15px] font-semibold leading-snug text-[#31406B] sm:text-[17px]">{rest}</p> : null}
+                  </div>
+                );
+              })()
             ) : (
               <p className="text-[18px] font-bold text-[#5A6478]">{L("No mentions in the last 24 hours yet.", "Belum ada percakapan dalam 24 jam terakhir.")}</p>
             )}

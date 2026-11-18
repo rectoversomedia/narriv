@@ -280,7 +280,7 @@ type RunError = Error & { status?: number; code?: string; info?: { retryAt?: str
 /** What to tell the user for each way a run request can end without a result. */
 function describeRunError(err: RunError): { tone: "error" | "info"; text: string } {
   if (err.code === "CLIENT_TIMEOUT") {
-    return { tone: "info", text: pickL("The run is taking longer than expected. It continues on the server; the keyword list below refreshes in a minute with the real result.", "Run ini butuh waktu lebih lama dari perkiraan. Prosesnya tetap berjalan di server; daftar kata kunci di bawah akan diperbarui dalam semenit dengan hasil aslinya.") };
+    return { tone: "info", text: pickL("The run is taking longer than expected. It continues on the server. The keyword list below refreshes in a minute with the real result.", "Run ini butuh waktu lebih lama dari perkiraan. Prosesnya tetap berjalan di server. Daftar kata kunci di bawah akan diperbarui dalam semenit dengan hasil aslinya.") };
   }
   if (err.status === 429) {
     const at = err.info?.retryAt ? new Date(err.info.retryAt) : null;
@@ -309,7 +309,7 @@ function RunMonitoringNow({ onDone }: { onDone: () => void }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[14px] font-black text-[#101334]">{pickL("Need the latest now?", "Butuh data terbaru sekarang?")}</p>
-          <p className="text-[12px] font-semibold text-[#5A6478]">{pickL("Collects the latest public news for up to 3 active keywords (8 articles each) and analyses it. Takes up to 2 minutes; one run per 10 minutes.", "Mengambil berita publik terbaru untuk hingga 3 kata kunci aktif (8 artikel per kata kunci) lalu menganalisisnya. Butuh hingga 2 menit; satu run per 10 menit.")}</p>
+          <p className="text-[12px] font-semibold text-[#5A6478]">{pickL("Collects the latest public news for up to 3 active keywords (8 articles each) and analyses it. Takes up to 2 minutes. One run per 10 minutes.", "Mengambil berita publik terbaru untuk hingga 3 kata kunci aktif (8 artikel per kata kunci) lalu menganalisisnya. Butuh hingga 2 menit. Satu run per 10 menit.")}</p>
         </div>
         <button
           type="button"

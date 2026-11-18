@@ -354,7 +354,7 @@ async function detectAlertsNow(workspaceId) {
         // Deduplication: while an unresolved alert for this topic exists (of any age), the issue is still the
         // same one, so it is refreshed instead of raised again. A 7-day look-back used to re-raise an issue
         // that stayed open for more than a week, stacking identical alerts. Titles in either language
-        // ("Negative Sentiment Spike: X" / "Lonjakan Sentimen Negatif: X") contain the topic.
+        // (older "Negative Sentiment Spike: X" and current "Sentimen negatif X melonjak") contain the topic.
         const { data: existingAlerts, error: dedupErr } = await supabase
             .from('alerts')
             .select('id, status, created_at, metadata')
@@ -395,7 +395,8 @@ async function detectAlertsNow(workspaceId) {
         const sources = Array.from(new Set(signals.map((s) => s.platform).filter(Boolean)));
         // Stored once and read by every member, so written in the workspace's content language.
         const id = (await workspaceLanguage(workspaceId)) === "id";
-        const title = id ? `Lonjakan Sentimen Negatif: ${topicKey}` : `Negative Sentiment Spike: ${topicKey}`;
+        // No "Label: name" titles: the name leads, the event follows.
+        const title = id ? `Sentimen negatif ${topicKey} melonjak` : `Negative sentiment about ${topicKey} is spiking`;
         const description = id
             ? `${negativeCount} dari ${totalCount} percakapan terbaru (${roundedRatio}%) bernada negatif untuk ${topicKey}.`
             : `${negativeCount} of ${totalCount} recent signals (${roundedRatio}%) are negative for ${topicKey}.`;

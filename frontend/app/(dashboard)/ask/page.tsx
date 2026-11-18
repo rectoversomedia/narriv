@@ -38,11 +38,11 @@ function describeCoverage(data: { signals: number; windowHours: number; platform
   if (lang === "id") {
     const period = days >= 1 ? `${days} hari terakhir` : `${data.windowHours} jam terakhir`;
     const count = data.signals >= 50 ? `${data.signals} data tersimpan terbaru` : `${data.signals} data tersimpan`;
-    return `Berdasarkan ${count} dari ${period}${platforms ? ` (${platforms})` : ""}.${newsOnly ? " Hanya sumber berita; media sosial belum tercakup." : ""}`;
+    return `Berdasarkan ${count} dari ${period}${platforms ? ` (${platforms})` : ""}.${newsOnly ? " Hanya sumber berita. Media sosial belum tercakup." : ""}`;
   }
   const period = days >= 1 ? `the last ${days} day${days === 1 ? "" : "s"}` : `the last ${data.windowHours} hours`;
   const count = data.signals >= 50 ? `the ${data.signals} most recent stored signals` : `${data.signals} stored signal${data.signals === 1 ? "" : "s"}`;
-  return `Based on ${count} from ${period}${platforms ? ` (${platforms})` : ""}.${newsOnly ? " News sources only; social media is not covered." : ""}`;
+  return `Based on ${count} from ${period}${platforms ? ` (${platforms})` : ""}.${newsOnly ? " News sources only. Social media is not covered." : ""}`;
 }
 
 interface SuggestedCategory {

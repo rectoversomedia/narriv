@@ -945,12 +945,12 @@ export default function CasesPage() {
                         {deadlineInfo ? (
                           <div className="flex items-center gap-1.5">
                             {deadlineInfo.isPast && item.status !== "resolved" && item.status !== "closed" ? (
-                              <span className="inline-block rounded-[6px] bg-[#B42318] px-2 py-1 font-mono text-[11.5px] font-bold leading-tight text-white">
+                              <span className="inline-block rounded-[6px] bg-[#B42318] px-2 py-1 text-[11.5px] font-bold leading-tight text-white">
                                 <span className="block text-[9.5px] uppercase tracking-[0.06em] text-white/80">{pickL("Overdue", "Lewat tenggat")}</span>
                                 {deadlineInfo.formatted}
                               </span>
                             ) : (
-                              <span className="font-mono text-[12px] font-bold text-[#31406B]">{deadlineInfo.formatted}</span>
+                              <span className="text-[12px] font-bold text-[#31406B]">{deadlineInfo.formatted}</span>
                             )}
                           </div>
                         ) : (
@@ -965,7 +965,7 @@ export default function CasesPage() {
                         <p className="text-[12px] font-black text-slate-900">
                           {formatRelativeTime(item.createdAt, locale)}
                         </p>
-                        <p className="mt-1 font-mono text-[11.5px] font-medium text-[#5A6478]">
+                        <p className="mt-1 text-[11.5px] font-medium text-[#5A6478]">
                           {formatDateTime(item.createdAt, locale)}
                         </p>
                       </td>

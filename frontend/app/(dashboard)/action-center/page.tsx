@@ -206,7 +206,7 @@ export default function ActionCenterPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={cn("rounded-[8px] px-2.5 py-1 text-[12px] font-bold", tone.stamp)}>{tone.label}</span>
                   {a.urgency && to.has(`urgency_${a.urgency}`) ? <span className="nv-stamp">{to(`urgency_${a.urgency}`)}</span> : null}
-                  <span className="font-mono text-[11.5px] font-medium text-[#5F6B94]">{L(`${a.evidenceCount} evidence`, `${a.evidenceCount} bukti`)}</span>
+                  <span className="text-[11.5px] font-medium text-[#5F6B94]">{L(`${a.evidenceCount} evidence`, `${a.evidenceCount} bukti`)}</span>
                 </div>
                 <h2 className="mt-4 text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] sm:text-[30px]">{actionTitle(a)}</h2>
                 {a.relatedNarrative?.title ? (
@@ -275,7 +275,7 @@ export default function ActionCenterPage() {
                       <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#12A66A] text-white"><CheckCircle2 size={13} /></span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[14.5px] font-bold text-[#101334] group-hover:text-[#3B52F5]">{actionTitle(a)}</span>
-                        <span className="mt-0.5 block truncate font-mono text-[11.5px] font-medium text-[#5F6B94]">{a.relatedNarrative?.title ? `${a.relatedNarrative.title} · ` : ""}{L(`${items} follow-ups`, `${items} tindak lanjut`)} · {L(`${a.evidenceCount} evidence`, `${a.evidenceCount} bukti`)}</span>
+                        <span className="mt-0.5 block truncate text-[11.5px] font-medium text-[#5F6B94]">{a.relatedNarrative?.title ? `${a.relatedNarrative.title} · ` : ""}{L(`${items} follow-ups`, `${items} tindak lanjut`)} · {L(`${a.evidenceCount} evidence`, `${a.evidenceCount} bukti`)}</span>
                       </span>
                       <ArrowRight size={16} className="shrink-0 text-[#9AA3BC] transition group-hover:text-[#3B52F5]" />
                     </Link>

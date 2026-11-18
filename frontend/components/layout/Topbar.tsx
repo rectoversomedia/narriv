@@ -373,7 +373,7 @@ export function Topbar() {
       <Link href="/" className="flex shrink-0 flex-col items-center justify-self-center lg:hidden" aria-label="Narriv dashboard">
         <Image src="/brand/logo-h-nv.webp" alt="Narriv" width={96} height={36} priority unoptimized className="h-11 w-auto max-w-none object-contain" />
         {/* Right under the wordmark (the image has ~10% empty space below the letters). */}
-        <span className="-mt-[1px] font-mono text-[7.5px] font-bold uppercase leading-none tracking-[0.1em] text-[#5F6B94]">Narrative Intelligence</span>
+        <span className="-mt-[1px] text-[7.5px] font-bold uppercase leading-none tracking-[0.1em] text-[#5F6B94]">Narrative Intelligence</span>
       </Link>
       <div ref={searchRef} className={`lg:relative lg:block lg:w-full lg:max-w-[530px] ${mobileSearch ? "fixed inset-x-4 top-[96px] z-[110] block rounded-[12px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)]" : "hidden"}`}>
         <label className="flex h-[48px] items-center gap-4 rounded-[8px] border border-border bg-slate-50 px-5 text-[var(--text-soft)] focus-within:border-[#465FFF]/50 focus-within: transition-all">

@@ -48,7 +48,7 @@ export function MonitoringProfileCard({ settings }: { settings?: WorkspaceSettin
       id: "gov",
       icon: Landmark,
       title: L("Government", "Pemerintahan"),
-      body: L("Public services, policies and citizen sentiment; hoaxes about programmes and the office.", "Layanan publik, kebijakan, dan suara warga; hoaks soal program dan instansi."),
+      body: L("Public services, policies and citizen sentiment. Hoaxes about programmes and the office.", "Layanan publik, kebijakan, dan suara warga. Hoaks soal program dan instansi."),
     },
     {
       id: "cve",
@@ -115,8 +115,8 @@ export function MonitoringProfileCard({ settings }: { settings?: WorkspaceSettin
       {useCase === "cve" ? (
         <ul className="mt-4 grid gap-2 text-[12.5px] font-medium leading-relaxed text-[#31406B] md:grid-cols-3">
           <li className="py-1"><b className="font-black text-[#101334]">{L("Narratives, not people.", "Narasi, bukan orang.")}</b> {L("Narriv tracks what spreads and where, never builds profiles of individuals.", "Narriv memantau narasi yang menyebar dan di mana, tidak membuat profil individu.")}</li>
-          <li className="py-1"><b className="font-black text-[#101334]">{L("A person decides.", "Manusia yang memutuskan.")}</b> {L("AI only suggests a category; each one is confirmed or dismissed by your team.", "AI hanya menyarankan kategori; tim Anda yang mengonfirmasi atau menolaknya.")}</li>
-          <li className="py-1"><b className="font-black text-[#101334]">{L("Public sources only.", "Hanya sumber publik.")}</b> {L("News and public posts; never private groups or chats.", "Berita dan postingan publik; tidak pernah grup atau percakapan tertutup.")}</li>
+          <li className="py-1"><b className="font-black text-[#101334]">{L("A person decides.", "Manusia yang memutuskan.")}</b> {L("AI only suggests a category. Each one is confirmed or dismissed by your team.", "AI hanya menyarankan kategori. Tim Anda yang mengonfirmasi atau menolaknya.")}</li>
+          <li className="py-1"><b className="font-black text-[#101334]">{L("Public sources only.", "Hanya sumber publik.")}</b> {L("News and public posts. Never private groups or chats.", "Berita dan postingan publik. Tidak pernah grup atau percakapan tertutup.")}</li>
         </ul>
       ) : null}
       {save.isPending ? <p className="mt-3 flex items-center gap-2 text-[12px] font-semibold text-[#5A6478]"><Loader2 size={13} className="animate-spin" aria-hidden="true" />{L("Saving…", "Menyimpan…")}</p> : null}
