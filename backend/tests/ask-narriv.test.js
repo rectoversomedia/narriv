@@ -7,7 +7,7 @@ import { supabaseModuleFor } from './helpers/fake-supabase.js';
 process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'test-openai-key'; // fake; client is injected
 const db = createMemoryDb();
 jest.unstable_mockModule('../src/lib/supabase.js', () => supabaseModuleFor(db));
-const { askNarriv, dedupeClustersByTitle } = await import('../src/lib/ask-narriv.js');
+const { askNarriv, dedupeClustersByTitle, windowFromQuestion } = await import('../src/lib/ask-narriv.js');
 
 const WS = '11111111-1111-1111-1111-111111111111';
 const ctx = {
@@ -78,8 +78,19 @@ describe('askNarriv', () => {
     const openai = openaiReturning(JSON.stringify({ answer: 'ok', grounded: true, sources: [{ id: 'cl-real', kind: 'cluster' }] }));
     const r = await askNarriv({ workspaceId: WS, question: 'q', windowHours: 168 }, { openai, checkBudget: async () => ({ allowed: true }), recordUsage: async () => {} });
     const prompt = openai.chat.completions.create.mock.calls[0][0].messages.map((m) => m.content).join('\n');
-    expect(prompt).toContain('cl-real | n=1 | Real narrative');
+    expect(prompt).toMatch(/cl-real \| n=1 \| \S+ \| Real narrative/);
     expect(prompt).not.toContain('cl-seeded');
     expect(r.sources).toEqual([{ id: 'cl-real', kind: 'narrative', title: 'Real narrative', url: null }]);
   });
+});
+
+describe('Ask Narriv period from the question', () => {
+  it.each([
+    ['Isu apa yang paling perlu diwaspadai bulan ini?', 720],
+    ['What happened this month?', 720],
+    ['Ada apa minggu ini?', 168],
+    ['Ringkas 14 hari terakhir', 336],
+    ['Apa yang terjadi hari ini?', 24],
+    ['Siapa yang paling sering memberitakan?', null],
+  ])('%s -> %s', (q, h) => expect(windowFromQuestion(q)).toBe(h));
 });

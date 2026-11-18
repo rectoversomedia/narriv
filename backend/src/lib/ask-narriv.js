@@ -34,8 +34,8 @@ Rules:
 async function gatherContext(workspaceId, windowHours) {
     const sinceIso = new Date(Date.now() - windowHours * 3600 * 1000).toISOString();
     const [signals, alerts, clusters] = await Promise.all([
-        baseSupabaseAdmin.from("signals").select("id, sentiment, platform, captured_at, title, url").eq("workspace_id", workspaceId).gte("captured_at", sinceIso).order("captured_at", { ascending: false }).limit(50).then((r) => r.data || []),
-        baseSupabaseAdmin.from("alerts").select("id, title, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", sinceIso).limit(20).then((r) => r.data || []),
+        baseSupabaseAdmin.from("signals").select("id, sentiment, platform, captured_at, title, url").eq("workspace_id", workspaceId).gte("captured_at", sinceIso).order("captured_at", { ascending: false }).limit(300).then((r) => r.data || []),
+        baseSupabaseAdmin.from("alerts").select("id, title, type, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", sinceIso).limit(20).then((r) => r.data || []),
         // Linked member counts, not the stored counter: clusters without linked
         // signals have no evidence and are not offered to the model.
         baseSupabaseAdmin.from("narrative_clusters").select("id, title, sentiment, updated_at, narrative_cluster_signals(signal_id)").eq("workspace_id", workspaceId).order("updated_at", { ascending: false, nullsFirst: false }).limit(50)
@@ -105,9 +105,24 @@ export function platformCoverage(signals) {
     return counts;
 }
 
-export async function askNarriv({ workspaceId, question, windowHours = 24 }, deps = {}) {
+/**
+ * Period the question asks about ("bulan ini", "minggu ini", "30 hari", "this month"), in hours; null when it names
+ * none. Without this, "what should we watch this month?" was answered from the last 24 hours only.
+ */
+export function windowFromQuestion(question) {
+    const q = String(question || "").toLowerCase();
+    const n = q.match(/(\d{1,3})\s*(hari|days?)/);
+    if (n) return Math.min(Math.max(Number(n[1]), 1), 90) * 24;
+    if (/\b(bulan|month|30 hari|sebulan)\b/.test(q)) return 30 * 24;
+    if (/\b(minggu|pekan|week|seminggu|sepekan)\b/.test(q)) return 7 * 24;
+    if (/\b(hari ini|today|24 jam|kemarin|yesterday)\b/.test(q)) return 24;
+    return null;
+}
+
+export async function askNarriv({ workspaceId, question, windowHours = 24, explicitWindow = false }, deps = {}) {
     if (!workspaceId) return { grounded: false, error: "workspaceId is required" };
     if (!question || typeof question !== "string") return { grounded: false, error: "question is required" };
+    if (!explicitWindow) windowHours = windowFromQuestion(question) ?? windowHours;
 
     const ctx = await (deps.gatherContext || gatherContext)(workspaceId, windowHours);
     const dataIsEmpty = ctx.signals.length === 0 && ctx.alerts.length === 0 && ctx.clusters.length === 0;
@@ -123,10 +138,12 @@ export async function askNarriv({ workspaceId, question, windowHours = 24 }, dep
         `Narrative clusters: ${ctx.clusters.length}\n\n` +
         `Recent signals (id | sent | platform | title):\n` +
         ctx.signals.slice(0, 10).map((s) => `  ${s.id} | ${s.sentiment || "?"} | ${s.platform || "?"} | ${(s.title || "").slice(0, 80)}`).join("\n") +
-        `\n\nActive alerts (id | severity | status):\n` +
-        ctx.alerts.map((a) => `  ${a.id} | ${a.severity || "?"} | ${a.status || "?"}`).join("\n") +
-        `\n\nLargest narrative clusters (id | signal_count | title):\n` +
-        ctx.clusters.map((c) => `  ${c.id} | n=${c.signal_count} | ${c.title}`).join("\n");
+        `\n\nNegative signals in the window (id | platform | title):\n` +
+        ctx.signals.filter((s) => String(s.sentiment || "").toLowerCase() === "negative").slice(0, 10).map((s) => `  ${s.id} | ${s.platform || "?"} | ${(s.title || "").slice(0, 80)}`).join("\n") +
+        `\n\nAlerts (id | type | severity | status | title). Type "opportunity" is good news to amplify, not a risk:\n` +
+        ctx.alerts.map((a) => `  ${a.id} | ${a.type || "risk"} | ${a.severity || "?"} | ${a.status || "?"} | ${(a.title || "").slice(0, 80)}`).join("\n") +
+        `\n\nLargest narrative clusters (id | signal_count | sentiment | title):\n` +
+        ctx.clusters.map((c) => `  ${c.id} | n=${c.signal_count} | ${c.sentiment || "?"} | ${c.title}`).join("\n");
 
     if (dataIsEmpty) {
         return {

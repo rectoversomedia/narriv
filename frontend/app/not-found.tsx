@@ -43,7 +43,7 @@ export default function NotFound() {
 
         {/* Help Text */}
         <p className="mt-12 text-sm text-[#5A6478]">
-          If you think this is an error, please contact support.
+          {L("If you think this is an error, please contact support.", "Kalau menurut Anda ini keliru, hubungi tim dukungan kami.")}
         </p>
       </div>
     </div>

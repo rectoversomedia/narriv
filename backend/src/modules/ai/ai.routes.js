@@ -383,7 +383,8 @@ router.post("/ask", rateLimiters.aiGeneration(), async (req, res) => {
         if (!ws) return;
         const question = req.body?.question;
         const win = windowParam(req);
-        const out = await askNarriv({ workspaceId: ws, question, windowHours: win });
+        const explicitWindow = req.body?.windowHours != null || req.query?.windowHours != null;
+        const out = await askNarriv({ workspaceId: ws, question, windowHours: win, explicitWindow });
         res.json(out);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
