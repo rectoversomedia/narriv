@@ -226,8 +226,8 @@ export function IfItGrows({ en }: P) {
           [2, t("Peringatan ke PIC", "Alert to the owner"), t("Tim Corporate Communication menerima peringatan berisi bukti, tenggat, dan langkah pertama.", "Corporate Communication gets an alert with evidence, a deadline and the first step."), NEG],
           [3, t("Rencana dan laporan", "Plan and report"), t("AI menyusun draf rencana respons. Ringkasan satu halaman siap untuk direksi.", "AI drafts a response plan. A one-page summary is ready for the board."), BLUE],
         ].map(([n, title, text, c]) => (
-          <Card key={String(n)} style={{ minHeight: 380, padding: 44 }}>
-            <Num n={n as number} c={c as string} />
+          <Card key={String(n)} style={{ minHeight: 380, padding: 44, textAlign: "center" }}>
+            <span style={{ display: "flex", justifyContent: "center" }}><Num n={n as number} c={c as string} /></span>
             <p style={{ margin: "30px 0 0", fontSize: 40, fontWeight: 800, letterSpacing: "-0.02em" }}>{title as string}</p>
             <p style={{ margin: "16px 0 0", fontSize: 26, lineHeight: 1.5, color: MUTED }}>{text as string}</p>
           </Card>
@@ -278,12 +278,9 @@ export function WhatIsNI({ en }: P) {
     <Light tag={t("Apa itu", "What it is")} v={1}>
       <Head kicker={t("Apa itu narrative intelligence", "What narrative intelligence is")} title={t(<>Bukan sekadar menghitung berita, tapi <Brush>membaca ceritanya.</Brush></>, <>Not counting mentions, <Brush>reading the story.</Brush></>)} sub={t("Media monitoring biasa memberi daftar berita. Narrative intelligence memberi tahu cerita apa yang sedang terbentuk tentang Anda, seberapa cepat menyebar, dan apa yang perlu dilakukan.", "Media monitoring gives you a list of articles. Narrative intelligence tells you which story is forming about you, how fast it spreads and what to do next.")} />
       <div style={{ position: "absolute", left: 96, right: 96, top: 600, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32 }}>
-        {steps.map(([I, c, h, d], k) => (
+        {steps.map(([, c, h, d], k) => (
           <Card key={h} style={{ padding: "40px 40px 44px", textAlign: "center" }}>
-            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-              <span style={{ display: "inline-flex", width: 64, height: 64, borderRadius: 18, alignItems: "center", justifyContent: "center", background: c }}><I size={34} color="#fff" aria-hidden /></span>
-              <Num n={k + 1} c={INK} s={44} />
-            </span>
+            <span style={{ display: "flex", justifyContent: "center" }}><Num n={k + 1} c={c} s={64} /></span>
             <p style={{ margin: "26px 0 0", fontSize: 40, fontWeight: 800, letterSpacing: "-0.02em" }}>{h}</p>
             <p style={{ margin: "14px 0 0", fontSize: 26, lineHeight: 1.5, color: MUTED }}>{d}</p>
           </Card>
