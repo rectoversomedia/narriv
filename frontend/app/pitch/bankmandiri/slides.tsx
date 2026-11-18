@@ -1,7 +1,7 @@
 // /pitch/bankmandiri: the Narriv deck prepared for a Bank Mandiri meeting. The data slides use Narriv's real
 // monitoring of public news and YouTube about Bank Mandiri, 19 Oct to 18 Nov 2026 (workspace "Narriv Demo — Bank
 // Mandiri"); the feature slides reuse the main deck. No Bank Mandiri logo or branding: the name only.
-import { AlertTriangle, Ear, Plus, FileText, Layers, Megaphone, ShieldAlert, Sparkles, Zap } from "lucide-react";
+import { AlertTriangle, BellRing, Bot, ClipboardList, Ear, Eye, Plus, Radar, Users, FileText, Layers, Megaphone, ShieldAlert, Sparkles, Zap } from "lucide-react";
 import { AMBER, BLUE, Brush, Card, Dark, Dot, INK, INKED, Light, MONO, MUTED, NEG, NEU, Num, POS, Ribbon, Stamp, Head } from "../kit";
 import { Alerts, AiVisibility, Bar, Closing, Reports, Solution, Trust } from "../slides";
 
@@ -368,6 +368,102 @@ export function ReportingPlan({ en }: P) {
   );
 }
 
+const DAILY: Record<string, number> = { "10-19": 10, "10-20": 15, "10-21": 8, "10-22": 16, "10-25": 1, "10-26": 1, "10-29": 2, "10-30": 3, "10-31": 7, "11-01": 2, "11-02": 15, "11-03": 11, "11-04": 5, "11-06": 1, "11-11": 1, "11-12": 3, "11-13": 3, "11-16": 3, "11-17": 5, "11-18": 10 };
+function dailySeries() {
+  const out: number[] = [];
+  for (let d = new Date(Date.UTC(2026, 9, 19)); d <= new Date(Date.UTC(2026, 10, 18)); d.setUTCDate(d.getUTCDate() + 1)) {
+    out.push(DAILY[d.toISOString().slice(5, 10)] ?? 0);
+  }
+  return out;
+}
+
+export function DashboardView({ en }: P) {
+  const t = tr(en);
+  const series = dailySeries();
+  const W = 1000, H = 230, max = 16;
+  const pts = series.map((v, i) => [(i / (series.length - 1)) * W, H - (v / max) * (H - 16)] as const);
+  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const kpis: Array<[string, string, string]> = [["122", t("Percakapan", "Mentions"), INK], ["7%", t("Negatif", "Negative"), NEG], ["60%", t("Positif", "Positive"), POS], ["0", t("Peringatan terbuka", "Open alerts"), INK]];
+  const issues: Array<[string, number, string]> = [[t("Rekomendasi saham & kurs harian", "Daily stock & FX picks"), 13, NEU], [t("Citra sosial & kinerja", "Social image & results"), 5, POS], [t("Perluasan layanan & inklusi", "Service reach & inclusion"), 4, POS], [t("Sorotan KUR ASN", "KUR civil-servant story"), 2, AMBER]];
+  return (
+    <Light tag={t("Tampilan dashboard", "The dashboard")} v={1}>
+      <Head kicker={t("Yang tim Anda lihat setiap hari", "What your team sees every day")} title={t(<>Semua dalam <Brush>satu layar.</Brush></>, <>Everything on <Brush>one screen.</Brush></>)} />
+      <div className="pc" style={{ position: "absolute", left: 96, right: 96, top: 350, bottom: 130, borderRadius: 30, background: "#fff", overflow: "hidden", ...INKED }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 28px", background: "#EEF1F9", borderBottom: "2px solid #E2E6F2" }}>
+          {["#F87171", "#FBBF24", "#34D399"].map((c) => <span key={c} style={{ width: 14, height: 14, borderRadius: 99, background: c }} />)}
+          <span style={{ marginLeft: 18, padding: "6px 18px", borderRadius: 10, background: "#fff", fontFamily: MONO, fontSize: 17, color: MUTED }}>app.narriv.digital</span>
+        </div>
+        <div style={{ padding: "28px 40px", display: "grid", gridTemplateColumns: "1fr 520px", gap: 36 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <span style={{ fontSize: 32, fontWeight: 800 }}>Bank Mandiri</span>
+              <span style={{ padding: "6px 16px", borderRadius: 999, background: "#E5F6EE", color: "#047857", fontSize: 20, fontWeight: 800 }}>{t("Aman", "Safe")}</span>
+              <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 17, color: MUTED }}>{t("30 hari terakhir", "Last 30 days")}</span>
+            </div>
+            <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+              {kpis.map(([v, l, c]) => (
+                <div key={l} style={{ padding: "16px 20px", borderRadius: 18, border: "2px solid #E2E6F2" }}>
+                  <p style={{ margin: 0, fontSize: 44, fontWeight: 800, lineHeight: 1, color: c }}>{v}</p>
+                  <p style={{ margin: "8px 0 0", fontSize: 18, fontWeight: 700, color: MUTED }}>{l}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ margin: "24px 0 10px", fontFamily: MONO, fontSize: 17, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED }}>{t("Percakapan per hari", "Mentions per day")}</p>
+            <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 200 }} preserveAspectRatio="none" aria-hidden>
+              <path d={`${line} L${W},${H} L0,${H} Z`} fill="rgba(70,95,255,.12)" />
+              <path d={line} fill="none" stroke={BLUE} strokeWidth={4} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            </svg>
+            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: MONO, fontSize: 15, color: MUTED }}><span>19 {t("Okt", "Oct")}</span><span>2 Nov</span><span>18 Nov</span></div>
+          </div>
+          <div>
+            <p style={{ margin: "4px 0 14px", fontFamily: MONO, fontSize: 17, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED }}>{t("Isu teratas", "Top issues")}</p>
+            <div style={{ display: "grid", gap: 12 }}>
+              {issues.map(([name, n, c]) => (
+                <div key={name} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", borderRadius: 16, background: "#F5F7FC" }}>
+                  <Dot c={c} s={14} /><span style={{ fontSize: 21, fontWeight: 700 }}>{name}</span><span style={{ marginLeft: "auto", fontSize: 22, fontWeight: 800 }}>{n}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 20, padding: "18px 20px", borderRadius: 18, background: INK, color: "#fff" }}>
+              <p style={{ margin: 0, fontFamily: MONO, fontSize: 15, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#A5B4FF" }}>{t("Perlu diwaspadai", "Watch")}</p>
+              <p style={{ margin: "8px 0 0", fontSize: 21, lineHeight: 1.4 }}>{t("CBA menyoroti dugaan KUR ke ASN · 16 Nov", "CBA questions KUR loans to civil servants · 16 Nov")}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p style={{ position: "absolute", left: 96, bottom: 26, margin: 0, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B93B0" }}>{t("Ilustrasi tampilan dengan data asli Bank Mandiri · 19 Okt – 18 Nov 2026", "Layout illustration with real Bank Mandiri data · 19 Oct – 18 Nov 2026")}</p>
+    </Light>
+  );
+}
+
+export function Capabilities({ en }: P) {
+  const t = tr(en);
+  const caps: Array<[typeof Ear, string, string]> = [
+    [Radar, t("Pemantauan per jam", "Hourly monitoring"), t("Berita online dan YouTube, media sosial sebagai add-on.", "Online news and YouTube; social media as an add-on.")],
+    [Layers, t("Isu & nada otomatis", "Issues & tone"), t("Berita dikelompokkan jadi isu, dinilai positif/negatif.", "Stories grouped into issues and scored for tone.")],
+    [BellRing, t("Peringatan dini", "Early alerts"), t("Lonjakan negatif langsung dikirim ke PIC dengan tenggat.", "Negative spikes go straight to an owner with a deadline.")],
+    [ClipboardList, t("Rencana aksi", "Action plans"), t("Draf langkah respons yang bisa dibagi dan dipantau tim.", "Draft response steps the team can assign and track.")],
+    [Bot, t("Briefing & Ask Narriv", "Brief & Ask Narriv"), t("Ringkasan pagi dan tanya jawab dengan sumber dikutip.", "Morning summary and Q&A with cited sources.")],
+    [Eye, t("AI Visibility", "AI Visibility"), t("Cara ChatGPT dan AI lain menjawab soal Bank Mandiri.", "How ChatGPT and other AIs answer about Bank Mandiri.")],
+    [FileText, t("Laporan otomatis", "Automatic reports"), t("PDF, Excel, CSV; Bahasa Indonesia atau English.", "PDF, Excel, CSV; Indonesian or English.")],
+    [Users, t("Tim & akses", "Team & access"), t("Banyak anggota, peran, dan workspace per merek.", "Several members, roles, and a workspace per brand.")],
+  ];
+  return (
+    <Dark tag={t("Kemampuan", "Capabilities")} glow="top">
+      <Head dark kicker={t("Semua yang termasuk", "Everything included")} title={t(<>Satu platform, <Brush>dari deteksi sampai laporan.</Brush></>, <>One platform, <Brush>from detection to report.</Brush></>)} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 420, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24 }}>
+        {caps.map(([I, h, d]) => (
+          <div key={h} className="pc" style={{ padding: "30px 30px 34px", borderRadius: 26, background: "#fff", color: INK, ...INKED }}>
+            <span style={{ display: "inline-flex", width: 56, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center", background: BLUE }}><I size={30} color="#fff" aria-hidden /></span>
+            <p style={{ margin: "20px 0 0", fontSize: 29, fontWeight: 800, letterSpacing: "-0.02em" }}>{h}</p>
+            <p style={{ margin: "10px 0 0", fontSize: 22, lineHeight: 1.45, color: MUTED }}>{d}</p>
+          </div>
+        ))}
+      </div>
+    </Dark>
+  );
+}
+
 export function mandiriDeck(en: boolean) {
   return [
     <MandiriCover key="cover" en={en} />,
@@ -380,6 +476,8 @@ export function mandiriDeck(en: boolean) {
     <GoodNews key="good" en={en} />,
     <Sources key="sources" en={en} />,
     <Solution key="solution" en={en} />,
+    <DashboardView key="dash" en={en} />,
+    <Capabilities key="caps" en={en} />,
     <IfItGrows key="grows" en={en} />,
     <Alerts key="alerts" en={en} sample={en
       ? { title: "KUR-to-civil-servant story is spreading", text: "Coverage of alleged KUR loans to civil servants doubled in 24 hours and is now quoted by national outlets.", owner: "Corporate Communication", due: "In 4 hours", todo: "Prepare a statement on KUR verification, brief the spokesperson, check coverage every hour.", note: "Example · simulated alert, not a real event", level: "High" }
