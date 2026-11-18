@@ -235,10 +235,17 @@ describe('Claude request shaping (Opus 5.5)', () => {
   it('omits sampling params and sets effort plus server-side fallback for claude-opus-5-5', () => {
     const req = buildClaudeRequest({ model: 'claude-opus-5-5', user: 'hi', temperature: 0.4, maxTokens: 512 });
     expect(req).not.toHaveProperty('temperature');
-    expect(req.output_config).toEqual({ effort: 'medium' });
+    expect(req.output_config).toEqual({ effort: 'low' }); // default effort is low (cost)
     expect(req.betas).toEqual(['server-side-fallback-2026-07-01']);
     expect(req.fallbacks).toBe('default');
     expect(req.max_tokens).toBe(512);
+  });
+
+  it('pins every Claude call to the lock model when AI_CLAUDE_MODEL_LOCK is set', () => {
+    process.env.AI_CLAUDE_MODEL_LOCK = 'claude-haiku-5-5';
+    try {
+      expect(buildClaudeRequest({ model: 'claude-opus-5-5', user: 'hi' }).model).toBe('claude-haiku-5-5');
+    } finally { delete process.env.AI_CLAUDE_MODEL_LOCK; }
   });
 
   it('keeps temperature for models that accept sampling', () => {

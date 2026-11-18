@@ -38,13 +38,13 @@ export function getAnthropicClient() {
 }
 
 /**
- * Premium reasoning model. Claude Opus 5.5 (`claude-opus-5-5`) is the default;
- * override with ANTHROPIC_MODEL. No production workload is routed here unless
+ * Default Claude model: Haiku 5.5 (`claude-haiku-5-5`), the cheapest; override with ANTHROPIC_MODEL, or pin every
+ * call with AI_CLAUDE_MODEL_LOCK. No production workload is routed here unless
  * a tier is explicitly configured to a claude-* model.
  */
-export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-5-5";
+export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-5-5";
 export const ANTHROPIC_MAX_TOKENS = Number(process.env.ANTHROPIC_MAX_TOKENS || 4096);
-export const ANTHROPIC_EFFORT = process.env.ANTHROPIC_EFFORT || "medium";
+export const ANTHROPIC_EFFORT = process.env.ANTHROPIC_EFFORT || "low";
 
 // Capabilities per model family (see Anthropic model docs). `sampling: false`
 // means temperature/top_p are rejected; `effort` means output_config.effort is
@@ -67,7 +67,10 @@ export function modelCapabilities(model) {
 }
 
 /** Build a Messages API request that respects the model's capabilities. */
-export function buildClaudeRequest({ model = ANTHROPIC_MODEL, system, user, maxTokens = ANTHROPIC_MAX_TOKENS, temperature, effort = ANTHROPIC_EFFORT }) {
+export function buildClaudeRequest({ model: askedModel = ANTHROPIC_MODEL, system, user, maxTokens = ANTHROPIC_MAX_TOKENS, temperature, effort = ANTHROPIC_EFFORT }) {
+    // Cost lock: with AI_CLAUDE_MODEL_LOCK set (production: claude-haiku-5-5) every Claude call uses that model,
+    // whatever a route or tier asks for, so nothing can quietly run on Sonnet or Opus.
+    const model = process.env.AI_CLAUDE_MODEL_LOCK || askedModel;
     const caps = modelCapabilities(model);
     const req = {
         model,
