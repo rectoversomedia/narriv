@@ -1,7 +1,7 @@
 // /pitch/bankmandiri: the Narriv deck prepared for a Bank Mandiri meeting. The data slides use Narriv's real
 // monitoring of public news and YouTube about Bank Mandiri, 19 Oct to 18 Nov 2026 (workspace "Narriv Demo — Bank
 // Mandiri"); the feature slides reuse the main deck. No Bank Mandiri logo or branding: the name only.
-import { AlertTriangle, Sparkles } from "lucide-react";
+import { AlertTriangle, Ear, FileText, Layers, Megaphone, ShieldAlert, Sparkles, Zap } from "lucide-react";
 import { AMBER, BLUE, Brush, Card, Dark, Dot, INK, INKED, Light, MONO, MUTED, NEG, NEU, Num, POS, Ribbon, Stamp, Head } from "../kit";
 import { Alerts, AiVisibility, Bar, Closing, Reports, Solution, Trust } from "../slides";
 
@@ -254,9 +254,110 @@ export function Pilot({ en }: P) {
   );
 }
 
+export function WhatIsNI({ en }: P) {
+  const t = tr(en);
+  const steps: Array<[typeof Ear, string, string, string]> = [
+    [Ear, BLUE, t("Mendengar", "Listen"), t("Mengumpulkan berita online dan video publik yang menyebut nama Anda, setiap jam.", "Collects every public news story and video that names you, every hour.")],
+    [Layers, "#8B5CF6", t("Memahami", "Understand"), t("Berita yang membahas hal sama digabung jadi satu isu, lalu dinilai nada, besar, dan arahnya.", "Stories about the same thing become one issue, scored for tone, size and direction.")],
+    [Zap, "#EC4899", t("Bertindak", "Act"), t("Peringatan dini, draf respons, dan laporan ringkas untuk tim dan direksi.", "Early warnings, draft responses and short reports for the team and the board.")],
+  ];
+  return (
+    <Light tag={t("Apa itu", "What it is")} v={1}>
+      <Head kicker={t("Apa itu narrative intelligence", "What narrative intelligence is")} title={t(<>Bukan sekadar menghitung berita, tapi <Brush>membaca ceritanya.</Brush></>, <>Not counting mentions, <Brush>reading the story.</Brush></>)} sub={t("Media monitoring biasa memberi daftar berita. Narrative intelligence memberi tahu cerita apa yang sedang terbentuk tentang Anda, seberapa cepat menyebar, dan apa yang perlu dilakukan.", "Media monitoring gives you a list of articles. Narrative intelligence tells you which story is forming about you, how fast it spreads and what to do next.")} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 600, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32 }}>
+        {steps.map(([I, c, h, d], k) => (
+          <Card key={h} style={{ padding: "40px 40px 44px" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 18 }}>
+              <span style={{ display: "inline-flex", width: 64, height: 64, borderRadius: 18, alignItems: "center", justifyContent: "center", background: c }}><I size={34} color="#fff" aria-hidden /></span>
+              <span style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: MUTED }}>0{k + 1}</span>
+            </span>
+            <p style={{ margin: "26px 0 0", fontSize: 40, fontWeight: 800, letterSpacing: "-0.02em" }}>{h}</p>
+            <p style={{ margin: "14px 0 0", fontSize: 26, lineHeight: 1.5, color: MUTED }}>{d}</p>
+          </Card>
+        ))}
+      </div>
+    </Light>
+  );
+}
+
+export function ForMandiri({ en }: P) {
+  const t = tr(en);
+  const uses: Array<[typeof Ear, string, string, string]> = [
+    [ShieldAlert, NEG, t("Tangkap isu sebelum membesar", "Catch issues before they grow"), t("Sorotan KUR ke ASN dan kredit jumbo tertangkap otomatis dan langsung dikelompokkan jadi isu yang dipantau.", "The KUR and jumbo-loan stories were caught automatically and grouped into tracked issues.")],
+    [Layers, BLUE, t("Pisahkan per merek", "One view per brand"), t("Bank Mandiri, Livin', dan Mandiri Sekuritas dipantau terpisah, jadi jelas mana yang tertekan.", "Bank Mandiri, Livin' and Mandiri Sekuritas tracked apart, so you see which one is under pressure.")],
+    [Megaphone, POS, t("Perkuat kabar baik", "Amplify good news"), t("ATM Emas dan penyaluran BSU lewat Livin' sedang naik. Tim bisa ikut mengangkatnya selagi ramai.", "Gold ATMs and BSU payouts via Livin' are rising. The team can ride them while they trend.")],
+    [FileText, AMBER, t("Laporan siap direksi", "Board-ready reports"), t("Ringkasan satu halaman tiap Senin: status, isu utama, dan langkah yang disarankan.", "A one-page Monday summary: status, top issues and next steps.")],
+  ];
+  return (
+    <Dark tag={t("Untuk Bank Mandiri", "For Bank Mandiri")} glow="left">
+      <Head dark kicker={t("Fungsinya dalam kasus ini", "What it does here")} title={t(<>Empat hal yang <Brush>langsung terpakai.</Brush></>, <>Four things you <Brush>use from day one.</Brush></>)} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 420, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 28 }}>
+        {uses.map(([I, c, h, d]) => (
+          <div key={h} className="pc" style={{ display: "flex", gap: 28, padding: "36px 40px", borderRadius: 30, background: "#fff", color: INK, ...INKED }}>
+            <span style={{ display: "inline-flex", flexShrink: 0, width: 64, height: 64, borderRadius: 18, alignItems: "center", justifyContent: "center", background: c }}><I size={34} color="#fff" aria-hidden /></span>
+            <span>
+              <p style={{ margin: 0, fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em" }}>{h}</p>
+              <p style={{ margin: "12px 0 0", fontSize: 25, lineHeight: 1.5, color: MUTED }}>{d}</p>
+            </span>
+          </div>
+        ))}
+      </div>
+    </Dark>
+  );
+}
+
+export function TrackRecord({ en }: P) {
+  const t = tr(en);
+  const cases: Array<[string, string, string]> = [
+    ["FIFGROUP", "89%", t("sentimen positif, 3,2 juta+ views organik", "positive sentiment, 3.2M+ organic views")],
+    ["Prudential", "3.000+", t("leads dari kampanye digital", "leads from digital campaigns")],
+    ["BRImo · UOB · AstraPay", t("Akuisisi", "Acquisition"), t("kampanye digital untuk aplikasi keuangan", "digital campaigns for finance apps")],
+    [t("Aplikasi fintech", "Fintech app"), "2,7 → 4,5", t("rating aplikasi lewat program app growth", "app rating through an app growth programme")],
+  ];
+  return (
+    <Light tag={t("Tim di balik Narriv", "The team behind Narriv")} v={2}>
+      <Head kicker="Rectoverso Media" title={t(<>Sudah terbiasa menjaga <Brush>reputasi brand keuangan.</Brush></>, <>Used to guarding <Brush>finance brands.</Brush></>)} sub={t("Narriv dibangun oleh Rectoverso Media, yang sejak 2020 menangani 100+ brand. Ini hasil kerja tim, bukan hasil Narriv.", "Narriv is built by Rectoverso Media, working with 100+ brands since 2020. These are the team's results, not Narriv's.")} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 560, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 28 }}>
+        {cases.map(([who, big, d]) => (
+          <Card key={who} style={{ padding: "36px 34px 40px" }}>
+            <p style={{ margin: 0, fontFamily: MONO, fontSize: 20, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: BLUE }}>{who}</p>
+            <p style={{ margin: "22px 0 0", fontSize: 64, lineHeight: 1, fontWeight: 800, letterSpacing: "-0.04em" }}>{big}</p>
+            <p style={{ margin: "16px 0 0", fontSize: 24, lineHeight: 1.45, color: MUTED }}>{d}</p>
+          </Card>
+        ))}
+      </div>
+    </Light>
+  );
+}
+
+export function Faq({ en }: P) {
+  const t = tr(en);
+  const qa: Array<[string, string]> = [
+    [t("Datanya dari mana?", "Where does the data come from?"), t("Berita online dan YouTube publik, dicek tiap jam. Setiap angka bisa diklik sampai ke sumbernya.", "Public online news and YouTube, checked hourly. Every number links to its source.")],
+    [t("Seberapa akurat nadanya?", "How accurate is the tone?"), t("Dinilai AI, lalu bisa dikoreksi tim. Koreksi dipakai untuk penilaian berikutnya.", "Scored by AI, correctable by your team. Corrections feed the next scoring.")],
+    [t("Aman untuk bank?", "Is it safe for a bank?"), t("Hanya data publik, tanpa data nasabah. Workspace terpisah per klien.", "Public data only, no customer data. One isolated workspace per client.")],
+    [t("Bisa pantau kompetitor?", "Can it track competitors?"), t("Bisa. Tinggal tambah kata kunci, misalnya bank pesaing atau produk tertentu.", "Yes. Add keywords for rival banks or specific products.")],
+  ];
+  return (
+    <Light tag="FAQ" v={3}>
+      <Head kicker={t("Pertanyaan yang sering muncul", "Common questions")} title={t(<>Yang biasanya <Brush>ditanyakan.</Brush></>, <>What people <Brush>usually ask.</Brush></>)} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 400, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 28 }}>
+        {qa.map(([q, a]) => (
+          <Card key={q} style={{ padding: "36px 40px 40px" }}>
+            <p style={{ margin: 0, fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em" }}>{q}</p>
+            <p style={{ margin: "14px 0 0", fontSize: 26, lineHeight: 1.5, color: MUTED }}>{a}</p>
+          </Card>
+        ))}
+      </div>
+    </Light>
+  );
+}
+
 export function mandiriDeck(en: boolean) {
   return [
     <MandiriCover key="cover" en={en} />,
+    <WhatIsNI key="what" en={en} />,
+    <ForMandiri key="for" en={en} />,
     <Snapshot key="snapshot" en={en} />,
     <Keywords key="keywords" en={en} />,
     <WatchList key="watch" en={en} />,
@@ -269,6 +370,8 @@ export function mandiriDeck(en: boolean) {
     <AiVisibility key="ai" en={en} />,
     <Reports key="reports" en={en} />,
     <Trust key="trust" en={en} />,
+    <TrackRecord key="track" en={en} />,
+    <Faq key="faq" en={en} />,
     <Pilot key="pilot" en={en} />,
     <Closing key="closing" en={en} />,
   ];

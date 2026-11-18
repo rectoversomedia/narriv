@@ -48,7 +48,12 @@ export function Dot({ c, s = 16 }: { c: string; s?: number }) {
 
 /** Narriv wordmark: white on navy, ink on paper. */
 export function Logo({ dark, x = 96, y = 64, h = 52 }: { dark: boolean; x?: number; y?: number; h?: number }) {
-  return <img src={dark ? "/brand/logo-p-nv.webp" : "/brand/logo-h-nv.webp"} alt="Narriv" style={{ position: "absolute", left: x, top: y, height: h, width: "auto" }} />;
+  return (
+    <>
+      <img src={dark ? "/brand/logo-p-nv.webp" : "/brand/logo-h-nv.webp"} alt="Narriv" style={{ position: "absolute", left: x, top: y, height: h, width: "auto" }} />
+      <span style={{ position: "absolute", left: x + 2, top: y + h + 8, fontFamily: MONO, fontSize: 15, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", whiteSpace: "nowrap", color: dark ? "rgba(255,255,255,.55)" : "#6B7394" }}>Narrative Intelligence</span>
+    </>
+  );
 }
 
 // Soft gradient orbs drifting behind the content (the deck CSS animates .pitch-orb); the layout shifts with `v` so
