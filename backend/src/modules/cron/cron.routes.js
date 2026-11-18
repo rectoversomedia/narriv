@@ -206,6 +206,9 @@ const runDaily = async (req, res) => {
             }
         } catch (e) { results.cluster = { error: e.message }; }
 
+        // 5b. Default follow-up on the issues just clustered.
+        results.followUps = await runFollowUps({ deadline: start + 200000 });
+
         // 6. Store finished Apify collections nobody checked from the browser.
         try {
             const { syncPendingCollections } = await import("../ingestion/apify-collection.service.js");
@@ -248,15 +251,48 @@ async function sendDigests() {
     }
 }
 
+// Default follow-up after new data: positive issues → opportunities, risky issues → a case and an AI action plan
+// (one plan per workspace per run). Bounded by a time budget so the ingest call stays inside its limit.
+async function runFollowUps({ deadline }) {
+    const totals = { workspaces: 0, opportunities: 0, cases: 0, plans: 0 };
+    try {
+        const { runIssueFollowUp } = await import("../../lib/issue-follow-up.js");
+        const { detectOpportunities } = await import("../alerts/alerts.service.js");
+        const { generateActionPlan } = await import("../actions/actions.service.js");
+        const { anyAiConfigured } = await import("../../lib/chat-client.js");
+        const { data: ws } = await supabase.from("workspaces").select("id").limit(50);
+        for (const w of ws || []) {
+            if (Date.now() > deadline) break;
+            try {
+                totals.opportunities += (await detectOpportunities(w.id)).length;
+                // An AI plan takes up to ~40s: only start one when that still fits the call's time budget.
+                const planFits = anyAiConfigured() && Date.now() < deadline - 45000;
+                const r = await runIssueFollowUp(w.id, { generatePlan: planFits ? generateActionPlan : null });
+                totals.cases += r.cases;
+                totals.plans += r.plans;
+                totals.workspaces++;
+            } catch (error) {
+                logStructured("warn", "cron_follow_up_workspace_failed", { workspaceId: w.id, error: error.message });
+            }
+        }
+    } catch (error) {
+        logStructured("warn", "cron_follow_up_failed", { error: error.message });
+        return { error: error.message };
+    }
+    return totals;
+}
+
 // Scheduled real-data ingestion (Vercel Cron, every hour).
 const runIngest = async (req, res) => {
     if (!verifyCronSecret(req)) return res.status(401).json({ error: "Unauthorized" });
+    const started = Date.now();
     try {
         const { runScheduledIngestion } = await import("../ingestion/scheduled-ingestion.js");
         const perKeywordLimit = Math.min(Math.max(parseInt(req.query.limit, 10) || 8, 1), 15);
         const summary = await runScheduledIngestion({ budgetMs: INGEST_BUDGET_MS, perKeywordLimit, trigger: ingestTrigger({ userAgent: req.headers["user-agent"], slot: req.query.slot ?? null }) });
         summary.alertDigests = await sendDigests();
         summary.reportSchedules = await runDueSchedules();
+        summary.followUps = await runFollowUps({ deadline: started + 285000 });
         res.status(summary.status === "failed" ? 500 : 200).json(summary);
     } catch (error) {
         logStructured("error", "cron_ingest_failed", { error: error.message });
