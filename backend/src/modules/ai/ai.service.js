@@ -169,8 +169,8 @@ async function callOpenAI(messages, usageCtx = null) {
             response_format: { type: "json_object" }
         });
         logStructured("info", "ai_provider_call_succeeded", {
-            provider: "openai",
-            model: "gpt-4o-mini",
+            provider: response.provider || "openai",
+            model: response.model || "gpt-4o-mini",
             latencyMs: Date.now() - startedAt,
         });
         // Cost tracking is opt-in per call: only callers that know the workspace pass usageCtx.
@@ -178,7 +178,8 @@ async function callOpenAI(messages, usageCtx = null) {
             await recordTokenUsage({
                 workspaceId: usageCtx.workspaceId,
                 operation: usageCtx.operation || "signal_analysis",
-                model: "gpt-4o-mini",
+                // The model that actually answered (Claude Haiku when it serves), so cost is priced right.
+                model: response.model || "gpt-4o-mini",
                 inputTokens: response.usage?.prompt_tokens || 0,
                 outputTokens: response.usage?.completion_tokens || 0,
             });

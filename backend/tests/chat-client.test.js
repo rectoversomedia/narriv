@@ -4,8 +4,15 @@ const okClaude = async () => ({ content: '```json\n{"a":1}\n```', model: 'claude
 const failingOpenAI = (status, message) => ({ chat: { completions: { create: async () => { throw Object.assign(new Error(message), { status }); } } } });
 
 describe('chat client', () => {
+  it('stops at the monthly call cap without calling any provider', async () => {
+    let called = false;
+    const client = createChatClient({ monthlyCallsUsed: async () => 3000, order: ['anthropic'], claude: async () => { called = true; return okClaude(); } });
+    await expect(client.chat.completions.create({ messages: [{ role: 'user', content: 'u' }] })).rejects.toThrow('Monthly AI limit');
+    expect(called).toBe(false);
+  });
+
   it('falls back to Claude when OpenAI has no credits, in OpenAI response shape', async () => {
-    const client = createChatClient({ order: ['openai', 'anthropic'], openai: failingOpenAI(429, 'You have no credits remaining'), claude: okClaude });
+    const client = createChatClient({ monthlyCallsUsed: async () => 0, order: ['openai', 'anthropic'], openai: failingOpenAI(429, 'You have no credits remaining'), claude: okClaude });
     const res = await client.chat.completions.create({ model: 'gpt-4o-mini', messages: [{ role: 'system', content: 's' }, { role: 'user', content: 'u' }], response_format: { type: 'json_object' } });
     expect(res.provider).toBe('anthropic');
     expect(JSON.parse(res.choices[0].message.content)).toEqual({ a: 1 });
@@ -13,7 +20,7 @@ describe('chat client', () => {
   });
 
   it('does not hide a bad request behind the other provider', async () => {
-    const client = createChatClient({ order: ['openai', 'anthropic'], openai: failingOpenAI(400, 'invalid'), claude: okClaude });
+    const client = createChatClient({ monthlyCallsUsed: async () => 0, order: ['openai', 'anthropic'], openai: failingOpenAI(400, 'invalid'), claude: okClaude });
     await expect(client.chat.completions.create({ messages: [{ role: 'user', content: 'u' }] })).rejects.toThrow('invalid');
   });
 

@@ -94,11 +94,41 @@ export function providerOrder(env = process.env, configured = { openai: openaiCo
     return order.filter((p) => configured[p]);
 }
 
+/**
+ * A hard monthly ceiling on AI calls for the whole platform (NARRIV_AI_MONTHLY_CALL_CAP, default 3000, about $1-2 a
+ * month on Haiku). The Claude credit is shared with other projects, so Narriv must never run it down: past the cap AI
+ * calls stop until the next month, and records are stored without a sentiment (the daily backfill finishes them later).
+ * Counted from token_usage, cached for ten minutes so the check itself costs one query per instance now and then.
+ */
+let capCache = { at: 0, month: "", count: 0 };
+export async function monthlyCallsUsed(db = null, now = new Date()) {
+    // Loaded on first use: importing the database client at module load would make this file need DB settings.
+    db ??= (await import("./supabase.js")).default;
+    const month = now.toISOString().slice(0, 7);
+    if (capCache.month === month && Date.now() - capCache.at < 10 * 60 * 1000) return capCache.count;
+    const { count, error } = await db.from("token_usage").select("id", { count: "exact", head: true }).gte("created_at", `${month}-01T00:00:00Z`);
+    if (error) return capCache.month === month ? capCache.count : 0;
+    capCache = { at: Date.now(), month, count: count || 0 };
+    return capCache.count;
+}
+
+export async function assertWithinMonthlyCap(deps = {}) {
+    const cap = Number(process.env.NARRIV_AI_MONTHLY_CALL_CAP || 3000);
+    if (!(cap > 0)) return;
+    const used = await (deps.monthlyCallsUsed || monthlyCallsUsed)();
+    if (used >= cap) {
+        logStructured("warn", "ai_monthly_cap_reached", { used, cap });
+        throw Object.assign(new Error(`Monthly AI limit reached (${used}/${cap} calls).`), { code: "AI_MONTHLY_CAP" });
+    }
+    capCache.count += 1; // count this call too until the next refresh
+}
+
 export function createChatClient(deps = {}) {
     return {
         chat: {
             completions: {
                 async create(params, options) {
+                    await assertWithinMonthlyCap(deps);
                     const order = deps.order || providerOrder();
                     if (!order.length) throw Object.assign(new Error("No AI provider is configured."), { code: "AI_NOT_CONFIGURED" });
                     let lastErr;
