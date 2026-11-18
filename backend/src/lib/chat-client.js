@@ -43,7 +43,9 @@ export function toClaudeRequest(params) {
         model: process.env.AI_CLAUDE_MODEL || "claude-haiku-5-5",
         system: [system, wantsJson ? "Reply with one valid JSON object only: no prose, no code fences." : ""].filter(Boolean).join("\n\n") || undefined,
         user,
-        maxTokens: Math.min(Number(params.max_tokens || params.max_completion_tokens || 1024), 8192),
+        // Thinking is on for current Claude models and counts toward max_tokens: leave room so a short JSON
+        // answer is not cut off after the reasoning (OpenAI callers ask for as little as 300).
+        maxTokens: Math.min(Math.max(Number(params.max_tokens || params.max_completion_tokens || 1024), 2048), 8192),
         effort: "low",
         wantsJson,
     };

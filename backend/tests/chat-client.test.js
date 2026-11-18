@@ -27,7 +27,7 @@ describe('chat client', () => {
     expect(req.user).toBe('U');
     expect(req.system).toMatch(/^S/);
     expect(req.system).toMatch(/JSON/);
-    expect(req.maxTokens).toBe(300);
+    expect(req.maxTokens).toBe(2048); // room for thinking before a short JSON answer
     expect(isProviderSideFailure({ status: 503 })).toBe(true);
     expect(isProviderSideFailure({ status: 400 })).toBe(false);
   });
