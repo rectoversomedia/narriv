@@ -203,7 +203,11 @@ describe('Auth endpoints', () => {
 
     const resetRes = await send(request(app).post('/auth/reset-password')).send({ resetToken: verify.body.resetToken, newPassword: 'ResetPassword789!' });
     expect(resetRes.status).toBe(200);
-    expect(db.table('password_reset_tokens')[0].used_at).toBeTruthy();
+    // Used rows are deleted (the real table has no used_at column).
+    expect(db.table('password_reset_tokens')).toHaveLength(0);
+    // The token cannot be used twice.
+    const again = await send(request(app).post('/auth/reset-password')).send({ resetToken: verify.body.resetToken, newPassword: 'ResetPassword790!' });
+    expect(again.status).toBe(400);
 
     const login = await send(request(app).post('/auth/login')).send({ email: 'test@example.com', password: 'ResetPassword789!' });
     expect(login.status).toBe(200);

@@ -721,6 +721,9 @@ export const logout = async (req, res) => {
     }
 };
 
+/** Marks a password_reset_tokens row whose emailed code was confirmed and swapped for a reset token. */
+const VERIFIED_PREFIX = "verified:";
+
 export const forgotPassword = async (req, res) => {
     try {
         const email = String(req.body.email || "").trim().toLowerCase();
@@ -779,13 +782,13 @@ export const forgotPassword = async (req, res) => {
         const reset_code = createResetCode();
         const expires_at = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
 
-        // Invalidate previous unused tokens
+        // A new code replaces any earlier one. The table has no used_at / verified_at columns (every query on them
+        // failed with "column does not exist", so no reset could ever finish): old rows are deleted instead.
         const now = new Date().toISOString();
         await baseSupabaseAdmin
             .from("password_reset_tokens")
-            .update({ used_at: now })
-            .eq("user_id", user.id)
-            .is("used_at", null);
+            .delete()
+            .eq("user_id", user.id);
 
         // Store the hash of the emailed code: verifyResetCode compares the submitted
         // code against token_hash (previously the hash of an unrelated random token
@@ -879,14 +882,14 @@ export const verifyResetCode = async (req, res) => {
             .from("password_reset_tokens")
             .select("*")
             .eq("user_id", user.id)
-            .is("used_at", null)
             .gt("expires_at", now)
             .order("created_at", { ascending: false })
             .limit(5);
 
         if (findError) throw findError;
 
-        const tokenRow = candidates.find((candidate) => compareResetSecret(code, candidate.token_hash));
+        // Rows already exchanged for a reset token carry the VERIFIED_PREFIX and never match a code.
+        const tokenRow = candidates.find((candidate) => !String(candidate.token_hash).startsWith(VERIFIED_PREFIX) && compareResetSecret(code, candidate.token_hash));
         if (!tokenRow) {
             await writeAuditLog(user.id, "password_reset_code_failed", { email: user.email });
             return res.status(400).json({ error: "Invalid or expired reset code.", code: "INVALID_RESET_CODE" });
@@ -895,10 +898,9 @@ export const verifyResetCode = async (req, res) => {
         const resetToken = crypto.randomBytes(32).toString("hex");
         const { error: updateError } = await baseSupabaseAdmin
             .from("password_reset_tokens")
-            .update({
-                token_hash: hashResetSecret(resetToken),
-                verified_at: now,
-            })
+            // The prefix marks "code confirmed" (there is no verified_at column) and keeps a bare 6-digit code from
+            // ever being accepted as the reset token.
+            .update({ token_hash: `${VERIFIED_PREFIX}${hashResetSecret(resetToken)}` })
             .eq("id", tokenRow.id);
 
         if (updateError) throw updateError;
@@ -1063,9 +1065,7 @@ export const resetPassword = async (req, res) => {
         const { data: tokens, error: findError } = await baseSupabaseAdmin
             .from("password_reset_tokens")
             .select("*")
-            .eq("token_hash", hashResetSecret(resetToken))
-            .is("used_at", null)
-            .not("verified_at", "is", "null")
+            .eq("token_hash", `${VERIFIED_PREFIX}${hashResetSecret(String(resetToken || ""))}`)
             .gt("expires_at", now);
 
         if (findError) throw findError;
@@ -1106,11 +1106,11 @@ export const resetPassword = async (req, res) => {
 
         if (userUpdateError) throw userUpdateError;
 
-        // Mark reset token as used
+        // Used: delete every reset row for this user so neither the token nor an older code can be replayed.
         const { error: tokenUpdateError } = await baseSupabaseAdmin
             .from("password_reset_tokens")
-            .update({ used_at: now })
-            .eq("id", tokenRow.id);
+            .delete()
+            .eq("user_id", tokenRow.user_id);
 
         if (tokenUpdateError) throw tokenUpdateError;
 
