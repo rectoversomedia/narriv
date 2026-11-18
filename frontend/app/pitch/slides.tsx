@@ -147,7 +147,7 @@ export function Sources({ en }: P) {
   );
 }
 
-function Bar({ label, n, c, max = 46 }: { label: string; n: number; c: string; max?: number }) {
+export function Bar({ label, n, c, max = 46 }: { label: string; n: number; c: string; max?: number }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 80px", alignItems: "center", gap: 20 }}>
       <div>

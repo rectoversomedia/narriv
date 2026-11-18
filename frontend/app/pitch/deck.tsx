@@ -12,8 +12,9 @@ type Lang = "id" | "en";
 const LANG_KEY = "narriv_pitch_lang";
 const TX = ["fade", "slide-left", "rise", "zoom", "slide-right", "blur", "flip", "drop"];
 
-export default function Deck({ id, en }: { id: React.ReactNode[]; en: React.ReactNode[] }) {
-  const [lang, setLang] = useState<Lang>("en");
+/** `pdf`: the file name stem of the ready 16:9 PDFs in /pitch ({stem}-ID.pdf / -EN.pdf); null hides the button. */
+export default function Deck({ id, en, pdf = "Narriv-Pitch", defaultLang = "en" }: { id: React.ReactNode[]; en: React.ReactNode[]; pdf?: string | null; defaultLang?: Lang }) {
+  const [lang, setLang] = useState<Lang>(defaultLang);
   const slides = lang === "en" ? en : id;
   const n = slides.length;
   const [i, setI] = useState(0);
@@ -120,7 +121,7 @@ export default function Deck({ id, en }: { id: React.ReactNode[]; en: React.Reac
           <span className="w-16 text-center font-bold tabular-nums text-white/70">{i + 1}/{n}</span>
           <button type="button" onClick={next} disabled={i === n - 1} className="rounded-lg p-2 hover:bg-white/10 disabled:opacity-30" aria-label="Slide berikutnya"><ChevronRight className="size-5" /></button>
           <button type="button" onClick={toggleFull} className="ml-1 rounded-lg p-2 hover:bg-white/10" aria-label="Layar penuh"><Maximize2 className="size-5" /></button>
-          <a href={`/pitch/Narriv-Pitch-${lang.toUpperCase()}.pdf`} download={`Narriv-Pitch-${lang.toUpperCase()}.pdf`} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold hover:bg-white/10" aria-label="Unduh PDF 16:9"><Download className="size-4" /> PDF</a>
+          {pdf ? <a href={`/pitch/${pdf}-${lang.toUpperCase()}.pdf`} download={`${pdf}-${lang.toUpperCase()}.pdf`} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold hover:bg-white/10" aria-label="Unduh PDF 16:9"><Download className="size-4" /> PDF</a> : null}
         </div>
       )}
     </div>
