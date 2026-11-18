@@ -1,4 +1,5 @@
 import express from "express";
+import { primaryModelLabel } from "../../lib/chat-client.js";
 import { requestLang, tr } from "../../lib/request-context.js";
 import supabase from "../../lib/supabase.js";
 import { analyzeSignal, generateSignalsSummary } from "../ai/ai.service.js";
@@ -761,7 +762,7 @@ router.post("/:id/analyze", validateRequest({ params: signalIdParamsSchema }), a
                     recommended_action: result.recommended_action,
                 }),
                 confidence: result.confidence_score,
-                model: "gpt-4o-mini",
+                model: primaryModelLabel(),
             })
             .select()
             .single();
@@ -854,7 +855,7 @@ router.post("/batch-analyze", async (req, res) => {
                             recommended_action: result.recommended_action,
                         }),
                         confidence: result.confidence_score,
-                        model: "gpt-4o-mini",
+                        model: primaryModelLabel(),
                     })
                     .select()
                     .single();

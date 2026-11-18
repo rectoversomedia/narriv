@@ -10,6 +10,7 @@
  * engagement. Clustering and alert rules run once per batch afterwards.
  */
 import supabaseAdmin from "../../lib/supabase.js";
+import { primaryModelLabel } from "../../lib/chat-client.js";
 import { provinceFromLabel, resolveRecordRegion } from "../../lib/indonesia-regions.js";
 import { logStructured } from "../../lib/logger.js";
 import { checkBudgetAllowance } from "../../lib/cost-management.js";
@@ -244,7 +245,7 @@ export async function persistCollectedRecords(records, {
             signal_id: signal.id,
             analysis: aiResult,
             confidence: aiResult.confidence_score || 0.85,
-            model: "gpt-4o-mini",
+            model: primaryModelLabel(),
           });
         if (analysisErr) {
           analysisFailed++;

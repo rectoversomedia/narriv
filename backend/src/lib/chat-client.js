@@ -157,3 +157,8 @@ export function getChatClient() {
 }
 
 export const anyAiConfigured = () => providerOrder().length > 0;
+
+/** The model that normally answers, for labelling stored analyses (a one-off fallback is not reflected). */
+export function primaryModelLabel(env = process.env) {
+    return env.AI_PRIMARY_PROVIDER === "anthropic" ? (env.AI_CLAUDE_MODEL_LOCK || env.AI_CLAUDE_MODEL || "claude-haiku-5-5") : (env.AI_MODEL || "gpt-4o-mini");
+}

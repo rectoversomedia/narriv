@@ -9,6 +9,7 @@
  */
 
 import { baseSupabaseAdmin } from "../../lib/supabase.js";
+import { primaryModelLabel } from "../../lib/chat-client.js";
 import { analyzeSignal } from "../ai/ai.service.js";
 import { logStructured } from "../../lib/logger.js";
 import { checkBudgetAllowance } from "../../lib/cost-management.js";
@@ -37,7 +38,7 @@ export function buildAnalysisRow(signalId, result) {
             confidence_score: typeof result?.confidence_score === "number" ? result.confidence_score : null,
         },
         confidence: typeof result?.confidence_score === "number" ? result.confidence_score : null,
-        model: "gpt-4o-mini",
+        model: primaryModelLabel(),
     };
 }
 

@@ -1,4 +1,5 @@
 import { Worker } from "bullmq";
+import { primaryModelLabel } from "../lib/chat-client.js";
 import connection from "../lib/redis.js";
 import supabase from "../lib/supabase.js";
 import { analyzeSignal } from "../modules/ai/ai.service.js";
@@ -163,7 +164,7 @@ const worker = new Worker(
                         recommended_action: analysisResult.recommended_action,
                     }),
                     confidence: analysisResult.confidence_score,
-                    model: "gpt-4o-mini",
+                    model: primaryModelLabel(),
                 });
 
             if (analysisError) {
