@@ -838,7 +838,8 @@ export const forgotPassword = async (req, res) => {
             code: reset_code,
             expiresInMinutes: PASSWORD_RESET_TTL_MINUTES,
         });
-        sendEmail({ to: user.email, ...emailTemplate }).catch(err =>
+        // Awaited: on Vercel the function is frozen once the response is sent, so a background send never went out.
+        await sendEmail({ to: user.email, ...emailTemplate }).catch(err =>
             logStructured("warn", "password_reset_email_failed", { email: user.email, error: err?.message })
         );
 
@@ -1037,7 +1038,8 @@ export const resendVerification = async (req, res) => {
             code: verificationCode,
             expiresInMinutes: PASSWORD_RESET_TTL_MINUTES,
         });
-        sendEmail({ to: user.email, ...emailTemplate }).catch(err =>
+        // Awaited: on Vercel the function is frozen once the response is sent, so a background send never went out.
+        await sendEmail({ to: user.email, ...emailTemplate }).catch(err =>
             logStructured("warn", "verification_resend_email_failed", { email: user.email, error: err?.message })
         );
 
@@ -1122,7 +1124,8 @@ export const resetPassword = async (req, res) => {
 
         // Send confirmation email (best-effort, never blocks response)
         const confirmTemplate = passwordResetConfirmation({ name: user.name });
-        sendEmail({ to: user.email, ...confirmTemplate }).catch(err =>
+        // Awaited: on Vercel the function is frozen once the response is sent, so a background send never went out.
+        await sendEmail({ to: user.email, ...confirmTemplate }).catch(err =>
             logStructured("warn", "password_reset_confirm_email_failed", { email: user.email, error: err?.message })
         );
 
