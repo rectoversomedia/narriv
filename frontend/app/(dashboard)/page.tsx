@@ -148,6 +148,7 @@ function FirstRun() {
   const queryClient = useQueryClient();
   const keywordsQuery = useQuery({ queryKey: ["monitoring-keywords"], queryFn: getMonitoringKeywords, staleTime: 30 * 1000 });
   const run = useMutation({
+    meta: { silent: true },
     mutationFn: () => runKeywordMonitoring({ firstRun: true }),
     onSuccess: () => void queryClient.invalidateQueries(),
     onError: (err: Error & { status?: number; code?: string }) => {

@@ -300,9 +300,10 @@ export default function ActionPlansPage() {
     toastHook.success(message);
   };
 
+  const [changingDecision, setChangingDecision] = useState(false);
   const feedbackMutation = useMutation({
     mutationFn: ({ actionPlanId, action, reason }: { actionPlanId: string; action: "accepted" | "edited" | "rejected"; reason?: string }) => submitActionPlanFeedback(actionPlanId, action, reason),
-    onSuccess: async (result) => {
+    onSuccess: async (result, variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["action-queue"] }),
         queryClient.invalidateQueries({ queryKey: ["action-plan", selectedActionId] }),
@@ -310,7 +311,12 @@ export default function ActionPlansPage() {
         queryClient.invalidateQueries({ queryKey: ["feedback-accuracy"] }),
         queryClient.invalidateQueries({ queryKey: ["actionPlanLearning", selectedActionId] }),
       ]);
-      showToast(result ? t("toast.feedbackSent") : t("toast.feedbackFailed"), result ? "success" : "error");
+      setChangingDecision(false);
+      await queryClient.invalidateQueries({ queryKey: ["action-plan"] });
+      if (!result) { showToast(t("toast.feedbackFailed"), "error"); return; }
+      showToast(variables.action === "rejected"
+        ? pickL("Plan rejected. Your reason helps the next draft.", "Rencana ditolak. Alasan Anda dipakai untuk draf berikutnya.")
+        : pickL("Plan approved. It is now in progress.", "Rencana disetujui dan sekarang sedang dijalankan."), "success");
     },
     onError: () => showToast(t("toast.feedbackRetry"), "error"),
   });
@@ -563,6 +569,11 @@ export default function ActionPlansPage() {
             <div className="mt-5 rounded-[18px] bg-[#101334] p-5 text-white">
               <p className="text-[12px] font-bold text-[#A5B4FF]">{pickL("Your Decision", "Keputusan Anda")}</p>
               <p className="mt-1.5 text-[15px] font-semibold text-white/80">{pickL("AI drafted this plan. Approve it to go ahead, or reject it with a reason so the next draft is better.", "Rencana ini disusun AI. Setujui untuk dijalankan, atau tolak dengan alasan supaya draf berikutnya lebih baik.")}</p>
+              {(() => {
+                // The decision stays visible after it is made, instead of the same two buttons coming back.
+                const st = String(latestPlan?.workflowStatus ?? "pending");
+                const decided = !changingDecision && st !== "pending" && st !== "open";
+                if (!decided) return (<>
               <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
                 <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-[#465FFF] px-6 text-[14px] font-black text-white transition hover:bg-[#3B52F5] disabled:opacity-50">
                   <CheckCircle2 size={16} /> {pickL("Approve Plan", "Setujui Rencana")}
@@ -571,6 +582,18 @@ export default function ActionPlansPage() {
                   <XCircle size={16} /> {pickL("Reject", "Tolak")}
                 </button>
               </div>
+                </>);
+                const rejected = st === "rejected";
+                return (
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <span className={cn("inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[14px] font-black", rejected ? "bg-[#FDECEC] text-[#B42318]" : "bg-[#E5F6EE] text-[#047857]")}>
+                      {rejected ? <XCircle size={16} /> : <CheckCircle2 size={16} />}
+                      {rejected ? pickL("Rejected", "Ditolak") : st === "done" ? pickL("Approved · done", "Disetujui · selesai") : pickL("Approved · in progress", "Disetujui · sedang dijalankan")}
+                    </span>
+                    <button type="button" onClick={() => setChangingDecision(true)} className="text-[13px] font-bold text-white/80 underline-offset-2 hover:text-white hover:underline">{pickL("Change decision", "Ubah keputusan")}</button>
+                  </div>
+                );
+              })()}
             </div>
             </>)}
           </CardContent>

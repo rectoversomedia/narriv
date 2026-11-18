@@ -1,6 +1,7 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { emitToast, toastShownSince } from "@/lib/toast-bus";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { useUiStore } from "@/store/useUiStore";
 
@@ -8,6 +9,30 @@ export function ReactQueryProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
+        // Every button that saves or changes something answers with a clear success or failure toast. A page that
+        // already shows its own message for that action wins (checked just after its callbacks ran); background
+        // writes opt out with meta: { silent: true }.
+        mutationCache: new MutationCache({
+          onSuccess: (_data, _vars, _ctx, mutation) => {
+            if (mutation.meta?.silent) return;
+            const started = mutation.state.submittedAt || Date.now();
+            window.setTimeout(() => {
+              if (toastShownSince(started)) return;
+              const id = useUiStore.getState().language === "id";
+              emitToast({ tone: "success", description: id ? "Berhasil disimpan." : "Saved." });
+            }, 300);
+          },
+          onError: (error, _vars, _ctx, mutation) => {
+            if (mutation.meta?.silent) return;
+            const started = mutation.state.submittedAt || Date.now();
+            window.setTimeout(() => {
+              if (toastShownSince(started)) return;
+              const id = useUiStore.getState().language === "id";
+              const msg = error instanceof Error && error.message && error.message.length < 140 ? ` ${error.message}` : "";
+              emitToast({ tone: "error", description: (id ? "Gagal. Coba lagi." : "That did not work. Please try again.") + msg });
+            }, 300);
+          },
+        }),
         defaultOptions: {
           queries: {
             // Monitoring data changes hourly, so pages reuse what they loaded for two minutes and keep it for

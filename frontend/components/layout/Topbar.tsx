@@ -224,6 +224,7 @@ export function Topbar() {
   });
 
   const markRead = useMutation({
+    meta: { silent: true },
     mutationFn: (id: string) => markNotificationAsRead(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: notificationsQueryKey });
