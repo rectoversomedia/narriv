@@ -55,6 +55,30 @@ const client = () => {
 describe('Auth endpoints', () => {
   beforeEach(reset);
 
+  it('a new account signs in only after confirming the emailed code', async () => {
+    const reg = await request(app).post('/auth/register').use(client()).send({ email: 'verify.me@example.com', password: PASSWORD, name: 'Verify Me', company: 'Acme' });
+    expect(reg.status).toBe(201);
+    expect(reg.body.requireVerification).toBe(true);
+    const code = /^(\d{6})/.exec(sentEmails.at(-1).subject)[1];
+
+    const before = await request(app).post('/auth/login').use(client()).send({ email: 'verify.me@example.com', password: PASSWORD });
+    expect(before.status).toBe(403);
+    expect(before.body.code).toBe('EMAIL_NOT_VERIFIED');
+
+    const wrong = await request(app).post('/auth/verify-email').use(client()).send({ email: 'verify.me@example.com', code: code === '000000' ? '111111' : '000000' });
+    expect(wrong.status).toBe(400);
+
+    const ok = await request(app).post('/auth/verify-email').use(client()).send({ email: 'verify.me@example.com', code });
+    expect(ok.status).toBe(200);
+    expect(ok.body.token).toBeTruthy();
+    expect(ok.body.refreshToken).toBeTruthy();
+    // The used code is gone, so it cannot be replayed.
+    expect(db.table('email_verification_tokens')).toHaveLength(0);
+
+    const after = await request(app).post('/auth/login').use(client()).send({ email: 'verify.me@example.com', password: PASSWORD });
+    expect(after.status).toBe(200);
+  });
+
   it('registers a user with a hashed password, workspace and membership', async () => {
     const res = await request(app).post('/auth/register').send({
       email: 'New.User@Example.com', password: PASSWORD, name: 'New User', company: 'Acme',
@@ -62,9 +86,8 @@ describe('Auth endpoints', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.email).toBe('new.user@example.com');
-    // Registration currently auto-verifies email (production bypass while email
-    // delivery is pending), so no verification step is required.
-    expect(res.body.requireVerification).toBe(false);
+    // Email delivery works, so a new account must confirm the emailed code before it can sign in.
+    expect(res.body.requireVerification).toBe(true);
     const [user] = db.table('users');
     expect(user.email).toBe('new.user@example.com');
     expect(user.password).not.toBe(PASSWORD);

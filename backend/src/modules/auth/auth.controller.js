@@ -390,7 +390,9 @@ export const register = async (req, res) => {
                 email: email.toLowerCase(),
                 password: hashed,
                 name,
-                email_verified: true, // Auto-verify: registration creates workspace onboarding — email verified through password verification
+                // Verified by the 6-digit code emailed below (login refuses an unverified account). Google sign-in
+                // accounts are verified by Google and are created elsewhere.
+                email_verified: false,
                 failed_login_attempts: 0,
                 locked_until: null,
                 created_at: now,
@@ -939,7 +941,6 @@ export const verifyEmail = async (req, res) => {
             .from("email_verification_tokens")
             .select("*")
             .eq("user_id", user.id)
-            .is("used_at", null)
             .gt("expires_at", now)
             .order("created_at", { ascending: false })
             .limit(5);
@@ -960,11 +961,12 @@ export const verifyEmail = async (req, res) => {
 
         if (userUpdateError) throw userUpdateError;
 
-        // Mark verification token as used
+        // The table has no used_at column (the old update failed with "column does not exist", so no code could
+        // ever be confirmed): a used code is deleted, with any other code still pending for this user.
         const { error: tokenUpdateError } = await baseSupabaseAdmin
             .from("email_verification_tokens")
-            .update({ used_at: now })
-            .eq("id", tokenRow.id);
+            .delete()
+            .eq("user_id", user.id);
 
         if (tokenUpdateError) throw tokenUpdateError;
 
@@ -974,7 +976,7 @@ export const verifyEmail = async (req, res) => {
         const token = signAccessToken(user);
         const { refresh_token } = await issueRefreshToken(user.id);
 
-        return res.json({ token, refresh_token, user: toSessionUser(user) });
+        return res.json({ token, refresh_token, refreshToken: refresh_token, user: toSessionUser(user) });
     } catch (error) {
         logStructured("error", "Error verifying email:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
@@ -1011,13 +1013,11 @@ export const resendVerification = async (req, res) => {
             return res.status(429).json({ error: "Too many verification requests. Try again later." });
         }
 
-        // Invalidate previous unused tokens
-        const now = new Date().toISOString();
+        // A new code replaces any earlier one (deleted: the table has no used_at column).
         const { error: invalidateError } = await baseSupabaseAdmin
             .from("email_verification_tokens")
-            .update({ used_at: now })
-            .eq("user_id", user.id)
-            .is("used_at", null);
+            .delete()
+            .eq("user_id", user.id);
 
         if (invalidateError) throw invalidateError;
 

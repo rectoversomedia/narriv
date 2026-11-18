@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { AuthShell, CenterIcon, HelpAction, InfoCallout, PrimaryButton, SecondaryLinkButton, VerificationCodeInput } from "@/components/auth/auth-shell";
 import { resendVerificationCode, verifyEmailCode } from "@/lib/api-service";
 import { useAuthStore } from "@/store/useAuthStore";
-import { launchDashboard } from "@/lib/launch";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -83,7 +82,10 @@ export default function VerifyEmailPage() {
         { name: response.user.name, email: response.user.email, provider: "password", workspace: "Narriv" }, 
         response.refreshToken
       );
-      launchDashboard(() => router.push("/"));
+      // The route guard reads this cookie; without it the first page after verifying bounced back to sign-in.
+      document.cookie = `narriv_auth=${encodeURIComponent(response.token)}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
+      // A new account has no workspace yet: straight to onboarding, as the auto-verified signup did.
+      router.push("/onboarding");
     } catch {
       setApiError(t("errors.verifyFailed"));
     } finally {

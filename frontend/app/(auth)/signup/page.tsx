@@ -73,6 +73,9 @@ export default function SignupPage() {
       }
 
       if (json.requireVerification) {
+        // Drop any earlier session (often the demo, tried before signing up): with its cookie still set, the route
+        // guard sent the new account from the code page to the old dashboard.
+        useAuthStore.getState().logout();
         router.push("/verify-email");
       } else {
         // Auto-verified: sign in with what was just typed and go straight to onboarding (no second login form).
