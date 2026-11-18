@@ -72,7 +72,12 @@ export async function generateReport({ workspaceId, title, periodStart, periodEn
         platform_distribution: Object.entries(platformsMap)
             .map(([platform, count]) => ({ platform, count }))
             .sort((a, b) => b.count - a.count),
-        top_signals: signalsList.slice(0, 5).map(s => {
+        // What a reader must see first: negative, then mixed, then positive, neutral last; newest first within each.
+        // (In date order the list filled up with routine items such as daily stock tips.)
+        top_signals: [...signalsList].sort((a, b) => {
+            const rank = (x) => ({ negative: 0, mixed: 1, positive: 2, neutral: 3 })[String((x.analyses || [])[0]?.sentiment || x.sentiment || "").toLowerCase()] ?? 4;
+            return rank(a) - rank(b) || String(b.published_at || b.captured_at || "").localeCompare(String(a.published_at || a.captured_at || ""));
+        }).slice(0, 6).map(s => {
             const analyses = s.analyses || [];
             const latestAnalysis = analyses[0];
             return {

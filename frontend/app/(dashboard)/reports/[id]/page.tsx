@@ -141,12 +141,14 @@ function ReportBody({ data }: { data: ReportView }) {
   }[v];
 
   // One sentence a director can repeat: the tone, the size, where it came from, and what needs attention.
+  const openSerious = data.alerts.filter((a) => (a.severity === "critical" || a.severity === "high") && !["resolved", "closed", "dismissed"].includes(String(a.status).toLowerCase())).length;
   const headline = v === "none"
     ? L("No records were collected in this period.", "Tidak ada data yang terkumpul di periode ini.")
     : [
       L(`${t.negative}% of ${t.signals} records were negative and ${t.positive}% positive`, `${t.negative}% dari ${t.signals} percakapan bernada negatif dan ${t.positive}% positif`),
       topPlatform ? L(`, mostly on ${platformName(topPlatform.platform)}`, `, terbanyak di ${platformName(topPlatform.platform)}`) : "",
-      t.criticalAlerts ? L(`. ${t.criticalAlerts} serious ${t.criticalAlerts === 1 ? "alert needs" : "alerts need"} a response.`, `. ${t.criticalAlerts} peringatan berat perlu direspons.`) : ".",
+      // Only serious alerts still open need a response; resolved ones are history.
+      openSerious ? L(`. ${openSerious} serious ${openSerious === 1 ? "alert needs" : "alerts need"} a response.`, `. ${openSerious} peringatan berat perlu direspons.`) : t.criticalAlerts ? L(`. ${t.criticalAlerts} serious ${t.criticalAlerts === 1 ? "alert was" : "alerts were"} raised and handled.`, `. ${t.criticalAlerts} peringatan berat muncul dan sudah ditangani.`) : ".",
     ].join("");
 
   return (
