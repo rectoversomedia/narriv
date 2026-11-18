@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,10 +31,15 @@ export function ModalShell({
   const titleId = useId();
   const descId = useId();
 
+  // Read the latest onClose through a ref. With onClose as an effect dependency, every keystroke in a field (a new
+  // onClose each render) ran the cleanup, which moved focus back to the opening button: typing stopped after one letter.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onCloseRef.current(); };
     document.addEventListener("keydown", onKey);
     const { overflow } = document.body.style;
     document.body.style.overflow = "hidden";
@@ -43,7 +48,7 @@ export function ModalShell({
       document.body.style.overflow = overflow;
       previouslyFocused?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open || typeof document === "undefined") return null;
 
