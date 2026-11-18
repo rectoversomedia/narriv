@@ -127,9 +127,14 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
         <div className="p-5 sm:p-7">
           <MonoLabel>{L(`Brief · ${today} · last ${data.windowHours} hours`, `Briefing · ${today} · ${data.windowHours} jam terakhir`)}</MonoLabel>
           <h2 className="mt-3 max-w-4xl text-balance text-[26px] font-black leading-[1.18] tracking-[-0.03em] text-[#101334] sm:text-[32px]">
-            {risk ? <>{L("Status: ", "Status: ")}<span style={{ color: risk.color }}>{L(...risk.word)}</span></> : L("Not scored yet", "Belum dinilai")}
-            {drivers[0] ? <>{L(", driven by ", ", didorong oleh ")}{L(...(DRIVER_LABELS[drivers[0].key] ?? [drivers[0].key, drivers[0].key])).toLowerCase()}</> : null}
-            {repLook ? <>{L(". Reputation: ", ". Reputasi: ")}<span style={{ color: repLook.color }}>{L(...repLook.word)}</span>.</> : "."}
+            {/* The status alone on the first line; why, and the reputation, on a calmer line below. */}
+            {risk ? <span style={{ color: risk.color }}>{L(...risk.word)}</span> : L("Not scored yet", "Belum dinilai")}
+            {drivers[0] || repLook ? (
+              <span className="mt-2 block text-[18px] font-bold leading-snug tracking-[-0.01em] text-[#31406B] sm:text-[22px]">
+                {drivers[0] ? L(`Mostly from ${L(...(DRIVER_LABELS[drivers[0].key] ?? [drivers[0].key, drivers[0].key]))}.`, `Paling banyak karena ${L(...(DRIVER_LABELS[drivers[0].key] ?? [drivers[0].key, drivers[0].key]))}.`) : null}
+                {repLook ? <>{" "}{L("Reputation is ", "Reputasi ")}<span style={{ color: repLook.color }}>{L(...repLook.word).toLowerCase()}</span>.</> : null}
+              </span>
+            ) : null}
           </h2>
 
           <dl className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -152,7 +157,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
             <p className="px-1 text-[12px] font-bold text-[#A5B4FF] sm:mr-2">{L("Start Here", "Mulai dari Sini")}</p>
             {first ? (
               <button type="button" onClick={() => runStep(first)} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5] sm:w-auto">
-                {code.action(first.action)}: {stepButton(first)}
+                {stepButton(first)}
               </button>
             ) : null}
             <Link href="/alerts" className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-white/80 px-5 text-[14px] font-black text-white transition hover:bg-white/10 sm:w-auto">

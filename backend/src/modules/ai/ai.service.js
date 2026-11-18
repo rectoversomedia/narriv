@@ -480,7 +480,7 @@ function buildFallbackSummary(signals = [], contextInfo = {}) {
         title: "AI Signal Summary",
         // The verdict first, in plain words; the headline that leads it comes after, only when there is one.
         content: negative === 0
-            ? { en: `A calm day: none of today's ${total} mentions is negative.`, id: `Hari ini tenang: tidak ada yang negatif dari ${total} percakapan.` }
+            ? { en: `A calm day. None of today's ${total} mentions is negative.`, id: `Hari ini tenang. Tidak ada yang negatif dari ${total} percakapan.` }
             : {
                 en: `${negative} of today's ${total} mentions are negative.${short && topNegative ? ` Most are about "${short}".` : ""}`,
                 id: `${negative} dari ${total} percakapan hari ini negatif.${short && topNegative ? ` Terbanyak soal "${short}".` : ""}`,

@@ -39,10 +39,10 @@ function story(d: NarrativeDetailRecord, total: number, top: [string, number] | 
   if (top && total) parts.push(pickL(`Mostly ${sentimentWord(top[0]).toLowerCase()} (${Math.round((top[1] / total) * 100)}%).`, `Mayoritas ${sentimentWord(top[0]).toLowerCase()} (${Math.round((top[1] / total) * 100)}%).`));
   const m = d.momentum;
   if (m) {
-    if (m.last24h > m.prior24h) parts.push(pickL(`Still growing: ${m.last24h} new in the last 24 hours.`, `Masih naik: ${m.last24h} catatan baru dalam 24 jam terakhir.`));
+    if (m.last24h > m.prior24h) parts.push(pickL(`Still growing. ${m.last24h} new in the last 24 hours.`, `Masih naik. ${m.last24h} catatan baru dalam 24 jam terakhir.`));
     else if (m.last24h === 0) parts.push(pickL("Quiet in the last 24 hours.", "Tenang dalam 24 jam terakhir."));
-    else if (m.last24h === m.prior24h) parts.push(pickL(`Steady: ${m.last24h} in the last 24 hours, the same as the day before.`, `Stabil: ${m.last24h} dalam 24 jam terakhir, sama dengan sehari sebelumnya.`));
-    else parts.push(pickL(`Slowing: ${m.last24h} in the last 24 hours against ${m.prior24h} the day before.`, `Melambat: ${m.last24h} dalam 24 jam terakhir dibanding ${m.prior24h} sehari sebelumnya.`));
+    else if (m.last24h === m.prior24h) parts.push(pickL(`Steady. ${m.last24h} in the last 24 hours, the same as the day before.`, `Stabil. ${m.last24h} dalam 24 jam terakhir, sama dengan sehari sebelumnya.`));
+    else parts.push(pickL(`Slowing. ${m.last24h} in the last 24 hours against ${m.prior24h} the day before.`, `Melambat. ${m.last24h} dalam 24 jam terakhir dibanding ${m.prior24h} sehari sebelumnya.`));
   }
   return parts.join(" ");
 }

@@ -180,7 +180,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
                             <p className="mt-1 text-[11px] font-black text-[#6B7591]">{label}</p>
                           </div>
                         ))}
-                        {(run.fetched ?? 0) === 0 ? <p className="col-span-3 mt-1 rounded-[8px] bg-[#FFF3DC] px-2.5 py-1.5 text-[12px] font-bold text-[#A04606]">{pickL("Nothing found: try a more common name or spelling.", "Tidak ada hasil: coba nama atau ejaan yang lebih umum.")}</p> : null}
+                        {(run.fetched ?? 0) === 0 ? <p className="col-span-3 mt-1 rounded-[8px] bg-[#FFF3DC] px-2.5 py-1.5 text-[12px] font-bold text-[#A04606]">{pickL("Nothing found. Try a more common name or spelling.", "Tidak ada hasil. Coba nama atau ejaan yang lebih umum.")}</p> : null}
                       </div>
                     ) : (
                       <div className="mt-3"><LastRunLine keyword={k} t={t} /></div>

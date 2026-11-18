@@ -157,7 +157,7 @@ export function OverviewHero({
     : level === "waiting"
     ? L(`No mentions in the last ${periodLabel} yet.`, `Belum ada percakapan dalam ${periodLabel} terakhir.`)
     : worst && worstShare >= 30
-    ? L(`${worst.keyword} is under the most pressure: ${worstShare}% of ${fmt(worst.count)} mentions are negative.`, `${worst.keyword} paling disorot: ${worstShare}% dari ${fmt(worst.count)} percakapan bernada negatif.`)
+    ? L(`${worst.keyword} is under the most pressure. ${worstShare}% of ${fmt(worst.count)} mentions are negative.`, `${worst.keyword} paling disorot. ${worstShare}% dari ${fmt(worst.count)} percakapan bernada negatif.`)
     : L(`No keyword has a high negative share in the last ${periodLabel}.`, `Tidak ada kata kunci dengan porsi negatif tinggi dalam ${periodLabel} terakhir.`);
   const followUp = analysing
     ? L("The verdict appears here once they are scored, usually within the hour.", "Kesimpulan muncul di sini setelah dinilai, biasanya dalam satu jam.")
@@ -178,7 +178,13 @@ export function OverviewHero({
   const style = LEVEL_STYLE[level];
   // The headline with the keyword under pressure set in the level's colour.
   const headlineNode = level !== "waiting" && worst && worstShare >= 30
-    ? <><span className={style.text}>{worst.keyword}</span>{L(` is under the most pressure: ${worstShare}% of ${fmt(worst.count)} mentions are negative.`, ` paling disorot: ${worstShare}% dari ${fmt(worst.count)} percakapan bernada negatif.`)}</>
+    // Two lines, no colon: who is under pressure, then the number on its own line, a size smaller.
+    ? <>
+        <span className={style.text}>{worst.keyword}</span>{L(" is under the most pressure", " paling disorot")}
+        <span className="mt-2 block text-[20px] font-bold leading-snug tracking-[-0.02em] text-[#31406B] sm:text-[24px]">
+          {L(`${worstShare}% of ${fmt(worst.count)} mentions are negative.`, `${worstShare}% dari ${fmt(worst.count)} percakapan bernada negatif.`)}
+        </span>
+      </>
     : headline;
 
   return (
