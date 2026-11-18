@@ -501,7 +501,8 @@ router.get("/media", async (req, res) => {
             .from("signals")
             .select("id, title, url, platform, author, published_at, captured_at, sentiment, metadata")
             .eq("workspace_id", workspaceId)
-            .gte("published_at", since)
+            // Same window as the other Monitoring panels (collected in the period), so the totals match.
+            .gte("captured_at", since)
             .order("published_at", { ascending: true })
             .limit(5000);
         if (error) throw error;

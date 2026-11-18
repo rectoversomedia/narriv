@@ -194,7 +194,7 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
                 <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{risk ? tidyTitle(risk.title) : L("No negative issue", "Tidak ada isu negatif")}</p>
               </div>
               <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
-                <p className="text-[34px] font-black leading-none text-[#A04606]">{fastest?.velocity || "—"}</p>
+                <p className="text-[34px] font-black leading-none text-[#A04606]">{fastest?.velocity === "new" ? L("New", "Baru") : fastest?.velocity || "—"}</p>
                 <p className="mt-2 text-[11.5px] font-bold text-[#5F6B94]">{L("Fastest Rising", "Naik Paling Cepat")}</p>
                 <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{fastest ? tidyTitle(fastest.title) : null}</p>
               </div>

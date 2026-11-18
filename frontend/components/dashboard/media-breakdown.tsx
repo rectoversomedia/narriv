@@ -74,7 +74,7 @@ export function MediaBreakdownPanel({ data, days, loading }: { data?: MediaBreak
                       <span className="flex h-2.5 flex-1 overflow-hidden rounded-full bg-[#F1F4FA]">
                         {(["positive", "neutral", "negative"] as const).map((k) => (m[k] ? <span key={k} style={{ width: `${(m[k] / m.total) * 100}%`, background: TONE[k].bar }} /> : null))}
                       </span>
-                      <span className="w-[64px] text-right text-[11px] font-bold text-[#5A6478]">{m.negative ? <span className="text-[#B42318]">{m.negative} {L("neg", "neg")}</span> : `${Math.round((m.positive / m.total) * 100)}% ${L("pos", "pos")}`}</span>
+                      <span className="w-[64px] text-right text-[11px] font-bold text-[#5A6478]">{m.negative ? <span className="text-[#B42318]">{m.negative} {L("neg", "neg")}</span> : m.positive ? `${Math.round((m.positive / m.total) * 100)}% pos` : L("neutral", "netral")}</span>
                     </span>
                     <ChevronDown size={16} className={cn("text-[#5A6478] transition", isOpen && "rotate-180")} aria-hidden />
                   </button>

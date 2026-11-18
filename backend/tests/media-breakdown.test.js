@@ -21,12 +21,12 @@ describe('media breakdown API', () => {
     db.table('workspaces').push({ id: WS_A, name: 'A', onboarding_completed: true }, { id: WS_B, name: 'B', onboarding_completed: true });
     db.table('workspace_members').push({ id: 'wm', workspace_id: WS_A, user_id: USER_ID, role: 'owner', created_at: hoursAgo(100) });
     db.table('signals').push(
-      { id: 'a1', workspace_id: WS_A, title: 'First on the story', url: 'https://k.example/1', platform: 'news', author: 'Kontan', sentiment: 'NEUTRAL', metadata: { publisher: 'Kontan' }, published_at: hoursAgo(30) },
-      { id: 'a2', workspace_id: WS_A, title: 'Follow-up', url: 'https://k.example/2', platform: 'news', author: 'Kontan', sentiment: 'negative', metadata: { publisher: 'Kontan' }, published_at: hoursAgo(5) },
-      { id: 'a3', workspace_id: WS_A, title: 'Another outlet', url: 'https://c.example/1', platform: 'news', author: 'CNBC', sentiment: 'POSITIVE', metadata: { publisher: 'CNBC' }, published_at: hoursAgo(10) },
-      { id: 'a4', workspace_id: WS_A, title: 'A tweet', url: 'https://x.com/someone/1', platform: 'x', author: 'someone', sentiment: 'NEGATIVE', metadata: {}, published_at: hoursAgo(3) },
-      { id: 'a5', workspace_id: WS_A, title: 'Too old', platform: 'news', author: 'Old', sentiment: 'NEUTRAL', metadata: {}, published_at: hoursAgo(24 * 40) },
-      { id: 'b1', workspace_id: WS_B, title: 'Other client', platform: 'news', author: 'Kontan', sentiment: 'NEGATIVE', metadata: { publisher: 'Kontan' }, published_at: hoursAgo(2) },
+      { id: 'a1', workspace_id: WS_A, title: 'First on the story', url: 'https://k.example/1', platform: 'news', author: 'Kontan', sentiment: 'NEUTRAL', metadata: { publisher: 'Kontan' }, published_at: hoursAgo(30), captured_at: hoursAgo(30) },
+      { id: 'a2', workspace_id: WS_A, title: 'Follow-up', url: 'https://k.example/2', platform: 'news', author: 'Kontan', sentiment: 'negative', metadata: { publisher: 'Kontan' }, published_at: hoursAgo(5), captured_at: hoursAgo(5) },
+      { id: 'a3', workspace_id: WS_A, title: 'Another outlet', url: 'https://c.example/1', platform: 'news', author: 'CNBC', sentiment: 'POSITIVE', metadata: { publisher: 'CNBC' }, published_at: hoursAgo(10), captured_at: hoursAgo(10) },
+      { id: 'a4', workspace_id: WS_A, title: 'A tweet', url: 'https://x.com/someone/1', platform: 'x', author: 'someone', sentiment: 'NEGATIVE', metadata: {}, published_at: hoursAgo(3), captured_at: hoursAgo(3) },
+      { id: 'a5', workspace_id: WS_A, title: 'Too old', platform: 'news', author: 'Old', sentiment: 'NEUTRAL', metadata: {}, published_at: hoursAgo(24 * 40), captured_at: hoursAgo(24 * 40) },
+      { id: 'b1', workspace_id: WS_B, title: 'Other client', platform: 'news', author: 'Kontan', sentiment: 'NEGATIVE', metadata: { publisher: 'Kontan' }, published_at: hoursAgo(2), captured_at: hoursAgo(2) },
     );
   });
 
