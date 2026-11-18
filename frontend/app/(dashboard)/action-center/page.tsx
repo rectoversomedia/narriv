@@ -116,7 +116,7 @@ export default function ActionCenterPage() {
         body: decided ? (
           <ul className="space-y-0.5">
             {plans.map((p) => <li key={p.id}><Link href="/action-plans" className="hover:text-[#3B52F5] hover:underline">{to("planItem", { title: p.title || to("untitled"), status: status("plan", p.status) })}</Link></li>)}
-            {cases.map((c) => <li key={c.id}><Link href="/workspace/cases" className="hover:text-[#3B52F5] hover:underline">{to("caseItem", { title: c.title || to("untitled"), status: status("case", c.status) })}</Link></li>)}
+            {cases.map((c) => <li key={c.id} className="max-w-full"><Link href="/workspace/cases" className="hover:text-[#3B52F5] hover:underline">{to("caseItem", { title: c.title || to("untitled"), status: status("case", c.status) })}</Link></li>)}
             {a.unchangedSinceFollowUp ? <li className="text-[12px] text-[#5A6478]">{to("fu_unchanged", { date: fmtDate(fu?.openSince) })}</li> : fu?.stage === "in_progress" ? <li className="text-[12px] text-[#9A5B00]">{to("fu_newSince")}</li> : null}
           </ul>
         ) : t("followUpNone"),
@@ -248,13 +248,13 @@ export default function ActionCenterPage() {
                     <p className="text-[12.5px] font-bold text-[#5F6B94]">{L("Follow-up under way", "Tindak lanjut yang berjalan")}</p>
                     <ul className="mt-1.5 flex flex-wrap gap-1.5">
                       {plans.map((pl) => (
-                        <li key={pl.id}><Link href="/action-plans" className="inline-flex max-w-full items-center gap-1.5 rounded-full border-[1.5px] border-[#101334] bg-white px-3 py-1 text-[12.5px] font-bold text-[#101334] hover:bg-[#EEF1FF]">
+                        <li key={pl.id} className="max-w-full"><Link href="/action-plans" className="inline-flex max-w-full items-center gap-1.5 rounded-full border-[1.5px] border-[#101334] bg-white px-3 py-1 text-[12.5px] font-bold text-[#101334] hover:bg-[#EEF1FF]">
                           <span className={cn("size-2 shrink-0 rounded-full", pl.status === "done" || pl.status === "completed" ? "bg-[#12A66A]" : "bg-[#F59E0B]")} />
                           <span className="truncate">{L("Plan", "Rencana")} · {tidyTitle(pl.title) || to("untitled")}</span>
                         </Link></li>
                       ))}
                       {cases.map((c) => (
-                        <li key={c.id}><Link href="/workspace/cases" className="inline-flex max-w-full items-center gap-1.5 rounded-full border-[1.5px] border-[#101334] bg-white px-3 py-1 text-[12.5px] font-bold text-[#101334] hover:bg-[#EEF1FF]">
+                        <li key={c.id} className="max-w-full"><Link href="/workspace/cases" className="inline-flex max-w-full items-center gap-1.5 rounded-full border-[1.5px] border-[#101334] bg-white px-3 py-1 text-[12.5px] font-bold text-[#101334] hover:bg-[#EEF1FF]">
                           <span className={cn("size-2 shrink-0 rounded-full", c.status === "resolved" || c.status === "closed" ? "bg-[#12A66A]" : "bg-[#465FFF]")} />
                           <span className="truncate">{L("Case", "Kasus")} · {tidyTitle(c.title) || to("untitled")}</span>
                         </Link></li>

@@ -468,7 +468,7 @@ export default function DashboardPage() {
                             <Tag tone={levelTone(alert.severity ?? "low")}>{tLevel(`level.${["critical", "high", "medium", "low"].includes(alert.severity ?? "") ? alert.severity : "low"}`)}</Tag>
                             <span className="text-[11px] font-bold text-[#5A6478]">{timeAgo(alertTime(alert))}</span>
                           </span>
-                          <span className="mt-1.5 block truncate text-[15px] font-black text-[#101334]">{tidyTitle(alert.title)}</span>
+                          <span className="mt-1.5 block line-clamp-2 text-[15px] font-black leading-snug text-[#101334]">{tidyTitle(alert.title)}</span>
                           <AlertFacts alert={alert} />
                         </span>
                         <span className="inline-flex h-9 shrink-0 items-center rounded-full bg-[#465FFF] px-4 text-[12.5px] font-bold text-white">{L("Handle", "Tangani")}</span>
@@ -484,7 +484,7 @@ export default function DashboardPage() {
                             <span className="text-[11px] font-bold text-[#5A6478]">{codes.urgency(rec.urgency)}</span>
                           </span>
                           <span className="mt-1.5 block text-[15px] font-black text-[#101334]">{codes.action(rec.action)}</span>
-                          {rec.observedIssue && (index === 0 || firstSentence(rec.observedIssue) !== firstSentence(recommendations[index - 1]?.observedIssue ?? "")) ? <span className="mt-0.5 block truncate text-[12px] font-semibold text-[#53608C]">{firstSentence(rec.observedIssue)}</span> : null}
+                          {rec.observedIssue && (index === 0 || firstSentence(rec.observedIssue) !== firstSentence(recommendations[index - 1]?.observedIssue ?? "")) ? <span className="mt-0.5 block line-clamp-2 text-[12px] font-semibold text-[#53608C]">{firstSentence(rec.observedIssue)}</span> : null}
                         </span>
                         <span className="inline-flex h-9 shrink-0 items-center rounded-full bg-[#EEF1FF] px-4 text-[12.5px] font-bold text-[#3B52F5]">{L("Create Action Plan", "Buat Rencana Aksi")}</span>
                       </button>

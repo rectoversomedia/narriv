@@ -1,5 +1,7 @@
 /**
  * The shared frame of every Narriv email: a navy header with the logo, a white body, and a footer, both centred.
+ * The header colour is also a background-image: Gmail's dark mode on iPhone inverts plain background colours
+ * (navy turned pale lilac, hiding the white logo) but leaves images alone.
  * Table-based with inline styles so it holds up in Gmail, Outlook and Apple Mail. Pieces (heading, button, facts,
  * quote list) keep the same spacing in every email.
  */
@@ -46,7 +48,7 @@ export function emailLayout({ lang = "en", title, preheader, kicker, body, reaso
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F5F7FC">
 <tr><td align="center" style="padding:32px 12px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:20px;overflow:hidden;border:1px solid ${LINE}">
-<tr><td align="center" style="background:${INK};padding:30px 28px 26px;text-align:center">
+<tr><td align="center" bgcolor="#101334" style="background:${INK};background-image:linear-gradient(${INK},${INK});padding:30px 28px 26px;text-align:center">
 <a href="${SITE_URL}" style="text-decoration:none"><img src="${LOGO_URL}" width="132" height="36" alt="Narriv" style="display:block;margin:0 auto;border:0;width:132px;height:auto;color:#ffffff;font:800 24px ${FONT}"></a>
 ${kicker ? `<div style="margin-top:14px;font:700 11px/1.4 ${FONT};letter-spacing:2px;text-transform:uppercase;color:#A5B4FF">${esc(kicker)}</div>` : ""}
 </td></tr>
