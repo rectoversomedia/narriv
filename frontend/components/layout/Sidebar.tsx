@@ -38,7 +38,7 @@ export function Sidebar() {
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const mobileItems = navGroups.flatMap((group) => group.items);
   // Open alerts, shown beside Follow-up so what waits for a decision is visible from every page.
-  const openAlerts = useQuery({ queryKey: ["nav-open-alerts"], queryFn: () => getAlerts({ status: "unresolved", limit: 1 }), staleTime: 60 * 1000, refetchInterval: 2 * 60 * 1000 });
+  const openAlerts = useQuery({ queryKey: ["nav-open-alerts"], queryFn: () => getAlerts({ status: "unresolved", type: "risk", limit: 1 }), staleTime: 60 * 1000, refetchInterval: 2 * 60 * 1000 });
   const openCount = openAlerts.data?.pagination?.total ?? 0;
   const badgeFor = (key: string) => (key === "tasks" && openCount > 0 ? (openCount > 99 ? "99+" : String(openCount)) : null);
 

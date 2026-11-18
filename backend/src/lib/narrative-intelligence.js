@@ -89,6 +89,7 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
             .from("alerts")
             .select("id, severity, status, created_at")
             .eq("workspace_id", workspaceId)
+            .neq("type", "opportunity")
             .gte("created_at", sinceIso)
             .then((r) => r.data || []),
         baseSupabaseAdmin

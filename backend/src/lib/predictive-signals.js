@@ -37,7 +37,7 @@ export async function computePredictiveSignals({ workspaceId, windowHours = 24 }
     const [recent, prev, alerts, clusters] = await Promise.all([
         baseSupabaseAdmin.from("signals").select("id, sentiment, captured_at").eq("workspace_id", workspaceId).gte("captured_at", sinceIso).then((r) => r.data || []),
         baseSupabaseAdmin.from("signals").select("id").eq("workspace_id", workspaceId).lt("captured_at", sinceIso).gte("captured_at", prevSinceIso).then((r) => r.data || []),
-        baseSupabaseAdmin.from("alerts").select("id, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", sinceIso).then((r) => r.data || []),
+        baseSupabaseAdmin.from("alerts").select("id, severity, status, created_at").eq("workspace_id", workspaceId).neq("type", "opportunity").gte("created_at", sinceIso).then((r) => r.data || []),
         baseSupabaseAdmin.from("narrative_clusters")
             .select("id, title, signal_count, narrative_cluster_signals(signal:signals(id, captured_at))")
             .eq("workspace_id", workspaceId)

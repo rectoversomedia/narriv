@@ -252,7 +252,7 @@ export default function DashboardPage() {
   });
   const pipelineQuery = useQuery({ queryKey: ["pipeline-status"], queryFn: getPipelineStatus, staleTime: 60 * 1000, retry: 1 });
   const issuesQuery = useQuery({ queryKey: ["overview-issues", period], queryFn: () => getNarratives({ limit: 20, days: PERIOD_DAYS[period] }), staleTime: 60 * 1000 });
-  const alertsQuery = useQuery({ queryKey: ["overview-active-alerts"], queryFn: () => getAlerts({ status: "unresolved", limit: 50 }), staleTime: 30 * 1000 });
+  const alertsQuery = useQuery({ queryKey: ["overview-active-alerts"], queryFn: () => getAlerts({ status: "unresolved", type: "risk", limit: 50 }), staleTime: 30 * 1000 });
   const recsQuery = useQuery({ queryKey: ["overview-recommendations", period], queryFn: () => getRecommendations(PERIOD_HOURS[period]), staleTime: 60 * 1000, retry: 1 });
   // What the workspace monitors for decides some panels: a CVE workspace sees provinces and narrative categories
   // where a brand sees AI visibility and competitors; a government body has no competitors.

@@ -842,6 +842,8 @@ export default function AlertsPage() {
       const res = await getAlerts({
         page,
         limit: 10,
+        // Opportunities have their own page; this list is for risks to handle.
+        type: "risk",
         severity: severityFilter || undefined,
         status: statusFilter || undefined,
         search: searchQuery.trim() || undefined,

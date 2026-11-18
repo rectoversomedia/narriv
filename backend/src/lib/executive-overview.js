@@ -131,7 +131,7 @@ export async function computeExecutiveOverview({ workspaceId, windowHours = 168 
         db.from("narrative_clusters").select("id, title, sentiment, created_at, updated_at, narrative_cluster_signals(signal_id)")
             .eq("workspace_id", workspaceId).order("updated_at", { ascending: false, nullsFirst: false }).limit(100),
         db.from("alerts").select("id, title, severity, status, created_at")
-            .eq("workspace_id", workspaceId).gte("created_at", since).order("created_at", { ascending: false }).limit(100),
+            .eq("workspace_id", workspaceId).neq("type", "opportunity").gte("created_at", since).order("created_at", { ascending: false }).limit(100),
         (deps.loadRelevanceContext || loadRelevanceContext)(db, workspaceId),
         db.from("action_plans").select("id, title, status, cluster_id, signal_id, alert_id, created_at")
             .eq("workspace_id", workspaceId).order("created_at", { ascending: false }).limit(200),

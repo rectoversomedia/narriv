@@ -39,6 +39,7 @@ export async function computeReputationIntelligence({ workspaceId, windowHours =
             .from("alerts")
             .select("id, severity, status")
             .eq("workspace_id", workspaceId)
+            .neq("type", "opportunity")
             .gte("created_at", sinceIso)
             .then((r) => r.data || []),
         baseSupabaseAdmin
