@@ -103,7 +103,16 @@ export const getSummary = async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0] || "default";
-        const { startDate, endDate } = req.query;
+        // The client sends "now minus N" with millisecond precision, so every request had its own cache key and the
+        // summary (a full signals scan) was rebuilt on every poll. Flooring both ends to the minute lets repeated
+        // polls and the previous-period query share the cached result; the window shifts by under a minute.
+        const toMinute = (v) => {
+            if (!v) return v;
+            const t = Date.parse(v);
+            return Number.isNaN(t) ? v : new Date(Math.floor(t / 60000) * 60000).toISOString();
+        };
+        const startDate = toMinute(req.query.startDate);
+        const endDate = toMinute(req.query.endDate);
         const rangeKey = `${startDate || "all"}_${endDate || "all"}`;
 
         const cacheKey = CACHE_KEYS.dashboard(workspaceId, rangeKey);

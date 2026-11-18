@@ -198,7 +198,7 @@ export function Topbar() {
     queryFn: () => getNotifications(1, 50),
     enabled: !!token,
     staleTime: 60 * 1000,
-    refetchInterval: 60 * 1000,
+    refetchInterval: 2 * 60 * 1000,
     refetchIntervalInBackground: false,
   });
 
