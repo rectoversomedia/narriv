@@ -1,12 +1,11 @@
-import OpenAI from "openai";
+import { anyAiConfigured, getChatClient } from "../../lib/chat-client.js";
 import { logStructured } from "../../lib/logger.js";
 import { extractCitationsFromText } from "./citation-extractor.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const client = OPENAI_API_KEY ? new OpenAI({
-    apiKey: OPENAI_API_KEY,
-}) : null;
+// OpenAI or Claude, with a fallback between them (lib/chat-client).
+const client = anyAiConfigured() ? getChatClient() : null;
 
 /**
  * Generate diverse, realistic consumer prompt variants for evaluating brand visibility in LLMs.
@@ -194,7 +193,7 @@ export function analyzePromptResponse(responseText, brandName, competitors = [])
  * @returns {Promise<{ en: string, id: string, raw: string }>}
  */
 export async function executeSimulatedPromptQuery(promptText, options = {}) {
-    if (!OPENAI_API_KEY || !client) {
+    if (!client) {
         logStructured("warn", "geo_engine_no_openai_key", { prompt: promptText });
         return {
             en: `[Simulated GPT-4o-mini] Objective response regarding the prompt: "${promptText}". Comprehensive overview with industry context and competitive insights.`,

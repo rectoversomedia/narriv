@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import OpenAI from "openai";
+import { anyAiConfigured, getChatClient } from "../../lib/chat-client.js";
 import { validateAIOutput } from "./ai.schema.js";
 import { logStructured } from "../../lib/logger.js";
 import { incrementAIFailure } from "../../lib/metrics.js";
@@ -8,13 +8,12 @@ import { recordTokenUsage } from "../../lib/token-tracking.js";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 if (!OPENAI_API_KEY) {
-    logStructured("warn", "[AI SERVICE] WARNING: OPENAI_API_KEY is not set. AI features will be disabled.");
+    logStructured("warn", "[AI SERVICE] OPENAI_API_KEY is not set: AI runs on Claude if ANTHROPIC_API_KEY is set, otherwise it is off.");
 }
 
 // Initialize the OpenAI client
-const client = OPENAI_API_KEY ? new OpenAI({
-    apiKey: OPENAI_API_KEY,
-}) : null;
+// OpenAI or Claude, with a fallback between them (lib/chat-client).
+const client = anyAiConfigured() ? getChatClient() : null;
 
 class AIAnalysisError extends Error {
     constructor(message, details = {}) {
@@ -224,7 +223,7 @@ function tryParseJSON(raw) {
  * @returns {Promise<object>} - The validated AI analysis object.
  */
 export const analyzeSignal = async (title, content, usageCtx = null) => {
-    if (!OPENAI_API_KEY) {
+    if (!client) {
         throw new Error("OpenAI API key is not configured. Set OPENAI_API_KEY in your .env file.");
     }
 
@@ -298,7 +297,7 @@ export const analyzeText = async (text) => {
  * JSON; the caller then stores the record without a category, never a guessed one.
  */
 export const classifyCveNarrative = async (title, content, usageCtx = null) => {
-    if (!OPENAI_API_KEY) throw new Error("OpenAI API key is not configured.");
+    if (!client) throw new Error("No AI provider is configured.");
     const { CVE_SYSTEM_PROMPT, normalizeCveResult } = await import("../../lib/cve-categories.js");
     const text = `${title ? `Title: ${title}\n` : ""}Content: ${String(content || "").slice(0, 3000)}`;
     const raw = await callOpenAI([{ role: "system", content: CVE_SYSTEM_PROMPT }, { role: "user", content: text }], { ...(usageCtx || {}), operation: usageCtx?.operation || "cve_classification" });
@@ -315,7 +314,7 @@ export const classifyCveNarrative = async (title, content, usageCtx = null) => {
  * @returns {Promise<object>} - { whyItMatters, whatToDo }
  */
 export const enhanceAlert = async (alertData, signalsContext) => {
-    if (!OPENAI_API_KEY) {
+    if (!client) {
         logStructured("warn", "[AI] Cannot enhance alert: Missing API key.");
         return { whyItMatters: null, whatToDo: null };
     }
@@ -379,7 +378,7 @@ export const enhanceAlert = async (alertData, signalsContext) => {
  * @returns {Promise<object>} - { title, description, dominant_sentiment, impact }
  */
 export const analyzeCluster = async (signalsContext, lang = "en") => {
-    if (!OPENAI_API_KEY) {
+    if (!client) {
         logStructured("warn", "[AI] Cannot analyze cluster: Missing API key.");
         return null;
     }
@@ -429,7 +428,7 @@ export const analyzeCluster = async (signalsContext, lang = "en") => {
  * few of its posts. Returns { angles: [{ title, format, platform, hook }], caution } or null without a provider.
  */
 export const suggestContentAngles = async ({ brand, title, description, samples = [], risk = null, lang = "en" }, usageCtx = null) => {
-    if (!OPENAI_API_KEY) return null;
+    if (!client) return null;
     const id = lang === "id";
     const system = [
         "You are a senior social media strategist for brands in Indonesia.",
@@ -537,7 +536,7 @@ export const generateSignalsSummary = async (signals = [], contextInfo = {}) => 
 
 async function generateSignalsSummaryUncached(signals, contextInfo) {
 
-    if (!OPENAI_API_KEY) {
+    if (!client) {
         return buildFallbackSummary(signals, contextInfo);
     }
 

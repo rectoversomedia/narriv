@@ -53,6 +53,9 @@ export async function latestKeywordRuns(workspaceId) {
         .from("cron_ingestion_logs")
         .select("created_at, status, metadata")
         .eq("job_name", "scheduled-rss-ingestion")
+        // Only runs that included this workspace: the last 20 runs of the whole platform hid a paused workspace's
+        // history ("awaiting first run" next to 120 collected mentions). jsonb containment on metadata.results.
+        .contains("metadata", { results: [{ workspaceId }] })
         .order("created_at", { ascending: false })
         .limit(20);
     if (error) return { runs: new Map(), error: error.message };

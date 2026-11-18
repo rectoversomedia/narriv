@@ -1,4 +1,5 @@
 import express from "express";
+import { anyAiConfigured } from "../../lib/chat-client.js";
 import supabase from "../../lib/supabase.js";
 import { generateActionPlan, generateMultiStepPlan } from "./actions.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
@@ -33,7 +34,7 @@ router.post("/", rateLimiters.aiGeneration(), validateRequest({ body: createActi
             );
         }
 
-        if (!process.env.OPENAI_API_KEY) {
+        if (!anyAiConfigured()) {
             return res.status(503).json({
                 error: "Action generation is currently unavailable.",
                 code: "AI_PROVIDER_UNAVAILABLE",
@@ -222,7 +223,7 @@ router.post("/multi-step", rateLimiters.aiGeneration(), async (req, res) => {
             );
         }
 
-        if (!process.env.OPENAI_API_KEY) {
+        if (!anyAiConfigured()) {
             return res.status(503).json({
                 error: "Action generation is currently unavailable.",
                 code: "AI_PROVIDER_UNAVAILABLE",

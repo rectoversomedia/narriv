@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { getChatClient } from "./chat-client.js";
 import { logStructured } from "./logger.js";
 import { routeCompletion, listTiers } from "./ai-routing.js";
 
@@ -10,10 +10,9 @@ if (!apiKey || apiKey === "sk-placeholder") {
 
 let clientInstance = null;
 
+/** The shared chat client: OpenAI-shaped, runs on OpenAI or Claude with a fallback (lib/chat-client). */
 export function getOpenAIClient() {
-    if (!clientInstance) {
-        clientInstance = new OpenAI({ apiKey: apiKey || "" });
-    }
+    if (!clientInstance) clientInstance = getChatClient();
     return clientInstance;
 }
 

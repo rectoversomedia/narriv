@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { anyAiConfigured, getChatClient } from "../../lib/chat-client.js";
 import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { buildTemplateContext } from "./action-templates.js";
@@ -7,9 +7,8 @@ import { recordTokenUsage } from "../../lib/token-tracking.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const client = OPENAI_API_KEY ? new OpenAI({
-    apiKey: OPENAI_API_KEY,
-}) : null;
+// OpenAI or Claude, with a fallback between them (lib/chat-client).
+const client = anyAiConfigured() ? getChatClient() : null;
 
 const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 20000);
 const OPENAI_MAX_RETRIES = 1;
@@ -517,8 +516,8 @@ async function buildContext({ alertId, clusterId, signalId, workspaceId }) {
  */
 export async function generateActionPlan({ workspaceId, strategyType, alertId, clusterId, signalId }, deps = {}) {
     const complete = deps.complete || callOpenAIWithRetry;
-    if (!deps.complete && !OPENAI_API_KEY) {
-        throw new Error("OPENAI_API_KEY is not configured.");
+    if (!deps.complete && !client) {
+        throw new Error("No AI provider is configured (OPENAI_API_KEY or ANTHROPIC_API_KEY).");
     }
 
     const promptConfig = STRATEGY_PROMPTS[strategyType];
@@ -767,8 +766,8 @@ export async function buildFeedbackContext(workspaceId, strategyType) {
  * @returns {Promise<object>} - Multi-step action plan
  */
 export async function generateMultiStepPlan({ workspaceId, strategyType, alertId, clusterId, maxSteps = 5 }) {
-    if (!OPENAI_API_KEY) {
-        throw new Error("OPENAI_API_KEY is not configured.");
+    if (!client) {
+        throw new Error("No AI provider is configured (OPENAI_API_KEY or ANTHROPIC_API_KEY).");
     }
 
     const promptConfig = STRATEGY_PROMPTS[strategyType];

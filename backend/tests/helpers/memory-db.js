@@ -109,6 +109,13 @@ export function createMemoryDb(seed = {}) {
       if (!Array.isArray(row[col])) throw new Error(`memory-db: overlaps on non-array column ${col}`);
       return row[col].some((v) => vals.includes(v));
     });
+    // jsonb containment (Postgres @>): every key of the pattern holds; an array pattern element must match some element.
+    const contains = (actual, pattern) => {
+      if (pattern === null || typeof pattern !== 'object') return actual === pattern || String(actual) === String(pattern);
+      if (Array.isArray(pattern)) return Array.isArray(actual) && pattern.every((p) => actual.some((a) => contains(a, p)));
+      return actual != null && typeof actual === 'object' && Object.entries(pattern).every(([k, v]) => contains(actual[k], v));
+    };
+    b.contains = (col, pattern) => addFilter((row) => contains(valueAt(row, col), pattern));
     b.not = (col, op, val) => addFilter((row) => !compare(op, valueAt(row, col), val));
     b.match = (obj) => addFilter((row) => Object.entries(obj || {}).every(([c, v]) => compare('eq', row[c], v)));
     b.setHeader = () => b;
