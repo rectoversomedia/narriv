@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
 import { MonoLabel, StatStrip } from "@/components/ui/stamp";
 import { intlLocale } from "@/store/useUiStore";
+import { tidyText, tidyTitle } from "@/lib/tidy-text";
 
 const fmtDate = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString(intlLocale(), { day: "numeric", month: "short" }) : "");
 
@@ -24,10 +25,9 @@ type Step = { icon: typeof Lightbulb; title: string; body: React.ReactNode; done
 function JourneyProgress({ steps }: { steps: Step[] }) {
   return (
     <ol className="grid grid-cols-5 gap-1.5">
-      {steps.map((step, i) => (
+      {steps.map((step) => (
         <li key={step.title} className="min-w-0">
-          <div className={cn("h-2 rounded-full", step.done ? "bg-[#12A66A]" : "bg-[#E3E7F1]")} />
-          <p className={cn("mt-1.5 truncate text-[11px] font-black", step.done ? "text-[#047857]" : "text-[#6B7591]")} title={step.title}>{i + 1}. {step.title}</p>
+          <div title={step.title} className={cn("h-2 rounded-full", step.done ? "bg-[#12A66A]" : "bg-[#E3E7F1]")} />
         </li>
       ))}
     </ol>
@@ -174,9 +174,9 @@ export default function ActionCenterPage() {
         <>
         <StatStrip
           stats={[
-            { key: "all", value: ordered.length, label: L("Recommendations", "Rekomendasi"), helper: L("from the evidence", "dari bukti"), tone: "text-[#3B52F5]" },
+            { key: "all", value: ordered.length, label: L("Recommendations", "Rekomendasi"), helper: L("in this period", "di periode ini"), tone: "text-[#3B52F5]" },
             { key: "decide", value: pending, label: L("Need a Decision", "Perlu Keputusan"), helper: pending > 0 ? L("decide first", "putuskan dulu") : L("none", "tidak ada"), tone: pending > 0 ? "text-[#B42318]" : "text-[#101334]" },
-            { key: "recheck", value: recheck.length, label: L("New Data Since", "Ada Data Baru"), helper: recheck.length > 0 ? L("check again", "cek ulang") : L("none", "tidak ada"), tone: recheck.length > 0 ? "text-[#B45309]" : "text-[#101334]" },
+            { key: "recheck", value: recheck.length, label: L("New Data Since", "Ada Data Baru"), helper: recheck.length > 0 ? L("issue changed after follow-up", "isu berubah setelah ditindaklanjuti") : L("none", "tidak ada"), tone: recheck.length > 0 ? "text-[#B45309]" : "text-[#101334]" },
             { key: "done", value: finished.length, label: L("Done", "Selesai"), helper: L("outcome recorded", "hasil tercatat"), tone: "text-[#047857]" },
           ]}
         />
@@ -203,43 +203,65 @@ export default function ActionCenterPage() {
             <section key={`${a.action}-${kind}-${i}`} className={cn(BOX, "overflow-hidden !p-0")}>
               <div className={cn("h-2", tone.band)} />
               <div className="p-5 sm:p-7">
+                {/* Read top to bottom: which issue, what to do, why, what backs it, where it stands. */}
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={cn("rounded-[8px] px-2.5 py-1 text-[12px] font-bold", tone.stamp)}>{tone.label}</span>
                   {a.urgency && to.has(`urgency_${a.urgency}`) ? <span className="nv-stamp">{to(`urgency_${a.urgency}`)}</span> : null}
-                  <span className="text-[11.5px] font-medium text-[#5F6B94]">{L(`${a.evidenceCount} evidence`, `${a.evidenceCount} bukti`)}</span>
                 </div>
-                <h2 className="mt-4 text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] sm:text-[30px]">{actionTitle(a)}</h2>
                 {a.relatedNarrative?.title ? (
-                  <Link href={monitoringHref({ hours, narrative: a.relatedNarrative.id })} className="mt-1.5 inline-block text-[14px] font-bold text-[#31406B] hover:text-[#3B52F5]">{L("Issue", "Isu")}: {a.relatedNarrative.title} →</Link>
+                  <Link href={monitoringHref({ hours, narrative: a.relatedNarrative.id })} className="group mt-4 block max-w-3xl">
+                    <span className="block text-[12.5px] font-bold text-[#5F6B94]">{L("About the issue", "Tentang isu")}</span>
+                    <span className="mt-0.5 block text-[16px] font-bold leading-snug text-[#31406B] group-hover:text-[#3B52F5]">{tidyTitle(a.relatedNarrative.title)} →</span>
+                  </Link>
                 ) : null}
+                <h2 className="mt-3 text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] sm:text-[30px]">{actionTitle(a)}</h2>
 
-                <div className="mt-5 grid gap-5 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-                  <div>
-                    <MonoLabel>{L("Why", "Kenapa")}</MonoLabel>
-                    <p className="mt-2 text-[16px] font-semibold leading-relaxed text-[#101334]">{actionWhy(a)}</p>
-                    <Link href={monitoringHref({ hours, narrative: a.relatedNarrative?.id })} className="mt-2 inline-flex items-center gap-1 text-[13px] font-bold text-[#3B52F5] hover:underline">{L(`See ${a.evidenceCount} evidence`, `Lihat ${a.evidenceCount} bukti`)} <ArrowRight size={14} /></Link>
+                <dl className="mt-5 grid gap-4 md:grid-cols-3">
+                  <div className="rounded-[14px] bg-[#F6F7FC] p-4">
+                    <dt className="text-[12.5px] font-bold text-[#5F6B94]">{L("Why", "Kenapa")}</dt>
+                    <dd className="mt-1.5 text-[15px] font-semibold leading-relaxed text-[#101334]">{tidyText(actionWhy(a))}</dd>
                   </div>
-                  <div>
-                    <MonoLabel>{L("Progress", "Perjalanan")}</MonoLabel>
-                    <div className="mt-3"><JourneyProgress steps={steps} /></div>
-                    {plans.length || cases.length ? (
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {plans.map((pl) => (
-                          <Link key={pl.id} href="/action-plans" className="inline-flex max-w-full items-center gap-1.5 rounded-full border-[1.5px] border-[#101334] bg-white px-3 py-1 text-[12px] font-bold text-[#101334] hover:bg-[#EEF1FF]">
-                            <span className={cn("size-2 shrink-0 rounded-full", pl.status === "done" || pl.status === "completed" ? "bg-[#12A66A]" : "bg-[#F59E0B]")} />
-                            <span className="truncate">{pl.title || to("untitled")}</span>
-                          </Link>
-                        ))}
-                        {cases.map((c) => (
-                          <Link key={c.id} href="/workspace/cases" className="inline-flex max-w-full items-center gap-1.5 rounded-full border-[1.5px] border-[#101334] bg-white px-3 py-1 text-[12px] font-bold text-[#101334] hover:bg-[#EEF1FF]">
-                            <span className={cn("size-2 shrink-0 rounded-full", c.status === "resolved" || c.status === "closed" ? "bg-[#12A66A]" : "bg-[#465FFF]")} />
-                            <span className="truncate">{L("Case", "Kasus")}: {c.title || to("untitled")}</span>
-                          </Link>
-                        ))}
-                      </div>
-                    ) : null}
+                  <div className="rounded-[14px] bg-[#F6F7FC] p-4">
+                    <dt className="text-[12.5px] font-bold text-[#5F6B94]">{L("Evidence", "Bukti")}</dt>
+                    <dd className="mt-1.5 text-[28px] font-black leading-none text-[#101334]">{a.evidenceCount}</dd>
+                    <dd className="mt-1 text-[13px] font-medium text-[#5F6B94]">{L(a.evidenceCount === 1 ? "mention behind this" : "mentions behind this", "percakapan pendukung")}</dd>
+                    <dd className="mt-2"><Link href={monitoringHref({ hours, narrative: a.relatedNarrative?.id })} className="inline-flex items-center gap-1 text-[13px] font-bold text-[#3B52F5] hover:underline">{L("Read them", "Baca buktinya")} <ArrowRight size={14} /></Link></dd>
                   </div>
-                </div>
+                  <div className="rounded-[14px] bg-[#F6F7FC] p-4">
+                    {(() => {
+                      const doneCount = steps.filter((st) => st.done).length;
+                      const next = steps.find((st) => !st.done);
+                      return (
+                        <>
+                          <dt className="text-[12.5px] font-bold text-[#5F6B94]">{L("Where it stands", "Sejauh mana")}</dt>
+                          <dd className="mt-1.5 text-[15px] font-bold text-[#101334]">{L(`Step ${doneCount} of 5`, `Tahap ${doneCount} dari 5`)}</dd>
+                          <dd className="mt-2"><JourneyProgress steps={steps} /></dd>
+                          <dd className="mt-2 text-[13px] font-medium text-[#5F6B94]">{next ? L(`Next: ${next.title.toLowerCase()}`, `Berikutnya ${next.title.toLowerCase()}`) : L("All steps done", "Semua tahap selesai")}</dd>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </dl>
+
+                {plans.length || cases.length ? (
+                  <div className="mt-4">
+                    <p className="text-[12.5px] font-bold text-[#5F6B94]">{L("Follow-up under way", "Tindak lanjut yang berjalan")}</p>
+                    <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                      {plans.map((pl) => (
+                        <li key={pl.id}><Link href="/action-plans" className="inline-flex max-w-full items-center gap-1.5 rounded-full border-[1.5px] border-[#101334] bg-white px-3 py-1 text-[12.5px] font-bold text-[#101334] hover:bg-[#EEF1FF]">
+                          <span className={cn("size-2 shrink-0 rounded-full", pl.status === "done" || pl.status === "completed" ? "bg-[#12A66A]" : "bg-[#F59E0B]")} />
+                          <span className="truncate">{L("Plan", "Rencana")} · {tidyTitle(pl.title) || to("untitled")}</span>
+                        </Link></li>
+                      ))}
+                      {cases.map((c) => (
+                        <li key={c.id}><Link href="/workspace/cases" className="inline-flex max-w-full items-center gap-1.5 rounded-full border-[1.5px] border-[#101334] bg-white px-3 py-1 text-[12.5px] font-bold text-[#101334] hover:bg-[#EEF1FF]">
+                          <span className={cn("size-2 shrink-0 rounded-full", c.status === "resolved" || c.status === "closed" ? "bg-[#12A66A]" : "bg-[#465FFF]")} />
+                          <span className="truncate">{L("Case", "Kasus")} · {tidyTitle(c.title) || to("untitled")}</span>
+                        </Link></li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
 
                 {/* The decision bar. */}
                 <div className="mt-6 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:flex-wrap sm:items-center">
