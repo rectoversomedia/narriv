@@ -330,7 +330,7 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
       <CardContent className="p-5 sm:p-7">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <p className="text-[12px] font-bold text-[#5F6B94]">{L("What Is Happening", "Yang Sedang Terjadi")}</p>
-          <p className="text-[12px] font-bold text-[#5A6478]">{L(`From ${formatSignals(total)} mentions in ${live.length} issues`, `Dari ${formatSignals(total)} percakapan dalam ${live.length} isu`)}</p>
+          <p className="text-[12px] font-bold text-[#5A6478]">{/* No summed count here: one mention can belong to several issues, so the sum never matched the Overview total. */}{L(`Across ${live.length} tracked issues`, `Dari ${live.length} isu yang terpantau`)}</p>
         </div>
 
         <button
@@ -608,7 +608,7 @@ export default function IntelligencePage() {
     {
       label: pickL("Negative issues", "Isu negatif"),
       value: pending ? "..." : String(negativeIssues.length),
-      helper: negativeIssues.length > 0 ? pickL(`${negativeIssues.reduce((n, c) => n + c.signals, 0)} records`, `${negativeIssues.reduce((n, c) => n + c.signals, 0)} percakapan`) : pickL("none", "tidak ada"),
+      helper: negativeIssues.length > 0 ? pickL(`${negativeIssues.reduce((n, c) => n + c.signals, 0)} mentions in these issues`, `${negativeIssues.reduce((n, c) => n + c.signals, 0)} percakapan di isu ini`) : pickL("none", "tidak ada"),
       icon: Brain,
       tone: "red" as Tone,
     },

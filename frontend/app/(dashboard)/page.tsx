@@ -294,6 +294,8 @@ export default function DashboardPage() {
     .slice(0, 3);
   const recommendations = [...(recsQuery.data?.recommendations ?? [])].sort((a, b) => (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9)).slice(0, 2);
   const openAlertTotal = alertsQuery.data?.pagination?.total ?? openAlerts.length;
+  // Unknown until the list has loaded: the hero shows "—" instead of a false "no alerts".
+  const openAlertsKnown = alertsQuery.isSuccess ? openAlertTotal : null;
 
   // Sources
   const platforms = summary?.platform_distribution ?? [];
@@ -354,7 +356,7 @@ export default function DashboardPage() {
           keywords={summary?.keyword_breakdown ?? []}
           total={total}
           negativeShare={Math.round(pct(dist.negative, analysed))}
-          openAlerts={openAlertTotal}
+          openAlerts={openAlertsKnown}
           criticalAlerts={((alertsQuery.data?.data ?? []) as AlertRow[]).filter((a) => a.severity === "critical").length}
           hours={hours}
           periodLabel={periodWord[period]}

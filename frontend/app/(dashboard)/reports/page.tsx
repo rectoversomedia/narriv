@@ -151,9 +151,11 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
     // The shared status (lib/status), from the same negative share the Overview uses.
     : (() => { const st = statusFromMentions({ negativeShare: neg }); return { word: L(...STATUS_WORD[st]), color: STATUS_COLOR[st].text, bg: st === "action" ? "#FDECEC" : st === "watch" ? "#FFF4E5" : "#E5F6EE" }; })();
   const list = narratives ?? [];
-  const top = list[0];
+  // Picked the way the Issue Map picks them: the largest issue, and the largest negative one.
+  const bySize = [...list].sort((a, b) => (b.signalCount || 0) - (a.signalCount || 0));
+  const top = bySize[0];
   const totalInIssues = list.reduce((sum, n) => sum + (n.signalCount || 0), 0) || 1;
-  const risk = list.find((n) => /neg/i.test(n.sentiment));
+  const risk = bySize.find((n) => /neg/i.test(n.sentiment));
   const fastest = [...list].sort((a, b) => (parseFloat(b.velocity) || 0) - (parseFloat(a.velocity) || 0))[0];
   const days = dashboard?.sentiment_trend ?? [];
   const maxDay = Math.max(1, ...days.map((d) => d.total));
@@ -189,12 +191,12 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
               <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#C81E1E]">{risk ? risk.signalCount : 0}</p>
                 <p className="mt-2 text-[11.5px] font-bold text-[#5F6B94]">{L("Biggest Risk", "Risiko Terbesar")}</p>
-                <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{risk ? risk.title : L("No negative issue", "Tidak ada isu negatif")}</p>
+                <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{risk ? tidyTitle(risk.title) : L("No negative issue", "Tidak ada isu negatif")}</p>
               </div>
               <div className="flex flex-col rounded-[14px] bg-[#F6F7FC] px-4 py-4">
                 <p className="text-[34px] font-black leading-none text-[#A04606]">{fastest?.velocity || "—"}</p>
                 <p className="mt-2 text-[11.5px] font-bold text-[#5F6B94]">{L("Fastest Rising", "Naik Paling Cepat")}</p>
-                <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{fastest?.title}</p>
+                <p className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-snug text-[#101334]">{fastest ? tidyTitle(fastest.title) : null}</p>
               </div>
             </div>
           ) : (
@@ -1031,8 +1033,9 @@ export default function ReportsPage() {
     shareReportMutation.mutate({ reportId: String(firstRow.id), recipientEmail: email, subject: subject || undefined });
   };
   const narrativesQuery = useQuery({
-    queryKey: ["reports-narratives-summary"],
-    queryFn: () => getNarratives({ limit: 10, days: 7 }),
+    // The same 30 days as the rest of this panel and the Issue Map (was 7 days under a "30 days" title).
+    queryKey: ["reports-narratives-summary-30d"],
+    queryFn: () => getNarratives({ limit: 50, days: 30 }),
     staleTime: 60 * 1000,
   });
   const dashboardQuery = useQuery({

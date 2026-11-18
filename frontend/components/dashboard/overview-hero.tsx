@@ -116,7 +116,7 @@ export function OverviewHero({
   keywords,
   total,
   negativeShare,
-  openAlerts,
+  openAlerts: openAlertsIn,
   criticalAlerts,
   hours,
   periodLabel,
@@ -129,7 +129,8 @@ export function OverviewHero({
   keywords: KeywordRow[];
   total: number;
   negativeShare: number;
-  openAlerts: number;
+  /** null while the alert list is loading or failed: shown as "—", never as a reassuring 0. */
+  openAlerts: number | null;
   criticalAlerts: number;
   hours: MonitoringPeriod;
   periodLabel: string;
@@ -141,6 +142,8 @@ export function OverviewHero({
 }) {
   const L = useL();
   const fmt = (n: number) => n.toLocaleString(intlLocale());
+  const alertsKnown = openAlertsIn !== null;
+  const openAlerts = openAlertsIn ?? 0;
   const sorted = [...keywords].sort((a, b) => negShare(b) - negShare(a) || b.count - a.count);
   const worst = sorted.find((k) => k.count >= 5 && k.negative > 0) ?? null;
   const worstShare = worst ? negShare(worst) : 0;
@@ -165,7 +168,9 @@ export function OverviewHero({
     ? L("Narriv checks your keywords every hour. Results appear here as they arrive.", "Narriv memeriksa kata kunci Anda setiap jam. Hasilnya muncul di sini begitu masuk.")
     : criticalAlerts > 0
     ? L(`${criticalAlerts} critical ${criticalAlerts === 1 ? "alert is" : "alerts are"} waiting for an owner.`, `${criticalAlerts} peringatan kritis menunggu ditangani.`)
-    : openAlerts > 0
+    : !alertsKnown
+      ? L("Loading alerts…", "Memuat peringatan…")
+      : openAlerts > 0
       ? L(`${openAlerts} ${openAlerts === 1 ? "alert is" : "alerts are"} still open.`, `${openAlerts} peringatan masih terbuka.`)
       : L("No open alerts.", "Tidak ada peringatan terbuka.");
 
@@ -173,7 +178,7 @@ export function OverviewHero({
     { v: fmt(total), l: L("Mentions", "Percakapan"), sub: L(`last ${periodLabel}`, `${periodLabel} terakhir`), href: monitoringHref({ hours }), tone: "text-[#101334]" },
     // Compared with the period before, so "41%" can be read as better or worse.
     { v: `${negativeShare}%`, l: L("Negative", "Negatif"), sub: prevNegativeShare == null ? L("of all mentions", "dari semua percakapan") : negativeShare === prevNegativeShare ? L(`same as the period before`, `sama dengan periode sebelumnya`) : L(`${negativeShare > prevNegativeShare ? "▲ up" : "▼ down"} from ${prevNegativeShare}% before`, `${negativeShare > prevNegativeShare ? "▲ naik" : "▼ turun"} dari ${prevNegativeShare}% sebelumnya`), href: monitoringHref({ hours, sentiment: "negative" }), tone: negativeShare >= 30 ? "text-[#B42318]" : "text-[#101334]" },
-    { v: fmt(openAlerts), l: L("Open Alerts", "Peringatan Aktif"), sub: criticalAlerts > 0 ? L(`${criticalAlerts} critical`, `${criticalAlerts} kritis`) : L("none critical", "tidak ada yang kritis"), href: "/alerts", tone: criticalAlerts > 0 ? "text-[#B42318]" : openAlerts > 0 ? "text-[#B45309]" : "text-[#101334]" },
+    { v: alertsKnown ? fmt(openAlerts) : "—", l: L("Open Alerts", "Peringatan Aktif"), sub: !alertsKnown ? L("loading…", "memuat…") : criticalAlerts > 0 ? L(`${criticalAlerts} critical`, `${criticalAlerts} kritis`) : L("none critical", "tidak ada yang kritis"), href: "/alerts", tone: criticalAlerts > 0 ? "text-[#B42318]" : openAlerts > 0 ? "text-[#B45309]" : "text-[#101334]" },
   ];
   const style = LEVEL_STYLE[level];
   // The headline with the keyword under pressure set in the level's colour.
@@ -182,7 +187,8 @@ export function OverviewHero({
     ? <>
         <span className={style.text}>{worst.keyword}</span>{L(" is under the most pressure", " paling disorot")}
         <span className="mt-2 block text-[20px] font-bold leading-snug tracking-[-0.02em] text-[#31406B] sm:text-[24px]">
-          {L(`${worstShare}% of ${fmt(worst.count)} mentions are negative.`, `${worstShare}% dari ${fmt(worst.count)} percakapan bernada negatif.`)}
+          {/* Say which mentions: the keyword's own, not the total in the tiles below. */}
+          {L(`${worstShare}% of the ${fmt(worst.count)} mentions about ${worst.keyword} are negative.`, `${worstShare}% dari ${fmt(worst.count)} percakapan soal ${worst.keyword} bernada negatif.`)}
         </span>
       </>
     : headline;
@@ -247,7 +253,11 @@ export function OverviewHero({
                 <p className="text-[12px] font-bold text-[#5F6B94]">{L("Monitored Keywords", "Kata Kunci yang Dipantau")}</p>
                 <h3 className="mt-1 text-[19px] font-black tracking-[-0.02em]">{L("Where The Pressure Is", "Di Mana Tekanannya")}</h3>
               </div>
-              <p className="text-[12px] font-medium text-[#5F6B94]">{L("highest negative share first", "urut dari porsi negatif tertinggi")}</p>
+              <p className="text-right text-[12px] font-medium text-[#5F6B94]">
+                {L("Highest negative share first", "Urut dari porsi negatif tertinggi")}
+                {/* Keyword counts add up to more than the total: say why, so the two numbers do not look wrong. */}
+                <span className="block">{L("One mention can name more than one keyword.", "Satu percakapan bisa menyebut lebih dari satu kata kunci.")}</span>
+              </p>
             </div>
             <ul className="mt-1 divide-y divide-[#EEF0F6]">
               {sorted.map((k) => <KeywordRowItem key={k.keyword} k={k} hours={hours} />)}
