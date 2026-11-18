@@ -163,6 +163,15 @@ export function classifyCveBatch() {
   return apiClient<{ classified: number; failed: number; remaining: number }>("/signals/cve-classify", { method: "POST", body: JSON.stringify({}) });
 }
 
+export type MediaPost = { id: string; title: string; url: string | null; publishedAt: string; sentiment: "positive" | "neutral" | "negative" };
+export type MediaOutlet = { name: string; platform: string; social: boolean; total: number; positive: number; neutral: number; negative: number; firstAt: string; lastAt: string; posts: MediaPost[] };
+export type MediaBreakdown = { days: number; total: number; media: MediaOutlet[] };
+
+/** Per outlet: how many records, the tone split, when it first wrote, and its posts oldest first. */
+export function getMediaBreakdown(days: 1 | 7 | 30 | 90 = 30) {
+  return apiClient<MediaBreakdown>(`/signals/media?days=${days}`);
+}
+
 export function getRegionBreakdown(days: 1 | 7 | 30 | 90 = 30) {
   return apiClient<RegionBreakdown>(`/signals/regions?days=${days}`);
 }

@@ -279,10 +279,10 @@ export function WhatIsNI({ en }: P) {
       <Head kicker={t("Apa itu narrative intelligence", "What narrative intelligence is")} title={t(<>Bukan sekadar menghitung berita, tapi <Brush>membaca ceritanya.</Brush></>, <>Not counting mentions, <Brush>reading the story.</Brush></>)} sub={t("Media monitoring biasa memberi daftar berita. Narrative intelligence memberi tahu cerita apa yang sedang terbentuk tentang Anda, seberapa cepat menyebar, dan apa yang perlu dilakukan.", "Media monitoring gives you a list of articles. Narrative intelligence tells you which story is forming about you, how fast it spreads and what to do next.")} />
       <div style={{ position: "absolute", left: 96, right: 96, top: 600, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32 }}>
         {steps.map(([I, c, h, d], k) => (
-          <Card key={h} style={{ padding: "40px 40px 44px" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 18 }}>
+          <Card key={h} style={{ padding: "40px 40px 44px", textAlign: "center" }}>
+            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
               <span style={{ display: "inline-flex", width: 64, height: 64, borderRadius: 18, alignItems: "center", justifyContent: "center", background: c }}><I size={34} color="#fff" aria-hidden /></span>
-              <span style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: MUTED }}>0{k + 1}</span>
+              <Num n={k + 1} c={INK} s={44} />
             </span>
             <p style={{ margin: "26px 0 0", fontSize: 40, fontWeight: 800, letterSpacing: "-0.02em" }}>{h}</p>
             <p style={{ margin: "14px 0 0", fontSize: 26, lineHeight: 1.5, color: MUTED }}>{d}</p>
@@ -566,14 +566,85 @@ export function MandiriClosing({ en }: P) {
   );
 }
 
+export function StoryTrace({ en }: P) {
+  const t = tr(en);
+  const steps: Array<[string, string, "pos" | "neu" | "neg", string, boolean?]> = [
+    [t("19 Okt · 14.23", "19 Oct · 14:23"), "CNBC Indonesia", "neu", t("Bank Mandiri buka suara soal agunan saham JARR dan PGUN", "Bank Mandiri speaks on JARR and PGUN shares held as collateral"), true],
+    [t("20 Okt · 05.10", "20 Oct · 05:10"), "KONTAN", "neg", t("Saham PGUN dan JARR ambles, agunan kredit Bank Mandiri tergerus", "PGUN and JARR shares slump, eroding Bank Mandiri's loan collateral")],
+    [t("20 Okt · 05.50", "20 Oct · 05:50"), "VIVA.co.id", "neu", t("Haji Isam gadai saham ke Bank Mandiri, BEI tidak bisa ikut campur", "Shares pledged to Bank Mandiri; the exchange cannot step in")],
+    [t("20 Okt · 14.30", "20 Oct · 14:30"), "Pasardana", "pos", t("Tim riset ekonomi Bank Mandiri beri rekomendasi soal MSCI", "Bank Mandiri's economists give recommendations on MSCI")],
+    [t("20 Okt · 15.51", "20 Oct · 15:51"), "kontan.co.id", "neu", t("Menakar dampak agunan saham terhadap kualitas kredit", "Weighing the collateral's impact on loan quality")],
+    [t("20 Okt · 18.35", "20 Oct · 18:35"), "Inilah.com", "neg", t("Ancaman turun kasta MSCI, Bank Mandiri jadi kambing hitam", "MSCI downgrade threat, Bank Mandiri blamed")],
+  ];
+  const tone = { pos: [POS, t("Positif", "Positive")], neu: [NEU, t("Netral", "Neutral")], neg: [NEG, t("Negatif", "Negative")] } as const;
+  return (
+    <Light tag={t("Jejak isu", "Story trace")} v={3}>
+      <Head kicker={t("Siapa yang pertama · isu agunan saham", "Who wrote first · the collateral story")} title={t(<>Dari satu klarifikasi, <Brush>jadi 6 artikel dalam 28 jam.</Brush></>, <>One statement, <Brush>six articles in 28 hours.</Brush></>)} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 360, display: "grid", gap: 12 }}>
+        {steps.map(([at, media, s, title, first]) => (
+          <div key={at} className="pc" style={{ display: "grid", gridTemplateColumns: "220px 360px 140px 1fr", alignItems: "center", gap: 20, padding: "18px 32px", borderRadius: 22, background: first ? INK : "#fff", color: first ? "#fff" : INK, ...INKED }}>
+            <span style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: first ? "#A5B4FF" : MUTED }}>{at}</span>
+            <span style={{ fontSize: 27, fontWeight: 800 }}>{media}{first ? <span style={{ marginLeft: 12, padding: "3px 12px", borderRadius: 999, background: BLUE, fontSize: 16, fontWeight: 800, verticalAlign: "middle" }}>{t("PERTAMA", "FIRST")}</span> : null}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 10, fontSize: 21, fontWeight: 800, color: first ? "#fff" : tone[s][0] }}><Dot c={tone[s][0]} s={14} />{tone[s][1]}</span>
+            <span style={{ fontSize: 24, lineHeight: 1.35, color: first ? "rgba(255,255,255,.85)" : INK }}>{title}</span>
+          </div>
+        ))}
+      </div>
+      <p style={{ position: "absolute", left: 96, bottom: 26, margin: 0, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B93B0" }}>{t("Nada negatif muncul 15 jam setelah berita pertama · waktu WIB", "Negative tone arrived 15 hours after the first story · times in WIB")}</p>
+    </Light>
+  );
+}
+
+export function MediaBreakdown({ en }: P) {
+  const t = tr(en);
+  const rows: Array<[string, number, string, number, number, number, string]> = [
+    ["Demokratis.co.id", 9, t("20 Okt", "20 Oct"), 6, 3, 0, t("Layanan digital, Livin, emas, BSU", "Digital services, Livin, gold, BSU")],
+    ["Mandiri Sekuritas (YouTube)", 7, "11 Nov", 0, 7, 0, t("Saham pilihan harian", "Daily stock picks")],
+    ["CNBC Indonesia", 6, t("19 Okt", "19 Oct"), 4, 2, 0, t("Agunan saham, kredit Timah, donor darah", "Share collateral, Timah loan, blood drive")],
+    ["kontan.co.id", 6, t("20 Okt", "20 Oct"), 2, 4, 0, t("Dampak agunan, kartu kredit, bullion", "Collateral impact, credit cards, bullion")],
+    ["investor.id", 6, t("20 Okt", "20 Oct"), 1, 5, 0, t("Kurs dolar harian, dividen", "Daily FX rates, dividend")],
+    ["CNN Indonesia", 4, t("20 Okt", "20 Oct"), 4, 0, 0, t("Neraca sehat, ISO privasi, investasi emas", "Healthy balance sheet, privacy ISO, gold")],
+    ["Warta Ekonomi", 4, t("20 Okt", "20 Oct"), 2, 2, 0, t("Laba Rp37,5 T, kredit PT Timah", "Rp37.5T profit, PT Timah loan")],
+  ];
+  const cols = "380px 100px 120px 360px 1fr";
+  return (
+    <Dark tag={t("Breakdown media", "Media breakdown")} glow="right">
+      <Head dark kicker={t("59 media dalam 30 hari", "59 outlets in 30 days")} title={t(<>Siapa menulis apa, <Brush>dan nadanya.</Brush></>, <>Who wrote what, <Brush>and in what tone.</Brush></>)} />
+      <div className="pc" style={{ position: "absolute", left: 96, right: 96, top: 370, borderRadius: 28, background: "#fff", color: INK, overflow: "hidden", ...INKED }}>
+        <div style={{ display: "grid", gridTemplateColumns: cols, gap: 20, padding: "18px 36px", background: "#EEF1F9", fontFamily: MONO, fontSize: 17, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED }}>
+          <span>{t("Media", "Outlet")}</span><span>{t("Artikel", "Posts")}</span><span>{t("Pertama", "First")}</span><span>{t("Nada", "Tone")}</span><span>{t("Bahas apa", "About")}</span>
+        </div>
+        {rows.map(([name, n, first, pos, neu, neg, about], k) => (
+          <div key={name} style={{ display: "grid", gridTemplateColumns: cols, gap: 20, alignItems: "center", padding: "16px 36px", borderTop: k ? "2px solid #EEF0F6" : "none" }}>
+            <span style={{ fontSize: 25, fontWeight: 800 }}>{name}</span>
+            <span style={{ fontSize: 27, fontWeight: 800 }}>{n}</span>
+            <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: MUTED }}>{first}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <span style={{ display: "flex", flex: 1, height: 14, borderRadius: 99, overflow: "hidden", background: "#F1F4FA" }}>
+                <span style={{ width: `${(pos / n) * 100}%`, background: POS }} /><span style={{ width: `${(neu / n) * 100}%`, background: NEU }} /><span style={{ width: `${(neg / n) * 100}%`, background: NEG }} />
+              </span>
+              <span style={{ width: 120, fontSize: 19, fontWeight: 800, color: pos ? POS : MUTED }}>{pos ? `${Math.round((pos / n) * 100)}% pos` : t("netral", "neutral")}</span>
+            </span>
+            <span style={{ fontSize: 22, lineHeight: 1.35, color: MUTED }}>{about}</span>
+          </div>
+        ))}
+      </div>
+      <p style={{ position: "absolute", left: 96, bottom: 26, margin: 0, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,.5)" }}>{t("Tidak ada media yang konsisten negatif · 9 berita negatif tersebar di media berbeda", "No outlet is consistently negative · the 9 negative stories came from different outlets")}</p>
+    </Dark>
+  );
+}
+
 export function mandiriDeck(en: boolean) {
   return [
     <MandiriCover key="cover" en={en} />,
     <Agenda key="agenda" en={en} />,
+    <WhatIsNI key="what" en={en} />,
     <Snapshot key="snapshot" en={en} />,
     <DashboardView key="dash" en={en} />,
     <Keywords key="keywords" en={en} />,
     <Sources key="sources" en={en} />,
+    <MediaBreakdown key="media" en={en} />,
+    <StoryTrace key="trace" en={en} />,
     <Issues key="issues" en={en} />,
     <WatchList key="watch" en={en} />,
     <GoodNews key="good" en={en} />,

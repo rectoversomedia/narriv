@@ -20,7 +20,8 @@ import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { correctSignalSentiment, getCveSummary, getRegionBreakdown, getWorkspaceSettings, reviewCve, type CorrectableSentiment, type CveTag, type RegionBreakdown } from "@/lib/api-service";
+import { correctSignalSentiment, getCveSummary, getMediaBreakdown, getRegionBreakdown, getWorkspaceSettings, reviewCve, type CorrectableSentiment, type CveTag, type RegionBreakdown } from "@/lib/api-service";
+import { MediaBreakdownPanel } from "@/components/dashboard/media-breakdown";
 import { RegionPanel } from "@/components/dashboard/region-panel";
 import { CvePanel } from "@/components/dashboard/cve-panel";
 import { CVE_CATEGORIES, cveCategory } from "@/lib/cve";
@@ -1163,6 +1164,7 @@ export default function SignalsPage() {
   // Provinces for the period in view (30 days when no period is chosen); feeds the region filter and panel.
   const regionDays = filters.hours ? (hoursToDays(filters.hours) as 1 | 7 | 30 | 90) : 30;
   const regionsQuery = useQuery({ queryKey: ["signal-regions", regionDays], queryFn: () => getRegionBreakdown(regionDays), staleTime: 60 * 1000 });
+  const mediaQuery = useQuery({ queryKey: ["signal-media", regionDays], queryFn: () => getMediaBreakdown(regionDays), staleTime: 60 * 1000 });
   // What the workspace monitors for; the list reports it, settings are the fallback before the first page loads.
   const settingsProfileQuery = useQuery({ queryKey: ["workspace-settings"], queryFn: getWorkspaceSettings, staleTime: 60 * 1000 });
   const profile = signalsQuery.data?.profile ?? (settingsProfileQuery.data ? { useCase: settingsProfileQuery.data.useCase, privacyMode: settingsProfileQuery.data.privacyMode } : undefined);
@@ -1449,6 +1451,8 @@ export default function SignalsPage() {
         <TimelineChart data={meta?.timeline} labels={meta?.timelineLabels} />
         <InvestigationQueue data={meta?.investigationQueue} />
       </div>
+
+      <MediaBreakdownPanel data={mediaQuery.data} days={regionDays} loading={mediaQuery.isPending} />
     </div>
   );
 }

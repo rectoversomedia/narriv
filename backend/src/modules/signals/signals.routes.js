@@ -486,6 +486,50 @@ router.get("/meta", async (req, res) => {
 // GET /regions?days=30 - where the workspace's records are about, per province: how many, how many negative,
 // and the cities named most. A record counts once, under the province stored as its region (older records stored
 // a city, which maps to its province). Records about no Indonesian place are reported as `unlocated`.
+// GET /media?days=30 - which outlets carry the conversation in the selected workspace: per outlet how many records,
+// the tone split, when it first and last wrote, and its posts (time, title, tone, link), oldest first so the first
+// outlet on a story is easy to see. News and video are grouped by publisher; social posts are grouped by platform
+// only, so no individual account is listed.
+const SOCIAL_PLATFORMS = new Set(["x", "twitter", "instagram", "facebook", "tiktok", "threads", "reddit"]);
+router.get("/media", async (req, res) => {
+    try {
+        const workspaceId = await resolveWorkspaceIdForUser(req.user.id);
+        const days = [1, 7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
+        if (!workspaceId) return res.json({ days, total: 0, media: [] });
+        const since = new Date(Date.now() - days * 86400000).toISOString();
+        const { data, error } = await supabase
+            .from("signals")
+            .select("id, title, url, platform, author, published_at, captured_at, sentiment, metadata")
+            .eq("workspace_id", workspaceId)
+            .gte("published_at", since)
+            .order("published_at", { ascending: true })
+            .limit(5000);
+        if (error) throw error;
+        const byName = new Map();
+        for (const row of data || []) {
+            const platform = String(row.platform || "news").toLowerCase();
+            const social = SOCIAL_PLATFORMS.has(platform);
+            const name = social ? platform : (row.metadata?.publisher || row.author || platform);
+            const key = `${social ? "s" : "m"}:${String(name).toLowerCase()}`;
+            const tone = String(row.sentiment || "").toUpperCase();
+            const sentiment = tone === "POSITIVE" ? "positive" : tone === "NEGATIVE" ? "negative" : "neutral";
+            const at = row.published_at || row.captured_at;
+            const entry = byName.get(key) || { name, platform, social, total: 0, positive: 0, neutral: 0, negative: 0, firstAt: at, lastAt: at, posts: [] };
+            entry.total++;
+            entry[sentiment]++;
+            if (at < entry.firstAt) entry.firstAt = at;
+            if (at > entry.lastAt) entry.lastAt = at;
+            if (entry.posts.length < 50) entry.posts.push({ id: row.id, title: row.title, url: social ? null : row.url, publishedAt: at, sentiment });
+            byName.set(key, entry);
+        }
+        const media = [...byName.values()].sort((a, b) => b.total - a.total || String(a.firstAt).localeCompare(String(b.firstAt)));
+        res.json({ days, total: (data || []).length, media });
+    } catch (error) {
+        logStructured("error", "Error fetching media breakdown:", { error: error?.message || error });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 router.get("/regions", async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
