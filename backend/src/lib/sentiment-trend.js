@@ -13,8 +13,9 @@ export function buildSentimentTrend(rows, now = Date.now(), days = 7) {
         buckets.set(d, { date: d, positive: 0, neutral: 0, negative: 0, mixed: 0, unanalyzed: 0, total: 0 });
     }
     for (const row of rows || []) {
-        if (!row?.captured_at) continue;
-        const bucket = buckets.get(new Date(row.captured_at).toISOString().slice(0, 10));
+        const at = row?.published_at || row?.captured_at;
+        if (!at) continue;
+        const bucket = buckets.get(new Date(at).toISOString().slice(0, 10));
         if (!bucket) continue;
         const s = String(row.sentiment || "").toLowerCase();
         const key = ["positive", "neutral", "negative", "mixed"].includes(s) ? s : "unanalyzed";

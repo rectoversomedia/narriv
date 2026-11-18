@@ -108,6 +108,7 @@ router.post("/", validateRequest({ body: createBody }), async (req, res) => {
             brand_name: name,
             industry: req.body.industry || null,
             timezone: normalizeTimezone(req.body.timezone) ?? DEFAULT_TIMEZONE,
+            language: req.body.language === "en" ? "en" : "id",
             updated_at: new Date().toISOString(),
         }, { onConflict: "workspace_id" });
         if (settingsError) logStructured("warn", "workspace_settings_seed_failed", { workspaceId: workspace.id, error: settingsError.message });

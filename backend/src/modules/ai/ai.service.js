@@ -228,7 +228,15 @@ export const analyzeSignal = async (title, content, usageCtx = null) => {
         throw new Error("OpenAI API key is not configured. Set OPENAI_API_KEY in your .env file.");
     }
 
-    const systemPrompt = buildSignalSystemPrompt();
+    // Stored text follows the workspace language (workspace_settings.language), so an Indonesian workspace does not
+    // show English summaries. Labels used for grouping (sentiment, impact, narrative_type, stakeholder) stay English.
+    let lang = usageCtx?.language;
+    if (!lang && usageCtx?.workspaceId) {
+        try { lang = await (await import("../../lib/workspace-language.js")).workspaceLanguage(usageCtx.workspaceId); } catch { lang = "en"; }
+    }
+    const systemPrompt = buildSignalSystemPrompt() + (lang === "id"
+        ? '\n\nLANGUAGE: write "summary" and "recommended_action" in Bahasa Indonesia (natural, professional), whatever language the content is in. Keep "sentiment", "impact", "narrative_type" and "stakeholder" in English.'
+        : "");
     const userMessage = buildSignalUserMessage(title, content);
 
     // Build the initial messages array

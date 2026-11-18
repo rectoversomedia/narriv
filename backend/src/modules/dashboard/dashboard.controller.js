@@ -260,9 +260,10 @@ export const getSummary = async (req, res) => {
             {
                 const { data: trendRows, error: trendError } = await supabase
                     .from("signals")
-                    .select("sentiment, captured_at")
+                    .select("sentiment, captured_at, published_at")
                     .in("workspace_id", workspaceIds)
-                    .gte("captured_at", sentimentTrendStart())
+                    // Counted on the day a record was published (collection day only when the source gave no date).
+                    .or(`published_at.gte.${sentimentTrendStart()},and(published_at.is.null,captured_at.gte.${sentimentTrendStart()})`)
                     .limit(5000);
                 if (!trendError) sentiment_trend = buildSentimentTrend(trendRows || []);
             }

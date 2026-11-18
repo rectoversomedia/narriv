@@ -790,7 +790,7 @@ router.post("/:id/analyze", validateRequest({ params: signalIdParamsSchema }), a
 
         // 3. Run AI analysis
         logStructured("info", "signal_analyze_started", { signalId: id });
-        const result = await analyzeSignal(signal.title, cleanSignalContent(signal.content));
+        const result = await analyzeSignal(signal.title, cleanSignalContent(signal.content), { workspaceId: signal.workspace_id, operation: "manual_analysis" });
 
         // 4. Save result to SignalAnalysis
         const { data: analysis, error: analysisError } = await supabase
@@ -884,7 +884,7 @@ router.post("/batch-analyze", async (req, res) => {
         const results = [];
         for (const signal of unanalyzed) {
             try {
-                const result = await analyzeSignal(signal.title, cleanSignalContent(signal.content));
+                const result = await analyzeSignal(signal.title, cleanSignalContent(signal.content), { workspaceId: signal.workspace_id, operation: "manual_analysis" });
 
                 const { data: analysis, error: createError } = await supabase
                     .from('signal_analyses')

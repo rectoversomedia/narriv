@@ -451,7 +451,7 @@ export const register = async (req, res) => {
             id: workspaceId,
             name: workspaceBrandName,
             slug: workspaceSlug,
-            settings: { timezone: "Asia/Jakarta", language: "en", role: role || null, ...newTrialSettings() },
+            settings: { timezone: "Asia/Jakarta", language: "id", role: role || null, ...newTrialSettings() },
         });
         if (wsError) {
             logStructured("error", "register_workspace_create_failed", { error: wsError.message, code: wsError.code });
@@ -475,7 +475,7 @@ export const register = async (req, res) => {
             workspace_id: workspaceId,
             brand_name: workspaceBrandName,
             timezone: "Asia/Jakarta",
-            language: "en",
+            language: "id",
         });
         if (wsSettingsError) {
             logStructured("error", "register_workspace_settings_failed", { error: wsSettingsError.message, code: wsSettingsError.code });
@@ -1568,7 +1568,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name,
                 id: workspaceId,
                 name: `${name || "My"}'s Workspace`,
                 slug: workspaceSlug,
-                settings: { timezone: "Asia/Jakarta", language: "en", ...newTrialSettings() },
+                settings: { timezone: "Asia/Jakarta", language: "id", ...newTrialSettings() },
             });
             if (wsError2) logStructured("warn", "oauth_workspace_create_failed", { error: wsError2.message });
 
@@ -1584,7 +1584,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name,
                 workspace_id: workspaceId,
                 brand_name: name || "My Workspace",
                 timezone: "Asia/Jakarta",
-                language: "en",
+                language: "id",
             });
             if (wsSettingsError) logStructured("warn", "oauth_workspace_settings_failed", { error: wsSettingsError.message });
         }

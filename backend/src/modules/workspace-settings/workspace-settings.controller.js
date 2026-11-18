@@ -15,7 +15,7 @@ function toSafeDefaults(workspaceId) {
         brand_name: null,
         industry: null,
         timezone: DEFAULT_TIMEZONE,
-        language: "en",
+        language: "id",
         notification_email: null,
         whatsapp_pic: null,
         logo_url: null,
@@ -194,7 +194,7 @@ export async function updateWorkspaceSettings(req, res) {
                     timezone: timezone ?? DEFAULT_TIMEZONE,
                     notification_email: notificationEmail ?? null,
                     whatsapp_pic: whatsappPIC ?? null,
-                    language: language ?? "en",
+                    language: language ?? "id",
                 })
                 .select()
                 .single();
