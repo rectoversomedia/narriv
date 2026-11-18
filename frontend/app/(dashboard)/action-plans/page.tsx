@@ -182,7 +182,7 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
       <StatusPill status={action.status} t={t} />
       <h3 className="mt-2 text-[15px] font-black leading-snug text-[#101334]">{tidyTitle(action.title)}</h3>
       {/* The issue in one line, impact as a chip; owner by name only (the role lives on the plan). */}
-      <p className="mt-1.5 line-clamp-2 text-[13px] font-medium text-[#3A4566]" title={action.issue}>{action.issue}</p>
+      <p className="mt-1.5 line-clamp-2 text-[13px] font-medium text-[#3A4566]" title={action.issue}>{tidyTitle(action.issue)}</p>
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <span className="text-[12px] font-bold" style={{ color: readableTone(style.color) }}>{action.impact}</span>
         <span className="text-[12px] font-medium text-[#5F6B94]">· {action.due}</span>

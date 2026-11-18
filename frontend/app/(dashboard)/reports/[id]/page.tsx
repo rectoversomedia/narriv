@@ -1,6 +1,6 @@
 "use client";
 
-import { tidyTitle } from "@/lib/tidy-text";
+import { tidyText, tidyTitle } from "@/lib/tidy-text";
 import Link from "next/link";
 import { useState } from "react";
 import { useParams } from "next/navigation";
@@ -146,7 +146,7 @@ function ReportBody({ data }: { data: ReportView }) {
     : [
       L(`${t.negative}% of ${t.signals} records were negative and ${t.positive}% positive`, `${t.negative}% dari ${t.signals} percakapan bernada negatif dan ${t.positive}% positif`),
       topPlatform ? L(`, mostly on ${platformName(topPlatform.platform)}`, `, terbanyak di ${platformName(topPlatform.platform)}`) : "",
-      t.criticalAlerts ? L(`. ${t.criticalAlerts} serious alert(s) need a response.`, `. ${t.criticalAlerts} peringatan berat perlu direspons.`) : ".",
+      t.criticalAlerts ? L(`. ${t.criticalAlerts} serious ${t.criticalAlerts === 1 ? "alert needs" : "alerts need"} a response.`, `. ${t.criticalAlerts} peringatan berat perlu direspons.`) : ".",
     ].join("");
 
   return (
@@ -213,12 +213,12 @@ function ReportBody({ data }: { data: ReportView }) {
                     <span className="text-[12px] font-bold text-[#5A6478]">{L(...(STATUS[a.status] ?? [a.status, a.status]))} · {fmtDate(a.createdAt)}</span>
                   </div>
                   <p className="mt-2 text-[14px] font-black leading-snug text-[#101334]">{tidyTitle(a.title)}</p>
-                  {a.whatHappened ? <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-snug text-[#3A4566]">{a.whatHappened}</p> : null}
+                  {a.whatHappened ? <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-snug text-[#3A4566]">{tidyText(a.whatHappened)}</p> : null}
                   {a.whatToDo ? (
                     <div className="mt-auto pt-3">
                       <div className="rounded-[10px] bg-[#101334] px-3 py-2.5">
                         <p className="text-[11px] font-black text-[#A9B4FF]">{L("Next step", "Langkah")}</p>
-                        <p className="mt-0.5 line-clamp-2 text-[12px] font-bold leading-snug text-white">{a.whatToDo}</p>
+                        <p className="mt-0.5 line-clamp-2 text-[12px] font-bold leading-snug text-white">{tidyText(a.whatToDo)}</p>
                       </div>
                     </div>
                   ) : null}
@@ -335,7 +335,7 @@ export default function ReportDetailPage() {
           <Link href="/reports" className="inline-flex items-center gap-1.5 text-[12px] font-black text-[#58648C] transition hover:text-[#3B52F5]">
             <ArrowLeft size={14} /> {tr("detail.back")}
           </Link>
-          <h1 className="mt-3 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{data.title}</h1>
+          <h1 className="mt-3 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{tidyTitle(data.title)}</h1>
           <p className="mt-1 text-[13px] font-bold text-[#5A6478]">
             {data.brand ? `${data.brand} · ` : ""}{fmtDate(data.periodStart)} – {fmtDate(data.periodEnd)}
             <span className="text-[#6B7591]"> · {L("created", "dibuat")} {fmtDate(data.createdAt, true)}</span>

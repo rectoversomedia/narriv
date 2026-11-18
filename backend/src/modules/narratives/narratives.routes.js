@@ -47,7 +47,7 @@ export function toNarrativeItem(cluster, now = Date.now()) {
         description: cluster.description || cluster.main_narrative || "",
         sourceCount: uniquePlatforms.size || 0,
         confidence: avgConfidence,
-        confidenceBasis: confidenceValues.length ? tr(`from ${confidenceValues.length} analysed article(s)`, `dari ${confidenceValues.length} berita yang dianalisis`) : tr("no analysed articles yet", "belum ada berita yang dianalisis"),
+        confidenceBasis: confidenceValues.length ? tr(`from ${confidenceValues.length} analysed ${(confidenceValues.length) === 1 ? "article" : "articles"}`, `dari ${confidenceValues.length} berita yang dianalisis`) : tr("no analysed articles yet", "belum ada berita yang dianalisis"),
         impact: (cluster.impact || "MEDIUM").toString(),
         velocity: momentum.label,
         momentum,

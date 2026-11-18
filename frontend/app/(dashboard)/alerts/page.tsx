@@ -1,6 +1,6 @@
 "use client";
 
-import { tidyTitle } from "@/lib/tidy-text";
+import { tidyText, tidyTitle } from "@/lib/tidy-text";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -373,7 +373,7 @@ function CriticalIncident({
             </div>
             <Link href={`/alerts/${alert.id}`} className="group mt-4 block">
               <h2 className="line-clamp-2 max-w-4xl text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] group-hover:text-[#3B52F5] sm:text-[32px]">{tidyTitle(alert.title)}</h2>
-              {alert.description ? <p className="mt-2 line-clamp-2 max-w-3xl text-[15px] font-medium leading-relaxed text-[#31406B]">{alert.description}</p> : null}
+              {alert.description ? <p className="mt-2 line-clamp-2 max-w-3xl text-[15px] font-medium leading-relaxed text-[#31406B]">{tidyText(alert.description)}</p> : null}
             </Link>
             <dl className="mt-5 grid gap-3 sm:grid-cols-3">
               {facts.map((f) => (
@@ -700,13 +700,13 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 <td className="px-3 py-3">
                   <div className="min-w-0">
                     <Link href={`/alerts/${alert.id}`} className="text-[14.5px] font-black leading-snug text-[#101334] hover:text-[#3B52F5]">{tidyTitle(alert.title)}</Link>
-                    {alert.description ? <p className="mt-1 line-clamp-2 text-[12.5px] font-medium leading-snug text-[#3A4566]">{alert.description}</p> : null}
+                    {alert.description ? <p className="mt-1 line-clamp-2 text-[12.5px] font-medium leading-snug text-[#3A4566]">{tidyText(alert.description)}</p> : null}
                     {alert.time ? <p className="mt-1 text-[12px] font-medium text-[#6B7591]">{alert.time}</p> : null}
                   </div>
                 </td>
                 <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[11.5px] font-bold", alert.tone === "red" ? "bg-[#B42318] text-white" : alert.tone === "amber" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#E8F7EF] text-[#047857]")}>{alert.tags[0]}</span></td>
                 <td className="px-3 py-3 align-middle">{alert.sourceLabel === ta("table.unassigned") ? <span className="text-[12px] font-black text-[#C81E1E]">{alert.sourceLabel}</span> : <span className="line-clamp-2 text-[12px] font-black text-[#31406B]">{alert.sourceLabel}</span>}</td>
-                <td className="px-3 py-3 align-middle">{alert.overdue ? <span className="inline-block rounded-[6px] bg-[#C81E1E] px-2 py-1 text-[12px] font-black leading-tight text-white"><span className="block text-[11px] text-white/80">{pickL("Overdue", "Lewat tenggat")}</span>{alert.deadline}</span> : <span className="text-[12px] font-black text-[#31406B]">{alert.deadline}</span>}</td>
+                <td className="px-3 py-3 align-middle">{alert.overdue ? <span className="inline-block rounded-[6px] bg-[#C81E1E] px-2 py-1 text-[12px] font-black leading-tight text-white"><span className="block text-[11px] text-white/80">{pickL("Overdue", "Lewat tenggat")}</span>{alert.deadline}</span> : <span className="whitespace-nowrap text-[12px] font-black text-[#31406B]">{alert.deadline}</span>}</td>
                 <td className="px-3 py-3 align-middle"><StatusBadge status={alert.status} /><p className="mt-1 text-[11px] font-bold text-[#5A6478]">{alert.ack}</p></td>
                 <td className="relative px-3 py-3 text-right align-middle">
                   <button type="button" aria-label={pickL(`Open actions for ${alert.title}`, `Buka aksi untuk ${alert.title}`)} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5]"><MoreVertical size={16} /></button>

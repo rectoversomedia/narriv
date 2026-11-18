@@ -178,9 +178,9 @@ export default function IntegrationsPage() {
   };
 
   const banner = failing
-    ? { bg: "linear-gradient(135deg,#7F1D1D,#C81E1E)", title: pickL(`${failing} connection(s) failing`, `${failing} koneksi gagal mengirim`), sub: pickL("Alerts may not reach your team. Test or reconnect below.", "Peringatan bisa tidak sampai ke tim. Uji atau hubungkan ulang di bawah.") }
+    ? { bg: "linear-gradient(135deg,#7F1D1D,#C81E1E)", title: pickL(`${failing} ${(failing) === 1 ? "connection" : "connections"} failing`, `${failing} koneksi gagal mengirim`), sub: pickL("Alerts may not reach your team. Test or reconnect below.", "Peringatan bisa tidak sampai ke tim. Uji atau hubungkan ulang di bawah.") }
     : activeCount
-      ? { bg: "linear-gradient(135deg,#065F46,#12A66A)", title: pickL(`Alerts go to ${activeCount} channel(s)`, `Peringatan terkirim ke ${activeCount} saluran`), sub: pickL("New alerts are posted automatically as they are raised.", "Setiap peringatan baru langsung dikirim otomatis.") }
+      ? { bg: "linear-gradient(135deg,#065F46,#12A66A)", title: pickL(`Alerts go to ${activeCount} ${(activeCount) === 1 ? "channel" : "channels"}`, `Peringatan terkirim ke ${activeCount} saluran`), sub: pickL("New alerts are posted automatically as they are raised.", "Setiap peringatan baru langsung dikirim otomatis.") }
       : { bg: "linear-gradient(135deg,#7C2D12,#E8590C)", title: pickL("Alerts are not sent anywhere yet", "Peringatan belum dikirim ke mana pun"), sub: pickL("Connect Slack, Teams, Google Chat or WhatsApp so your team hears about a crisis in minutes.", "Hubungkan Slack, Teams, Google Chat, atau WhatsApp agar tim tahu krisis dalam hitungan menit.") };
 
   return (

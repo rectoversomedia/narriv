@@ -135,7 +135,7 @@ export async function canSyncSource(sourceId) {
             const remainingMinutes = Math.ceil(remainingMs / 60000);
             return {
                 allowed: false,
-                reason: `Rate limit: next sync in ${remainingMinutes} minute(s)`,
+                reason: `Rate limit: next sync in ${remainingMinutes} ${(remainingMinutes) === 1 ? "minute" : "minutes"}`,
                 remainingMs,
                 nextAllowedAt: new Date(lastSyncTime + minInterval).toISOString(),
                 currentFrequency: source.frequency,

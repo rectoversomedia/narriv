@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyText } from "@/lib/tidy-text";
 import Link from "next/link";
 import { STATUS_WORD, statusFromRisk } from "@/lib/status";
 import { useState } from "react";
@@ -250,7 +251,7 @@ export default function InsightsPage() {
                     <div className="ml-1 mt-3 h-1.5 overflow-hidden rounded-full bg-white">
                       <div className="h-full rounded-full" style={{ width: `${(c.contribution / maxContribution) * 100}%`, backgroundColor: color }} />
                     </div>
-                    <p className="mt-2.5 flex-1 pl-1 text-[14px] font-medium leading-relaxed text-[#31406B]">{c.reason}</p>
+                    <p className="mt-2.5 flex-1 pl-1 text-[14px] font-medium leading-relaxed text-[#31406B]">{tidyText(c.reason)}</p>
                     {link ? (
                       <Link href={link.href} className="ml-1 mt-3 inline-flex w-fit items-center gap-1.5 rounded-[10px] border-[1.5px] border-[#101334] bg-white px-3 py-2 text-[13px] font-black text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#EEF1FF]">
                         {L(link.label[0], link.label[1])} <ArrowRight size={14} />

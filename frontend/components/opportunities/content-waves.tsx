@@ -1,6 +1,6 @@
 "use client";
 
-import { tidyTitle } from "@/lib/tidy-text";
+import { tidyText, tidyTitle } from "@/lib/tidy-text";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Clock, FileText, Lightbulb, Loader2, RefreshCcw, ShieldAlert, TrendingUp, Waves } from "lucide-react";
@@ -106,7 +106,7 @@ function WaveCard({ wave }: { wave: ContentWave }) {
         <span className="flex items-center gap-1">{wave.platforms.slice(0, 5).map((p) => <PlatformIcon key={p} platform={p} className="size-4" />)}</span>
       </div>
       <h3 className="mt-3 text-[19px] font-black leading-snug tracking-[-0.015em] text-[#101334]">{wave.title}</h3>
-      {wave.description ? <p className="mt-1 line-clamp-2 text-[13.5px] font-medium leading-relaxed text-[#31406B]">{wave.description}</p> : null}
+      {wave.description ? <p className="mt-1 line-clamp-2 text-[13.5px] font-medium leading-relaxed text-[#31406B]">{tidyText(wave.description)}</p> : null}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div className="rounded-[12px] bg-[#FBFCFF] p-3 ring-1 ring-[#EEF1F7]">

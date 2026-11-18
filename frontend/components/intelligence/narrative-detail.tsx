@@ -44,7 +44,7 @@ function story(d: NarrativeDetailRecord, total: number, top: [string, number] | 
     else if (m.last24h === m.prior24h) parts.push(pickL(`Steady. ${m.last24h} in the last 24 hours, the same as the day before.`, `Stabil. ${m.last24h} dalam 24 jam terakhir, sama dengan sehari sebelumnya.`));
     else parts.push(pickL(`Slowing. ${m.last24h} in the last 24 hours against ${m.prior24h} the day before.`, `Melambat. ${m.last24h} dalam 24 jam terakhir dibanding ${m.prior24h} sehari sebelumnya.`));
   }
-  return parts.join(" ");
+  return parts;
 }
 
 function Summary({ detail }: { detail: NarrativeDetailRecord }) {
@@ -78,7 +78,20 @@ function Summary({ detail }: { detail: NarrativeDetailRecord }) {
             </span>
           ) : null}
         </div>
-        <p className="mt-3 max-w-3xl text-[17px] font-bold leading-[1.55] sm:text-[18.5px]">{story(detail, total, top)}</p>
+        {/* One fact per line instead of one long paragraph: the first is the headline, the rest a short list. */}
+        {(() => {
+          const lines = story(detail, total, top);
+          return (
+            <>
+              <p className="mt-3 max-w-3xl text-[19px] font-bold leading-snug sm:text-[21px]">{lines[0]}</p>
+              {lines.length > 1 ? (
+                <ul className="mt-2 max-w-3xl space-y-1 text-[15px] font-semibold leading-snug text-white/80">
+                  {lines.slice(1).map((line) => <li key={line} className="flex gap-2"><span aria-hidden>•</span><span>{line}</span></li>)}
+                </ul>
+              ) : null}
+            </>
+          );
+        })()}
 
         <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           {tiles.map(([v, l]) => (

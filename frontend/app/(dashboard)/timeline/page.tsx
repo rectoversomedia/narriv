@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyText, tidyTitle } from "@/lib/tidy-text";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -31,8 +32,8 @@ const KIND: Record<Kind, { en: string; id: string; dot: string; chip: string }> 
 const ISSUE_EVENTS: Record<string, { kind: Kind; en: string; id: string }> = {
   assignment_change: { kind: "alert", en: "Owner changed", id: "Penanggung jawab diganti" },
   escalation_change: { kind: "alert", en: "Escalation changed", id: "Eskalasi diubah" },
-  alert_escalated_overdue: { kind: "alert", en: "Escalated: past its deadline", id: "Dieskalasi: lewat tenggat" },
-  alert_escalated_unresolved_critical_risk: { kind: "alert", en: "Escalated: critical and unresolved", id: "Dieskalasi: kritis dan belum selesai" },
+  alert_escalated_overdue: { kind: "alert", en: "Escalated because it passed its deadline", id: "Dieskalasi karena lewat tenggat" },
+  alert_escalated_unresolved_critical_risk: { kind: "alert", en: "Escalated because it is critical and unresolved", id: "Dieskalasi karena kritis dan belum selesai" },
   case_created: { kind: "case", en: "Case opened", id: "Kasus dibuka" },
   case_updated: { kind: "case", en: "Case updated", id: "Kasus diperbarui" },
   action_plan_generated: { kind: "plan", en: "Response plan created", id: "Rencana respons dibuat" },
@@ -108,8 +109,8 @@ function Row({ entry, last }: { entry: Entry; last: boolean }) {
           <span className="text-[13px] font-bold text-[#31406B]">{entry.label}</span>
           {sev ? <span className={cn("rounded-[6px] px-2 py-0.5 text-[11.5px] font-bold", hot ? "bg-[#B42318] text-white" : "bg-[#F1F3F8] text-[#5F6B94]")}>{L(sev[0], sev[1])}</span> : null}
         </div>
-        {entry.title ? <p className="mt-1.5 text-[16px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]">{entry.title}</p> : null}
-        {entry.detail ? <p className="mt-0.5 line-clamp-2 text-[13.5px] text-[#5F6B94]">{entry.detail}</p> : null}
+        {entry.title ? <p className="mt-1.5 text-[16px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]">{tidyTitle(entry.title)}</p> : null}
+        {entry.detail ? <p className="mt-0.5 line-clamp-2 text-[13.5px] text-[#5F6B94]">{tidyText(entry.detail)}</p> : null}
       </div>
       {entry.href ? (
         <span className="mt-1 hidden shrink-0 items-center gap-1 text-[12px] font-bold text-[#3B52F5] opacity-0 transition group-hover:opacity-100 sm:inline-flex">
@@ -179,7 +180,7 @@ export default function TimelinePage() {
           key: k,
           value: loading ? "…" : count(k),
           label: L(KIND[k].en, KIND[k].id),
-          helper: only === k ? L("showing only these", "hanya ini yang tampil") : L("click to filter", "klik untuk menyaring"),
+          helper: only === k ? L("showing only these", "hanya ini yang tampil") : L("events · click to filter", "kejadian · klik untuk menyaring"),
           tone: KIND[k].chip.replace(/\bbg-\S+/g, "").trim(),
           onClick: () => setOnly(only === k ? null : k),
           active: only === k,

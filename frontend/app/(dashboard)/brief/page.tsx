@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyText } from "@/lib/tidy-text";
 import { STATUS_COLOR, STATUS_WORD, statusFromRisk } from "@/lib/status";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
@@ -189,7 +190,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
                           <span className={cn("rounded-[6px] px-2 py-0.5 text-[11.5px] font-bold", levelTone(a.priority))}>{code.level(a.priority)}</span>
                           <span className="rounded-[6px] bg-[#EEF1FF] px-2 py-0.5 text-[11.5px] font-bold text-[#3B52F5]">{code.urgency(a.urgency)}</span>
                         </div>
-                        <p className="mt-1 text-[14px] font-medium leading-relaxed text-[#31406B]">{a.reason}</p>
+                        <p className="mt-1 text-[14px] font-medium leading-relaxed text-[#31406B]">{tidyText(a.reason)}</p>
                       </div>
                     </div>
                     {button ? (
@@ -219,7 +220,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
                       <span className="shrink-0 text-[13px] font-bold text-[#B42318]">+{Math.round(d.contribution * 10) / 10}</span>
                     </div>
                     <div className="mt-1.5 h-2 rounded-full bg-[#EEF0F6]"><div className="h-full rounded-full bg-gradient-to-r from-[#465FFF] to-[#B42318]" style={{ width: `${(d.contribution / maxDriver) * 100}%` }} /></div>
-                    <p className="mt-1 text-[12.5px] font-medium text-[#5F6B94]">{d.reason}</p>
+                    <p className="mt-1 text-[12.5px] font-medium text-[#5F6B94]">{tidyText(d.reason)}</p>
                   </li>
                 ))}
               </ul>

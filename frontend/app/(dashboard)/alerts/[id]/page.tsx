@@ -294,7 +294,7 @@ function Evidence({ items, missing, auto, L }: { items: AlertEvidence[]; missing
       ) : (
         <p className="mt-3 text-[13px] font-semibold text-[#647099]">{L("No linked articles are stored for this alert.", "Belum ada berita yang tertaut ke peringatan ini.")}</p>
       )}
-      {missing ? <p className="mt-3 text-[12px] font-semibold text-[#647099]">{L(`${missing} linked article(s) are no longer available.`, `${missing} berita tertaut sudah tidak tersedia.`)}</p> : null}
+      {missing ? <p className="mt-3 text-[12px] font-semibold text-[#647099]">{L(`${missing} linked ${(missing) === 1 ? "article" : "articles"} are no longer available.`, `${missing} berita tertaut sudah tidak tersedia.`)}</p> : null}
       {auto ? <p className="mt-3 text-[12px] font-semibold text-[#647099]">{L("Raised automatically by Narriv's monitoring rules.", "Dibuat otomatis oleh aturan pemantauan Narriv.")}</p> : null}
     </section>
   );

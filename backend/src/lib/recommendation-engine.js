@@ -76,7 +76,7 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
     if (emergingNarratives > 0) {
         out.push({
             action: "monitor",
-            reason: tr(`${emergingNarratives} new narrative(s) detected. Keep watching.`, `${emergingNarratives} narasi baru terdeteksi. Terus pantau.`),
+            reason: tr(`${emergingNarratives} new ${(emergingNarratives) === 1 ? "narrative" : "narratives"} detected. Keep watching.`, `${emergingNarratives} narasi baru terdeteksi. Terus pantau.`),
             priority: "medium",
             urgency: "this_week",
             expectedOutcome: tr("Continued observation produces an updated brief within 24h.", "Pemantauan lanjutan menghasilkan briefing terbaru dalam 24 jam."),
@@ -192,7 +192,7 @@ export function groundRecommendation(rec, risk) {
         recommendedAction: rec.action,
         sourceIds,
         confidence: Number(confidence.toFixed(2)),
-        confidenceBasis: `risk model ${risk.version}, uncertainty ${risk.uncertainty?.level || "unknown"}, ${sourceIds.length} supporting record(s)`,
+        confidenceBasis: `risk model ${risk.version}, uncertainty ${risk.uncertainty?.level || "unknown"}, ${sourceIds.length} supporting ${(sourceIds.length) === 1 ? "record" : "records"}`,
         limitations,
         monitorNext: MONITOR_NEXT[rec.action] ? tr(...MONITOR_NEXT[rec.action]) : tr("Re-run the intelligence brief after the next ingestion.", "Jalankan ulang briefing intelijen setelah pengambilan data berikutnya."),
     };

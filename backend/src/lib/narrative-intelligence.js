@@ -184,7 +184,7 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
     if (emerging.length > 0) {
         inferences.push({
             kind: "emerging_narratives",
-            label: tr(`${emerging.length} narrative cluster(s) currently showing elevated momentum.`, `${emerging.length} klaster narasi sedang menunjukkan momentum tinggi.`),
+            label: tr(`${emerging.length} narrative ${(emerging.length) === 1 ? "cluster" : "clusters"} currently showing elevated momentum.`, `${emerging.length} klaster narasi sedang menunjukkan momentum tinggi.`),
             items: emerging,
         });
         for (const e of emerging) evidence.push({ type: "narrative_cluster", id: e.clusterId });

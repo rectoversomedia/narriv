@@ -329,7 +329,7 @@ function RunMonitoringNow({ onDone }: { onDone: () => void }) {
           <p>
             {RUN_STATUS_TEXT[result.status] ? pickL(...RUN_STATUS_TEXT[result.status]) : result.status}{" "}
             {pickL(
-              `in ${Math.max(1, Math.round(result.durationMs / 1000))} s: ${result.totals.fetched} articles found, ${result.totals.inserted} new saved, ${result.totals.deduplicated} already saved (skipped), ${result.totals.analyzed} analysed${result.totals.analysisFailed ? `, ${result.totals.analysisFailed} analysis failures` : ""}${result.totals.failedKeywords ? `, ${result.totals.failedKeywords} keyword(s) failed` : ""}.`,
+              `in ${Math.max(1, Math.round(result.durationMs / 1000))} s: ${result.totals.fetched} articles found, ${result.totals.inserted} new saved, ${result.totals.deduplicated} already saved (skipped), ${result.totals.analyzed} analysed${result.totals.analysisFailed ? `, ${result.totals.analysisFailed} analysis failures` : ""}${result.totals.failedKeywords ? `, ${result.totals.failedKeywords} ${(result.totals.failedKeywords) === 1 ? "keyword" : "keywords"} failed` : ""}.`,
               `dalam ${Math.max(1, Math.round(result.durationMs / 1000))} dtk: ${result.totals.fetched} artikel ditemukan, ${result.totals.inserted} baru disimpan, ${result.totals.deduplicated} sudah tersimpan (dilewati), ${result.totals.analyzed} dianalisis${result.totals.analysisFailed ? `, ${result.totals.analysisFailed} analisis gagal` : ""}${result.totals.failedKeywords ? `, ${result.totals.failedKeywords} kata kunci gagal` : ""}.`,
             )}
           </p>

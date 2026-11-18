@@ -262,7 +262,7 @@ export default function DashboardPage() {
     mutationFn: runGeoAllEngines,
     onSuccess: (res) => {
       const ok = res.results.filter((r) => r.ok).length;
-      toast.success(L(`${ok} AI assistant(s) tested.`, `${ok} AI selesai diuji.`));
+      toast.success(L(`${ok} AI ${ok === 1 ? "assistant" : "assistants"} tested.`, `${ok} AI selesai diuji.`));
       void queryClient.invalidateQueries({ queryKey: ["overview-geo-summary"] });
     },
     onError: (error: Error) => toast.error(error.message || L("The test could not run.", "Uji gagal dijalankan.")),

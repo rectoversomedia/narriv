@@ -102,7 +102,7 @@ export async function computeReputationIntelligence({ workspaceId, windowHours =
     });
     inferences.push({
         kind: "active_alerts",
-        label: tr(`${activeAlerts} active alert(s) in the window.`, `${activeAlerts} peringatan aktif di periode ini.`),
+        label: tr(`${activeAlerts} active ${activeAlerts === 1 ? "alert" : "alerts"} in the window.`, `${activeAlerts} peringatan aktif di periode ini.`),
         value: activeAlerts,
     });
 

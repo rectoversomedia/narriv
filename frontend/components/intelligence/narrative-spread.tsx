@@ -140,6 +140,8 @@ function Amplifiers({ spread }: { spread: NarrativeSpread }) {
   return (
     <div className={cn(INKED, "p-4 sm:p-5")}>
       <p className={cn(KICKER, "text-[#5A6478]")}>{pickL("Who Amplified It", "Siapa yang Memperbesar")}</p>
+      {/* Only the most active accounts are listed, so their posts need not add up to the issue total. */}
+      {rows.length ? <p className="mt-0.5 text-[12.5px] font-medium text-[#5A6478]">{pickL(`The ${rows.length} most active accounts`, `${rows.length} akun paling aktif`)}</p> : null}
       {!rows.length ? (
         <p className="mt-3 text-[13px] font-medium text-[#5A6478]">{spread.hiddenAccounts ? pickL(`${spread.hiddenAccounts} accounts took part. Their names are hidden by privacy mode.`, `${spread.hiddenAccounts} akun ikut membahas. Namanya disembunyikan oleh mode privasi.`) : pickL("No author names were recorded for this narrative.", "Belum ada nama penulis yang tercatat untuk narasi ini.")}</p>
       ) : (
@@ -205,7 +207,7 @@ function Regions({ regions }: { regions: NarrativeSpread["regions"] }) {
     return (
       <p className="flex items-start gap-2 rounded-[14px] border border-dashed border-[#C9D1E6] px-3.5 py-3 text-[12.5px] font-medium leading-relaxed text-[#5A6478]">
         <MapPin size={15} className="mt-0.5 shrink-0 text-[#6B7591]" aria-hidden="true" />
-        {pickL("No place yet: the records do not name a province and the accounts share no location. Places are read from text and platform labels, never from IP addresses.", "Belum ada data wilayah: catatan tidak menyebut provinsi dan akun tidak mencantumkan lokasi. Wilayah dibaca dari teks dan label platform, bukan dari alamat IP.")}
+        {pickL("No place yet. The records do not name a province and the accounts share no location. Places are read from text and platform labels, never from IP addresses.", "Belum ada data wilayah. Catatan tidak menyebut provinsi dan akun tidak mencantumkan lokasi. Wilayah dibaca dari teks dan label platform, bukan dari alamat IP.")}
       </p>
     );
   }

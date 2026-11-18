@@ -205,15 +205,18 @@ function CollectionBanner({ problems, active, total }: { problems: number; activ
     ? pickL("No source connected yet", "Belum ada sumber yang terhubung")
     : ok
       ? pickL(`All ${active} sources are running`, `Semua ${active} sumber berjalan normal`)
-      : pickL(`${problems} source(s) need attention`, `${problems} sumber perlu perhatian`);
+      : pickL(`${problems} ${problems === 1 ? "source needs" : "sources need"} attention`, `${problems} sumber perlu perhatian`);
   return (
     <section className="flex flex-wrap items-center justify-between gap-4 rounded-[16px] p-5 text-white shadow-[0_12px_32px_rgba(16,19,52,0.16)]" style={{ background: total === 0 ? "linear-gradient(135deg,#334155,#64748B)" : ok ? "linear-gradient(135deg,#065F46,#12A66A)" : "linear-gradient(135deg,#7F1D1D,#C81E1E)" }}>
       <div className="min-w-0">
         <p className="text-[12px] font-black text-white/70">{pickL("Data collection", "Pengambilan data")}</p>
         <p className="mt-1 text-[24px] font-black leading-tight">{headline}</p>
         <p className="mt-1 text-[13px] font-bold text-white/85">
-          {ws
-            ? pickL(`Last run ${timeAgo(ws.at)}: ${totals.fetched} found, ${totals.inserted} new, ${totals.duplicates} duplicates skipped.`, `Terakhir ${timeAgo(ws.at)}: ${totals.fetched} ditemukan, ${totals.inserted} baru, ${totals.duplicates} duplikat dilewati.`)
+          {/* The demo is seeded, not collected: say so instead of "no collection yet" under "all running". */}
+          {isDemoUser(useAuthStore.getState().user)
+            ? pickL("Sample data, refreshed every night.", "Data contoh, diperbarui tiap malam.")
+            : ws
+            ? pickL(`Last run ${timeAgo(ws.at)}. ${totals.fetched} found, ${totals.inserted} new, ${totals.duplicates} duplicates skipped.`, `Terakhir ${timeAgo(ws.at)}. ${totals.fetched} ditemukan, ${totals.inserted} baru, ${totals.duplicates} duplikat dilewati.`)
             : pickL("No collection has run yet.", "Belum ada pengambilan data.")}
           {pending ? pickL(` ${pending} waiting for analysis.`, ` ${pending} menunggu dianalisis.`) : ""}
         </p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { tidyTitle } from "@/lib/tidy-text";
+import { tidyText, tidyTitle } from "@/lib/tidy-text";
 import { STATUS_COLOR, STATUS_WORD, statusFromMentions } from "@/lib/status";
 import { humanReportSummary } from "@/lib/report-summary";
 import Link from "next/link";
@@ -530,7 +530,7 @@ function ReportsTable({
                       <Link href={`/reports/${report.id}`} className="text-[14.5px] font-black leading-snug text-[#101334] hover:text-[#3B52F5] transition-colors">
                         {tidyTitle(report.title)}
                       </Link>
-                      <p className="mt-1 line-clamp-2 text-[12.5px] font-medium leading-snug text-[#5F6B94]">{report.description}</p>
+                      <p className="mt-1 line-clamp-2 text-[12.5px] font-medium leading-snug text-[#5F6B94]">{tidyText(report.description)}</p>
                     </div>
                   </div>
                 </td>
@@ -1480,7 +1480,7 @@ export default function ReportsPage() {
                               {pickL(`${template.sectionCount} sections`, `${template.sectionCount} bagian`)}
                             </span>
                           </div>
-                          <p className="text-[12px] font-bold text-[#5F6B94] mt-1 leading-relaxed">{template.description}</p>
+                          <p className="text-[12px] font-bold text-[#5F6B94] mt-1 leading-relaxed">{tidyText(template.description)}</p>
                           <div className="flex flex-wrap gap-2 mt-3">
                             <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#3B52F5] px-2.5 py-1.5 rounded-[6px] font-black">
                               {template.format}

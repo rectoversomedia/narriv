@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyText } from "@/lib/tidy-text";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -765,7 +766,7 @@ export default function CasesPage() {
                 <div key={item.id} className="py-1">
                   <button type="button" onClick={() => setDetailCaseId(item.id)} className="block w-full text-left">
                     <p className="text-[13px] font-black leading-snug text-[#101334]">{item.title}</p>
-                    {item.description && <p className="mt-0.5 line-clamp-2 text-[12px] font-bold text-[#5F6B94]">{item.description}</p>}
+                    {item.description && <p className="mt-0.5 line-clamp-2 text-[12px] font-bold text-[#5F6B94]">{tidyText(item.description)}</p>}
                   </button>
                   <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                     <select

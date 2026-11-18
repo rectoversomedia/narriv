@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyText } from "@/lib/tidy-text";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Clock, Layers, Minus, Radio } from "lucide-react";
@@ -173,7 +174,7 @@ export function IssueLifecycle({ records, stageOf, days }: { records: NarrativeR
                         {impact ? <span className="rounded-[7px] bg-[#F1F3F8] px-2 py-0.5 text-[11.5px] font-bold text-[#31406B]">{pickL(...impact)}</span> : null}
                       </div>
                       <p className="mt-2 text-[16.5px] font-black leading-snug tracking-[-0.01em] text-[#101334] group-hover:text-[#3B52F5]">{r.title}</p>
-                      {r.description ? <p className="mt-1 line-clamp-2 text-[13.5px] font-medium leading-relaxed text-[#31406B]">{r.description}</p> : null}
+                      {r.description ? <p className="mt-1 line-clamp-2 text-[13.5px] font-medium leading-relaxed text-[#31406B]">{tidyText(r.description)}</p> : null}
 
                       <dl className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
                         <div className="rounded-[12px] bg-[#F6F7FC] px-3 py-2">

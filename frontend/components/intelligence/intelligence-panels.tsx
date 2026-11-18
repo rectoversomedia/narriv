@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyText } from "@/lib/tidy-text";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -183,7 +184,7 @@ export function TodaysIntelligenceStrip({ windowHours = 24 }: { windowHours?: nu
         {topRec ? (
           <>
             <p className="mt-2 text-[13px] font-semibold leading-snug text-slate-900 first-letter:">{code.action(topRec.action)}</p>
-            <p className="mt-1 text-[12px] leading-snug text-slate-600 line-clamp-2">{topRec.reason}</p>
+            <p className="mt-1 text-[12px] leading-snug text-slate-600 line-clamp-2">{tidyText(topRec.reason)}</p>
             <div className="mt-2 flex items-center gap-1.5">
               <Pill tone="text-slate-700 bg-slate-50 border-slate-200">{t("priority", { value: code.level(topRec.priority) })}</Pill>
               <Pill tone="text-slate-700 bg-slate-50 border-slate-200">{t("urgency", { value: code.urgency(topRec.urgency) })}</Pill>
@@ -280,7 +281,7 @@ function RiskExplanation({ model, score }: { model: RiskModelExplanation; score:
               <div className="mt-1 h-1.5 w-full rounded-full bg-slate-100">
                 <div className="h-1.5 rounded-full bg-[#465FFF]" style={{ width: `${Math.min(100, c.contribution * (100 / Math.max(1, c.weight * 100)))}%` }} />
               </div>
-              <p className="mt-1 text-slate-600">{c.reason}</p>
+              <p className="mt-1 text-slate-600">{tidyText(c.reason)}</p>
               {c.evidenceIds.length > 0 ? (
                 <p className="mt-0.5 text-[12px] text-[#5A6478]">
                   {t("evidence")} {c.key === "active_alerts"
@@ -450,7 +451,7 @@ export function RecommendedActionsPanel({ windowHours = 24, limit = 5 }: { windo
                 <Pill tone="text-slate-700 bg-slate-50 border-slate-200">{code.urgency(r.urgency)}</Pill>
               </span>
             </div>
-            <p className="mt-1 text-[12px] text-slate-600">{r.reason}</p>
+            <p className="mt-1 text-[12px] text-slate-600">{tidyText(r.reason)}</p>
             {r.observedIssue ? <p className="mt-1 text-[12px] text-[#5A6478]">{t("observed", { value: r.observedIssue })}</p> : null}
             {r.expectedOutcome ? (
               <p className="mt-1 text-[12px] text-[#5A6478]">{t("expected", { value: r.expectedOutcome })}</p>

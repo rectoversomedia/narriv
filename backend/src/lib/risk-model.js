@@ -96,7 +96,7 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
     // High counts once, critical twice; normalized by window size (capped at 1).
     add("severity", (severe.length + critical) / n,
         severe.length
-            ? tr(`${severe.length} mention(s) rated high/critical severity (${critical} critical).`, `${severe.length} percakapan bertingkat keparahan tinggi/kritis (${critical} kritis).`)
+            ? tr(`${severe.length} ${(severe.length) === 1 ? "mention" : "mentions"} rated high/critical severity (${critical} critical).`, `${severe.length} percakapan bertingkat keparahan tinggi/kritis (${critical} kritis).`)
             : tr("No mentions rated high or critical severity.", "Tidak ada percakapan bertingkat keparahan tinggi atau kritis."),
         severe.map((s) => s.id), { highOrCritical: severe.length, critical });
 
@@ -119,7 +119,7 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
     const sevWeight = { critical: 1, high: 0.75, medium: 0.4, low: 0.2 };
     const alertLoad = active.reduce((sum, a) => sum + (sevWeight[lower(a.severity)] ?? 0.4), 0);
     add("active_alerts", alertLoad / 3,
-        active.length ? tr(`${active.length} unresolved alert(s) in the window.`, `${active.length} peringatan belum selesai di periode ini.`) : tr("No unresolved alerts in the window.", "Tidak ada peringatan yang belum selesai di periode ini."),
+        active.length ? tr(`${active.length} unresolved ${active.length === 1 ? "alert" : "alerts"} in the window.`, `${active.length} peringatan belum selesai di periode ini.`) : tr("No unresolved alerts in the window.", "Tidak ada peringatan yang belum selesai di periode ini."),
         active.map((a) => a.id), { unresolved: active.length });
 
     // 5. Narrative momentum from timestamped member observations (last 24h vs
@@ -136,18 +136,18 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
     }
     const emerging = [...byTitle.values()];
     const duplicates = emerging.reduce((n, c) => n + c.duplicateIds.length, 0);
-    if (duplicates > 0) uncertainty.push(tr(`${duplicates} duplicate narrative cluster(s) share a title with another cluster and were merged.`, `${duplicates} klaster narasi duplikat (judulnya sama dengan klaster lain) digabung.`));
+    if (duplicates > 0) uncertainty.push(tr(`${duplicates} duplicate narrative ${(duplicates) === 1 ? "cluster" : "clusters"} share a title with another cluster and were merged.`, `${duplicates} klaster narasi duplikat (judulnya sama dengan klaster lain) digabung.`));
     if (clusters.length > 0 && withMomentum.length === 0) uncertainty.push(tr("Narrative momentum unavailable: no member observations for the tracked clusters.", "Momentum narasi belum tersedia: belum ada pengamatan untuk klaster yang dipantau."));
     add("narrative_momentum", emerging.length / 3,
         emerging.length
-            ? tr(`${emerging.length} new narrative(s) rising fast in 24h.`, `${emerging.length} narasi baru naik cepat dalam 24 jam.`)
+            ? tr(`${emerging.length} new ${(emerging.length) === 1 ? "narrative" : "narratives"} rising fast in 24h.`, `${emerging.length} narasi baru naik cepat dalam 24 jam.`)
             : tr("No new narrative rising.", "Belum ada narasi baru yang naik."),
         emerging.flatMap((c) => [c.id, ...c.duplicateIds]),
         { emergingNarratives: emerging.length, duplicateClusters: duplicates, clustersWithObservations: withMomentum.length, minSignals24h: EMERGING_MIN_SIGNALS_24H, minGrowthPct: EMERGING_MIN_GROWTH_PCT });
 
-    if (n < MIN_SIGNALS_FOR_CONFIDENCE) uncertainty.push(tr(`Small sample: only ${n} mention(s) in the window.`, `Sampel kecil: hanya ${n} percakapan di periode ini.`));
+    if (n < MIN_SIGNALS_FOR_CONFIDENCE) uncertainty.push(tr(`Small sample: only ${n} ${(n) === 1 ? "mention" : "mentions"} in the window.`, `Sampel kecil: hanya ${n} percakapan di periode ini.`));
     const unrated = signals.filter((s) => !s.sentiment).length;
-    if (unrated > 0) uncertainty.push(tr(`${unrated} mention(s) have no sentiment yet (unanalyzed).`, `${unrated} percakapan belum punya sentimen (belum dianalisis).`));
+    if (unrated > 0) uncertainty.push(tr(`${unrated} ${(unrated) === 1 ? "mention" : "mentions"} have no sentiment yet (unanalyzed).`, `${unrated} percakapan belum punya sentimen (belum dianalisis).`));
 
     const score = Math.round(components.reduce((sum, c) => sum + c.contribution, 0));
     const level = uncertainty.length === 0 ? "low" : uncertainty.length === 1 ? "medium" : "high";

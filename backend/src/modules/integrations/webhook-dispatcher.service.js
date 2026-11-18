@@ -149,7 +149,7 @@ export async function testIntegrationConnection(integration) {
     const testText = "*[Narriv] Tes koneksi berhasil*\nSaluran ini akan menerima peringatan krisis dari workspace Narriv Anda.";
     if (integration.platform === "whatsapp") {
         const result = await sendWhatsAppMessage(integration.config, testText.replace(/\*/g, ""));
-        return { success: true, message: `WhatsApp test sent to ${result.sent} number(s)${result.failed.length ? `; failed: ${result.failed.join("; ")}` : ""}` };
+        return { success: true, message: `WhatsApp test sent to ${result.sent} ${(result.sent) === 1 ? "number" : "numbers"}${result.failed.length ? `; failed: ${result.failed.join("; ")}` : ""}` };
     }
     const url = getWebhookUrl(integration);
     if (!url) {

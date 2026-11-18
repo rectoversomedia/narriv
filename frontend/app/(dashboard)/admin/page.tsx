@@ -576,7 +576,7 @@ export default function AdminPage() {
             </button>
           ))}
         </div>
-        {t ? <p className="relative mt-3 text-[12px] font-medium text-white/60">{L(`AI ${usd(t.aiCostMonth)} · social media ${usd(t.socialSpendMonth)} of ${usd(list.data?.socialCapUsd ?? 0)} · ${t.socialOn} client(s) with social on · rate Rp${RATE.toLocaleString("id-ID")}/USD`, `AI ${usd(t.aiCostMonth)} · media sosial ${usd(t.socialSpendMonth)} dari ${usd(list.data?.socialCapUsd ?? 0)} · ${t.socialOn} klien dengan media sosial aktif · kurs Rp${RATE.toLocaleString("id-ID")}/USD`)}</p> : null}
+        {t ? <p className="relative mt-3 text-[12px] font-medium text-white/60">{L(`AI ${usd(t.aiCostMonth)} · social media ${usd(t.socialSpendMonth)} of ${usd(list.data?.socialCapUsd ?? 0)} · ${t.socialOn} ${(t.socialOn) === 1 ? "client" : "clients"} with social on · rate Rp${RATE.toLocaleString("id-ID")}/USD`, `AI ${usd(t.aiCostMonth)} · media sosial ${usd(t.socialSpendMonth)} dari ${usd(list.data?.socialCapUsd ?? 0)} · ${t.socialOn} klien dengan media sosial aktif · kurs Rp${RATE.toLocaleString("id-ID")}/USD`)}</p> : null}
       </section>
 
       <TestEmailCard />

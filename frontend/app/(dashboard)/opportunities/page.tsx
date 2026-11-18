@@ -1,6 +1,6 @@
 "use client";
 
-import { tidyTitle } from "@/lib/tidy-text";
+import { tidyText, tidyTitle } from "@/lib/tidy-text";
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -58,7 +58,7 @@ function FeaturedOpportunity({ alert, onPlan }: { alert: Alert; onPlan: () => vo
           <span className="text-[11.5px] font-medium text-[#5F6B94]">{shortDate(alert.createdAt)}</span>
         </div>
         <h2 className="mt-4 max-w-4xl text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] sm:text-[32px]">{tidyTitle(alert.title)}</h2>
-        {alert.whatHappened ? <p className="mt-2 max-w-3xl text-[15.5px] font-medium leading-relaxed text-[#31406B]">{alert.whatHappened}</p> : null}
+        {alert.whatHappened ? <p className="mt-2 max-w-3xl text-[15.5px] font-medium leading-relaxed text-[#31406B]">{tidyText(alert.whatHappened)}</p> : null}
         {!owner ? (
           <p className="mt-4 inline-flex items-center gap-2 rounded-[10px] bg-[#FFF7E8] px-3 py-2 text-[13px] font-bold text-[#92400E]">{L("No owner yet: assign someone so it is not missed.", "Belum ada penanggung jawab: tunjuk seseorang supaya tidak terlewat.")}</p>
         ) : null}
@@ -89,7 +89,7 @@ function OpportunityRow({ alert }: { alert: Alert }) {
       <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-[#12A66A]" />
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]">{tidyTitle(alert.title)}</span>
-        {alert.whatToDo ? <span className="mt-1 block line-clamp-2 text-[13.5px] font-medium text-[#31406B]">{alert.whatToDo}</span> : null}
+        {alert.whatToDo ? <span className="mt-1 block line-clamp-2 text-[13.5px] font-medium text-[#31406B]">{tidyText(alert.whatToDo)}</span> : null}
         <span className="mt-1 block text-[11.5px] font-medium text-[#5F6B94]">
           {L(priority.en, priority.id)} · {shortDate(alert.createdAt)} · {owner || <span className="text-[#B45309]">{L("No owner yet", "Belum ada penanggung jawab")}</span>}
         </span>
