@@ -21,6 +21,7 @@ export function Cover({ en }: P) {
   return (
     <Dark glow="right">
       <img src="/brand/logo-bulat-nv.webp" alt="" style={{ position: "absolute", left: 1270, top: 250, width: 520, height: 520, filter: "drop-shadow(0 0 120px rgba(70,95,255,.55))" }} />
+      <span style={{ position: "absolute", left: 1170, width: 720, top: 800, fontFamily: MONO, fontSize: 22, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(199,208,255,.8)", textAlign: "center" }}>Narrative Intelligence</span>
       <span aria-hidden style={{ position: "absolute", left: 1170, top: 150, width: 720, height: 720, borderRadius: 999, border: "2px solid rgba(165,180,255,.22)" }} />
       <span aria-hidden style={{ position: "absolute", left: 1090, top: 70, width: 880, height: 880, borderRadius: 999, border: "2px dashed rgba(165,180,255,.14)" }} />
       <div className="ph" style={{ position: "absolute", left: 96, top: 250, width: 1120 }}>
@@ -310,7 +311,7 @@ export function AiVisibility({ en }: P) {
   );
 }
 
-export function Reports({ en }: P) {
+export function Reports({ en, img }: P & { img?: string }) {
   const t = tr(en);
   return (
     <Dark tag={t("Fitur · Laporan", "Feature · Reports")} glow="right">
@@ -320,7 +321,7 @@ export function Reports({ en }: P) {
         <Point dark icon={CalendarClock} title={t("Terkirim terjadwal, misalnya tiap Senin", "Scheduled, e.g. every Monday")} text={t("PDF, Excel, dan CSV ke email direksi (laporan terjadwal mulai paket Intelligence).", "PDF, Excel and CSV to leadership by email (scheduled reports from Intelligence).")} />
         <Point dark icon={Languages} title={t("Bahasa Indonesia atau English", "Bahasa Indonesia or English")} text={t("Pilih bahasa sebelum laporan dibuat.", "Pick the language before the report is generated.")} />
       </div>
-      <img src={`/pitch/report-${en ? "en" : "id"}.webp`} alt="" className="pc" style={{ position: "absolute", left: 1140, top: 150, width: 640, height: "auto", borderRadius: 18, border: `3px solid ${INK}`, boxShadow: "0 30px 80px rgba(0,0,0,.45), 0 10px 0 #465FFF", transform: "rotate(2.5deg)" }} />
+      <img src={img ?? `/pitch/report-${en ? "en" : "id"}.webp`} alt="" className="pc" style={{ position: "absolute", left: 1140, top: 150, width: 640, height: "auto", borderRadius: 18, border: `3px solid ${INK}`, boxShadow: "0 30px 80px rgba(0,0,0,.45), 0 10px 0 #465FFF", transform: "rotate(2.5deg)" }} />
     </Dark>
   );
 }
@@ -501,6 +502,7 @@ export function Closing({ en }: P) {
   return (
     <Dark glow="top">
       <img src="/brand/logo-bulat-nv.webp" alt="" className="ph" style={{ position: "absolute", left: 870, top: 150, width: 180, height: 180, filter: "drop-shadow(0 0 80px rgba(70,95,255,.6))" }} />
+      <span style={{ position: "absolute", left: 0, right: 0, top: 336, fontFamily: MONO, fontSize: 22, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(199,208,255,.8)", textAlign: "center" }}>Narrative Intelligence</span>
       <div className="ph" style={{ position: "absolute", left: 160, right: 160, top: 380, textAlign: "center" }}>
         <h2 style={{ margin: 0, fontSize: 104, lineHeight: 1.04, fontWeight: 800, letterSpacing: "-0.045em" }}>{t(<>Lihat brand Anda <Brush>di Narriv.</Brush></>, <>See your brand <Brush>in Narriv.</Brush></>)}</h2>
         <p style={{ margin: "30px auto 0", maxWidth: 1200, fontSize: 32, lineHeight: 1.45, color: "rgba(255,255,255,.7)" }}>{t("Buka demo tanpa mendaftar, atau mulai uji coba gratis untuk brand Anda sendiri hari ini.", "Open the demo without signing up, or start a free trial on your own brand today.")}</p>

@@ -280,7 +280,8 @@ function renderReportPdf(data, lang, mentionLimit) {
     doc.rect(0, 0, doc.page.width, HEAD_H).fill(glow);
     const markFile = asset(WORDMARK);
     if (existsSync(markFile)) doc.image(markFile, left, 30, { height: 24 });
-    else doc.fillColor("#FFFFFF").font(F.black).fontSize(18).text("Narriv.", left, 32);
+    else doc.fillColor("#FFFFFF").font(F.black).fontSize(18).text("narriv.", left, 32);
+    doc.fillColor("#A9B2D6").font(F.mono).fontSize(6.5).text("NARRATIVE INTELLIGENCE", left + 1, 57, { characterSpacing: 1.6, lineBreak: false });
     const stamp = (W.reportStamp || "").toUpperCase();
     doc.font(F.mono).fontSize(7.5);
     const stW = doc.widthOfString(stamp, { characterSpacing: 1 }) + 18;

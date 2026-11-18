@@ -24,6 +24,7 @@ export function MandiriCover({ en }: P) {
   return (
     <Dark glow="right">
       <img src="/brand/logo-bulat-nv.webp" alt="" style={{ position: "absolute", left: 1270, top: 250, width: 520, height: 520, filter: "drop-shadow(0 0 120px rgba(70,95,255,.55))" }} />
+      <span style={{ position: "absolute", left: 1170, width: 720, top: 800, fontFamily: MONO, fontSize: 22, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(199,208,255,.8)", textAlign: "center" }}>Narrative Intelligence</span>
       <span aria-hidden style={{ position: "absolute", left: 1170, top: 150, width: 720, height: 720, borderRadius: 999, border: "2px solid rgba(165,180,255,.22)" }} />
       <span aria-hidden style={{ position: "absolute", left: 1090, top: 70, width: 880, height: 880, borderRadius: 999, border: "2px dashed rgba(165,180,255,.14)" }} />
       <div className="ph" style={{ position: "absolute", left: 96, top: 230, width: 1120 }}>
@@ -379,7 +380,7 @@ export function mandiriDeck(en: boolean) {
       ? { title: "KUR-to-civil-servant story is spreading", text: "Coverage of alleged KUR loans to civil servants doubled in 24 hours and is now quoted by national outlets.", owner: "Corporate Communication", due: "In 4 hours", todo: "Prepare a statement on KUR verification, brief the spokesperson, check coverage every hour.", note: "Example · simulated alert, not a real event", level: "High" }
       : { title: "Sorotan KUR ke ASN mulai menyebar", text: "Pemberitaan dugaan penyaluran KUR ke ASN naik 2× dalam 24 jam dan mulai dikutip media nasional.", owner: "Corporate Communication", due: "4 jam lagi", todo: "Siapkan pernyataan soal verifikasi KUR, brief juru bicara, pantau pemberitaan tiap jam.", note: "Contoh · simulasi, bukan kejadian nyata", level: "Tinggi" }} />,
     <AiVisibility key="ai" en={en} />,
-    <Reports key="reports" en={en} />,
+    <Reports key="reports" en={en} img={`/pitch/report-mandiri-${en ? "en" : "id"}.jpg`} />,
     <Trust key="trust" en={en} />,
     <TrackRecord key="track" en={en} />,
     <Faq key="faq" en={en} />,
