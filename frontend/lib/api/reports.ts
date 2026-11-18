@@ -305,8 +305,23 @@ export interface NarrativeDetailRecord extends NarrativeRecord {
   }>;
   evidenceNote?: string | null;
   spread?: NarrativeSpread | null;
+  journey?: NarrativeJourney | null;
+  framing?: { frames: NarrativeFrame[]; at: string } | null;
   precedents?: NarrativePrecedent[];
   expectation?: NarrativeExpectation | null;
+}
+
+export type Tone = "positive" | "neutral" | "negative" | "mixed";
+/** One angle from which an issue is told (backend lib/narrative-framing.js). */
+export interface NarrativeFrame { label: string; summary: string; tone: Tone; count: number; outlets: string[]; recordIds: string[] }
+/** How an issue's tone moved over time (backend lib/narrative-journey.js). */
+export interface NarrativeJourney {
+  records: number;
+  steps: Array<{ id: string; at: string; hoursAfterStart: number; tone: Tone; outlet: string | null; title: string | null; url: string | null }>;
+  firstNegative: { at: string; hoursAfterStart: number; outlet: string | null } | null;
+  peak: { day: string; count: number };
+  negativeShare: { early: number; late: number; trend: "rising" | "falling" | "steady" };
+  spanHours: number;
 }
 
 /** How a narrative spread, read from its linked records (backend lib/narrative-spread.js). */

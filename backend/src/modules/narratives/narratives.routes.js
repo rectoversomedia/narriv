@@ -8,6 +8,10 @@ import { logStructured } from "../../lib/logger.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { wrapAsync } from "../../lib/sentry.js";
 import { buildSpread } from "../../lib/narrative-spread.js";
+import { buildJourney } from "../../lib/narrative-journey.js";
+import { getFraming } from "../../lib/narrative-framing.js";
+import { getChatClient, anyAiConfigured } from "../../lib/chat-client.js";
+import { workspaceLanguage } from "../../lib/workspace-language.js";
 import { buildPrecedents } from "../../lib/narrative-precedents.js";
 import { getWorkspaceProfile } from "../../lib/workspace-profile.js";
 import { maskSignal } from "../../lib/privacy.js";
@@ -346,6 +350,11 @@ router.get("/:id", async (req, res) => {
 
         const item = toNarrativeItem(cluster);
         const spread = buildSpread(memberRows, { privacy: privacyMode });
+        const journey = buildJourney(memberRows, { privacy: privacyMode });
+        // One small AI call per issue when its records change; stored on the cluster afterwards.
+        const framing = anyAiConfigured()
+            ? await getFraming({ cluster, members: memberRows, lang: await workspaceLanguage(cluster.workspace_id), db: supabase, chat: getChatClient() }).catch(() => null)
+            : (cluster.metadata?.framing || null);
         const history = await narrativeHistory(cluster, item.firstSeen).catch((err) => {
             logStructured("warn", "narrative_precedents_failed", { error: err?.message });
             return { precedents: [], expectation: null };
@@ -354,6 +363,8 @@ router.get("/:id", async (req, res) => {
         return res.json({
             ...item,
             spread,
+            journey,
+            framing: framing ? { frames: framing.frames, at: framing.at } : null,
             ...history,
             trends,
             sentimentBreakdown,

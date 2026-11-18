@@ -9,6 +9,7 @@
  * Unknown values stay unknown: no invented publication dates, sentiment or
  * engagement. Clustering and alert rules run once per batch afterwards.
  */
+import { isNearDuplicate } from "../../lib/near-duplicate.js";
 import supabaseAdmin from "../../lib/supabase.js";
 import { primaryModelLabel } from "../../lib/chat-client.js";
 import { provinceFromLabel, resolveRecordRegion } from "../../lib/indonesia-regions.js";
@@ -105,6 +106,10 @@ export async function persistCollectedRecords(records, {
   // Records repeated inside one batch: claimed synchronously, before any await,
   // because the database check below runs concurrently for several records.
   const seenInBatch = new Set();
+  // Recent headlines in the workspace, to skip the same story from the same outlet under another link.
+  const { data: recentRows } = await supabaseAdmin.from("signals").select("title, author, metadata")
+    .eq("workspace_id", workspaceId).gte("captured_at", new Date(Date.now() - 7 * 864e5).toISOString()).limit(1000);
+  const recent = (recentRows || []).map((r) => ({ title: r.title, author: r.author, metadata: { publisher: r.metadata?.publisher } }));
 
   const processRecord = async (record) => {
     try {
@@ -124,6 +129,12 @@ export async function persistCollectedRecords(records, {
         return;
       }
       batchKeys.forEach((k) => seenInBatch.add(k));
+      const candidate = { title: record.title, author: record.author, metadata: { publisher: record.metadata?.publisher } };
+      if (recent.some((r) => isNearDuplicate(r, candidate))) {
+        skippedDuplicates++;
+        return;
+      }
+      recent.push(candidate);
 
       if (await existsInWorkspace(workspaceId, record.externalId, url)) {
         skippedDuplicates++;

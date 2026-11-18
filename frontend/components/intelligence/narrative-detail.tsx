@@ -6,6 +6,7 @@ import type { NarrativeDetailRecord } from "@/lib/api-service";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { pickL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
+import { NarrativeFramingPanel, NarrativeJourneyPanel } from "./narrative-framing";
 import { KICKER, NarrativePrecedents, NarrativeSpreadPanel, SectionHead, duration, platformName, when } from "./narrative-spread";
 
 /**
@@ -182,15 +183,20 @@ function Evidence({ detail, n }: { detail: NarrativeDetailRecord; n: string }) {
  * records beside it; on narrow screens (and in a modal) everything stacks in reading order.
  */
 export function NarrativeDetailView({ detail, layout = "stack" }: { detail: NarrativeDetailRecord; layout?: "stack" | "page" }) {
-  const spread = detail.spread ? <NarrativeSpreadPanel spread={detail.spread} n="01" /> : null;
-  const history = <NarrativePrecedents precedents={detail.precedents ?? []} expectation={detail.expectation} n={detail.spread ? "02" : "01"} />;
-  const records = <Evidence detail={detail} n={detail.spread ? "03" : "02"} />;
+  // Sections are numbered in reading order, skipping the ones this issue has no data for.
+  let k = 0;
+  const num = () => String(++k).padStart(2, "0");
+  const framing = detail.framing?.frames?.length ? <NarrativeFramingPanel frames={detail.framing.frames} n={num()} /> : null;
+  const journey = detail.journey ? <NarrativeJourneyPanel journey={detail.journey} n={num()} /> : null;
+  const spread = detail.spread ? <NarrativeSpreadPanel spread={detail.spread} n={num()} /> : null;
+  const history = <NarrativePrecedents precedents={detail.precedents ?? []} expectation={detail.expectation} n={num()} />;
+  const records = <Evidence detail={detail} n={num()} />;
   if (layout === "page") {
     return (
       <div className="grid gap-8">
         <Summary detail={detail} />
         <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="grid gap-8">{spread ?? history}</div>
+          <div className="grid gap-8">{framing}{journey}{spread ?? history}</div>
           <div className="grid gap-8">{spread ? history : null}{records}</div>
         </div>
       </div>
@@ -199,6 +205,8 @@ export function NarrativeDetailView({ detail, layout = "stack" }: { detail: Narr
   return (
     <div className="grid gap-8">
       <Summary detail={detail} />
+      {framing}
+      {journey}
       {spread}
       {history}
       {records}
