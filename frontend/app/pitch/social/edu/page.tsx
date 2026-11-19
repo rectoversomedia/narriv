@@ -92,13 +92,6 @@ const closing = (_topic: string): Slide => ({
           <p style={{ margin: "12px 0 0", fontSize: 66, fontWeight: 800, letterSpacing: "-0.035em" }}>app.narriv.digital</p>
         </div>
       </div>
-      <div style={{ marginTop: 40, display: "flex", justifyContent: "center", gap: 36, fontSize: 26, fontWeight: 800, color: "rgba(255,255,255,.85)" }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
-          <svg width="24" height="30" viewBox="0 0 24 28" aria-hidden><path d="M3 2h18v24l-9-6-9 6z" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinejoin="round" /></svg>
-          Simpan untuk tim kamu
-        </span>
-        <span>· Tanpa perlu daftar</span>
-      </div>
     </>
   ),
 });
