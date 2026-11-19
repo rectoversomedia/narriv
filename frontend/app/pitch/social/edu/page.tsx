@@ -15,9 +15,9 @@ const GRAD = "linear-gradient(90deg,#465FFF,#8B5CF6 55%,#EC4899)";
 type Slide = { dark?: boolean; body: ReactNode };
 type Post = { key: string; topic: string; slides: Slide[] };
 
-function Title({ kicker: _kicker, children, sub, dark, top = 320, size = 80 }: { kicker: string; children: ReactNode; sub?: string; dark?: boolean; top?: number; size?: number }) {
+function Title({ kicker: _kicker, children, sub, dark, size = 80 }: { kicker: string; children: ReactNode; sub?: string; dark?: boolean; size?: number }) {
   return (
-    <div style={{ position: "absolute", left: 72, right: 72, top }}>
+    <div style={{ textAlign: "center" }}>
       <h2 style={{ margin: 0, fontSize: size, lineHeight: 1.04, fontWeight: 800, letterSpacing: "-0.045em" }}>{children}</h2>
       {sub ? <p style={{ margin: "26px 0 0", fontSize: 32, lineHeight: 1.42, color: dark ? "rgba(255,255,255,.75)" : MUTED }}>{sub}</p> : null}
     </div>
@@ -30,9 +30,9 @@ function Num({ n, c }: { n: number | string; c: string }) {
 
 const COLORS = [BLUE, VIOLET, PINK, AMBER];
 
-function Rows({ items, top = 540, start = 1 }: { items: Array<[string, string]>; top?: number; start?: number }) {
+function Rows({ items, start = 1 }: { items: Array<[string, string]>; start?: number }) {
   return (
-    <div style={{ position: "absolute", left: 72, right: 72, top, display: "grid", gap: 22 }}>
+    <div style={{ marginTop: 56, display: "grid", gap: 22 }}>
       {items.map(([h, d], i) => (
         <div key={h} style={{ ...card, display: "flex", gap: 24, alignItems: "flex-start", padding: "28px 30px" }}>
           <Num n={start + i} c={COLORS[(start - 1 + i) % COLORS.length]} />
@@ -49,8 +49,8 @@ const cover = (kicker: string, title: ReactNode, sub: string): Slide => ({
   dark: true,
   body: (
     <>
-      <Title dark top={380} size={88} kicker={kicker} sub={sub}>{title}</Title>
-      <div style={{ position: "absolute", right: 72, bottom: 150, padding: "18px 28px", borderRadius: 999, background: "#fff", color: INK, fontSize: 28, fontWeight: 800 }}>Geser →</div>
+      <Title dark size={88} kicker={kicker} sub={sub}>{title}</Title>
+      <div style={{ position: "absolute", right: 0, bottom: 10, padding: "18px 28px", borderRadius: 999, background: "#fff", color: INK, fontSize: 28, fontWeight: 800 }}>Geser →</div>
     </>
   ),
 });
@@ -60,7 +60,7 @@ const list = (kicker: string, title: ReactNode, items: Array<[string, string]>, 
   body: (
     <>
       <Title dark={dark} kicker={kicker} size={72}>{title}</Title>
-      <Rows items={items} top={items.length > 3 ? 470 : 520} start={start} />
+      <Rows items={items} start={start} />
     </>
   ),
 });
@@ -68,7 +68,7 @@ const list = (kicker: string, title: ReactNode, items: Array<[string, string]>, 
 const big = (kicker: string, text: ReactNode, note?: string, dark = false): Slide => ({
   dark,
   body: (
-    <div style={{ position: "absolute", left: 72, right: 72, top: 360 }}>
+    <div style={{ textAlign: "center" }}>
       <p style={{ margin: 0, fontSize: 92, lineHeight: 1.06, fontWeight: 800, letterSpacing: "-0.045em" }}>{text}</p>
       {note ? <p style={{ margin: "44px 0 0", fontSize: 32, lineHeight: 1.45, color: dark ? "rgba(255,255,255,.75)" : MUTED }}>{note}</p> : null}
     </div>
@@ -81,18 +81,18 @@ const closing = (_topic: string): Slide => ({
   dark: true,
   body: (
     <>
-      <img src="/brand/logo-bulat-nv.webp" alt="" style={{ position: "absolute", left: 415, top: 220, width: 250, height: 250, filter: "drop-shadow(0 0 90px rgba(70,95,255,.6))" }} />
-      <div style={{ position: "absolute", left: 72, right: 72, top: 520, textAlign: "center" }}>
+      <img src="/brand/logo-bulat-nv.webp" alt="" style={{ alignSelf: "center", width: 230, height: 230, filter: "drop-shadow(0 0 90px rgba(70,95,255,.6))" }} />
+      <div style={{ marginTop: 40, textAlign: "center" }}>
         <p style={{ margin: 0, fontSize: 76, lineHeight: 1.06, fontWeight: 800, letterSpacing: "-0.045em" }}>Ketahui isunya. <Brush>Bertindak duluan.</Brush></p>
       </div>
       {/* The demo address, big and unmissable. */}
-      <div style={{ position: "absolute", left: 72, right: 72, top: 780, padding: 5, borderRadius: 34, background: GRAD }}>
+      <div style={{ marginTop: 56, padding: 5, borderRadius: 34, background: GRAD }}>
         <div style={{ padding: "30px 34px 34px", borderRadius: 30, background: "#fff", color: INK, textAlign: "center" }}>
           <p style={{ margin: 0, fontFamily: MONO, fontSize: 22, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: BLUE }}>Coba demo gratis di</p>
           <p style={{ margin: "12px 0 0", fontSize: 66, fontWeight: 800, letterSpacing: "-0.035em" }}>app.narriv.digital</p>
         </div>
       </div>
-      <div style={{ position: "absolute", left: 72, right: 72, top: 1050, display: "flex", justifyContent: "center", gap: 36, fontSize: 26, fontWeight: 800, color: "rgba(255,255,255,.85)" }}>
+      <div style={{ marginTop: 40, display: "flex", justifyContent: "center", gap: 36, fontSize: 26, fontWeight: 800, color: "rgba(255,255,255,.85)" }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
           <svg width="24" height="30" viewBox="0 0 24 28" aria-hidden><path d="M3 2h18v24l-9-6-9 6z" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinejoin="round" /></svg>
           Simpan untuk tim kamu
@@ -113,7 +113,7 @@ const compareTable = (() => {
     ["Langkah", "Kamu simpulkan sendiri", "Rekomendasi & rencana aksi"],
   ];
   return (
-    <div style={{ ...card, position: "absolute", left: 72, right: 72, top: 520, overflow: "hidden" }}>
+    <div style={{ ...card, marginTop: 56, overflow: "hidden" }}>
       <div style={{ display: "grid", gridTemplateColumns: "210px 1fr 1fr", padding: "18px 26px", background: INK, color: "#C7D0FF", fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
         <span /><span>Media monitoring</span><span style={{ color: "#fff" }}>Narrative intel</span>
       </div>
@@ -131,17 +131,17 @@ const compareTable = (() => {
 const sourcesBlock = (() => {
   const chip = (x: string, on: boolean) => <span key={x} style={{ padding: "18px 24px", borderRadius: 18, background: on ? "#fff" : "rgba(255,255,255,.08)", color: on ? INK : "#fff", border: on ? `3px solid ${INK}` : "2px dashed rgba(255,255,255,.35)", fontSize: 28, fontWeight: 800 }}>{x}</span>;
   return (
-    <div style={{ position: "absolute", left: 72, right: 72, top: 500 }}>
+    <div style={{ marginTop: 64, textAlign: "center" }}>
       <Kicker dark style={{ fontSize: 20 }}>Sudah termasuk</Kicker>
-      <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 14 }}>{["Berita online", "YouTube + komentar", "Telegram publik", "Google News"].map((x) => chip(x, true))}</div>
+      <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 14 }}>{["Berita online", "YouTube + komentar", "Telegram publik", "Google News"].map((x) => chip(x, true))}</div>
       <Kicker dark style={{ fontSize: 20, marginTop: 64 }}>Add-on media sosial</Kicker>
-      <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 14 }}>{["X / Twitter", "TikTok", "Instagram", "Facebook"].map((x) => chip(x, false))}</div>
+      <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 14 }}>{["X / Twitter", "TikTok", "Instagram", "Facebook"].map((x) => chip(x, false))}</div>
     </div>
   );
 })();
 
 const clusterBlock = (
-  <div style={{ position: "absolute", left: 72, right: 72, top: 600, display: "grid", gridTemplateColumns: "1fr 90px 1fr", alignItems: "center" }}>
+  <div style={{ marginTop: 72, display: "grid", gridTemplateColumns: "1fr 90px 1fr", alignItems: "center" }}>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {Array.from({ length: 42 }, (_, i) => <span key={i} style={{ width: 34, height: 34, borderRadius: 8, background: [NEG, POS, "#C9CFDD", AMBER][i % 4], opacity: 0.85 }} />)}
     </div>
@@ -155,7 +155,7 @@ const clusterBlock = (
 );
 
 const timelineBlock = (
-  <div style={{ position: "absolute", left: 72, right: 72, top: 520, display: "grid", gap: 22 }}>
+  <div style={{ marginTop: 56, display: "grid", gap: 22 }}>
     {([["Jam 0–1", "Isu pertama muncul, biasanya dari satu akun atau grup.", BLUE], ["Jam 1–3", "Golden hours: klarifikasi masih bisa meredam.", POS], ["Jam 3–12", "Media mulai mengutip. Cerita makin sulit dikoreksi.", AMBER], ["Jam 12+", "Sudah jadi isu nasional. Mode krisis.", NEG]] as const).map(([h, d, c], i) => (
       <div key={h} style={{ ...card, display: "grid", gridTemplateColumns: "170px 1fr", gap: 20, alignItems: "center", padding: "34px 28px" }}>
         <span style={{ fontFamily: MONO, fontSize: 27, fontWeight: 700, color: c }}>{h}</span>
@@ -166,7 +166,7 @@ const timelineBlock = (
 );
 
 const aiBlock = (
-  <div style={{ ...card, position: "absolute", left: 72, right: 72, top: 560, padding: "40px 40px" }}>
+  <div style={{ ...card, marginTop: 56, padding: "40px 40px" }}>
     <p style={{ margin: 0, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.12em", color: MUTED }}>PERTANYAAN KE 5 ASISTEN AI</p>
     <p style={{ margin: "10px 0 0", fontSize: 34, fontWeight: 800, lineHeight: 1.3 }}>“Bank digital apa yang cocok untuk UMKM?”</p>
     <div style={{ marginTop: 28, display: "grid", gap: 12 }}>
@@ -255,7 +255,8 @@ export default function EduSeries() {
           {post.slides.map((s, i) => (
             <Frame key={i} id={`p${post.key}-${i + 1}`} w={1080} h={1350} dark={s.dark}>
               <Brand dark={s.dark} />
-              {s.body}
+              {/* Content sits centred between the logo and the footer. */}
+              <div style={{ position: "absolute", left: 72, right: 72, top: 190, bottom: 130, display: "flex", flexDirection: "column", justifyContent: "center" }}>{s.body}</div>
               <Pager n={i + 1} of={post.slides.length} dark={s.dark}  />
             </Frame>
           ))}
