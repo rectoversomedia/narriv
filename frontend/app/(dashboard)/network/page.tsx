@@ -38,6 +38,15 @@ const when = (v: string) => new Date(v).toLocaleString(intlLocale(), { day: "num
 
 function Coordination({ item }: { item: NetworkCoordination }) {
   const L = useL();
+  if (item.kind === "new_accounts") {
+    return (
+      <div className="rounded-[14px] bg-[#FDF2F8] p-4 shadow-[inset_0_0_0_1.5px_#F9C6DF]">
+        <p className="text-[12px] font-black text-[#BE185D]">{L("Young accounts, same push", "Akun baru, dorongan seragam")}</p>
+        <p className="mt-1 text-[14px] font-bold text-[#101334]">{L(`${item.accountCount} accounts under 60 days old in camp ${item.camp}, all negative`, `${item.accountCount} akun berumur di bawah 60 hari di kubu ${item.camp}, semuanya bernada negatif`)}</p>
+        <p className="mt-1 text-[12px] text-[#5A6478]">{item.accounts.join(", ")}</p>
+      </div>
+    );
+  }
   if (item.kind === "same_text") {
     return (
       <div className="rounded-[14px] bg-[#FFF7ED] p-4 shadow-[inset_0_0_0_1.5px_#FCD9A8]">
@@ -215,6 +224,7 @@ export default function NetworkPage() {
                               <span className="mt-1 flex flex-wrap gap-1.5">
                                 <span title={L(ROLE[a.role].note[0], ROLE[a.role].note[1])} className="rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[10.5px] font-bold text-[#3B52F5]">{L(ROLE[a.role].en, ROLE[a.role].id)}</span>
                                 <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-bold", TONE[a.tone].chip)}>{L(TONE[a.tone].en, TONE[a.tone].id)}</span>
+                                {(a.automation ?? 0) >= 35 ? <span className="rounded-full bg-[#FDF2F8] px-2 py-0.5 text-[10.5px] font-black text-[#BE185D]">{L(`Bot signs ${a.automation}`, `Indikasi bot ${a.automation}`)}</span> : null}
                               </span>
                             </span>
                             {[a.comments, a.repliesReceived, a.likes].map((v, k) => (
@@ -225,6 +235,7 @@ export default function NetworkPage() {
                           </button>
                           {open ? (
                             <div className="grid gap-2 border-t border-[#EEF0F6] px-4 pb-4 pt-3">
+                              {a.flags?.length ? <div className="flex flex-wrap gap-1.5">{a.flags.map((f) => <span key={f.key} className="rounded-full bg-[#FDF2F8] px-2.5 py-0.5 text-[11px] font-bold text-[#BE185D]">{f.label}</span>)}</div> : null}
                               <p className="text-[12px] font-semibold text-[#5A6478]">{L(`${ROLE[a.role].note[0]} · active on ${a.videos} video(s)`, `${ROLE[a.role].note[1]} · aktif di ${a.videos} video`)}{a.camp ? L(` · camp ${a.camp}`, ` · kubu ${a.camp}`) : ""}</p>
                               {(a.samples ?? []).map((x, k) => (
                                 <div key={k} className="rounded-[12px] bg-[#F7F8FC] px-3 py-2.5">
@@ -254,6 +265,20 @@ export default function NetworkPage() {
                   {net.coordination.length ? net.coordination.map((c, i) => <Coordination key={i} item={c} />) : (
                     <p className="rounded-[14px] bg-[#F1FCF6] p-4 text-[13.5px] font-bold text-[#047857]">{L("No coordinated pattern found in this period.", "Tidak ada pola terkoordinasi di periode ini.")}</p>
                   )}
+                  {net.suspectAccounts?.length ? (
+                    <div className="mt-2 grid gap-2">
+                      <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#8B93B0]">{L("Accounts with bot signs", "Akun dengan indikasi bot")}</p>
+                      {net.suspectAccounts.map((a) => (
+                        <div key={a.name} className="flex items-start gap-3 rounded-[12px] border border-[#F3D3E4] bg-white px-3 py-2.5">
+                          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#FDF2F8] text-[12px] font-black text-[#BE185D]">{a.automation}</span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-[13.5px] font-black text-[#101334]">{a.name}</span>
+                            <span className="mt-0.5 block text-[11.5px] font-semibold text-[#5A6478]">{a.flags.map((f) => f.label).join(" · ")}</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </section>
               </div>
             </>

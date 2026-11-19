@@ -18,11 +18,11 @@ export function DemoBanner() {
   const isDemo = isDemoSession(useAuthStore((state) => state.user));
   if (!isDemo) return null;
   return (
-    <div role="note" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-[10px] border border-transparent bg-[#8B5CFF]/10 px-4 py-3 text-center">
-      <p className="text-[13px] font-bold text-[#6E44E8]">
+    <div role="note" className="flex items-center justify-between gap-3 rounded-[12px] border border-transparent bg-[#8B5CFF]/10 px-3.5 py-2 text-left sm:justify-center sm:px-4 sm:py-3 sm:text-center">
+      <p className="min-w-0 text-[12px] font-bold leading-snug text-[#6E44E8] sm:text-[13px]">
         {t("demoBanner")}
       </p>
-      <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#6E44E8] shadow-sm hover:bg-[#F4F0FF]">
+      <button type="button" onClick={() => setOpen(true)} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#6E44E8] shadow-sm hover:bg-[#F4F0FF]">
         <Repeat size={13} aria-hidden="true" />
         {pickL("Switch Demo Case", "Ganti Kasus Demo")}
       </button>

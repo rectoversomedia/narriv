@@ -1,7 +1,7 @@
 "use client";
 
 import { Newspaper } from "lucide-react";
-import { Facebook, Instagram, Reddit, ThreadsLight, TikTokDark, XLight, YouTube } from "@ridemountainpig/svgl-react";
+import { Facebook, Instagram, Reddit, Telegram, ThreadsLight, TikTokDark, XLight, YouTube } from "@ridemountainpig/svgl-react";
 import { cn } from "@/lib/utils";
 
 const LOGOS: Record<string, (props: { className?: string }) => React.ReactNode> = {
@@ -13,10 +13,11 @@ const LOGOS: Record<string, (props: { className?: string }) => React.ReactNode> 
   x: XLight,
   threads: ThreadsLight,
   reddit: Reddit,
+  telegram: Telegram,
 };
 
 const NAMES: Record<string, string> = {
-  instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", youtube: "YouTube", twitter: "X", x: "X", threads: "Threads", reddit: "Reddit", news: "News",
+  instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", youtube: "YouTube", twitter: "X", x: "X", threads: "Threads", reddit: "Reddit", telegram: "Telegram", news: "News",
 };
 
 /** The platform's official logo (news, which has none, gets a newspaper mark). The name is the accessible label. */

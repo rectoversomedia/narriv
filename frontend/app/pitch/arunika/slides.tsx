@@ -4,6 +4,7 @@
 import { AlertTriangle, BellRing, ExternalLink, Bot, ClipboardList, Ear, Eye, Plus, Radar, Users, FileText, Layers, Sparkles, Zap } from "lucide-react";
 import { AMBER, BLUE, Brush, Card, Dark, Dot, INK, INKED, Light, MONO, MUTED, NEG, NEU, Num, POS, Ribbon, Stamp, Head } from "../kit";
 import { Alerts, AiVisibility, Bar, Reports } from "../slides";
+import { EscalationChart } from "@/components/charts/escalation-chart";
 
 type P = { en: boolean };
 const tr = (en: boolean) => <T,>(id: T, e: T): T => (en ? e : id);
@@ -801,11 +802,115 @@ export function ArunikaReport({ en }: P) {
   );
 }
 
+// Sample escalation of the data-leak story: social posts first, video next, online news, then the coordinated push.
+const ESC = {
+  social: [0, 1, 1, 2, 2, 3, 3, 4, 5, 6, 8, 9, 11, 12, 13, 15, 17, 18, 20, 23, 26, 30, 35, 41, 48, 56],
+  video: [0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 18, 20, 22, 25, 28],
+  news: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 3, 5, 7, 8, 10, 12, 13, 15, 16, 18, 20, 22, 24],
+};
+
+/** "One post can become a narrative attack": the escalation of the sample data-leak story, drawn live. */
+export function Escalation({ en }: P) {
+  const t = tr(en);
+  return (
+    <Dark tag={t("Eskalasi isu", "Escalation")} glow="right">
+      <Head dark top={170} width={1500} kicker={t("Isu kebocoran data · 17 jam", "The data-leak story · 17 hours")} title={t(<>Satu unggahan bisa jadi <Brush>serangan narasi.</Brush></>, <>One post can become a <Brush>narrative attack.</Brush></>)} />
+      <div className="pc" style={{ position: "absolute", left: 96, right: 96, top: 400 }}>
+        <EscalationChart
+          width={2000}
+          height={560}
+          fontScale={1.7}
+          duration={3200}
+          startLabel={t("Hari nol", "Day zero")}
+          endLabel={t("Sekarang", "Now")}
+          layers={[
+            { label: t("Media sosial (X, Facebook)", "Social media (X, Facebook)"), color: "#EC4899", values: ESC.social },
+            { label: "YouTube", color: "#8B5CF6", values: ESC.video },
+            { label: t("Media online", "Online news"), color: "#465FFF", values: ESC.news },
+          ]}
+          markers={[
+            { at: 0, label: t("Unggahan pertama", "First post"), color: "#12A66A" },
+            { at: 6, label: t("Menyebar di jaringan", "Network spread"), color: "#0EA5E9" },
+            { at: 11, label: t("Media online masuk", "Online news joins"), color: "#465FFF" },
+            { at: 17, label: t("Akun terkoordinasi", "Coordinated accounts"), color: "#F59E0B" },
+            { at: 22, label: t("Risiko 94 · kritis", "Risk 94 · critical"), color: "#E5484D" },
+          ]}
+        />
+      </div>
+      <Source en={en} dark />
+    </Dark>
+  );
+}
+
+/** The four layers of intelligence in Narriv, each with where it lives in the app. */
+export function FourLayers({ en }: P) {
+  const t = tr(en);
+  const layers: Array<[string, string, string, string, string]> = [
+    [BLUE, t("Narasi", "Narrative"), t("Cerita apa yang terbentuk", "Which story is forming"), t("Isu, sudut pandang, perjalanan cerita, eskalasi", "Issues, framing, story journey, escalation"), "/intelligence"],
+    ["#8B5CF6", t("Aktor", "Actor"), t("Siapa yang menggerakkan", "Who drives it"), t("Kubu, akun berpengaruh, jejak asal lintas platform", "Camps, influential accounts, cross-platform origin"), "/network"],
+    ["#E5484D", t("Ancaman", "Threat"), t("Seberapa berbahaya", "How dangerous"), t("Skor risiko, indikasi bot, cek klaim hoaks, peringatan serangan narasi", "Risk score, bot signs, hoax claim check, narrative-attack alerts"), "/alerts"],
+    ["#12A66A", t("Dampak", "Impact"), t("Apa akibatnya & langkahnya", "What it costs & what to do"), t("Jawaban AI, peluang, rencana aksi, laporan direksi", "AI answers, opportunities, action plans, board reports"), "/action-plans"],
+  ];
+  return (
+    <Light tag={t("Empat lapisan", "Four layers")} v={2}>
+      <Head kicker={t("Narrative intelligence Narriv", "Narriv's narrative intelligence")} title={t(<>Empat lapisan, <Brush>satu platform.</Brush></>, <>Four layers, <Brush>one platform.</Brush></>)} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 470, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 26 }}>
+        {layers.map(([c, h, q, d, path], k) => (
+          <a key={h} href={appLink(path)} target="_blank" rel="noreferrer" className="pc pitch-link" style={{ position: "relative", display: "block", textDecoration: "none", padding: "44px 30px 52px", minHeight: 420, borderRadius: 28, background: "#fff", color: INK, textAlign: "center", ...INKED }}>
+            <ExternalLink size={20} color={MUTED} aria-hidden style={{ position: "absolute", right: 20, top: 20 }} />
+            <span style={{ display: "flex", justifyContent: "center" }}><Num n={k + 1} c={c} s={60} /></span>
+            <p style={{ margin: "22px 0 0", fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em" }}>{h} <span style={{ color: c }}>Intelligence</span></p>
+            <p style={{ margin: "10px 0 0", fontSize: 24, fontWeight: 700, color: c }}>{q}</p>
+            <p style={{ margin: "14px 0 0", fontSize: 22, lineHeight: 1.45, color: MUTED }}>{d}</p>
+          </a>
+        ))}
+      </div>
+    </Light>
+  );
+}
+
+/** Risk score and claim check on the sample data-leak issue. */
+export function RiskAndClaims({ en }: P) {
+  const t = tr(en);
+  const factors: Array<[string, string]> = [["+25", t("73% bernada negatif", "73% negative")], ["+25", t("20 dari 22 catatan dalam 48 jam", "20 of 22 records in 48 hours")], ["+15", t("22 catatan di 3 platform", "22 records on 3 platforms")], ["+15", t("2 indikasi akun terkoordinasi", "2 coordination signs")], ["+8", t("Topik sensitif: keamanan data", "Sensitive topic: data security")], ["+6", t("1 klaim dibantah cek fakta", "1 claim refuted by fact-checkers")]];
+  const claims: Array<[string, string, string, string]> = [
+    [t("Data nasabah dijual di forum gelap", "Customer data sold on a dark-web forum"), t("Belum terverifikasi", "Unverified"), "#FFF4E5", "#A04606"],
+    [t("Bank belum memberi klarifikasi resmi", "No official statement yet"), t("Terkonfirmasi", "Confirmed"), "#E5F6EE", "#047857"],
+    [t("Seluruh rekening nasabah sudah dibobol", "Every customer account has been breached"), t("Dibantah · hoaks", "Refuted · hoax"), "#FDECEC", "#B42318"],
+  ];
+  const r = 120, c = 2 * Math.PI * r;
+  return (
+    <Light tag={t("Skor risiko & cek klaim", "Risk score & claim check")} v={1}>
+      <Head kicker={t("Isu kebocoran data", "The data-leak issue")} title={t(<>Seberapa berbahaya, <Brush>dan mana yang hoaks.</Brush></>, <>How dangerous, <Brush>and what is a hoax.</Brush></>)} />
+      <Card style={{ position: "absolute", left: 96, top: 400, width: 860, padding: "36px 40px", display: "grid", gridTemplateColumns: "280px 1fr", gap: 30, alignItems: "center" }}>
+        <div style={{ position: "relative", width: 280, height: 280 }}>
+          <svg viewBox="0 0 280 280" style={{ width: 280, height: 280, transform: "rotate(-90deg)" }}><circle cx="140" cy="140" r={r} fill="none" stroke="#EEF0F6" strokeWidth="26" /><circle cx="140" cy="140" r={r} fill="none" stroke={NEG} strokeWidth="26" strokeLinecap="round" strokeDasharray={`${0.94 * c} ${c}`} /></svg>
+          <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center" }}><div><p style={{ margin: 0, fontSize: 88, fontWeight: 800, lineHeight: 1 }}>94</p><p style={{ margin: "8px 0 0", fontSize: 22, fontWeight: 800, color: "#B42318" }}>{t("Kritis", "Critical")}</p></div></div>
+        </div>
+        <div style={{ display: "grid", gap: 10 }}>
+          {factors.map(([pts, l]) => <div key={l} style={{ display: "flex", gap: 14, alignItems: "center", padding: "10px 16px", borderRadius: 14, background: "#F7F8FC", fontSize: 21, fontWeight: 700 }}><span style={{ width: 50, color: NEG, fontWeight: 800 }}>{pts}</span>{l}</div>)}
+        </div>
+      </Card>
+      <div style={{ position: "absolute", left: 1000, right: 96, top: 400, display: "grid", gap: 18 }}>
+        {claims.map(([cl, st, bg, fg]) => (
+          <Card key={cl} style={{ padding: "26px 30px" }}>
+            <p style={{ margin: 0, fontSize: 27, fontWeight: 800, lineHeight: 1.3 }}>“{cl}”</p>
+            <span style={{ display: "inline-block", marginTop: 12, padding: "6px 16px", borderRadius: 999, background: bg, color: fg, fontSize: 19, fontWeight: 800 }}>{st}</span>
+          </Card>
+        ))}
+        <p style={{ margin: 0, fontSize: 20, color: MUTED }}>{t("Dicocokkan otomatis dengan TurnBackHoax & CekFakta.", "Matched automatically against TurnBackHoax & CekFakta.")}</p>
+      </div>
+      <Source en={en} />
+    </Light>
+  );
+}
+
 export function arunikaDeck(en: boolean) {
   return [
     <ArunikaCover key="cover" en={en} />,
     <Agenda key="agenda" en={en} />,
     <WhatIsNI key="what" en={en} />,
+    <FourLayers key="layers" en={en} />,
     <Snapshot key="snapshot" en={en} />,
     <DashboardView key="dash" en={en} />,
     <Keywords key="keywords" en={en} />,
@@ -814,6 +919,8 @@ export function arunikaDeck(en: boolean) {
     <StoryTrace key="trace" en={en} />,
     <Issues key="issues" en={en} />,
     <WatchList key="watch" en={en} />,
+    <Escalation key="escalation" en={en} />,
+    <RiskAndClaims key="risk" en={en} />,
     <Network key="network" en={en} />,
     <Influencers key="influencers" en={en} />,
     <Coordination key="coord" en={en} />,

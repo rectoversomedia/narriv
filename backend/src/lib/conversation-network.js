@@ -53,7 +53,7 @@ function labelPropagation(adjacency, rounds = 12) {
  * @param comments comment rows (author, reply target, text, likes, time, sentiment, signal_id)
  * @param videos   signals the comments sit under: { id, title, author, url }
  */
-export function buildNetwork(comments, videos = [], { maxNodes = 140 } = {}) {
+export function buildNetwork(comments, videos = [], { maxNodes = 140, accountInfo = {}, now = Date.now() } = {}) {
     const videoById = new Map(videos.map((v) => [v.id, v]));
     const accounts = new Map();
     const acc = (id, name) => {
@@ -121,7 +121,7 @@ export function buildNetwork(comments, videos = [], { maxNodes = 140 } = {}) {
             const total = c.accounts.reduce((s, a) => s + a.comments, 0) || 1;
             const tone = neg / total >= 0.3 && neg > pos ? "negative" : pos / total >= 0.3 && pos > neg ? "positive" : neg && pos ? "mixed" : "neutral";
             const top = [...c.accounts].sort((x, y) => influence(y) - influence(x));
-            const samples = c.accounts.map((a) => a.best).filter((b) => b?.text).sort((x, y) => (y.like_count || 0) - (x.like_count || 0)).slice(0, 6).map((b) => b.text);
+            const samples = [...new Set(c.accounts.map((a) => a.best).filter((b) => b?.text).sort((x, y) => (y.like_count || 0) - (x.like_count || 0)).map((b) => b.text))].slice(0, 6);
             const videoIds = [...c.videos].sort();
             return {
                 key: videoIds.join("|"),
@@ -165,12 +165,24 @@ export function buildNetwork(comments, videos = [], { maxNodes = 140 } = {}) {
 
     const byAuthor = new Map();
     for (const c of comments) if (c.author_id) (byAuthor.get(c.author_id) || byAuthor.set(c.author_id, []).get(c.author_id)).push(c);
+    const coordination = detectCoordination(comments);
+    const sameText = new Set(coordination.filter((c) => c.kind === "same_text").flatMap((c) => c.accountIds || []));
+    const bursty = new Set(coordination.filter((c) => c.kind === "burst").map((c) => c.accountId));
+    const flagsOf = (a) => accountFlags(a, accountInfo[a.id], { sameText: sameText.has(a.id), burst: bursty.has(a.id), now });
+
+    // Several young accounts in one camp pushing the same negative tone: a third coordination sign.
+    for (const camp of campList) {
+        const young = [...camp.members].map((id) => accounts.get(id)).filter((a) => a && a.negative > a.positive && ageDays(accountInfo[a.id], now) !== null && ageDays(accountInfo[a.id], now) < 60);
+        if (young.length >= 3) coordination.push({ kind: "new_accounts", camp: camp.id, accounts: young.slice(0, 12).map((a) => a.name), accountCount: young.length, posts: young.reduce((n, a) => n + a.comments, 0) });
+    }
+
     const topAccounts = ranked.slice(0, 10).map((a) => ({
+        ...flagsOf(a),
         id: a.id, name: a.name, comments: a.comments, likes: a.likes, repliesReceived: a.repliesReceived, videos: a.videos.size, camp: campOf.get(a.id) ?? null,
         // YouTube channel ids start with "UC"; other ids (demo, handles) have no public page to link.
         url: /^UC[\w-]{20,}$/.test(String(a.id)) ? `https://www.youtube.com/channel/${a.id}` : null,
         // What they actually said: their most liked comments, with the video they sit under.
-        samples: (byAuthor.get(a.id) || []).sort((x, y) => (y.like_count || 0) - (x.like_count || 0)).slice(0, 3)
+        samples: (byAuthor.get(a.id) || []).sort((x, y) => (y.like_count || 0) - (x.like_count || 0)).filter((c, i, all) => all.findIndex((o) => o.text === c.text) === i).slice(0, 3)
             .map((c) => ({ text: String(c.text || "").slice(0, 240), likes: c.like_count || 0, tone: c.sentiment || "neutral", video: videoById.get(c.signal_id)?.title || null, at: c.published_at || null })),
         role: a.repliesReceived >= 3 ? "trigger" : a.comments >= 5 ? "amplifier" : a.likes >= 50 ? "voice" : "participant",
         tone: a.negative > a.positive ? "negative" : a.positive > a.negative ? "positive" : "neutral",
@@ -182,8 +194,30 @@ export function buildNetwork(comments, videos = [], { maxNodes = 140 } = {}) {
         edges,
         camps: campList.map(({ members, ...c }) => c),
         topAccounts,
-        coordination: detectCoordination(comments),
+        coordination,
+        // Accounts that look most automated, with the reasons (only those with at least one flag).
+        suspectAccounts: ranked.map((a) => ({ name: a.name, camp: campOf.get(a.id) ?? null, comments: a.comments, ...flagsOf(a) })).filter((a) => a.automation >= 35).sort((x, y) => y.automation - x.automation).slice(0, 10),
     };
+}
+
+function ageDays(info, now) {
+    const t = Date.parse(info?.createdAt || "");
+    return Number.isFinite(t) ? Math.floor((now - t) / 86400000) : null;
+}
+
+/**
+ * Why an account may be automated or part of a push, and a 0–100 score from those reasons. Indications only:
+ * new accounts and empty channels are common among real people too.
+ */
+export function accountFlags(a, info, { sameText = false, burst = false, now = Date.now() } = {}) {
+    const flags = [];
+    let automation = 0;
+    const age = ageDays(info, now);
+    if (age !== null && age < 90) { flags.push({ key: "new", label: `Akun baru · ${age} hari` }); automation += age < 30 ? 35 : 25; }
+    if (info && (info.videos ?? 1) === 0 && (info.subscribers ?? 1) < 5) { flags.push({ key: "empty", label: "Tanpa konten & pengikut" }); automation += 25; }
+    if (sameText) { flags.push({ key: "same_text", label: "Teks seragam dengan akun lain" }); automation += 25; }
+    if (burst) { flags.push({ key: "burst", label: "Komentar beruntun" }); automation += 15; }
+    return { flags, automation: Math.min(100, automation) };
 }
 
 /**
@@ -210,6 +244,7 @@ export function detectCoordination(comments, { minAccounts = 3, windowHours = 6 
             kind: "same_text",
             text: sorted[0].text.slice(0, 220),
             accounts: [...new Set(sorted.map((c) => c.author_name || c.author_id))].slice(0, 12),
+            accountIds: [...authors],
             accountCount: authors.size,
             posts: sorted.length,
             spanMinutes: Math.round(span * 60),
@@ -230,7 +265,7 @@ export function detectCoordination(comments, { minAccounts = 3, windowHours = 6 
             const windowed = sorted.filter((c, j) => j >= i && Date.parse(c.published_at) <= end);
             const vids = new Set(windowed.map((c) => c.signal_id));
             if (windowed.length >= 6 && vids.size >= 3) {
-                out.push({ kind: "burst", account: sorted[i].author_name || sorted[i].author_id, posts: windowed.length, videos: vids.size, firstAt: windowed[0].published_at, text: windowed[0].text.slice(0, 160) });
+                out.push({ kind: "burst", accountId: sorted[i].author_id, account: sorted[i].author_name || sorted[i].author_id, posts: windowed.length, videos: vids.size, firstAt: windowed[0].published_at, text: windowed[0].text.slice(0, 160) });
                 break;
             }
         }

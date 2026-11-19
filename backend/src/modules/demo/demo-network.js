@@ -70,6 +70,7 @@ export function demoNetworkDocs(t0) {
     };
     const at = (ms) => new Date(t0 - ms).toISOString();
     const docs = [];
+    const pushers = [];
     let n = 0;
     for (const [vi, v] of DEMO_VIDEOS.entries()) {
         const accounts = Array.from({ length: v.size }, handle);
@@ -105,7 +106,7 @@ export function demoNetworkDocs(t0) {
         // Coordinated push under the data-leak and outage videos: same text, six accounts, within 18 minutes.
         if (v.id === "demo-arunika-dataleak") {
             const start = 30 * H;
-            accounts.slice(-6).forEach((acc, i) => add(acc, COORDINATED, "negative", { ago: start - i * 3.5 * 60 * 1000, likes: 0 }));
+            accounts.slice(-6).forEach((acc, i) => { pushers.push(acc); add(acc, COORDINATED, "negative", { ago: start - i * 3.5 * 60 * 1000, likes: 0 }); });
         }
         docs.push({ v, comments });
     }
@@ -130,6 +131,16 @@ export function demoNetworkDocs(t0) {
         const main = DEMO_VIDEOS.find((v) => `yt:${v.id}` === c.videos[0]?.id);
         return main ? { key: c.key, ...main.camp } : null;
     }).filter(Boolean);
+    // Channel facts for the bot signals: the boycott pushers and the burst account are days old and empty.
+    const channels = {};
+    for (const c of all) {
+        if (channels[c.author_id]) continue;
+        const seed = [...String(c.author_id)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+        channels[c.author_id] = { createdAt: at((400 + (seed % 2600)) * D), subscribers: seed % 900, videos: seed % 40 };
+    }
+    pushers.forEach((acc, i) => { channels[acc] = { createdAt: at((8 + i * 2) * D), subscribers: 0, videos: 0 }; });
+    channels[busy] = { createdAt: at(25 * D), subscribers: 1, videos: 0 };
+    rows.push({ external_id: "ytchannels:info", title: "YouTube channels", metadata: { kind: "youtube_channels", demo: true, channels, at: at(2 * H) } });
     rows.push({ external_id: "ytnetwork:camps", title: "Conversation camps", metadata: { kind: "youtube_network_camps", demo: true, camps, at: at(2 * H) } });
     return rows;
 }

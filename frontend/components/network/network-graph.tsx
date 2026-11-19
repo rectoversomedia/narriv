@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { NetworkCamp, NetworkEdge, NetworkNode } from "@/lib/api-service";
 import { useL } from "@/lib/use-l";
 
@@ -10,7 +10,6 @@ export const campColor = (camp: number | null | undefined) => (camp ? CAMP_COLOR
 
 const INK = "#101334";
 const NEG = "#E5484D";
-const W = 1200;
 
 type Pt = { x: number; y: number };
 type Region = { camp: NetworkCamp; cx: number; cy: number; r: number };
@@ -19,9 +18,10 @@ type Region = { camp: NetworkCamp; cx: number; cy: number; r: number };
  * Camp-anchored layout, readable at a glance: every camp gets its own circle, its video(s) in the middle and its
  * accounts on rings around them, most influential closest. Deterministic: the same data always draws the same map.
  */
-function layout(nodes: NetworkNode[], edges: NetworkEdge[], camps: NetworkCamp[]) {
+function layout(nodes: NetworkNode[], edges: NetworkEdge[], camps: NetworkCamp[], narrow = false) {
+  const W = narrow ? 640 : 1200;
   const shown = camps.slice(0, 8);
-  const cols = shown.length <= 3 ? Math.max(shown.length, 1) : shown.length <= 4 ? 2 : shown.length <= 6 ? 3 : 4;
+  const cols = narrow ? 1 : shown.length <= 3 ? Math.max(shown.length, 1) : shown.length <= 4 ? 2 : shown.length <= 6 ? 3 : 4;
   const rows = Math.max(1, Math.ceil(shown.length / cols));
   const cellW = W / cols;
   const cellH = 330;
@@ -80,12 +80,21 @@ function layout(nodes: NetworkNode[], edges: NetworkEdge[], camps: NetworkCamp[]
     const reach = Math.max(60, ...accs.map((n) => { const q = pos.get(n.id)!; return Math.hypot(q.x - region.cx, q.y - region.cy); }));
     region.r = Math.min(region.r, reach + 30);
   }
-  return { pos, regions: [...regions.values()], H };
+  return { pos, regions: [...regions.values()], H, W };
 }
 
 export function NetworkGraph({ nodes, edges, camps, campFilter }: { nodes: NetworkNode[]; edges: NetworkEdge[]; camps: NetworkCamp[]; campFilter?: number | null }) {
   const L = useL();
-  const { pos, regions, H } = useMemo(() => layout(nodes, edges, camps), [nodes, edges, camps]);
+  // Phones get one camp per row, so the map stays readable instead of shrinking to dots.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const set = () => setNarrow(mq.matches);
+    set();
+    mq.addEventListener("change", set);
+    return () => mq.removeEventListener("change", set);
+  }, []);
+  const { pos, regions, H, W } = useMemo(() => layout(nodes, edges, camps, narrow), [nodes, edges, camps, narrow]);
   const [hover, setHover] = useState<NetworkNode | null>(null);
   const maxWeight = Math.max(1, ...nodes.filter((n) => n.kind === "account").map((n) => n.weight));
   const radius = (n: NetworkNode) => (n.kind === "video" ? 13 : 3.5 + Math.sqrt(n.weight / maxWeight) * 11);

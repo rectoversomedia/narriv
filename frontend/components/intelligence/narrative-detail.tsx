@@ -6,7 +6,8 @@ import type { NarrativeDetailRecord } from "@/lib/api-service";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { pickL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
-import { NarrativeFramingPanel, NarrativeJourneyPanel } from "./narrative-framing";
+import { NarrativeEscalationPanel } from "./narrative-escalation";
+import { NarrativeClaimsPanel, NarrativeFramingPanel, NarrativeJourneyPanel, NarrativeRiskPanel } from "./narrative-framing";
 import { KICKER, NarrativePrecedents, NarrativeSpreadPanel, SectionHead, duration, platformName, when } from "./narrative-spread";
 
 /**
@@ -186,6 +187,9 @@ export function NarrativeDetailView({ detail, layout = "stack" }: { detail: Narr
   // Sections are numbered in reading order, skipping the ones this issue has no data for.
   let k = 0;
   const num = () => String(++k).padStart(2, "0");
+  const risk = detail.risk ? <NarrativeRiskPanel risk={detail.risk} n={num()} /> : null;
+  const escalation = (detail.relatedSignals?.length ?? 0) >= 3 ? <NarrativeEscalationPanel detail={detail} n={num()} /> : null;
+  const claims = detail.claims?.length ? <NarrativeClaimsPanel claims={detail.claims} n={num()} /> : null;
   const framing = detail.framing?.frames?.length ? <NarrativeFramingPanel frames={detail.framing.frames} n={num()} /> : null;
   const journey = detail.journey ? <NarrativeJourneyPanel journey={detail.journey} n={num()} /> : null;
   const spread = detail.spread ? <NarrativeSpreadPanel spread={detail.spread} n={num()} /> : null;
@@ -196,7 +200,7 @@ export function NarrativeDetailView({ detail, layout = "stack" }: { detail: Narr
       <div className="grid gap-8">
         <Summary detail={detail} />
         <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="grid gap-8">{framing}{journey}{spread ?? history}</div>
+          <div className="grid gap-8">{risk}{escalation}{claims}{framing}{journey}{spread ?? history}</div>
           <div className="grid gap-8">{spread ? history : null}{records}</div>
         </div>
       </div>
@@ -205,6 +209,9 @@ export function NarrativeDetailView({ detail, layout = "stack" }: { detail: Narr
   return (
     <div className="grid gap-8">
       <Summary detail={detail} />
+      {risk}
+      {escalation}
+      {claims}
       {framing}
       {journey}
       {spread}

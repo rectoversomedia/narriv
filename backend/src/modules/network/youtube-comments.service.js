@@ -125,6 +125,10 @@ export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days 
             logStructured("warn", "youtube_top_videos_failed", { workspaceId, error: error.message });
         }
     }
+    // Channel facts for the bot signals (free, 1 quota unit per 50 channels).
+    if (!late()) {
+        try { out.channels = await collectChannelInfo(workspaceId, { db, fetchImpl }); } catch (error) { logStructured("warn", "youtube_channels_failed", { workspaceId, error: error.message }); }
+    }
     // Comments stored before the AI read existed (or while AI was unavailable) get it now, a few videos per run.
     try {
         if (late()) out.more = true;
@@ -138,6 +142,35 @@ export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days 
     }
     if (out.videos) logStructured("info", "youtube_comments_collected", { workspaceId, ...out });
     return out;
+}
+
+const CHANNELS_DOC = "ytchannels:info";
+
+/**
+ * Channel facts for the accounts in the network (creation date, subscribers, videos), free through the YouTube
+ * Data API (channels.list, 1 unit per 50 channels). Used for the "new account / empty channel" bot signals.
+ * Stored once per channel in raw_documents "ytchannels:info".
+ */
+export async function collectChannelInfo(workspaceId, { db = supabase, fetchImpl = fetch, max = 200 } = {}) {
+    if (!apiKey()) return 0;
+    const { data: docs } = await db.from("raw_documents").select("metadata").eq("workspace_id", workspaceId).like("external_id", "ytcomments:%").limit(300);
+    const ids = [...new Set((docs || []).flatMap((d) => (d.metadata?.comments || []).map((c) => c.author_id)).filter((id) => /^UC[\w-]{20,}$/.test(String(id))))];
+    const { data: existing } = await db.from("raw_documents").select("id, metadata").eq("workspace_id", workspaceId).eq("external_id", CHANNELS_DOC).maybeSingle();
+    const known = existing?.metadata?.channels || {};
+    const todo = ids.filter((id) => !known[id]).slice(0, max);
+    for (let i = 0; i < todo.length; i += 50) {
+        const params = new URLSearchParams({ part: "snippet,statistics", id: todo.slice(i, i + 50).join(","), maxResults: "50", key: apiKey() });
+        const res = await fetchImpl(`https://www.googleapis.com/youtube/v3/channels?${params}`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) break;
+        for (const ch of json.items || []) {
+            known[ch.id] = { createdAt: ch.snippet?.publishedAt || null, subscribers: Number(ch.statistics?.subscriberCount ?? 0), videos: Number(ch.statistics?.videoCount ?? 0) };
+        }
+    }
+    const metadata = { kind: "youtube_channels", channels: known, at: new Date().toISOString() };
+    if (existing) await db.from("raw_documents").update({ metadata }).eq("id", existing.id);
+    else await db.from("raw_documents").insert({ workspace_id: workspaceId, external_id: CHANNELS_DOC, title: "YouTube channels", metadata });
+    return todo.length;
 }
 
 export async function retoneStoredComments(workspaceId, { db = supabase, maxVideos = 25, deadline = Infinity } = {}) {

@@ -25,9 +25,10 @@ router.use(verifyToken);
 // Member signals with their persisted analyses (used for confidence, source
 // count and momentum; nothing below is estimated without these records).
 export const NARRATIVE_LIST_SELECT =
-    "*, narrative_cluster_signals(signal:signals(id, platform, captured_at, published_at, analyses:signal_analyses(confidence, analysis)))";
+    "*, narrative_cluster_signals(signal:signals(id, platform, sentiment, captured_at, published_at, analyses:signal_analyses(confidence, analysis)))";
 
 import { analysisConfidence, narrativeMomentum } from "../../lib/narrative-momentum.js";
+import { narrativeRisk } from "../../lib/narrative-risk.js";
 export { analysisConfidence, narrativeMomentum };
 
 export function toNarrativeItem(cluster, now = Date.now()) {
@@ -68,6 +69,9 @@ export function toNarrativeItem(cluster, now = Date.now()) {
         // between narratives from shared evidence instead of inventing them.
         memberSignalIds: [...new Set(signals.map((s) => s.id).filter(Boolean))].slice(0, 200),
         sentiment: cluster.sentiment || "neutral",
+        // How dangerous this story is, 0–100 with its reasons (lib/narrative-risk.js).
+        risk: narrativeRisk(cluster, signals, now),
+        claims: cluster.metadata?.claims?.items || [],
     };
 }
 

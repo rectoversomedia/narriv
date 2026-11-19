@@ -321,17 +321,18 @@ export default function DashboardPage() {
   const showHero = !neverCollected && Boolean(summary?.keyword_breakdown?.length || workspaceQuery.data?.brandName);
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-4 pb-10 sm:space-y-6">
       {isDemoSession ? <DemoBanner /> : null}
 
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+      {/* On phones the tab above already says "Ringkasan": the title drops and the period sits alone, full width. */}
+      <header className="flex flex-wrap items-end justify-between gap-3 sm:gap-4">
+        <div className="hidden sm:block">
           <h1 className="text-[28px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{L("Overview", "Ringkasan")}</h1>
           {lastDataAt && !showHero ? <p className="mt-1 text-[13px] font-medium text-[#5A6478]">{L("Last data", "Data terakhir")}: <b className="font-black text-[#101334]">{timeAgo(lastDataAt)}</b></p> : null}
         </div>
-        <div role="group" aria-label={L("Period", "Periode")} className="flex rounded-full bg-white p-1 border-[1.5px] border-[#101334] shadow-[0_2px_0_#101334]">
+        <div role="group" aria-label={L("Period", "Periode")} className="grid w-full grid-cols-3 rounded-full bg-white p-1 border-[1.5px] border-[#101334] shadow-[0_2px_0_#101334] sm:flex sm:w-auto">
           {(["24h", "7d", "30d"] as DateRangeKey[]).map((key) => (
-            <button key={key} type="button" onClick={() => setPeriod(key)} aria-pressed={period === key} className={cn("rounded-full px-4 py-2 text-[12.5px] font-bold transition", period === key ? "bg-[#101334] text-white" : "text-[#5A6478] hover:text-[#101334]")}>
+            <button key={key} type="button" onClick={() => setPeriod(key)} aria-pressed={period === key} className={cn("rounded-full px-4 py-2 text-center text-[12.5px] font-bold transition", period === key ? "bg-[#101334] text-white" : "text-[#5A6478] hover:text-[#101334]")}>
               {periodButton[key]}
             </button>
           ))}

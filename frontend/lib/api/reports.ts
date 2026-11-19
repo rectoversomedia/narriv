@@ -286,7 +286,14 @@ export interface NarrativeRecord {
   recommendedFocus: string;
   signalCount: number;
   sentiment: string;
+  risk?: NarrativeRisk | null;
+  claims?: NarrativeClaim[];
 }
+
+/** How dangerous a story is, 0–100 with its reasons (backend lib/narrative-risk.js). */
+export interface NarrativeRisk { score: number; level: "critical" | "high" | "medium" | "low"; factors: Array<{ key: string; points: number; label: string }> }
+/** A factual claim the issue rests on, checked against fact-check feeds (backend lib/claim-check.js). */
+export interface NarrativeClaim { claim: string; status: "unverified" | "refuted" | "confirmed"; source: { title: string; url: string | null } | null }
 
 export interface NarrativeDetailRecord extends NarrativeRecord {
   trends: Array<{ date: string; count: number }>;
@@ -317,7 +324,8 @@ export interface NarrativeFrame { label: string; summary: string; tone: Tone; co
 /** How an issue's tone moved over time (backend lib/narrative-journey.js). */
 export interface NarrativeJourney {
   records: number;
-  steps: Array<{ id: string; at: string; hoursAfterStart: number; tone: Tone; outlet: string | null; title: string | null; url: string | null }>;
+  origin?: { platform: string | null; outlet: string | null; at: string; mainstreamAt: string | null; hoursToMainstream: number | null; platforms: string[] };
+  steps: Array<{ id: string; at: string; hoursAfterStart: number; tone: Tone; platform?: string | null; outlet: string | null; title: string | null; url: string | null }>;
   firstNegative: { at: string; hoursAfterStart: number; outlet: string | null } | null;
   peak: { day: string; count: number };
   negativeShare: { early: number; late: number; trend: "rising" | "falling" | "steady" | "few" };

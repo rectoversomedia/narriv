@@ -8,7 +8,7 @@ import { maskHandles } from "../../lib/privacy.js";
 import { logStructured } from "../../lib/logger.js";
 import { requestLang } from "../../lib/request-context.js";
 import { collectYouTubeComments, isCommentCollectionConfigured } from "./youtube-comments.service.js";
-import { loadNetworkInput, refreshCampSummaries, storedCampSummaries } from "./network.service.js";
+import { accountInfo, loadNetworkInput, refreshCampSummaries, storedCampSummaries } from "./network.service.js";
 import { telegramChannels } from "../ingestion/telegram.service.js";
 
 const router = express.Router();
@@ -26,7 +26,8 @@ function maskNetwork(net, lang) {
         nodes: net.nodes.map((n) => (n.kind === "account" ? { ...n, label: alias(n.label) } : n)),
         camps: net.camps.map((c) => ({ ...c, topAccounts: c.topAccounts.map(alias), samples: (c.samples || []).map(maskHandles) })),
         topAccounts: net.topAccounts.map((a) => ({ ...a, id: alias(a.name), name: alias(a.name), url: null, samples: (a.samples || []).map((x) => ({ ...x, text: maskHandles(x.text) })) })),
-        coordination: net.coordination.map((c) => ({ ...c, text: maskHandles(c.text), accounts: c.accounts?.map(alias), account: c.account ? alias(c.account) : undefined })),
+        suspectAccounts: (net.suspectAccounts || []).map((a) => ({ ...a, name: alias(a.name) })),
+        coordination: net.coordination.map((c) => ({ ...c, accountIds: undefined, accountId: undefined, text: c.text ? maskHandles(c.text) : c.text, accounts: c.accounts?.map(alias), account: c.account ? alias(c.account) : undefined })),
     };
 }
 
@@ -56,7 +57,7 @@ router.get("/", async (req, res) => {
             { key: "telegram", free: true, configured: true, items: counts.telegram || 0, channels: telegramChannels(ws?.settings) },
         ];
 
-        const built = buildNetwork(comments, videos);
+        const built = buildNetwork(comments, videos, { accountInfo: await accountInfo(workspaceId) });
         // AI names and summaries of the camps, stored at collection time (no AI call on read).
         const summaries = await storedCampSummaries(workspaceId);
         built.camps = built.camps.map((c) => ({ ...c, ...(summaries.get(c.key) ? { label: summaries.get(c.key).label, summary: summaries.get(c.key).summary, stance: summaries.get(c.key).stance } : {}) }));

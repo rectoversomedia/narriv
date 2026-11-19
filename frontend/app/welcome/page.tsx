@@ -1,5 +1,6 @@
 "use client";
 
+import { EscalationChart } from "@/components/charts/escalation-chart";
 import Link from "next/link";
 import { Fragment, useState, type CSSProperties, type ReactNode } from "react";
 import { ArrowRight, ArrowUpRight, BellRing, Building2, Check, ChevronDown, Clock3, FileText, LineChart, Megaphone, Minus, Radar, Sparkles, UserCheck, type LucideIcon } from "lucide-react";
@@ -520,6 +521,52 @@ export default function WelcomePage() {
         <Comparison />
       </section>
 
+      {/* A single post can scale into a narrative attack, and the four layers Narriv reads it with */}
+      <section className={cn("relative overflow-hidden text-white", INK)}>
+        <NarrativeField density={0.6} />
+        <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
+          <SectionHead
+            dark
+            title={L("A Single Post Can Become", "Satu Unggahan Bisa Menjadi")}
+            accent={L("A Narrative Attack.", "Serangan Narasi.")}
+            lead={L("Narriv follows a story from its first post to the coordinated push and the national news, and tells you how dangerous it is while there is still time.", "Narriv mengikuti sebuah cerita dari unggahan pertama, dorongan akun terkoordinasi, sampai media nasional, dan memberi tahu seberapa berbahaya selagi masih ada waktu.")}
+          />
+          <Reveal className="mt-12 rounded-[24px] border border-white/15 bg-white/[0.04] p-4 sm:p-8 lg:mt-16">
+            <EscalationChart
+              startLabel={L("Day zero", "Hari nol")}
+              endLabel={L("Now", "Sekarang")}
+              layers={[
+                { label: L("Social media", "Media sosial"), color: "#EC4899", values: [0, 1, 1, 2, 2, 3, 3, 4, 5, 6, 8, 9, 11, 12, 13, 15, 17, 18, 20, 23, 26, 30, 35, 41, 48, 56] },
+                { label: "YouTube", color: "#8B5CF6", values: [0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 18, 20, 22, 25, 28] },
+                { label: L("Online news", "Media online"), color: "#465FFF", values: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 3, 5, 7, 8, 10, 12, 13, 15, 16, 18, 20, 22, 24] },
+              ]}
+              markers={[
+                { at: 0, label: L("First post", "Unggahan pertama"), color: "#12A66A" },
+                { at: 6, label: L("Network spread", "Menyebar"), color: "#0EA5E9" },
+                { at: 11, label: L("Online news", "Media online"), color: "#465FFF" },
+                { at: 17, label: L("Coordinated accounts", "Akun terkoordinasi"), color: "#F59E0B" },
+                { at: 23, label: L("Risk 94", "Risiko 94"), color: "#E5484D" },
+              ]}
+            />
+          </Reveal>
+          <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { c: "#465FFF", t: L("Narrative", "Narasi"), q: L("Which story is forming", "Cerita apa yang terbentuk"), d: L("Issues, framing, story journey, escalation.", "Isu, sudut pandang, perjalanan cerita, eskalasi.") },
+              { c: "#8B5CF6", t: L("Actor", "Aktor"), q: L("Who drives it", "Siapa yang menggerakkan"), d: L("Camps, influential accounts, where it started.", "Kubu, akun berpengaruh, asal cerita.") },
+              { c: "#E5484D", t: L("Threat", "Ancaman"), q: L("How dangerous", "Seberapa berbahaya"), d: L("Risk score, bot signs, hoax claim check, attack alerts.", "Skor risiko, indikasi bot, cek klaim hoaks, peringatan serangan.") },
+              { c: "#12A66A", t: L("Impact", "Dampak"), q: L("What to do", "Apa langkahnya"), d: L("AI answers, opportunities, action plans, board reports.", "Jawaban AI, peluang, rencana aksi, laporan direksi.") },
+            ].map((x, i) => (
+              <Reveal as="li" key={x.t} delay={i * 100} className="rounded-[20px] border border-white/15 bg-white/[0.06] p-5 text-center">
+                <span className="mx-auto flex size-11 items-center justify-center rounded-xl text-[17px] font-black text-white" style={{ background: x.c }}>{i + 1}</span>
+                <p className="mt-4 text-[20px] font-black">{x.t} <span style={{ color: x.c === "#465FFF" ? "#A5B4FF" : x.c }}>Intelligence</span></p>
+                <p className="mt-1 text-[14px] font-bold text-white/80">{x.q}</p>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-white/60">{x.d}</p>
+              </Reveal>
+            ))}
+          </ul>
+        </div>
+      </section>
+
       {/* How it works */}
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
         <SectionHead
@@ -545,10 +592,11 @@ export default function WelcomePage() {
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:pb-28">
         <Reveal className={cn(CARD, "px-5 py-10 text-center sm:px-10 sm:py-12")}>
           <h2 className="text-balance text-[26px] font-black leading-tight tracking-[-0.02em] sm:text-[32px]"><Typewriter segments={[{ text: L("Every Channel Where Your Brand Is Discussed.", "Semua Kanal Tempat Brand Anda Dibicarakan.") }]} /></h2>
-          <ul className="mx-auto mt-9 grid max-w-3xl grid-cols-3 gap-x-4 gap-y-7 sm:grid-cols-6">
+          <ul className="mx-auto mt-9 grid max-w-3xl grid-cols-3 gap-x-4 gap-y-7 sm:grid-cols-7">
             {[
               { key: "news", name: L("News", "Berita"), live: true },
               { key: "youtube", name: "YouTube", live: true },
+              { key: "telegram", name: "Telegram", live: true },
               { key: "instagram", name: "Instagram", live: false },
               { key: "tiktok", name: "TikTok", live: false },
               { key: "x", name: "X", live: false },

@@ -244,8 +244,31 @@ export async function clearDemoWorkspace(db = defaultDb, ws = DEMO_WORKSPACE_ID)
  */
 export const BRAND_SCENARIO = {
     key: "brand",
-    version: 3,
+    version: 4,
     network: demoNetworkDocs,
+    // Narrative defence on the sample data: coordination signs and checked claims per issue (risk score reads them).
+    issueIntel: {
+        dataleak: {
+            coordination: { count: 2, kinds: ["same_text", "new_accounts"] },
+            claims: { signature: "demo", at: new Date().toISOString(), items: [
+                { claim: "Data nasabah Bank Arunika dijual di forum gelap", status: "unverified", source: null },
+                { claim: "Bank Arunika belum memberi klarifikasi resmi soal kebocoran", status: "confirmed", source: { title: "Pantauan kanal resmi Bank Arunika", url: null } },
+                { claim: "Seluruh rekening nasabah Bank Arunika sudah dibobol", status: "refuted", source: { title: "[SALAH] Semua rekening nasabah Bank Arunika dibobol (contoh)", url: null } },
+            ] },
+        },
+        outage: {
+            coordination: { count: 1, kinds: ["burst"] },
+            claims: { signature: "demo", at: new Date().toISOString(), items: [
+                { claim: "Arunika Mobile gagal login saat tanggal gajian", status: "confirmed", source: { title: "Pengumuman gangguan resmi Bank Arunika (contoh)", url: null } },
+                { claim: "Saldo nasabah hilang permanen akibat gangguan", status: "refuted", source: { title: "[SALAH] Saldo nasabah Arunika hilang permanen (contoh)", url: null } },
+            ] },
+        },
+        fees: {
+            claims: { signature: "demo", at: new Date().toISOString(), items: [
+                { claim: "Biaya transfer antarbank Bank Arunika naik", status: "confirmed", source: { title: "Tabel biaya resmi Bank Arunika (contoh)", url: null } },
+            ] },
+        },
+    },
     // Workspace logo (workspaces.logo_url), served by the frontend from public/brand/demo-logos.
     logo: "/brand/demo-logos/arunika.png",
     ws: DEMO_WORKSPACE_ID,
@@ -259,6 +282,8 @@ export const BRAND_SCENARIO = {
     region: (platform, r) => (platform === "news" ? "Nasional" : ["Jakarta", "Surabaya", "Bandung", "Medan", "Makassar"][Math.floor(r() * 5)]),
     criticalKey: "dataleak",
     alerts: (people, owner) => [
+        { key: "dataleak", title: "Indikasi serangan narasi: isu kebocoran data nasabah", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 20 * H, ago: 3 * H, level: "critical",
+          what: "Isu kebocoran data bernilai risiko 86/100 dan didorong 6 akun baru dengan teks seragam (#BoikotArunika).", why: "Isu berisiko tinggi yang didorong akun terkoordinasi menyebar lebih cepat dari isu organik dan membentuk persepsi sebelum fakta keluar.", todo: "Verifikasi klaim utama, terbitkan fakta dari kanal resmi, laporkan akun terkoordinasi ke platform, jangan balas satu per satu." },
         { key: "dataleak", title: "Isu kebocoran data Bank Arunika melonjak", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 26 * H, ago: 5 * H, level: "critical",
           what: "Klaim kebocoran data nasabah menyebar di X dan forum dalam 36 jam terakhir. Mayoritas bernada negatif.", why: "Isu keamanan data cepat merusak kepercayaan dan bisa menarik perhatian regulator.", todo: "Siapkan pernyataan sementara dalam 2 jam, minta tim IT memverifikasi klaim, dan tunjuk juru bicara." },
         { key: "outage", title: "Sentimen negatif Arunika Mobile melonjak", type: "risk", severity: "high", status: "acknowledged", team: "Operasional & IT", to: people.bayu, deadlineIn: -3 * H, ago: 30 * H, level: "high",
@@ -434,7 +459,7 @@ export async function seedScenarioWorkspace(def, { now = new Date(), db = defaul
         return {
             workspace_id: ws, title: n.title, description: n.summary, main_narrative: n.summary, summary: { text: n.summary },
             priority: n.impact, impact: n.impact, lifecycle: n.lifecycle, sentiment: n.sentiment, signal_count: members_.length,
-            keywords: n.title.toLowerCase().split(/\s+/).filter((w) => w.length > 4).slice(0, 6), metadata: { demo: true, key: n.key, labeledBy: "demo" },
+            keywords: n.title.toLowerCase().split(/\s+/).filter((w) => w.length > 4).slice(0, 6), metadata: { demo: true, key: n.key, labeledBy: "demo", ...(def.issueIntel?.[n.key] || {}) },
             created_at: at(30 * D), updated_at: latest,
         };
     }), "id, title");

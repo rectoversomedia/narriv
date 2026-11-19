@@ -6,10 +6,12 @@ export type NetworkTone = "positive" | "negative" | "neutral" | "mixed";
 export type NetworkNode = { id: string; kind: "account" | "video"; label: string; camp: number | null; weight: number; comments?: number; likes?: number; repliesReceived?: number; tone?: NetworkTone; channel?: string; url?: string };
 export type NetworkEdge = { source: string; target: string; kind: "comment" | "reply"; weight: number };
 export type NetworkCamp = { id: number; key: string; label?: string; summary?: string; stance?: "supportive" | "critical" | "mixed" | "unrelated"; samples?: string[]; size: number; comments: number; tone: NetworkTone; negativeShare: number; positiveShare: number; topAccounts: string[]; videos: Array<{ id: string; title: string; channel?: string; url?: string }> };
-export type NetworkAccount = { id?: string; url?: string | null; samples?: Array<{ text: string; likes: number; tone: NetworkTone; video: string | null; at: string | null }>; name: string; comments: number; likes: number; repliesReceived: number; videos: number; camp: number | null; role: "trigger" | "amplifier" | "voice" | "participant"; tone: NetworkTone };
+export type AccountFlag = { key: "new" | "empty" | "same_text" | "burst"; label: string };
+export type NetworkAccount = { flags?: AccountFlag[]; automation?: number; id?: string; url?: string | null; samples?: Array<{ text: string; likes: number; tone: NetworkTone; video: string | null; at: string | null }>; name: string; comments: number; likes: number; repliesReceived: number; videos: number; camp: number | null; role: "trigger" | "amplifier" | "voice" | "participant"; tone: NetworkTone };
 export type NetworkCoordination =
   | { kind: "same_text"; text: string; accounts: string[]; accountCount: number; posts: number; spanMinutes: number; firstAt: string; videos: number }
-  | { kind: "burst"; account: string; posts: number; videos: number; firstAt: string; text: string };
+  | { kind: "burst"; account: string; posts: number; videos: number; firstAt: string; text: string }
+  | { kind: "new_accounts"; camp: number; accounts: string[]; accountCount: number; posts: number };
 export type NetworkSource = { key: "youtube_comments" | "telegram"; free: boolean; configured: boolean; items: number; videos?: number; channels?: string[] };
 export type ConversationNetwork = {
   days: number;
@@ -19,6 +21,7 @@ export type ConversationNetwork = {
   camps: NetworkCamp[];
   topAccounts: NetworkAccount[];
   coordination: NetworkCoordination[];
+  suspectAccounts?: Array<{ name: string; camp: number | null; comments: number; flags: AccountFlag[]; automation: number }>;
   sources: NetworkSource[];
   monitoringPaused?: boolean;
   privacyMode?: boolean;

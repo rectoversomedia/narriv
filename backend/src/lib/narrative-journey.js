@@ -17,7 +17,7 @@ export function buildJourney(rows, { privacy = false } = {}) {
     const startAt = timed[0].t;
     const hours = (t) => Math.round(((t - startAt) / 3600000) * 10) / 10;
     const steps = timed.slice(0, 12).map(({ r, t }) => ({
-        id: r.id, at: new Date(t).toISOString(), hoursAfterStart: hours(t), tone: tone(r),
+        id: r.id, at: new Date(t).toISOString(), hoursAfterStart: hours(t), tone: tone(r), platform: r.platform || null,
         outlet: privacy && !r.metadata?.publisher ? null : outlet(r),
         title: r.title || null, url: privacy ? null : r.url || null,
     }));
@@ -28,7 +28,19 @@ export function buildJourney(rows, { privacy = false } = {}) {
     const half = Math.ceil(timed.length / 2);
     const share = (xs) => Math.round((xs.filter(({ r }) => tone(r) === "negative").length / Math.max(1, xs.length)) * 100);
     const early = share(timed.slice(0, half)), late = share(timed.slice(half));
+    // Origin across platforms: where the story started, and how long until mainstream media (news) carried it.
+    const first = timed[0];
+    const firstNews = timed.find(({ r }) => String(r.platform || "news").toLowerCase() === "news");
+    const origin = {
+        platform: first.r.platform || null,
+        outlet: privacy && !first.r.metadata?.publisher ? null : outlet(first.r),
+        at: new Date(first.t).toISOString(),
+        mainstreamAt: firstNews ? new Date(firstNews.t).toISOString() : null,
+        hoursToMainstream: firstNews ? hours(firstNews.t) : null,
+        platforms: [...new Set(timed.map(({ r }) => r.platform).filter(Boolean))],
+    };
     return {
+        origin,
         records: timed.length,
         steps,
         firstNegative: firstNeg ? { at: new Date(firstNeg.t).toISOString(), hoursAfterStart: hours(firstNeg.t), outlet: outlet(firstNeg.r) } : null,

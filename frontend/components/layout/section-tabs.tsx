@@ -35,7 +35,7 @@ export function SectionTabs() {
   if (!group) return null;
   const stepped = STEPPED_SECTIONS.includes(group);
   return (
-    <div className="mb-6 flex items-center">
+    <div className="mb-4 flex items-center sm:mb-6">
       <nav
         ref={navRef}
         aria-label={t(`nav.${group}`)}

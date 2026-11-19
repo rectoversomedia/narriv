@@ -35,6 +35,12 @@ export async function loadNetworkInput(workspaceId, { days = 30, signalFilter = 
     return { comments, videos };
 }
 
+/** Channel facts (creation date, subscribers, videos) per account id, for the bot signals. */
+export async function accountInfo(workspaceId, db = supabase) {
+    const { data } = await db.from("raw_documents").select("metadata").eq("workspace_id", workspaceId).eq("external_id", "ytchannels:info").maybeSingle();
+    return data?.metadata?.channels || {};
+}
+
 /** Stored AI names/summaries of camps, keyed by the camp's video set. */
 export async function storedCampSummaries(workspaceId, db = supabase) {
     const { data } = await db.from("raw_documents").select("metadata").eq("workspace_id", workspaceId).eq("external_id", SUMMARY_DOC).maybeSingle();
@@ -45,7 +51,7 @@ export async function storedCampSummaries(workspaceId, db = supabase) {
 export async function refreshCampSummaries(workspaceId, { db = supabase } = {}) {
     try {
         const { comments, videos } = await loadNetworkInput(workspaceId, { days: 30, db });
-        const net = buildNetwork(comments, videos);
+        const net = buildNetwork(comments, videos, { accountInfo: await accountInfo(workspaceId, db) });
         if (!net.camps.length) return { camps: 0 };
         const known = await storedCampSummaries(workspaceId, db);
         const missing = net.camps.filter((c) => !known.has(c.key));

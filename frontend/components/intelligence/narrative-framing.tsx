@@ -1,7 +1,7 @@
 "use client";
 
-import { ExternalLink, Route, Split } from "lucide-react";
-import type { NarrativeFrame, NarrativeJourney, Tone } from "@/lib/api-service";
+import { ExternalLink, Gauge, Route, ShieldCheck, Split } from "lucide-react";
+import type { NarrativeClaim, NarrativeFrame, NarrativeJourney, NarrativeRisk, Tone } from "@/lib/api-service";
 import { pickL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 import { SectionHead, duration, when } from "./narrative-spread";
@@ -59,6 +59,15 @@ export function NarrativeJourneyPanel({ journey, n }: { journey: NarrativeJourne
           <Moment label={pickL("Busiest day", "Hari paling ramai")} value={peakDay} note={pickL(`${journey.peak.count} records`, `${journey.peak.count} catatan`)} />
           <Moment label={pickL("Tone trend", "Arah nada")} value={trend === "rising" ? pickL("More negative", "Makin negatif") : trend === "falling" ? pickL("Cooling", "Mereda") : trend === "few" ? pickL("Not enough data", "Belum cukup data") : pickL("Steady", "Stabil")} tone={trend === "rising" ? "negative" : trend === "falling" ? "positive" : undefined} />
         </div>
+        {journey.origin ? (
+          <p className="rounded-[12px] bg-[#EEF1FF] px-3 py-2 text-[13px] font-semibold text-[#31406B]">
+            {pickL("Started on", "Berawal di")} <b>{journey.origin.platform ?? "—"}</b>{journey.origin.outlet ? ` (${journey.origin.outlet})` : ""}
+            {journey.origin.hoursToMainstream != null && journey.origin.hoursToMainstream > 0
+              ? pickL(` · reached online news after ${duration(journey.origin.hoursToMainstream)}`, ` · masuk media online setelah ${duration(journey.origin.hoursToMainstream)}`)
+              : ""}
+            {journey.origin.platforms.length > 1 ? pickL(` · spread across ${journey.origin.platforms.join(", ")}`, ` · menyebar di ${journey.origin.platforms.join(", ")}`) : ""}
+          </p>
+        ) : null}
         <p className="text-[13px] font-semibold text-[#31406B]">{trendText}</p>
         <ol className="grid gap-1.5 border-l-2 border-[#E2E6F2] pl-4">
           {journey.steps.map((s, i) => (
@@ -85,5 +94,74 @@ function Moment({ label, value, note, tone }: { label: string; value: string; no
       <p className={cn("mt-0.5 text-[16px] font-black", tone === "negative" ? "text-[#B42318]" : tone === "positive" ? "text-[#047857]" : "text-[#101334]")}>{value}</p>
       {note ? <p className="text-[11.5px] font-medium text-[#5A6478]">{note}</p> : null}
     </div>
+  );
+}
+
+const LEVEL: Record<NarrativeRisk["level"], { en: string; id: string; color: string; chip: string }> = {
+  critical: { en: "Critical", id: "Kritis", color: "#E5484D", chip: "bg-[#FDECEC] text-[#B42318]" },
+  high: { en: "High", id: "Tinggi", color: "#F59E0B", chip: "bg-[#FFF4E5] text-[#A04606]" },
+  medium: { en: "Medium", id: "Sedang", color: "#465FFF", chip: "bg-[#EEF1FF] text-[#3B52F5]" },
+  low: { en: "Low", id: "Rendah", color: "#12A66A", chip: "bg-[#E5F6EE] text-[#047857]" },
+};
+
+/** Small risk badge for lists: score and level. */
+export function RiskBadge({ risk }: { risk?: NarrativeRisk | null }) {
+  if (!risk) return null;
+  const l = LEVEL[risk.level];
+  return <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-black", l.chip)}>{pickL("Risk", "Risiko")} {risk.score}</span>;
+}
+
+/** The issue's risk score with the reasons that make it up. */
+export function NarrativeRiskPanel({ risk, n }: { risk: NarrativeRisk; n?: string }) {
+  const l = LEVEL[risk.level];
+  const r = 46, c = 2 * Math.PI * r;
+  return (
+    <section className="grid gap-4">
+      <SectionHead n={n} icon={Gauge} title={pickL("Narrative Risk", "Risiko Narasi")} note={pickL("How dangerous this story is, from its tone, speed, reach, topic, coordinated accounts and checked claims.", "Seberapa berbahaya cerita ini, dari nada, kecepatan, jangkauan, topik, akun terkoordinasi, dan klaim yang dicek.")} />
+      <div className={cn(BOX, "grid items-center gap-5 sm:grid-cols-[140px_1fr]")}>
+        <div className="relative mx-auto size-[120px]">
+          <svg viewBox="0 0 120 120" className="size-full -rotate-90"><circle cx="60" cy="60" r={r} fill="none" stroke="#EEF0F6" strokeWidth="12" /><circle cx="60" cy="60" r={r} fill="none" stroke={l.color} strokeWidth="12" strokeLinecap="round" strokeDasharray={`${(risk.score / 100) * c} ${c}`} /></svg>
+          <div className="absolute inset-0 grid place-items-center text-center"><div><p className="text-[30px] font-black leading-none text-[#101334]">{risk.score}</p><p className={cn("mt-1 inline-block rounded-full px-2 py-0.5 text-[10.5px] font-black", l.chip)}>{pickL(l.en, l.id)}</p></div></div>
+        </div>
+        <ul className="grid gap-2">
+          {risk.factors.length ? risk.factors.map((f) => (
+            <li key={f.key} className="flex items-center gap-3 rounded-[12px] bg-[#F7F8FC] px-3 py-2">
+              <span className="w-10 shrink-0 text-right text-[13px] font-black tabular-nums" style={{ color: l.color }}>+{f.points}</span>
+              <span className="text-[13.5px] font-semibold text-[#101334]">{f.label}</span>
+            </li>
+          )) : <li className="text-[13px] text-[#5A6478]">{pickL("No risk factor stands out.", "Tidak ada faktor risiko yang menonjol.")}</li>}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+const CLAIM: Record<NarrativeClaim["status"], { en: string; id: string; chip: string }> = {
+  unverified: { en: "Unverified", id: "Belum terverifikasi", chip: "bg-[#FFF4E5] text-[#A04606]" },
+  refuted: { en: "Refuted · hoax", id: "Dibantah · hoaks", chip: "bg-[#FDECEC] text-[#B42318]" },
+  confirmed: { en: "Confirmed", id: "Terkonfirmasi", chip: "bg-[#E5F6EE] text-[#047857]" },
+};
+
+/** The factual claims the issue rests on and what fact-checkers say. */
+export function NarrativeClaimsPanel({ claims, n }: { claims: NarrativeClaim[]; n?: string }) {
+  return (
+    <section className="grid gap-4">
+      <SectionHead n={n} icon={ShieldCheck} title={pickL("Claim Check", "Cek Klaim")} note={pickL("The claims this story rests on, matched against Indonesian fact-checkers (TurnBackHoax, CekFakta).", "Klaim yang jadi dasar cerita ini, dicocokkan dengan pemeriksa fakta Indonesia (TurnBackHoax, CekFakta).")} />
+      <div className={cn(BOX, "grid gap-3")}>
+        {claims.map((c) => (
+          <div key={c.claim} className="rounded-[14px] bg-[#F7F8FC] p-4">
+            <div className="flex flex-wrap items-start gap-2">
+              <span className="min-w-0 flex-1 text-[14.5px] font-bold leading-snug text-[#101334]">“{c.claim}”</span>
+              <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-black", CLAIM[c.status].chip)}>{pickL(CLAIM[c.status].en, CLAIM[c.status].id)}</span>
+            </div>
+            {c.source ? (
+              <p className="mt-1.5 text-[12px] font-semibold text-[#5A6478]">
+                {pickL("Source", "Sumber")}: {c.source.url ? <a href={c.source.url} target="_blank" rel="noreferrer" className="text-[#3B52F5] hover:underline">{c.source.title} <ExternalLink size={11} className="inline" /></a> : c.source.title}
+              </p>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

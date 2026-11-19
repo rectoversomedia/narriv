@@ -262,6 +262,7 @@ async function runFollowUps({ deadline, topVideos = false }) {
         const { anyAiConfigured } = await import("../../lib/chat-client.js");
         const { collectYouTubeComments } = await import("../network/youtube-comments.service.js");
         const { refreshCampSummaries } = await import("../network/network.service.js");
+        const { runNarrativeDefense } = await import("../../lib/narrative-defense.js");
         const { data: ws } = await supabase.from("workspaces").select("id, settings").limit(200);
         for (const w of ws || []) {
             if (Date.now() > deadline) break;
@@ -273,6 +274,11 @@ async function runFollowUps({ deadline, topVideos = false }) {
                     if (c.videos) await refreshCampSummaries(w.id);
                 }
                 totals.opportunities += (await detectOpportunities(w.id)).length;
+                // Coordination per issue, claim checks and narrative-attack alerts (paused workspaces too: no new data, no AI).
+                if (!w.settings?.monitoringPaused && Date.now() < deadline - 20000) {
+                    const d = await runNarrativeDefense(w.id);
+                    totals.attacks = (totals.attacks || 0) + d.attacks;
+                }
                 // An AI plan takes up to ~40s: only start one when that still fits the call's time budget.
                 const planFits = anyAiConfigured() && Date.now() < deadline - 45000;
                 const r = await runIssueFollowUp(w.id, { generatePlan: planFits ? generateActionPlan : null });

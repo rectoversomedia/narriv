@@ -145,6 +145,9 @@ function impactToPriorityTone(impact: string): Tone {
   return "amber";
 }
 
+const RISK_WORD = { critical: ["Critical", "Kritis"], high: ["High", "Tinggi"], medium: ["Medium", "Sedang"], low: ["Low", "Rendah"] } as const;
+const RISK_TONE: Record<"critical" | "high" | "medium" | "low", Tone> = { critical: "red", high: "amber", medium: "blue", low: "green" } as Record<"critical" | "high" | "medium" | "low", Tone>;
+
 function buildNarrativeClusters(records: NarrativeRecord[], labels: { sources: (count: number) => string; mediumPriority: string }): Cluster[] {
   return records.map((record, _index) => {
     const tone = sentimentToTone(record.sentiment);
@@ -158,8 +161,9 @@ function buildNarrativeClusters(records: NarrativeRecord[], labels: { sources: (
       growth: record.velocity,
       tone,
       sentiment: tone === "green" ? "positive" : tone === "red" ? "negative" : "neutral",
-      priority: impactLabel(record.impact, labels.mediumPriority),
-      priorityTone,
+      // The narrative risk score (0–100) leads when there is one; the AI impact label otherwise.
+      priority: record.risk ? { en: `Risk ${record.risk.score} · ${RISK_WORD[record.risk.level][0]}`, id: `Risiko ${record.risk.score} · ${RISK_WORD[record.risk.level][1]}` } : impactLabel(record.impact, labels.mediumPriority),
+      priorityTone: record.risk ? RISK_TONE[record.risk.level] : priorityTone,
       description: {
         en: record.description || record.recommendedFocus,
         id: record.description || record.recommendedFocus,
