@@ -15,11 +15,10 @@ const GRAD = "linear-gradient(90deg,#465FFF,#8B5CF6 55%,#EC4899)";
 type Slide = { dark?: boolean; body: ReactNode };
 type Post = { key: string; topic: string; slides: Slide[] };
 
-function Title({ kicker, children, sub, dark, top = 230, size = 80 }: { kicker: string; children: ReactNode; sub?: string; dark?: boolean; top?: number; size?: number }) {
+function Title({ kicker: _kicker, children, sub, dark, top = 320, size = 80 }: { kicker: string; children: ReactNode; sub?: string; dark?: boolean; top?: number; size?: number }) {
   return (
     <div style={{ position: "absolute", left: 72, right: 72, top }}>
-      <Kicker dark={dark}>{kicker}</Kicker>
-      <h2 style={{ margin: "24px 0 0", fontSize: size, lineHeight: 1.04, fontWeight: 800, letterSpacing: "-0.045em" }}>{children}</h2>
+      <h2 style={{ margin: 0, fontSize: size, lineHeight: 1.04, fontWeight: 800, letterSpacing: "-0.045em" }}>{children}</h2>
       {sub ? <p style={{ margin: "26px 0 0", fontSize: 32, lineHeight: 1.42, color: dark ? "rgba(255,255,255,.75)" : MUTED }}>{sub}</p> : null}
     </div>
   );
@@ -50,7 +49,7 @@ const cover = (kicker: string, title: ReactNode, sub: string): Slide => ({
   dark: true,
   body: (
     <>
-      <Title dark top={300} size={88} kicker={kicker} sub={sub}>{title}</Title>
+      <Title dark top={380} size={88} kicker={kicker} sub={sub}>{title}</Title>
       <div style={{ position: "absolute", right: 72, bottom: 150, padding: "18px 28px", borderRadius: 999, background: "#fff", color: INK, fontSize: 28, fontWeight: 800 }}>Geser →</div>
     </>
   ),
@@ -70,8 +69,7 @@ const big = (kicker: string, text: ReactNode, note?: string, dark = false): Slid
   dark,
   body: (
     <div style={{ position: "absolute", left: 72, right: 72, top: 360 }}>
-      <Kicker dark={dark}>{kicker}</Kicker>
-      <p style={{ margin: "36px 0 0", fontSize: 92, lineHeight: 1.06, fontWeight: 800, letterSpacing: "-0.045em" }}>{text}</p>
+      <p style={{ margin: 0, fontSize: 92, lineHeight: 1.06, fontWeight: 800, letterSpacing: "-0.045em" }}>{text}</p>
       {note ? <p style={{ margin: "44px 0 0", fontSize: 32, lineHeight: 1.45, color: dark ? "rgba(255,255,255,.75)" : MUTED }}>{note}</p> : null}
     </div>
   ),
@@ -79,14 +77,13 @@ const big = (kicker: string, text: ReactNode, note?: string, dark = false): Slid
 
 const custom = (kicker: string, title: ReactNode, node: ReactNode, dark = false): Slide => ({ dark, body: (<><Title dark={dark} kicker={kicker} size={72}>{title}</Title>{node}</>) });
 
-const closing = (topic: string): Slide => ({
+const closing = (_topic: string): Slide => ({
   dark: true,
   body: (
     <>
       <img src="/brand/logo-bulat-nv.webp" alt="" style={{ position: "absolute", left: 390, top: 230, width: 300, height: 300, filter: "drop-shadow(0 0 90px rgba(70,95,255,.6))" }} />
       <div style={{ position: "absolute", left: 72, right: 72, top: 600, textAlign: "center" }}>
-        <Kicker dark>{topic}</Kicker>
-        <p style={{ margin: "26px 0 0", fontSize: 76, lineHeight: 1.06, fontWeight: 800, letterSpacing: "-0.045em" }}>Ketahui isunya. <Brush>Bertindak duluan.</Brush></p>
+        <p style={{ margin: 0, fontSize: 76, lineHeight: 1.06, fontWeight: 800, letterSpacing: "-0.045em" }}>Ketahui isunya. <Brush>Bertindak duluan.</Brush></p>
       </div>
       <div style={{ position: "absolute", left: 72, right: 72, top: 960, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <span style={{ ...card, display: "flex", alignItems: "center", gap: 16, padding: "22px 26px", fontSize: 27, fontWeight: 800 }}>
@@ -253,7 +250,7 @@ export default function EduSeries() {
             <Frame key={i} id={`p${post.key}-${i + 1}`} w={1080} h={1350} dark={s.dark}>
               <Brand dark={s.dark} />
               {s.body}
-              <Pager n={i + 1} of={post.slides.length} dark={s.dark} note={`Seri edukasi · ${Number(post.key)}/10`} />
+              <Pager n={i + 1} of={post.slides.length} dark={s.dark}  />
             </Frame>
           ))}
         </div>
