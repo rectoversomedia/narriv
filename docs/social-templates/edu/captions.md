@@ -1,6 +1,6 @@
 # Seri Edukasi Narriv · 10 feed (@narriv.digital)
 
-Sepuluh carousel (4–5 slide, 1080×1350), urutan posting = nomor folder `post-01` … `post-10`. Slide terakhir tiap postingan: simpan, ikuti, coba demo. Sumber: `frontend/app/pitch/social/edu/page.tsx`.
+Sepuluh carousel (4–5 slide, 1080×1350), urutan posting = nomor folder `post-01` … `post-10`. Slide terakhir tiap postingan: alamat demo app.narriv.digital dan ajakan simpan. Sumber: `frontend/app/pitch/social/edu/page.tsx`.
 
 **1 · Apa itu narrative intelligence?**
 Media monitoring menghitung berapa kali kamu disebut. Narrative intelligence membaca cerita apa yang sedang terbentuk, seberapa cepat menyebar, dan apa yang perlu dilakukan. Bedanya: kamu bisa bertindak sebelum isunya ramai.
@@ -39,5 +39,5 @@ Orang kini bertanya ke asisten AI sebelum mencari. Narriv mengecek apakah brand 
 #AIVisibility #GEO #ChatGPT
 
 **10 · Siapa yang butuh Narriv?**
-Brand dan perusahaan, pemerintah dan lembaga, juga agensi PR. Coba demo gratis dengan data contoh lewat link di bio.
+Brand dan perusahaan, pemerintah dan lembaga, juga agensi PR. Coba demo gratis dengan data contoh di app.narriv.digital.
 #Narriv #PRAgency #Reputasi

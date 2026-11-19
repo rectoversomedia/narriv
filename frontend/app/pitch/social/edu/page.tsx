@@ -81,18 +81,24 @@ const closing = (_topic: string): Slide => ({
   dark: true,
   body: (
     <>
-      <img src="/brand/logo-bulat-nv.webp" alt="" style={{ position: "absolute", left: 390, top: 230, width: 300, height: 300, filter: "drop-shadow(0 0 90px rgba(70,95,255,.6))" }} />
-      <div style={{ position: "absolute", left: 72, right: 72, top: 600, textAlign: "center" }}>
+      <img src="/brand/logo-bulat-nv.webp" alt="" style={{ position: "absolute", left: 415, top: 220, width: 250, height: 250, filter: "drop-shadow(0 0 90px rgba(70,95,255,.6))" }} />
+      <div style={{ position: "absolute", left: 72, right: 72, top: 520, textAlign: "center" }}>
         <p style={{ margin: 0, fontSize: 76, lineHeight: 1.06, fontWeight: 800, letterSpacing: "-0.045em" }}>Ketahui isunya. <Brush>Bertindak duluan.</Brush></p>
       </div>
-      <div style={{ position: "absolute", left: 72, right: 72, top: 960, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-        <span style={{ ...card, display: "flex", alignItems: "center", gap: 16, padding: "22px 26px", fontSize: 27, fontWeight: 800 }}>
-          <svg width="30" height="36" viewBox="0 0 24 28" aria-hidden><path d="M3 2h18v24l-9-6-9 6z" fill="none" stroke={INK} strokeWidth="2.6" strokeLinejoin="round" /></svg>
+      {/* The demo address, big and unmissable. */}
+      <div style={{ position: "absolute", left: 72, right: 72, top: 780, padding: 5, borderRadius: 34, background: GRAD }}>
+        <div style={{ padding: "30px 34px 34px", borderRadius: 30, background: "#fff", color: INK, textAlign: "center" }}>
+          <p style={{ margin: 0, fontFamily: MONO, fontSize: 22, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: BLUE }}>Coba demo gratis di</p>
+          <p style={{ margin: "12px 0 0", fontSize: 66, fontWeight: 800, letterSpacing: "-0.035em" }}>app.narriv.digital</p>
+        </div>
+      </div>
+      <div style={{ position: "absolute", left: 72, right: 72, top: 1050, display: "flex", justifyContent: "center", gap: 36, fontSize: 26, fontWeight: 800, color: "rgba(255,255,255,.85)" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+          <svg width="24" height="30" viewBox="0 0 24 28" aria-hidden><path d="M3 2h18v24l-9-6-9 6z" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinejoin="round" /></svg>
           Simpan untuk tim kamu
         </span>
-        <span style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "22px 26px", borderRadius: 30, background: GRAD, fontSize: 27, fontWeight: 800, border: `3px solid ${INK}`, boxShadow: `0 8px 0 ${INK}` }}>Coba demo gratis</span>
+        <span>· Tanpa perlu daftar</span>
       </div>
-      <p style={{ position: "absolute", left: 72, right: 72, top: 1110, margin: 0, textAlign: "center", fontSize: 26, color: "rgba(255,255,255,.7)" }}>Ikuti @narriv.digital untuk seri berikutnya · link di bio</p>
     </>
   ),
 });
