@@ -17,6 +17,7 @@ import alertsRoutes from "./modules/alerts/alerts.routes.js";
 import escalationMatrixRoutes from "./modules/alerts/escalation-matrix.routes.js";
 import narrativesRoutes from "./modules/narratives/narratives.routes.js";
 import geoRoutes from "./modules/geo/geo.routes.js";
+import networkRoutes from "./modules/network/network.routes.js";
 import reportsRoutes from "./modules/reports/reports.routes.js";
 import actionsRoutes from "./modules/actions/actions.routes.js";
 import actionPlansRoutes from "./modules/action-plans/action-plans.routes.js";
@@ -198,6 +199,7 @@ app.use("/alerts", escalationMatrixRoutes);
 app.use("/alerts", alertsRoutes);
 app.use("/narratives", narrativesRoutes);
 app.use("/visibility", geoRoutes);
+app.use("/network", rateLimit({ ...RATE_LIMITS.api_default, prefix: "network" }), networkRoutes);
 // Report reads use the default API limit; export, download and email routes
 // apply the export limit themselves (see reports.routes.js).
 app.use("/reports", rateLimit({ ...RATE_LIMITS.api_default, prefix: "reports-read" }), apiSecurityHeaders, reportsRoutes);
