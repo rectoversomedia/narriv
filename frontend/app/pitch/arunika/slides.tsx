@@ -738,6 +738,69 @@ export function DefaultFlow({ en }: P) {
   );
 }
 
+/** The monthly report page for Bank Arunika, drawn with the same numbers as the deck (as the PDF report looks). */
+export function ArunikaReport({ en }: P) {
+  const t = tr(en);
+  const kpi: Array<[string, string, string, string]> = [
+    [t("Percakapan", "Mentions"), "220", t("+38% vs bulan lalu", "+38% vs last month"), INK],
+    [t("Negatif", "Negative"), "38%", t("+14 poin", "+14 pts"), NEG],
+    [t("Positif", "Positive"), "35%", t("−6 poin", "−6 pts"), POS],
+    [t("Peringatan", "Alerts"), "5", t("1 kritis", "1 critical"), AMBER],
+  ];
+  const decisions: Array<[string, string, string, string, string]> = [
+    [t("Isu kebocoran data nasabah", "Customer data-leak claim"), t("KRITIS", "CRITICAL"), NEG, t("PJ: Rina Wulandari · Head of Corp Comm · Tenggat 26 jam", "Owner: Rina Wulandari · Head of Corp Comm · Due in 26h"), t("Pernyataan sementara 2 jam, verifikasi IT, laporkan seruan #BoikotArunika.", "Holding statement in 2h, IT verification, report the #BoikotArunika push.")],
+    [t("Gangguan Arunika Mobile", "Arunika Mobile outage"), t("TINGGI", "HIGH"), AMBER, t("PJ: Bayu Pratama · PR Manager · Ditangani", "Owner: Bayu Pratama · PR Manager · In progress"), t("Status pemulihan tiap 2 jam dan kompensasi saldo terpotong.", "Recovery status every 2h and compensation for deducted balances.")],
+    [t("Biaya transfer vs Bank Seroja", "Transfer fees vs Bank Seroja"), t("SEDANG", "MEDIUM"), BLUE, t("PJ: Layanan Pelanggan · Terbuka", "Owner: Customer Care · Open"), t("FAQ biaya yang jujur dan promo gratis transfer segmen muda.", "An honest fee FAQ and free transfers for young users.")],
+  ];
+  return (
+    <div style={{ background: "#fff", color: INK, fontFamily: "inherit" }}>
+      <div style={{ padding: "26px 30px 22px", background: "linear-gradient(135deg,#0B0E24,#1B2160)", color: "#fff", borderBottom: "5px solid", borderImage: "linear-gradient(90deg,#465FFF,#EC4899) 1" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 22, fontWeight: 800 }}>narriv<span style={{ color: "#EC4899" }}>.</span></span>
+          <span style={{ padding: "3px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,.4)", fontFamily: MONO, fontSize: 9, letterSpacing: "0.12em" }}>{t("LAPORAN NARRATIVE INTELLIGENCE", "NARRATIVE INTELLIGENCE REPORT")}</span>
+        </div>
+        <p style={{ margin: "16px 0 0", fontSize: 25, fontWeight: 800 }}>{t("Review Bulanan · Bank Arunika", "Monthly Review · Bank Arunika")}</p>
+        <div style={{ marginTop: 12, display: "flex", gap: 8, fontSize: 11, fontWeight: 700 }}>
+          {[t("Brand · Bank Arunika", "Brand · Bank Arunika"), t("Periode · 30 hari terakhir", "Period · last 30 days"), t("Data contoh", "Sample data")].map((x) => <span key={x} style={{ padding: "4px 10px", borderRadius: 8, background: "rgba(255,255,255,.1)" }}>{x}</span>)}
+        </div>
+      </div>
+      <div style={{ padding: "20px 30px 24px" }}>
+        <p style={{ margin: 0, fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", color: MUTED }}>{t("NADA KESELURUHAN", "OVERALL TONE")}</p>
+        <div style={{ marginTop: 8, display: "flex", gap: 14, alignItems: "center" }}>
+          <span style={{ padding: "6px 14px", borderRadius: 10, background: "#FDECEC", color: "#B42318", fontSize: 18, fontWeight: 800, border: "2px solid #F5B5B0" }}>{t("Perlu tindakan", "Action needed")}</span>
+          <span style={{ fontSize: 12.5, lineHeight: 1.45, color: "#31406B" }}>{t("Gangguan Arunika Mobile dan klaim kebocoran data mendorong porsi negatif ke 38%. UMKM Naik Kelas dan laba Q3 jadi penyeimbang.", "The Arunika Mobile outage and a data-leak claim pushed the negative share to 38%. SME Level-Up and Q3 profit balance it.")}</span>
+        </div>
+        <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
+          {kpi.map(([l, v, d, c]) => (
+            <div key={l} style={{ padding: "10px 12px", borderRadius: 10, border: `2px solid ${INK}`, boxShadow: `0 2px 0 ${INK}` }}>
+              <p style={{ margin: 0, fontFamily: MONO, fontSize: 8.5, fontWeight: 700, letterSpacing: "0.1em", color: c }}>{l.toUpperCase()}</p>
+              <p style={{ margin: "4px 0 0", fontSize: 24, fontWeight: 800, color: c }}>{v}</p>
+              <p style={{ margin: "2px 0 0", fontSize: 9.5, fontWeight: 700, color: MUTED }}>{d}</p>
+            </div>
+          ))}
+        </div>
+        <p style={{ margin: "18px 0 8px", fontSize: 15, fontWeight: 800 }}>{t("Yang perlu diputuskan", "Decisions needed")}</p>
+        <div style={{ display: "grid", gap: 8 }}>
+          {decisions.map(([title, lvl, c, owner, step], i) => (
+            <div key={title} style={{ padding: "10px 12px", borderRadius: 10, background: "#F7F8FC" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ display: "grid", placeItems: "center", width: 18, height: 18, borderRadius: 99, background: c, color: "#fff", fontSize: 10, fontWeight: 900 }}>{i + 1}</span>
+                <span style={{ fontSize: 12.5, fontWeight: 800 }}>{title}</span>
+                <span style={{ marginLeft: "auto", padding: "2px 8px", borderRadius: 99, background: c, color: "#fff", fontSize: 8.5, fontWeight: 800 }}>{lvl}</span>
+              </div>
+              <p style={{ margin: "4px 0 0 26px", fontSize: 9.5, fontWeight: 700, color: c }}>{owner}</p>
+              <p style={{ margin: "2px 0 0 26px", fontSize: 10, color: "#31406B" }}><b>{t("Langkah", "Step")}:</b> {step}</p>
+            </div>
+          ))}
+        </div>
+        <p style={{ margin: "16px 0 6px", fontSize: 13, fontWeight: 800 }}>{t("Komposisi sentimen", "Sentiment mix")}</p>
+        <div style={{ display: "flex", height: 12, borderRadius: 4, overflow: "hidden" }}><span style={{ width: "38%", background: NEG }} /><span style={{ width: "35%", background: POS }} /><span style={{ width: "27%", background: "#C9CFDD" }} /></div>
+        <p style={{ margin: "6px 0 0", fontSize: 9.5, fontWeight: 700, color: MUTED }}>{t("Negatif 38% · Positif 35% · Netral 27% · 5 kubu di media sosial, 1 indikasi akun terkoordinasi", "Negative 38% · Positive 35% · Neutral 27% · 5 social camps, 1 coordination sign")}</p>
+      </div>
+    </div>
+  );
+}
+
 export function arunikaDeck(en: boolean) {
   return [
     <ArunikaCover key="cover" en={en} />,
@@ -764,7 +827,7 @@ export function arunikaDeck(en: boolean) {
       ? { title: "Bank Arunika data-leak claim is surging", text: "Claims of leaked customer data spread on X and forums over 36 hours. Mostly negative.", owner: "Rina Wulandari · Corp Comm", due: "In 26 hours", todo: "Holding statement within 2 hours, IT verifies the claim, name one spokesperson.", note: "Sample data · fictional bank", level: "Critical" }
       : { title: "Isu kebocoran data Bank Arunika melonjak", text: "Klaim kebocoran data nasabah menyebar di X dan forum dalam 36 jam terakhir. Mayoritas bernada negatif.", owner: "Rina Wulandari · Corp Comm", due: "26 jam lagi", todo: "Pernyataan sementara dalam 2 jam, tim IT verifikasi klaim, tunjuk satu juru bicara.", note: "Data contoh · bank fiktif", level: "Kritis" }} />,
     <AiVisibility key="ai" en={en} />,
-    <Reports key="reports" en={en} />,
+    <Reports key="reports" en={en} preview={<ArunikaReport en={en} />} />,
     <ReportingPlan key="plan" en={en} />,
     <ArunikaClosing key="closing" en={en} />,
   ];

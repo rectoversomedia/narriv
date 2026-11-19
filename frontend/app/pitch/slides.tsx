@@ -311,7 +311,7 @@ export function AiVisibility({ en }: P) {
   );
 }
 
-export function Reports({ en, img }: P & { img?: string }) {
+export function Reports({ en, img, preview }: P & { img?: string; preview?: React.ReactNode }) {
   const t = tr(en);
   return (
     <Dark tag={t("Fitur · Laporan", "Feature · Reports")} glow="right">
@@ -321,7 +321,11 @@ export function Reports({ en, img }: P & { img?: string }) {
         <Point dark icon={CalendarClock} title={t("Terkirim terjadwal, misalnya tiap Senin", "Scheduled, e.g. every Monday")} text={t("PDF, Excel, dan CSV ke email direksi (laporan terjadwal mulai paket Intelligence).", "PDF, Excel and CSV to leadership by email (scheduled reports from Intelligence).")} />
         <Point dark icon={Languages} title={t("Bahasa Indonesia atau English", "Bahasa Indonesia or English")} text={t("Pilih bahasa sebelum laporan dibuat.", "Pick the language before the report is generated.")} />
       </div>
-      <img src={img ?? `/pitch/report-${en ? "en" : "id"}.webp`} alt="" className="pc" style={{ position: "absolute", left: 1140, top: 150, width: 640, height: "auto", borderRadius: 18, border: `3px solid ${INK}`, boxShadow: "0 30px 80px rgba(0,0,0,.45), 0 10px 0 #465FFF", transform: "rotate(2.5deg)" }} />
+      {preview ? (
+        <div className="pc" style={{ position: "absolute", left: 1140, top: 150, width: 640, borderRadius: 18, overflow: "hidden", border: `3px solid ${INK}`, boxShadow: "0 30px 80px rgba(0,0,0,.45), 0 10px 0 #465FFF", transform: "rotate(2.5deg)" }}>{preview}</div>
+      ) : (
+        <img src={img ?? `/pitch/report-${en ? "en" : "id"}.webp`} alt="" className="pc" style={{ position: "absolute", left: 1140, top: 150, width: 640, height: "auto", borderRadius: 18, border: `3px solid ${INK}`, boxShadow: "0 30px 80px rgba(0,0,0,.45), 0 10px 0 #465FFF", transform: "rotate(2.5deg)" }} />
+      )}
     </Dark>
   );
 }

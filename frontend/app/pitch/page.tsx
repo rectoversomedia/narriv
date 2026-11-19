@@ -3,7 +3,8 @@
 import type { Metadata } from "next";
 import Deck from "./deck";
 import { deck } from "./slides";
-import { Coordination, DefaultFlow, Influencers, Network } from "./arunika/slides";
+import { ArunikaReport, Coordination, DefaultFlow, Influencers, Network } from "./arunika/slides";
+import { Reports } from "./slides";
 
 export const metadata: Metadata = {
   title: "Narriv Pitch Deck",
@@ -22,7 +23,8 @@ function fullDeck(en: boolean) {
     <Network key="network" en={en} />,
     <Influencers key="influencers" en={en} />,
     <Coordination key="coord" en={en} />,
-    ...slides.slice(at),
+    // The report sample uses the same Bank Arunika numbers as the slides around it.
+    ...slides.slice(at).map((s) => (s.key === "reports" ? <Reports key="reports" en={en} preview={<ArunikaReport en={en} />} /> : s)),
   ];
 }
 
