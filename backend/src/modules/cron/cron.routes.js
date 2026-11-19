@@ -212,6 +212,20 @@ const runDaily = async (req, res) => {
         // 5c. Daily self-check of the newer pipelines, so a silent failure shows up in the logs the next morning.
         results.selfCheck = await selfCheck();
 
+        // 5d. Narriv Radar: once a day, the top risky stories as "found → do" on every enabled channel (active workspaces only).
+        try {
+            const { buildRadar } = await import("../../lib/narrative-radar.js");
+            const { notifyRadar } = await import("../notifications/notification-dispatch.service.js");
+            const { data: rws } = await supabase.from("workspaces").select("id, settings").limit(200);
+            let sent = 0;
+            for (const w of rws || []) {
+                if (w.settings?.monitoringPaused || Date.now() > start + 240000) continue;
+                const radar = await buildRadar(w.id);
+                if (radar.items.length) { await notifyRadar({ workspaceId: w.id, radar }).catch(() => null); sent++; }
+            }
+            results.radar = { sent };
+        } catch (e) { results.radar = { error: e.message }; }
+
         // 6. Store finished Apify collections nobody checked from the browser.
         try {
             const { syncPendingCollections } = await import("../ingestion/apify-collection.service.js");

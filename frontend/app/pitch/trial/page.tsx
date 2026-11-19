@@ -19,10 +19,10 @@ function Label({ children, dark }: { children: ReactNode; dark?: boolean }) {
 
 const FEATURES: Array<[string, string, string]> = [
   ["#465FFF", "Pemantauan per jam", "Berita online, YouTube beserta komentarnya, dan kanal Telegram publik tentang brand Anda."],
-  ["#8B5CF6", "Peta isu & skor risiko", "Ratusan percakapan dikelompokkan jadi isu, dengan skor risiko 0–100 dan alasannya."],
+  ["#8B5CF6", "Peta isu & skor risiko", "Feed Narasi: isu diurutkan dari paling berbahaya, dengan tanda bot, toksik, hoaks, dan polarisasi."],
   ["#EC4899", "Jaringan & indikasi bot", "Kubu percakapan, akun paling berpengaruh, dan akun yang tampak terkoordinasi."],
   ["#F59E0B", "Cek klaim hoaks", "Klaim utama tiap isu dicocokkan dengan TurnBackHoax dan CekFakta."],
-  ["#E5484D", "Peringatan & rencana aksi", "Isu berisiko langsung ke penanggung jawab, lengkap dengan kasus dan draf respons."],
+  ["#E5484D", "Narriv Radar & peringatan", "Temuan dan langkah tiap pagi ke email, WhatsApp, Slack, atau Teams, plus rencana aksi."],
   ["#12A66A", "Jawaban AI & laporan", "Cara ChatGPT dan AI lain menyebut brand Anda, plus laporan siap direksi."],
 ];
 

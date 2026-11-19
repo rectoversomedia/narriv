@@ -288,6 +288,9 @@ export interface NarrativeRecord {
   sentiment: string;
   risk?: NarrativeRisk | null;
   claims?: NarrativeClaim[];
+  badges?: Array<"bot_like" | "toxic" | "anomalous" | "hoax" | "polarized">;
+  platforms?: string[];
+  audiences?: string[];
 }
 
 /** How dangerous a story is, 0–100 with its reasons (backend lib/narrative-risk.js). */

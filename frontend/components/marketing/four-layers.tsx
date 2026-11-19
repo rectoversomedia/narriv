@@ -85,8 +85,8 @@ export function FourLayers() {
   const layers = [
     { c: "#A5B4FF", t: L("Narrative", "Narrative"), big: L("Hundreds of stories, a few issues.", "Ratusan berita jadi beberapa isu."), d: L("Grouped by meaning, with framing, journey and escalation.", "Dikelompokkan per makna, lengkap dengan sudut pandang, perjalanan, dan eskalasi."), Art: NarrativeArt },
     { c: "#C4B5FD", t: L("Actor", "Actor"), big: L("See who is driving it.", "Lihat siapa yang menggerakkan."), d: L("Camps, influential accounts and where the story started.", "Kubu, akun paling berpengaruh, dan asal cerita."), Art: ActorArt },
-    { c: "#FFB4B6", t: L("Threat", "Threat"), big: L("Know how dangerous, in one number.", "Tahu seberapa bahaya, dalam satu angka."), d: L("Risk score 0–100, bot signs, hoax claim check, attack alerts.", "Skor risiko 0–100, indikasi bot, cek klaim hoaks, peringatan serangan."), Art: ThreatArt },
-    { c: "#86EFAC", t: L("Impact", "Impact"), big: L("Act before it spreads.", "Bertindak sebelum menyebar."), d: L("Action plans, opportunities, AI answers and board reports.", "Rencana aksi, peluang, Jawaban AI, dan laporan direksi."), Art: ImpactArt },
+    { c: "#FFB4B6", t: L("Threat", "Threat"), big: L("Know how dangerous, in one number.", "Tahu seberapa bahaya, dalam satu angka."), d: L("Risk score 0–100 and a Narrative Feed flagging bots, toxicity, anomalies, hoaxes and polarization.", "Skor risiko 0–100 dan Feed Narasi dengan tanda bot, toksik, anomali, hoaks, dan polarisasi."), Art: ThreatArt },
+    { c: "#86EFAC", t: L("Impact", "Impact"), big: L("Act before it spreads.", "Bertindak sebelum menyebar."), d: L("Daily Narriv Radar (found → do) on email, WhatsApp, Slack or Teams, plus action plans and board reports.", "Narriv Radar harian (temuan → langkah) ke email, WhatsApp, Slack, atau Teams, plus rencana aksi dan laporan direksi."), Art: ImpactArt },
   ];
   return (
     <>

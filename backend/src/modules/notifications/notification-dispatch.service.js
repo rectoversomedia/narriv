@@ -329,3 +329,29 @@ export async function notifyDeadlineReminder({
     });
 }
 
+
+/** Narriv Radar: the day's top risky stories as "what we found → what to do", on every enabled channel. */
+export async function notifyRadar({ workspaceId, radar }) {
+    const { radarText } = await import("../../lib/narrative-radar.js");
+    const { data: ws } = await baseSupabaseAdmin.from("workspace_settings").select("brand_name").eq("workspace_id", workspaceId).maybeSingle();
+    const brandName = ws?.brand_name || "Narriv";
+    const text = radarText(radar, brandName);
+    const html = emailLayout({
+        lang: "id",
+        title: "Narriv Radar",
+        preheader: `Narriv Radar: ${radar.items.length} isu perlu perhatian`,
+        body: [
+            emailHero({ chip: "Narriv Radar", title: `${radar.items.length} isu perlu perhatian hari ini`, lead: `Ringkasan narrative intelligence untuk ${esc(brandName)}.` }),
+            ...radar.items.map((it, i) => emailSection(`${i + 1}. ${esc(it.title)} · risiko ${it.score}`, `<p><b>Temuan:</b> ${esc(it.finding)}</p><p><b>Langkah:</b> ${esc(it.action)}</p>`)),
+            emailButton(`${appUrl()}/feed`, "Buka Feed Narasi"),
+        ].join(""),
+    });
+    return dispatchByEnabledChannels({
+        workspaceId,
+        subject: `[Narriv Radar] ${radar.items.length} isu perlu perhatian: ${brandName}`,
+        message: text,
+        html,
+        text: `${text}\n${appUrl()}/feed`,
+        metadata: { event: "narrative_radar", count: radar.items.length },
+    });
+}

@@ -7,7 +7,11 @@
  *   topic     up to 15  sensitive subjects (data security, regulators, law, fraud, SARA, boycotts)
  *   network   up to 15  coordination signs among the accounts pushing it (stored by the follow-up run)
  *   claims    up to 10  claims already refuted by fact-checkers (a hoax in play)
+ *   toxicity  up to 10  insults, slurs and abusive words in the records
+ *   polarity  up to 10  a split audience: strong positive and strong negative at once
+ * Capped at 100.
  */
+const TOXIC = /\b(bodoh|tolol|goblok|bangsat|anjing|bajingan|brengsek|maling|penipu|rampok|biadab|kampret|sialan|bego|idiot|kafir|antek|pengkhianat)\b/i;
 
 const SENSITIVE = [
     [/\b(bocor|kebocoran|dibobol|kebobolan|peretas|hacker|retas|data (nasabah|pribadi|pengguna)|forum gelap)\b/i, "keamanan data"],
@@ -68,6 +72,42 @@ export function narrativeRisk(cluster, signals, now = Date.now()) {
     const claims = Math.min(10, refuted * 6);
     if (claims) factors.push({ key: "claims", points: claims, label: `${refuted} klaim sudah dibantah cek fakta` });
 
-    const score = Math.min(100, tone + speed + reach + topic + network + claims);
+    const toxicCount = list.filter((s) => TOXIC.test(`${s.title || ""} ${s.content || ""}`)).length;
+    const toxicity = Math.min(10, Math.round((toxicCount / total) * 30));
+    if (toxicity >= 3) factors.push({ key: "toxicity", points: toxicity, label: `${toxicCount} catatan berisi kata kasar atau hinaan` });
+
+    const pos = list.filter((s) => toneOf(s) === "positive").length;
+    const split = Math.min(pos, neg) / total;
+    const polarity = split >= 0.2 ? Math.min(10, Math.round(split * 25)) : 0;
+    if (polarity) factors.push({ key: "polarity", points: polarity, label: `Publik terbelah: ${Math.round((pos / total) * 100)}% positif vs ${Math.round((neg / total) * 100)}% negatif` });
+
+    const score = Math.min(100, tone + speed + reach + topic + network + claims + toxicity + polarity);
     return { score, level: riskLevel(score), factors: factors.sort((a, b) => b.points - a.points) };
+}
+
+/** Feed badges for a narrative card, from the risk factors. */
+export function riskBadges(risk) {
+    const keys = new Set((risk?.factors || []).map((f) => f.key));
+    const out = [];
+    if (keys.has("network")) out.push("bot_like");
+    if (keys.has("toxicity")) out.push("toxic");
+    if (keys.has("speed")) out.push("anomalous");
+    if (keys.has("claims")) out.push("hoax");
+    if (keys.has("polarity")) out.push("polarized");
+    return out;
+}
+
+const AUDIENCES = [
+    [/\b(nasabah|rekening|tabungan|kartu|aplikasi|mobile|transfer|saldo|pelanggan|konsumen|pengguna)\b/i, "Nasabah & pelanggan"],
+    [/\b(saham|investor|ihsg|dividen|laba|obligasi|kinerja|emiten)\b/i, "Investor & analis"],
+    [/\b(ojk|bi|regulator|kemenkeu|dpr|kpk|bpk|hukum|gugatan)\b/i, "Regulator & pemerintah"],
+    [/\b(karyawan|pegawai|phk|mogok|serikat)\b/i, "Karyawan"],
+    [/\b(umkm|usaha|pedagang|mitra)\b/i, "UMKM & mitra"],
+    [/\b(warga|masyarakat|publik|bansos|hoaks)\b/i, "Masyarakat umum"],
+];
+/** Who a story touches, from its own words (rule-based, explainable). */
+export function affectedAudiences(text) {
+    const t = String(text || "");
+    const out = AUDIENCES.filter(([re]) => re.test(t)).map(([, l]) => l);
+    return out.length ? out.slice(0, 3) : ["Publik umum"];
 }
