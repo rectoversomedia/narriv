@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
+import { BarChart3, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, Share2, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
 
 // Four menus, each answering one question a director has:
 //   Hari Ini — what is happening and what do I decide today?
@@ -17,7 +17,7 @@ export const navGroups: Array<{ key: string; items: Array<{ key: string; href: s
     key: "main",
     items: [
       { key: "today", href: "/", icon: Home, match: ["/brief", "/insights", "/action-center"] },
-      { key: "issues", href: "/signals", icon: MessagesSquare, match: ["/intelligence", "/opportunities", "/timeline", "/visibility"] },
+      { key: "issues", href: "/signals", icon: MessagesSquare, match: ["/intelligence", "/network", "/opportunities", "/timeline", "/visibility"] },
       { key: "tasks", href: "/alerts", icon: Bell, match: ["/alert-center", "/action-plans", "/actions", "/workspace/cases"] },
       { key: "reports", href: "/reports", icon: FileText },
     ],
@@ -38,6 +38,7 @@ export const SECTION_TABS = {
   issues: [
     { key: "conversations", href: "/signals", icon: MessagesSquare },
     { key: "issueMap", href: "/intelligence", icon: Network },
+    { key: "network", href: "/network", icon: Share2 },
     { key: "opportunities", href: "/opportunities", icon: Sparkle },
     { key: "timeline", href: "/timeline", icon: CalendarClock },
     { key: "visibility", href: "/visibility", icon: Sparkles },

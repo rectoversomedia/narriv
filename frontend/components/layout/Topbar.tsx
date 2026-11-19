@@ -56,6 +56,7 @@ const navLinks = [
   { href: "/workspace/cases", title: { en: "Cases", id: "Kasus" }, subtitle: { en: "Follow-up", id: "Tindak Lanjut" } },
   { href: "/reports", title: { en: "Reports", id: "Laporan" }, subtitle: { en: "Reports", id: "Laporan" } },
   { href: "/visibility", title: { en: "AI answers", id: "Jawaban AI" }, subtitle: { en: "Issues", id: "Isu" } },
+  { href: "/network", title: { en: "Conversation network", id: "Jaringan percakapan" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/workspace/settings", title: { en: "Settings", id: "Pengaturan" }, subtitle: { en: "Keywords, team, notifications", id: "Kata kunci, tim, notifikasi" } },
   { href: "/workspace/sources", title: { en: "Data sources", id: "Sumber data" }, subtitle: { en: "Settings", id: "Pengaturan" } },
   { href: "/workspace/integrations", title: { en: "Notification channels", id: "Saluran notifikasi" }, subtitle: { en: "Settings", id: "Pengaturan" } },

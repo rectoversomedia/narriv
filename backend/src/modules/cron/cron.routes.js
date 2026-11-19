@@ -254,16 +254,22 @@ async function sendDigests() {
 // Default follow-up after new data: positive issues → opportunities, risky issues → a case and an AI action plan
 // (one plan per workspace per run). Bounded by a time budget so the ingest call stays inside its limit.
 async function runFollowUps({ deadline }) {
-    const totals = { workspaces: 0, opportunities: 0, cases: 0, plans: 0 };
+    const totals = { workspaces: 0, comments: 0, opportunities: 0, cases: 0, plans: 0 };
     try {
         const { runIssueFollowUp } = await import("../../lib/issue-follow-up.js");
         const { detectOpportunities } = await import("../alerts/alerts.service.js");
         const { generateActionPlan } = await import("../actions/actions.service.js");
         const { anyAiConfigured } = await import("../../lib/chat-client.js");
-        const { data: ws } = await supabase.from("workspaces").select("id").limit(50);
+        const { collectYouTubeComments } = await import("../network/youtube-comments.service.js");
+        const { data: ws } = await supabase.from("workspaces").select("id, settings").limit(200);
         for (const w of ws || []) {
             if (Date.now() > deadline) break;
             try {
+                // Free social data: comments under the workspace's YouTube videos (skipped for paused workspaces).
+                if (!w.settings?.monitoringPaused) {
+                    const c = await collectYouTubeComments(w.id, { maxVideos: 5 });
+                    totals.comments += c.comments || 0;
+                }
                 totals.opportunities += (await detectOpportunities(w.id)).length;
                 // An AI plan takes up to ~40s: only start one when that still fits the call's time budget.
                 const planFits = anyAiConfigured() && Date.now() < deadline - 45000;

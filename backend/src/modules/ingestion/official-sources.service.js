@@ -8,6 +8,7 @@
 import { logStructured } from "../../lib/logger.js";
 import { persistCollectedRecords } from "./signal-persistence.js";
 import { mentionsKeyword, phraseQuery } from "../../lib/keyword-match.js";
+import { fetchTelegramPosts } from "./telegram.service.js";
 
 const TIMEOUT_MS = 15_000;
 const LOOKBACK_DAYS = 7;
@@ -24,6 +25,7 @@ export function officialSourceStatus() {
     return [
         { key: "youtube", name: "YouTube", configured: isYouTubeConfigured() },
         { key: "reddit", name: "Reddit", configured: isRedditConfigured() },
+        { key: "telegram", name: "Telegram (public channels)", configured: true },
     ];
 }
 
@@ -112,6 +114,8 @@ export async function fetchRedditPosts(keyword, { limit = 8, fetchImpl = fetch }
 const COLLECTORS = [
     { platform: "youtube", configured: isYouTubeConfigured, fetch: fetchYouTubeVideos },
     { platform: "reddit", configured: isRedditConfigured, fetch: fetchRedditPosts },
+    // Free and keyless: public channels' web previews.
+    { platform: "telegram", configured: () => process.env.TELEGRAM_DISABLED !== "1" && process.env.NODE_ENV !== "test", fetch: fetchTelegramPosts },
 ];
 
 /**

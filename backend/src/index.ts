@@ -42,6 +42,7 @@ import alertsRoutes from "./modules/alerts/alerts.routes.js";
 import escalationMatrixRoutes from "./modules/alerts/escalation-matrix.routes.js";
 import narrativesRoutes from "./modules/narratives/narratives.routes.js";
 import geoRoutes from "./modules/geo/geo.routes.js";
+import networkRoutes from "./modules/network/network.routes.js";
 import reportsRoutes from "./modules/reports/reports.routes.js";
 import actionsRoutes from "./modules/actions/actions.routes.js";
 import actionPlansRoutes from "./modules/action-plans/action-plans.routes.js";
@@ -172,6 +173,7 @@ export function createApp(): Express {
   app.use("/api/alerts", alertsRoutes);
   app.use("/api/narratives", narrativesRoutes);
   app.use("/api/visibility", geoRoutes);
+  app.use("/api/network", networkRoutes);
   app.use("/api/reports", rateLimit(RATE_LIMITS.export), apiSecurityHeaders, reportsRoutes);
   app.use("/api/action-plans", actionPlansRoutes);
   app.use("/api/workspace", sensitiveDataHeaders, workspaceSettingsRoutes);
