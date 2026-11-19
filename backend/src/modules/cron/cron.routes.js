@@ -266,6 +266,7 @@ async function runFollowUps({ deadline, topVideos = false }) {
         const { collectYouTubeComments } = await import("../network/youtube-comments.service.js");
         const { refreshCampSummaries } = await import("../network/network.service.js");
         const { runNarrativeDefense } = await import("../../lib/narrative-defense.js");
+        const { enrichHeadlineRecords } = await import("../ingestion/publisher-rss.service.js");
         const { data: ws } = await supabase.from("workspaces").select("id, settings").limit(200);
         for (const w of ws || []) {
             if (Date.now() > deadline) break;
@@ -277,6 +278,8 @@ async function runFollowUps({ deadline, topVideos = false }) {
                     if (c.videos) await refreshCampSummaries(w.id);
                 }
                 totals.opportunities += (await detectOpportunities(w.id)).length;
+                // Headline-only news records get the article summary from the publisher feeds (free).
+                if (!w.settings?.monitoringPaused) totals.enriched = (totals.enriched || 0) + await enrichHeadlineRecords(w.id).catch(() => 0);
                 // Coordination per issue, claim checks and narrative-attack alerts (paused workspaces too: no new data, no AI).
                 if (!w.settings?.monitoringPaused && Date.now() < deadline - 20000) {
                     const d = await runNarrativeDefense(w.id);

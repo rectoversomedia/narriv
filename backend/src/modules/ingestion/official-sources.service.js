@@ -9,6 +9,7 @@ import { logStructured } from "../../lib/logger.js";
 import { persistCollectedRecords } from "./signal-persistence.js";
 import { mentionsKeyword, phraseQuery } from "../../lib/keyword-match.js";
 import { fetchTelegramPosts } from "./telegram.service.js";
+import { fetchPublisherArticles } from "./publisher-rss.service.js";
 
 const TIMEOUT_MS = 15_000;
 const LOOKBACK_DAYS = 7;
@@ -26,6 +27,7 @@ export function officialSourceStatus() {
         { key: "youtube", name: "YouTube", configured: isYouTubeConfigured() },
         { key: "reddit", name: "Reddit", configured: isRedditConfigured() },
         { key: "telegram", name: "Telegram (public channels)", configured: true },
+        { key: "publisher_rss", name: "Publisher RSS (CNN, CNBC, ANTARA, Tempo, Republika, Okezone)", configured: true },
     ];
 }
 
@@ -115,6 +117,8 @@ const COLLECTORS = [
     { platform: "youtube", configured: isYouTubeConfigured, fetch: fetchYouTubeVideos },
     { platform: "reddit", configured: isRedditConfigured, fetch: fetchRedditPosts },
     // Free and keyless: public channels' web previews.
+    // Large outlets' own RSS: articles with their summary, not only the headline.
+    { platform: "news", configured: () => process.env.PUBLISHER_RSS_DISABLED !== "1" && process.env.NODE_ENV !== "test", fetch: fetchPublisherArticles },
     { platform: "telegram", configured: () => process.env.TELEGRAM_DISABLED !== "1" && process.env.NODE_ENV !== "test", fetch: fetchTelegramPosts },
 ];
 
