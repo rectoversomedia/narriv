@@ -28,7 +28,11 @@ function Frame({ id, w, h, dark, children }: { id: string; w: number; h: number;
 function Brand({ dark, x = 72, y = 70 }: { dark?: boolean; x?: number; y?: number }) {
   return (
     <div style={{ position: "absolute", left: x, top: y }}>
-      <img src={dark ? "/brand/logo-p-nv.webp" : "/brand/logo-h-nv.webp"} alt="Narriv" style={{ height: 52, width: "auto", display: "block" }} />
+      {/* The two logo files carry different transparent margins: these sizes put the wordmark's left edge and height
+          on the same line as the text below, on dark and light frames alike. */}
+      {dark
+        ? <img src="/brand/logo-p-nv.webp" alt="Narriv" style={{ height: 52, width: "auto", display: "block" }} />
+        : <img src="/brand/logo-h-nv.webp" alt="Narriv" style={{ height: 61, width: "auto", display: "block", margin: "-10px 0 -1px -12px" }} />}
       <span style={{ display: "block", marginTop: 8, fontFamily: MONO, fontSize: 15, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: dark ? "rgba(255,255,255,.55)" : "#6B7394" }}>Narrative Intelligence</span>
     </div>
   );
