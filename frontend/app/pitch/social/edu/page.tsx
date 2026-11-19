@@ -19,7 +19,17 @@ function Title({ kicker: _kicker, children, sub, dark, size = 80 }: { kicker: st
   return (
     <div style={{ textAlign: "center" }}>
       <h2 style={{ margin: 0, fontSize: size, lineHeight: 1.04, fontWeight: 800, letterSpacing: "-0.045em" }}>{children}</h2>
-      {sub ? <p style={{ margin: "26px 0 0", fontSize: 32, lineHeight: 1.42, color: dark ? "rgba(255,255,255,.75)" : MUTED }}>{sub}</p> : null}
+      {sub ? <Sub text={sub} dark={dark} /> : null}
+    </div>
+  );
+}
+
+/** Supporting text under a title: each sentence on its own line, airy spacing, kept narrow so lines stay short. */
+function Sub({ text, dark }: { text: string; dark?: boolean }) {
+  const sentences = text.split(/(?<=[.?!])\s+/).filter(Boolean);
+  return (
+    <div style={{ margin: "44px auto 0", maxWidth: 860, display: "grid", gap: 14, fontSize: 32, lineHeight: 1.5, letterSpacing: "0.005em", wordSpacing: "0.06em", color: dark ? "rgba(255,255,255,.78)" : MUTED }}>
+      {sentences.map((x) => <p key={x} style={{ margin: 0 }}>{x}</p>)}
     </div>
   );
 }
@@ -70,7 +80,7 @@ const big = (kicker: string, text: ReactNode, note?: string, dark = false): Slid
   body: (
     <div style={{ textAlign: "center" }}>
       <p style={{ margin: 0, fontSize: 92, lineHeight: 1.06, fontWeight: 800, letterSpacing: "-0.045em" }}>{text}</p>
-      {note ? <p style={{ margin: "44px 0 0", fontSize: 32, lineHeight: 1.45, color: dark ? "rgba(255,255,255,.75)" : MUTED }}>{note}</p> : null}
+      {note ? <Sub text={note} dark={dark} /> : null}
     </div>
   ),
 });
