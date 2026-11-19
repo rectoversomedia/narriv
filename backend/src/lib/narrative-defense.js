@@ -55,6 +55,13 @@ export async function runNarrativeDefense(workspaceId, { db = supabase, maxClaim
         }
 
         const risk = narrativeRisk(cluster, members, now);
+        // Daily risk snapshots, so the score can later be checked against what the story actually did.
+        const hist = cluster.metadata?.riskHistory || [];
+        if (risk && (!hist.length || now - Date.parse(hist[hist.length - 1].at) > 20 * 3600000)) {
+            const riskHistory = [...hist, { at: new Date(now).toISOString(), score: risk.score, records: members.length }].slice(-60);
+            cluster.metadata = { ...cluster.metadata, riskHistory };
+            await db.from("narrative_clusters").update({ metadata: cluster.metadata }).eq("id", cluster.id);
+        }
         if (risk && risk.score >= 70 && coordination.count > 0 && !attacked.has(cluster.id)) {
             const id = lang === "id";
             const { error } = await db.from("alerts").insert({

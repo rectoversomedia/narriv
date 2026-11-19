@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, Share2, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
+import { BadgeCheck, BarChart3, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, Share2, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
 
 // Four menus, each answering one question a director has:
 //   Hari Ini — what is happening and what do I decide today?
@@ -19,7 +19,7 @@ export const navGroups: Array<{ key: string; items: Array<{ key: string; href: s
       { key: "today", href: "/", icon: Home, match: ["/brief", "/insights", "/action-center"] },
       { key: "issues", href: "/signals", icon: MessagesSquare, match: ["/intelligence", "/network", "/opportunities", "/timeline", "/visibility"] },
       { key: "tasks", href: "/alerts", icon: Bell, match: ["/alert-center", "/action-plans", "/actions", "/workspace/cases"] },
-      { key: "reports", href: "/reports", icon: FileText },
+      { key: "reports", href: "/reports", icon: FileText, match: ["/quality"] },
     ],
   },
 ];
@@ -50,6 +50,7 @@ export const SECTION_TABS = {
   ],
   reports: [
     { key: "reportsTab", href: "/reports", icon: FileText },
+    { key: "quality", href: "/quality", icon: BadgeCheck },
   ],
   settings: [
     { key: "settingsTab", href: "/workspace/settings", icon: SlidersHorizontal },

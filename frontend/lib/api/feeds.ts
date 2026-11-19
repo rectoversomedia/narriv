@@ -425,12 +425,7 @@ export type CorrectableSentiment = "POSITIVE" | "NEGATIVE" | "NEUTRAL" | "MIXED"
  * A person's correction of the AI's sentiment for one record: updates the record (so counts change at once) and
  * logs it as AI feedback, which feeds the accuracy numbers.
  */
-export async function correctSignalSentiment({ signalId, workspaceId, from, to }: { signalId: string; workspaceId: string | null; from: string | null; to: CorrectableSentiment }) {
-  await apiClient(`/api/signals/${signalId}`, { method: "PATCH", body: JSON.stringify({ sentiment: to }) });
-  if (workspaceId) {
-    await apiClient("/api/feedback", {
-      method: "POST",
-      body: JSON.stringify({ workspaceId, targetType: "signal_sentiment", targetId: signalId, action: "edited", originalOutput: { sentiment: from }, editedOutput: { sentiment: to } }),
-    }).catch(() => null);
-  }
+export async function correctSignalSentiment({ signalId, to }: { signalId: string; workspaceId: string | null; from: string | null; to: CorrectableSentiment }) {
+  // A correction is a tone review: it fixes the record and counts toward the measured accuracy (Uji Akurasi).
+  await apiClient("/api/quality/review", { method: "POST", body: JSON.stringify({ signalId, tone: String(to).toLowerCase() }) });
 }

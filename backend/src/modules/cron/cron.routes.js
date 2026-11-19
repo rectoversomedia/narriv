@@ -209,6 +209,9 @@ const runDaily = async (req, res) => {
         // 5b. Default follow-up on the issues just clustered.
         results.followUps = await runFollowUps({ deadline: start + 200000, topVideos: true });
 
+        // 5c. Daily self-check of the newer pipelines, so a silent failure shows up in the logs the next morning.
+        results.selfCheck = await selfCheck();
+
         // 6. Store finished Apify collections nobody checked from the browser.
         try {
             const { syncPendingCollections } = await import("../ingestion/apify-collection.service.js");
@@ -294,6 +297,31 @@ async function runFollowUps({ deadline, topVideos = false }) {
         return { error: error.message };
     }
     return totals;
+}
+
+async function selfCheck() {
+    const out = {};
+    try {
+        const { factChecks } = await import("../../lib/claim-check.js");
+        out.factCheckFeeds = (await factChecks()).length;
+    } catch (e) { out.factCheckFeeds = `error: ${e.message}`; }
+    try {
+        const { anyAiConfigured } = await import("../../lib/chat-client.js");
+        const { monthlyCallsUsed } = await import("../../lib/chat-client.js");
+        out.ai = anyAiConfigured();
+        out.aiCallsThisMonth = await monthlyCallsUsed().catch(() => null);
+    } catch (e) { out.ai = `error: ${e.message}`; }
+    try {
+        const { isCommentCollectionConfigured } = await import("../network/youtube-comments.service.js");
+        out.youtube = isCommentCollectionConfigured();
+    } catch (e) { out.youtube = `error: ${e.message}`; }
+    try {
+        const { data } = await supabase.from("signals").select("captured_at").order("captured_at", { ascending: false }).limit(1);
+        out.lastRecordHoursAgo = data?.[0] ? Math.round((Date.now() - Date.parse(data[0].captured_at)) / 3600000) : null;
+    } catch (e) { out.lastRecordHoursAgo = `error: ${e.message}`; }
+    const failing = Object.entries(out).filter(([k, v]) => v === false || v === 0 || String(v).startsWith("error") || (k === "lastRecordHoursAgo" && v > 26));
+    logStructured(failing.length ? "warn" : "info", "self_check", { ...out, failing: failing.map(([k]) => k) });
+    return { ...out, ok: failing.length === 0 };
 }
 
 // Scheduled real-data ingestion (Vercel Cron, every hour).

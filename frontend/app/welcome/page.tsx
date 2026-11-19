@@ -1,6 +1,7 @@
 "use client";
 
 import { EscalationChart } from "@/components/charts/escalation-chart";
+import { FourLayers } from "@/components/marketing/four-layers";
 import Link from "next/link";
 import { Fragment, useState, type CSSProperties, type ReactNode } from "react";
 import { ArrowRight, ArrowUpRight, BellRing, Building2, Check, ChevronDown, Clock3, FileText, LineChart, Megaphone, Minus, Radar, Sparkles, UserCheck, type LucideIcon } from "lucide-react";
@@ -549,21 +550,7 @@ export default function WelcomePage() {
               ]}
             />
           </Reveal>
-          <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { c: "#465FFF", t: L("Narrative", "Narasi"), q: L("Which story is forming", "Cerita apa yang terbentuk"), d: L("Issues, framing, story journey, escalation.", "Isu, sudut pandang, perjalanan cerita, eskalasi.") },
-              { c: "#8B5CF6", t: L("Actor", "Aktor"), q: L("Who drives it", "Siapa yang menggerakkan"), d: L("Camps, influential accounts, where it started.", "Kubu, akun berpengaruh, asal cerita.") },
-              { c: "#E5484D", t: L("Threat", "Ancaman"), q: L("How dangerous", "Seberapa berbahaya"), d: L("Risk score, bot signs, hoax claim check, attack alerts.", "Skor risiko, indikasi bot, cek klaim hoaks, peringatan serangan.") },
-              { c: "#12A66A", t: L("Impact", "Dampak"), q: L("What to do", "Apa langkahnya"), d: L("AI answers, opportunities, action plans, board reports.", "Jawaban AI, peluang, rencana aksi, laporan direksi.") },
-            ].map((x, i) => (
-              <Reveal as="li" key={x.t} delay={i * 100} className="rounded-[20px] border border-white/15 bg-white/[0.06] p-5 text-center">
-                <span className="mx-auto flex size-11 items-center justify-center rounded-xl text-[17px] font-black text-white" style={{ background: x.c }}>{i + 1}</span>
-                <p className="mt-4 text-[20px] font-black">{x.t} <span style={{ color: x.c === "#465FFF" ? "#A5B4FF" : x.c }}>Intelligence</span></p>
-                <p className="mt-1 text-[14px] font-bold text-white/80">{x.q}</p>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-white/60">{x.d}</p>
-              </Reveal>
-            ))}
-          </ul>
+          <FourLayers />
         </div>
       </section>
 

@@ -19,3 +19,4 @@ export * from "./api/insights";
 export * from "./api/realtime";
 export * from "./api/subscriptions";
 export * from "./api/network";
+export * from "./api/quality";
