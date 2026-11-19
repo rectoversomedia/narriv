@@ -273,7 +273,7 @@ export function SocialButtons() {
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <SocialButton icon={<GoogleLogo />} label={t("social.google")} href={`${apiUrl}/auth/google`} />
+      <SocialButton icon={<GoogleLogo />} label={t("social.google")} href={apiUrl.startsWith("http://localhost") ? `${apiUrl}/auth/google` : "/api/auth/google"} />
       <DemoButton />
     </div>
   );

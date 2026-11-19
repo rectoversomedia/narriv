@@ -117,6 +117,17 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // Google sign-in runs through the app's own address, so Google's account chooser says "app.narriv.digital"
+  // instead of the API's vercel.app host. The backend still does the work; cookies land on the app domain.
+  async rewrites() {
+    const api = process.env.NEXT_PUBLIC_API_URL;
+    if (!api || !/^https?:\/\//.test(api)) return [];
+    return [
+      { source: "/api/auth/google", destination: `${api}/auth/google` },
+      { source: "/api/auth/google/callback", destination: `${api}/auth/google/callback` },
+    ];
+  },
+
   // Redirects for legacy and shorthand workspace routes
   async redirects() {
     return [
