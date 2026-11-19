@@ -21,6 +21,12 @@ const TONE: Record<NetworkTone, { en: string; id: string; chip: string }> = {
   mixed: { en: "Mixed", id: "Campuran", chip: "bg-[#FFF4E5] text-[#A04606]" },
   neutral: { en: "Neutral", id: "Netral", chip: "bg-[#F1F4FA] text-[#4A5578]" },
 };
+const STANCE = {
+  supportive: { en: "Supportive", id: "Mendukung", chip: "bg-[#E5F6EE] text-[#047857]" },
+  critical: { en: "Critical", id: "Kritis", chip: "bg-[#FDECEC] text-[#B42318]" },
+  mixed: { en: "Mixed", id: "Campuran", chip: "bg-[#FFF4E5] text-[#A04606]" },
+  unrelated: { en: "Off-topic", id: "Di luar topik", chip: "bg-[#F1F4FA] text-[#4A5578]" },
+} as const;
 const ROLE = {
   trigger: { en: "Trigger", id: "Pemicu", note: ["Starts threads others reply to", "Memulai obrolan yang dibalas banyak akun"] },
   amplifier: { en: "Amplifier", id: "Penguat", note: ["Posts often, keeps it going", "Sering berkomentar, menjaga isu tetap hidup"] },
@@ -124,7 +130,7 @@ export default function NetworkPage() {
                     <button type="button" onClick={() => setCamp(null)} className={cn("rounded-full px-3 py-1 text-[12px] font-bold", camp == null ? "bg-[#101334] text-white" : "bg-[#F1F4FA] text-[#31406B]")}>{L("All", "Semua")}</button>
                     {net.camps.map((c) => (
                       <button key={c.id} type="button" onClick={() => setCamp(camp === c.id ? null : c.id)} className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-bold", camp === c.id ? "bg-[#101334] text-white" : "bg-[#F1F4FA] text-[#31406B]")}>
-                        <span className="size-2.5 rounded-full" style={{ background: campColor(c.id) }} />{L(`Camp ${c.id}`, `Kubu ${c.id}`)}
+                        <span className="size-2.5 rounded-full" style={{ background: campColor(c.id) }} />{c.label ?? L(`Camp ${c.id}`, `Kubu ${c.id}`)}
                       </button>
                     ))}
                   </div>
@@ -139,8 +145,12 @@ export default function NetworkPage() {
                     <article key={c.id} className={cn(BOX, "grid gap-3")}>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="grid size-8 place-items-center rounded-full text-[14px] font-black text-white" style={{ background: campColor(c.id) }}>{c.id}</span>
-                        <span className={cn("rounded-full px-2.5 py-0.5 text-[11.5px] font-bold", TONE[c.tone].chip)}>{L(TONE[c.tone].en, TONE[c.tone].id)}</span>
+                        {c.stance ? <span className={cn("rounded-full px-2.5 py-0.5 text-[11.5px] font-bold", STANCE[c.stance].chip)}>{L(STANCE[c.stance].en, STANCE[c.stance].id)}</span> : <span className={cn("rounded-full px-2.5 py-0.5 text-[11.5px] font-bold", TONE[c.tone].chip)}>{L(TONE[c.tone].en, TONE[c.tone].id)}</span>}
                         <span className="ml-auto text-[12.5px] font-bold text-[#5A6478]">{L(`${c.size} accounts · ${c.comments} comments`, `${c.size} akun · ${c.comments} komentar`)}</span>
+                      </div>
+                      <div>
+                        <h3 className="text-[18px] font-black leading-snug text-[#101334]">{c.label ?? L(`Camp ${c.id}`, `Kubu ${c.id}`)}</h3>
+                        {c.summary ? <p className="mt-1 text-[14px] leading-relaxed text-[#31406B]">{c.summary}</p> : null}
                       </div>
                       <div className="flex h-2 overflow-hidden rounded-full bg-[#E2E6F2]">
                         <span style={{ width: `${c.positiveShare}%` }} className="bg-[#12A66A]" />
@@ -159,6 +169,12 @@ export default function NetworkPage() {
                           ))}
                         </ul>
                       </div>
+                      {c.samples?.length ? (
+                        <div className="grid gap-1.5">
+                          <p className="text-[11.5px] font-bold text-[#5F6B94]">{L("Most liked comments", "Komentar paling disukai")}</p>
+                          {c.samples.slice(0, 2).map((t, k) => <p key={k} className="rounded-[10px] bg-[#F7F8FC] px-3 py-2 text-[13px] italic leading-snug text-[#31406B]">“{t.length > 200 ? `${t.slice(0, 199)}…` : t}”</p>)}
+                        </div>
+                      ) : null}
                       <p className="text-[12.5px] text-[#31406B]"><span className="font-bold">{L("Main accounts", "Akun utama")}:</span> {c.topAccounts.join(", ")}</p>
                     </article>
                   ))}

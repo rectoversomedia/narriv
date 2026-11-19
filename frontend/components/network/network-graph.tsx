@@ -65,6 +65,25 @@ export function NetworkGraph({ nodes, edges, campFilter }: { nodes: NetworkNode[
   const maxWeight = Math.max(1, ...nodes.map((n) => n.weight));
   const radius = (n: NetworkNode) => (n.kind === "video" ? 9 : 4 + Math.sqrt(n.weight / maxWeight) * 14);
   const dim = (n: NetworkNode) => campFilter != null && n.kind === "account" && n.camp !== campFilter;
+  // Names only for the most influential accounts, and only where they do not collide with a name already placed.
+  const labelled = useMemo(() => {
+    const boxes: Array<[number, number, number, number]> = [];
+    const out = new Set<string>();
+    const ranked = nodes.filter((n) => n.kind === "account").sort((a, b) => b.weight - a.weight).slice(0, 24);
+    for (const n of ranked) {
+      const p = pos.get(n.id);
+      if (!p) continue;
+      const text = n.label.length > 18 ? `${n.label.slice(0, 17)}…` : n.label;
+      const w = text.length * 6.4, h = 14, r = radius(n);
+      const box: [number, number, number, number] = [p.x - w / 2, p.y + r + 2, p.x + w / 2, p.y + r + 2 + h];
+      if (boxes.some((b) => !(box[2] < b[0] || box[0] > b[2] || box[3] < b[1] || box[1] > b[3]))) continue;
+      boxes.push(box);
+      out.add(n.id);
+      if (out.size >= 14) break;
+    }
+    return out;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, pos]);
   const neighbours = useMemo(() => {
     if (!hover) return null;
     const s = new Set([hover.id]);
@@ -90,7 +109,9 @@ export function NetworkGraph({ nodes, edges, campFilter }: { nodes: NetworkNode[
               {n.kind === "video"
                 ? <rect x={-r} y={-r} width={r * 2} height={r * 2} rx={3} fill="#101334" stroke="#fff" strokeWidth={1.5} />
                 : <circle r={r} fill={campColor(n.camp)} stroke={n.tone === "negative" ? "#B42318" : "#fff"} strokeWidth={n.tone === "negative" ? 2 : 1.5} />}
-              {n.kind === "account" && r > 11 ? <text y={r + 12} textAnchor="middle" fontSize={11} fontWeight={700} fill="#101334">{n.label.length > 18 ? `${n.label.slice(0, 17)}…` : n.label}</text> : null}
+              {n.kind === "account" && (labelled.has(n.id) || hover?.id === n.id) ? (
+                <text y={r + 12} textAnchor="middle" fontSize={11} fontWeight={800} fill="#101334" stroke="#F7F8FC" strokeWidth={3.5} paintOrder="stroke" style={{ pointerEvents: "none" }}>{n.label.length > 18 ? `${n.label.slice(0, 17)}…` : n.label}</text>
+              ) : null}
             </g>
           );
         })}

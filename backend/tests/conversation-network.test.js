@@ -6,6 +6,8 @@ jest.unstable_mockModule('../src/lib/supabase.js', () => supabaseModuleFor(creat
 const { buildNetwork, commentSentiment, detectCoordination, normalizeText } = await import('../src/lib/conversation-network.js');
 const { parseTelegramPage, telegramChannels } = await import('../src/modules/ingestion/telegram.service.js');
 const { videoIdOf } = await import('../src/modules/network/youtube-comments.service.js');
+const { toneComments, summarizeCamps } = await import('../src/lib/comment-ai.js');
+const fakeChat = (content) => ({ chat: { completions: { create: async () => ({ model: 'claude-haiku-5-5', usage: {}, choices: [{ message: { content: JSON.stringify(content) } }] }) } } });
 
 const at = (m) => new Date(Date.parse('2026-11-18T10:00:00Z') + m * 60000).toISOString();
 const c = (id, author, signal, text, extra = {}) => ({ external_id: id, author_id: author, author_name: author.toUpperCase(), signal_id: signal, text, like_count: 0, published_at: at(0), sentiment: commentSentiment(text), ...extra });
@@ -63,5 +65,25 @@ describe('free social sources', () => {
   it('finds the video id of a stored YouTube record', () => {
     expect(videoIdOf({ url: 'https://www.youtube.com/watch?v=d2vzGAUmw8Q' })).toBe('d2vzGAUmw8Q');
     expect(videoIdOf({ url: 'https://news.example/a' })).toBeNull();
+  });
+});
+
+describe('AI reading of comments', () => {
+  it('re-reads the most engaged comments and keeps the word list for the rest', async () => {
+    const rows = [
+      { external_id: 'a', text: 'mantap banget layanannya, kayak siput', like_count: 50, sentiment: 'positive' },
+      { external_id: 'b', text: 'biasa aja', like_count: 0, sentiment: 'neutral' },
+    ];
+    const out = await toneComments(rows, { workspaceId: 'ws', subject: 'Bank Mandiri', chat: fakeChat({ tones: [{ n: 1, tone: 'negative' }, { n: 2, tone: 'bogus' }] }) });
+    expect(out[0]).toMatchObject({ sentiment: 'negative', tone_by: 'ai' });
+    expect(out[1]).toMatchObject({ sentiment: 'neutral' });
+    expect(out[1].tone_by).toBeUndefined();
+  });
+
+  it('names camps by their video set and falls back to nothing on bad output', async () => {
+    const camps = [{ key: 'v1|v2', size: 10, positiveShare: 10, negativeShare: 60, videos: [{ id: 'v1', title: 'Kredit Jumbo' }], samples: ['kok bisa'] }];
+    const named = await summarizeCamps(camps, { workspaceId: 'ws', brand: 'Bank Mandiri', chat: fakeChat({ camps: [{ n: 1, label: 'Sorotan kredit jumbo', summary: 'Mempertanyakan kredit besar.', stance: 'critical' }] }) });
+    expect(named).toEqual([{ key: 'v1|v2', label: 'Sorotan kredit jumbo', summary: 'Mempertanyakan kredit besar.', stance: 'critical' }]);
+    expect(await summarizeCamps(camps, { workspaceId: 'ws', brand: 'X', chat: fakeChat({ nope: 1 }) })).toEqual([]);
   });
 });

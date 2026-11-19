@@ -261,6 +261,7 @@ async function runFollowUps({ deadline, topVideos = false }) {
         const { generateActionPlan } = await import("../actions/actions.service.js");
         const { anyAiConfigured } = await import("../../lib/chat-client.js");
         const { collectYouTubeComments } = await import("../network/youtube-comments.service.js");
+        const { refreshCampSummaries } = await import("../network/network.service.js");
         const { data: ws } = await supabase.from("workspaces").select("id, settings").limit(200);
         for (const w of ws || []) {
             if (Date.now() > deadline) break;
@@ -269,6 +270,7 @@ async function runFollowUps({ deadline, topVideos = false }) {
                 if (!w.settings?.monitoringPaused) {
                     const c = await collectYouTubeComments(w.id, { maxVideos: 5, withTopVideos: topVideos });
                     totals.comments += c.comments || 0;
+                    if (c.videos) await refreshCampSummaries(w.id);
                 }
                 totals.opportunities += (await detectOpportunities(w.id)).length;
                 // An AI plan takes up to ~40s: only start one when that still fits the call's time budget.

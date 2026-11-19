@@ -8,6 +8,7 @@ import { maskHandles } from "../../lib/privacy.js";
 import { logStructured } from "../../lib/logger.js";
 import { requestLang } from "../../lib/request-context.js";
 import { collectYouTubeComments, isCommentCollectionConfigured } from "./youtube-comments.service.js";
+import { loadNetworkInput, refreshCampSummaries, storedCampSummaries } from "./network.service.js";
 import { telegramChannels } from "../ingestion/telegram.service.js";
 
 const router = express.Router();
@@ -23,7 +24,7 @@ function maskNetwork(net, lang) {
     return {
         ...net,
         nodes: net.nodes.map((n) => (n.kind === "account" ? { ...n, label: alias(n.label) } : n)),
-        camps: net.camps.map((c) => ({ ...c, topAccounts: c.topAccounts.map(alias) })),
+        camps: net.camps.map((c) => ({ ...c, topAccounts: c.topAccounts.map(alias), samples: (c.samples || []).map(maskHandles) })),
         topAccounts: net.topAccounts.map((a) => ({ ...a, name: alias(a.name) })),
         coordination: net.coordination.map((c) => ({ ...c, text: maskHandles(c.text), accounts: c.accounts?.map(alias), account: c.account ? alias(c.account) : undefined })),
     };
@@ -43,30 +44,7 @@ router.get("/", async (req, res) => {
             const { data: links } = await supabase.from("narrative_cluster_signals").select("signal_id").eq("cluster_id", String(req.query.clusterId)).limit(200);
             signalFilter = (links || []).map((l) => l.signal_id);
         }
-        // Comments are stored per video in raw_documents (external_id "ytcomments:<videoId>").
-        const { data: docs, error } = await supabase
-            .from("raw_documents")
-            .select("metadata")
-            .eq("workspace_id", workspaceId)
-            .like("external_id", "ytcomments:%")
-            .limit(300);
-        if (error) throw error;
-        const wanted = signalFilter ? new Set(signalFilter) : null;
-        // A video is its signal when Narriv stored one, otherwise the video itself (most-viewed videos of the period).
-        const kept = (docs || []).filter((d) => (d.metadata?.signal_id || d.metadata?.video?.id) && (!wanted || wanted.has(d.metadata.signal_id)));
-        const vid = (d) => d.metadata.signal_id || `yt:${d.metadata.video.id}`;
-        const comments = kept.flatMap((d) => (Array.isArray(d.metadata.comments) ? d.metadata.comments : [])
-            .filter((c) => !c.published_at || c.published_at >= since)
-            .map((c) => ({ ...c, signal_id: vid(d) })));
-        const used = new Set(comments.map((c) => c.signal_id));
-        const signalIds = [...used].filter((id) => !id.startsWith("yt:"));
-        const { data: signalVideos } = signalIds.length
-            ? await supabase.from("signals").select("id, title, author, url").in("id", signalIds)
-            : { data: [] };
-        const videos = [
-            ...(signalVideos || []),
-            ...kept.filter((d) => !d.metadata.signal_id && used.has(vid(d))).map((d) => ({ id: vid(d), title: d.metadata.video.title, author: d.metadata.video.channel, url: d.metadata.video.url })),
-        ];
+        const { comments, videos } = await loadNetworkInput(workspaceId, { days, signalFilter });
 
         // What the free sources brought in the period, so the page can show where the network comes from.
         const { data: socialRows } = await supabase
@@ -78,7 +56,11 @@ router.get("/", async (req, res) => {
             { key: "telegram", free: true, configured: true, items: counts.telegram || 0, channels: telegramChannels(ws?.settings) },
         ];
 
-        let net = { days, ...buildNetwork(comments, videos || []), sources, monitoringPaused: ws?.settings?.monitoringPaused === true };
+        const built = buildNetwork(comments, videos);
+        // AI names and summaries of the camps, stored at collection time (no AI call on read).
+        const summaries = await storedCampSummaries(workspaceId);
+        built.camps = built.camps.map((c) => ({ ...c, ...(summaries.get(c.key) ? { label: summaries.get(c.key).label, summary: summaries.get(c.key).summary, stance: summaries.get(c.key).stance } : {}) }));
+        let net = { days, ...built, sources, monitoringPaused: ws?.settings?.monitoringPaused === true };
         const profile = await getWorkspaceProfile(workspaceId);
         if (profile?.privacyMode) net = { ...maskNetwork(net, requestLang()), privacyMode: true };
         res.json(net);
@@ -96,7 +78,8 @@ router.post("/collect", requireWorkspaceRole(MANAGER_ROLES), async (req, res) =>
         if (!workspaceId) return res.status(403).json({ error: "Workspace access denied" });
         if (!isCommentCollectionConfigured()) return res.status(400).json({ error: "YouTube is not connected.", code: "YOUTUBE_NOT_CONFIGURED" });
         const result = await collectYouTubeComments(workspaceId, { maxVideos: 15, withTopVideos: true });
-        res.status(201).json(result);
+        const summaries = await refreshCampSummaries(workspaceId);
+        res.status(201).json({ ...result, campsSummarized: summaries.camps });
     } catch (error) {
         logStructured("error", "network_collect_failed", { error: error?.message || error });
         res.status(500).json({ error: "Internal server error" });

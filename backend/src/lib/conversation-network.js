@@ -53,11 +53,11 @@ function labelPropagation(adjacency, rounds = 12) {
  * @param comments comment rows (author, reply target, text, likes, time, sentiment, signal_id)
  * @param videos   signals the comments sit under: { id, title, author, url }
  */
-export function buildNetwork(comments, videos = [], { maxNodes = 150 } = {}) {
+export function buildNetwork(comments, videos = [], { maxNodes = 140 } = {}) {
     const videoById = new Map(videos.map((v) => [v.id, v]));
     const accounts = new Map();
     const acc = (id, name) => {
-        if (!accounts.has(id)) accounts.set(id, { id, name: name || id, comments: 0, likes: 0, repliesReceived: 0, positive: 0, negative: 0, neutral: 0, videos: new Set(), first: null, last: null });
+        if (!accounts.has(id)) accounts.set(id, { id, name: name || id, comments: 0, likes: 0, repliesReceived: 0, positive: 0, negative: 0, neutral: 0, videos: new Set(), first: null, last: null, best: null });
         return accounts.get(id);
     };
     const adjacency = new Map();
@@ -75,6 +75,7 @@ export function buildNetwork(comments, videos = [], { maxNodes = 150 } = {}) {
         const a = acc(c.author_id, c.author_name);
         a.comments++;
         a.likes += c.like_count || 0;
+        if (!a.best || (c.like_count || 0) > (a.best.like_count || 0)) a.best = c;
         a[c.sentiment || "neutral"] = (a[c.sentiment || "neutral"] || 0) + 1;
         if (c.signal_id) { a.videos.add(c.signal_id); link(`acc:${c.author_id}`, `vid:${c.signal_id}`, 1); }
         if (c.published_at) {
@@ -107,7 +108,11 @@ export function buildNetwork(comments, videos = [], { maxNodes = 150 } = {}) {
             const total = c.accounts.reduce((s, a) => s + a.comments, 0) || 1;
             const tone = neg / total >= 0.3 && neg > pos ? "negative" : pos / total >= 0.3 && pos > neg ? "positive" : neg && pos ? "mixed" : "neutral";
             const top = [...c.accounts].sort((x, y) => influence(y) - influence(x));
+            const samples = c.accounts.map((a) => a.best).filter((b) => b?.text).sort((x, y) => (y.like_count || 0) - (x.like_count || 0)).slice(0, 6).map((b) => b.text);
+            const videoIds = [...c.videos].sort();
             return {
+                key: videoIds.join("|"),
+                samples,
                 size: c.accounts.length,
                 comments: total,
                 tone,
@@ -125,7 +130,8 @@ export function buildNetwork(comments, videos = [], { maxNodes = 150 } = {}) {
     for (const c of campList) for (const m of c.members) campOf.set(m, c.id);
 
     const ranked = [...accounts.values()].sort((x, y) => influence(y) - influence(x));
-    const shown = ranked.slice(0, maxNodes);
+    // The map shows the camps; accounts outside them stay counted in the stats and lists, not drawn as grey noise.
+    const shown = ranked.filter((a) => campOf.has(a.id)).slice(0, maxNodes);
     const shownIds = new Set(shown.map((a) => a.id));
     const shownVideos = new Set(shown.flatMap((a) => [...a.videos]));
 

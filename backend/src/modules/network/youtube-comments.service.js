@@ -8,6 +8,7 @@
 import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { commentSentiment } from "../../lib/conversation-network.js";
+import { toneComments } from "../../lib/comment-ai.js";
 
 const TIMEOUT_MS = 15_000;
 const MAX_STORED = 300; // per video, enough for its network, small enough for the record
@@ -125,8 +126,19 @@ export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days 
     return out;
 }
 
+const brandCache = new Map();
+async function brandOf(db, workspaceId) {
+    if (!brandCache.has(workspaceId)) {
+        const { data } = await db.from("workspace_settings").select("brand_name").eq("workspace_id", workspaceId).maybeSingle();
+        brandCache.set(workspaceId, data?.brand_name || "the brand");
+    }
+    return brandCache.get(workspaceId);
+}
+
 async function storeComments(db, workspaceId, videoId, video, rows) {
-    const comments = rows.slice(0, MAX_STORED).map((r) => ({ ...r, text: String(r.text || "").slice(0, 400), sentiment: commentSentiment(r.text) }));
+    const base = rows.slice(0, MAX_STORED).map((r) => ({ ...r, text: String(r.text || "").slice(0, 400), sentiment: commentSentiment(r.text) }));
+    // The most engaged comments get an AI read of their tone (one Haiku call per video); the rest keep the word list.
+    const comments = await toneComments(base, { workspaceId, subject: `${await brandOf(db, workspaceId)} (video: ${video.title || ""})` });
     const externalId = `ytcomments:${videoId}`;
     const metadata = { kind: "youtube_comments", signal_id: video.signalId || null, video: { id: videoId, title: video.title, channel: video.channel || null, url: video.url, views: video.views ?? null }, comments, total: rows.length, collected_at: new Date().toISOString() };
     const { data: existing } = await db.from("raw_documents").select("id").eq("workspace_id", workspaceId).eq("external_id", externalId).maybeSingle();
