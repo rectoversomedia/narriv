@@ -83,7 +83,7 @@ const closing = (_topic: string): Slide => ({
     <>
       <img src="/brand/logo-bulat-nv.webp" alt="" style={{ alignSelf: "center", width: 230, height: 230, filter: "drop-shadow(0 0 90px rgba(70,95,255,.6))" }} />
       <div style={{ marginTop: 40, textAlign: "center" }}>
-        <p style={{ margin: 0, fontSize: 76, lineHeight: 1.06, fontWeight: 800, letterSpacing: "-0.045em" }}>Ketahui isunya. <Brush>Bertindak duluan.</Brush></p>
+        <p style={{ margin: 0, fontSize: 76, lineHeight: 1.06, fontWeight: 800, letterSpacing: "-0.045em" }}>Baca isunya. <Brush>Kendalikan narasinya.</Brush></p>
       </div>
       {/* The demo address, big and unmissable. */}
       <div style={{ marginTop: 56, padding: 5, borderRadius: 34, background: GRAD }}>
