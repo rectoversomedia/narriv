@@ -122,8 +122,27 @@ export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days 
             logStructured("warn", "youtube_top_videos_failed", { workspaceId, error: error.message });
         }
     }
+    // Comments stored before the AI read existed (or while AI was unavailable) get it now, a few videos per run.
+    try {
+        out.retoned = await retoneStoredComments(workspaceId, { db });
+    } catch (error) {
+        logStructured("warn", "youtube_comments_retone_failed", { workspaceId, error: error.message });
+    }
     if (out.videos) logStructured("info", "youtube_comments_collected", { workspaceId, ...out });
     return out;
+}
+
+export async function retoneStoredComments(workspaceId, { db = supabase, maxVideos = 25 } = {}) {
+    const { data: docs } = await db.from("raw_documents").select("id, title, metadata").eq("workspace_id", workspaceId).like("external_id", "ytcomments:%").limit(300);
+    const todo = (docs || []).filter((d) => Array.isArray(d.metadata?.comments) && d.metadata.comments.length && !d.metadata.comments.some((c) => c.tone_by === "ai")).slice(0, maxVideos);
+    let done = 0;
+    for (const d of todo) {
+        const comments = await toneComments(d.metadata.comments, { workspaceId, subject: `${await brandOf(db, workspaceId)} (video: ${d.title || d.metadata.video?.title || ""})` });
+        if (!comments.some((c) => c.tone_by === "ai")) break; // AI unavailable or out of budget: stop, try next run
+        await db.from("raw_documents").update({ metadata: { ...d.metadata, comments } }).eq("id", d.id);
+        done++;
+    }
+    return done;
 }
 
 const brandCache = new Map();
