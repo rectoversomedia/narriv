@@ -51,7 +51,7 @@ describe('seeded scenarios', () => {
     const ws = (id) => db.table('workspaces').find((w) => w.id === id);
     expect(ws(DEMO_WORKSPACES.cve)).toMatchObject({ onboarding_completed: true, settings: { useCase: 'cve', privacyMode: true } });
     expect(ws(DEMO_WORKSPACES.gov).settings.useCase).toBe('gov');
-    expect(ws(DEMO_WORKSPACE_ID).settings).toEqual({ demoVersion: 2 }); // the brand demo keeps its settings; only the dataset version is noted
+    expect(ws(DEMO_WORKSPACE_ID).settings).toEqual({ demoVersion: 3 }); // the brand demo keeps its settings; only the dataset version is noted
     const brandSignals = db.table('signals').filter((s) => s.workspace_id === DEMO_WORKSPACE_ID);
     expect(brandSignals.length).toBe(220);
     expect(brandSignals.some((s) => s.metadata.cve)).toBe(false);
