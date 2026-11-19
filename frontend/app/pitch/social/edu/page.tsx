@@ -26,7 +26,7 @@ function Title({ kicker: _kicker, children, sub, dark, size = 80 }: { kicker: st
 
 /** Supporting text under a title: each sentence on its own line, airy spacing, kept narrow so lines stay short. */
 function Sub({ text, dark }: { text: string; dark?: boolean }) {
-  const sentences = text.split(/(?<=[.?!])\s+/).filter(Boolean);
+  const sentences = text.split(/(?<=[.?!:])\s+/).filter(Boolean);
   return (
     <div style={{ margin: "44px auto 0", maxWidth: 860, display: "grid", gap: 14, fontSize: 32, lineHeight: 1.5, letterSpacing: "0.005em", wordSpacing: "0.06em", color: dark ? "rgba(255,255,255,.78)" : MUTED }}>
       {sentences.map((x) => <p key={x} style={{ margin: 0 }}>{x}</p>)}
