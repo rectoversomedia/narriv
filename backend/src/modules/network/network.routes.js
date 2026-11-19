@@ -52,14 +52,21 @@ router.get("/", async (req, res) => {
             .limit(300);
         if (error) throw error;
         const wanted = signalFilter ? new Set(signalFilter) : null;
-        const kept = (docs || []).filter((d) => d.metadata?.signal_id && (!wanted || wanted.has(d.metadata.signal_id)));
+        // A video is its signal when Narriv stored one, otherwise the video itself (most-viewed videos of the period).
+        const kept = (docs || []).filter((d) => (d.metadata?.signal_id || d.metadata?.video?.id) && (!wanted || wanted.has(d.metadata.signal_id)));
+        const vid = (d) => d.metadata.signal_id || `yt:${d.metadata.video.id}`;
         const comments = kept.flatMap((d) => (Array.isArray(d.metadata.comments) ? d.metadata.comments : [])
             .filter((c) => !c.published_at || c.published_at >= since)
-            .map((c) => ({ ...c, signal_id: d.metadata.signal_id })));
-        const videoIds = [...new Set(comments.map((c) => c.signal_id))];
-        const { data: videos } = videoIds.length
-            ? await supabase.from("signals").select("id, title, author, url").in("id", videoIds)
+            .map((c) => ({ ...c, signal_id: vid(d) })));
+        const used = new Set(comments.map((c) => c.signal_id));
+        const signalIds = [...used].filter((id) => !id.startsWith("yt:"));
+        const { data: signalVideos } = signalIds.length
+            ? await supabase.from("signals").select("id, title, author, url").in("id", signalIds)
             : { data: [] };
+        const videos = [
+            ...(signalVideos || []),
+            ...kept.filter((d) => !d.metadata.signal_id && used.has(vid(d))).map((d) => ({ id: vid(d), title: d.metadata.video.title, author: d.metadata.video.channel, url: d.metadata.video.url })),
+        ];
 
         // What the free sources brought in the period, so the page can show where the network comes from.
         const { data: socialRows } = await supabase
@@ -88,7 +95,7 @@ router.post("/collect", requireWorkspaceRole(MANAGER_ROLES), async (req, res) =>
         const workspaceId = await resolveWorkspaceIdForUser(req.user.id, req.body?.workspaceId);
         if (!workspaceId) return res.status(403).json({ error: "Workspace access denied" });
         if (!isCommentCollectionConfigured()) return res.status(400).json({ error: "YouTube is not connected.", code: "YOUTUBE_NOT_CONFIGURED" });
-        const result = await collectYouTubeComments(workspaceId, { maxVideos: 15 });
+        const result = await collectYouTubeComments(workspaceId, { maxVideos: 15, withTopVideos: true });
         res.status(201).json(result);
     } catch (error) {
         logStructured("error", "network_collect_failed", { error: error?.message || error });

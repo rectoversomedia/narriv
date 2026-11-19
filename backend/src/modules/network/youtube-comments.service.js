@@ -85,7 +85,7 @@ export async function fetchVideoComments(videoId, { fetchImpl = fetch, maxPages 
  * Collect comments for the workspace's most recent YouTube videos that have none stored yet (or were collected more
  * than a day ago). Bounded per run so the ingest call stays fast and the quota stays far below the free limit.
  */
-export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days = 30, db = supabase, fetchImpl = fetch } = {}) {
+export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days = 30, db = supabase, fetchImpl = fetch, withTopVideos = false } = {}) {
     const out = { videos: 0, comments: 0, failed: 0 };
     if (!apiKey()) return { ...out, skipped: "YOUTUBE_API_KEY not set" };
     const since = new Date(Date.now() - days * 86400000).toISOString();
@@ -102,14 +102,7 @@ export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days 
     for (const video of due) {
         try {
             const rows = await fetchVideoComments(videoIdOf(video), { fetchImpl });
-            const comments = rows.slice(0, MAX_STORED).map((r) => ({ ...r, text: String(r.text || "").slice(0, 400), sentiment: commentSentiment(r.text) }));
-            const externalId = `ytcomments:${videoIdOf(video)}`;
-            const doc = { workspace_id: workspaceId, external_id: externalId, title: video.title || null, url: video.url, metadata: { kind: "youtube_comments", signal_id: video.id, comments, total: rows.length, collected_at: new Date().toISOString() } };
-            const { data: existing } = await db.from("raw_documents").select("id").eq("workspace_id", workspaceId).eq("external_id", externalId).maybeSingle();
-            const { error } = existing
-                ? await db.from("raw_documents").update({ metadata: doc.metadata, title: doc.title }).eq("id", existing.id)
-                : await db.from("raw_documents").insert(doc);
-            if (error) throw new Error(error.message);
+            await storeComments(db, workspaceId, videoIdOf(video), { signalId: video.id, title: video.title, channel: video.metadata?.publisher, url: video.url }, rows);
             await db.from("signals").update({ metadata: { ...(video.metadata || {}), comments_collected_at: new Date().toISOString(), comment_count: rows.length } }).eq("id", video.id);
             out.videos++;
             out.comments += Math.min(rows.length, MAX_STORED);
@@ -118,6 +111,58 @@ export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days 
             logStructured("warn", "youtube_comments_failed", { workspaceId, signalId: video.id, error: error.message });
         }
     }
+    // The newest videos are often small uploads with few comments. The most watched videos about the brand in the
+    // period are where the conversation is, so add them (search: 100 quota units per keyword, comments: 1 per page).
+    if (withTopVideos) {
+        try {
+            const top = await collectTopVideoComments(workspaceId, { db, fetchImpl, days });
+            out.videos += top.videos; out.comments += top.comments; out.failed += top.failed;
+        } catch (error) {
+            logStructured("warn", "youtube_top_videos_failed", { workspaceId, error: error.message });
+        }
+    }
     if (out.videos) logStructured("info", "youtube_comments_collected", { workspaceId, ...out });
+    return out;
+}
+
+async function storeComments(db, workspaceId, videoId, video, rows) {
+    const comments = rows.slice(0, MAX_STORED).map((r) => ({ ...r, text: String(r.text || "").slice(0, 400), sentiment: commentSentiment(r.text) }));
+    const externalId = `ytcomments:${videoId}`;
+    const metadata = { kind: "youtube_comments", signal_id: video.signalId || null, video: { id: videoId, title: video.title, channel: video.channel || null, url: video.url, views: video.views ?? null }, comments, total: rows.length, collected_at: new Date().toISOString() };
+    const { data: existing } = await db.from("raw_documents").select("id").eq("workspace_id", workspaceId).eq("external_id", externalId).maybeSingle();
+    const { error } = existing
+        ? await db.from("raw_documents").update({ metadata, title: video.title || null }).eq("id", existing.id)
+        : await db.from("raw_documents").insert({ workspace_id: workspaceId, external_id: externalId, title: video.title || null, url: video.url, metadata });
+    if (error) throw new Error(error.message);
+    return comments.length;
+}
+
+/** Most-viewed videos of the period for the workspace's first keywords, and their comments (refreshed daily). */
+export async function collectTopVideoComments(workspaceId, { db = supabase, fetchImpl = fetch, days = 30, perKeyword = 5 } = {}) {
+    const out = { videos: 0, comments: 0, failed: 0 };
+    const { data: kws } = await db.from("monitoring_keywords").select("keyword").eq("workspace_id", workspaceId).eq("is_active", true).limit(2);
+    const { data: docs } = await db.from("raw_documents").select("external_id, metadata").eq("workspace_id", workspaceId).like("external_id", "ytcomments:%").limit(300);
+    const fresh = new Set((docs || []).filter((d) => Date.parse(d.metadata?.collected_at || 0) > Date.now() - 86400000).map((d) => d.external_id));
+    for (const { keyword } of kws || []) {
+        const params = new URLSearchParams({ part: "snippet", q: `"${keyword}"`, type: "video", order: "viewCount", maxResults: String(perKeyword), regionCode: "ID", relevanceLanguage: "id", publishedAfter: new Date(Date.now() - days * 86400000).toISOString(), key: apiKey() });
+        const res = await fetchImpl(`https://www.googleapis.com/youtube/v3/search?${params}`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${json?.error?.message || ""}`.slice(0, 200));
+        for (const item of json.items || []) {
+            const id = item.id?.videoId;
+            if (!id || fresh.has(`ytcomments:${id}`)) continue;
+            fresh.add(`ytcomments:${id}`);
+            try {
+                const rows = await fetchVideoComments(id, { fetchImpl, maxPages: 3 });
+                if (!rows.length) continue;
+                const { data: sig } = await db.from("signals").select("id").eq("workspace_id", workspaceId).eq("url", `https://www.youtube.com/watch?v=${id}`).maybeSingle();
+                out.comments += await storeComments(db, workspaceId, id, { signalId: sig?.id, title: decode(item.snippet?.title), channel: item.snippet?.channelTitle, url: `https://www.youtube.com/watch?v=${id}` }, rows);
+                out.videos++;
+            } catch (error) {
+                out.failed++;
+                logStructured("warn", "youtube_top_video_comments_failed", { workspaceId, videoId: id, error: error.message });
+            }
+        }
+    }
     return out;
 }

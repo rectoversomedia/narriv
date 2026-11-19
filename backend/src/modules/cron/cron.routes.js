@@ -207,7 +207,7 @@ const runDaily = async (req, res) => {
         } catch (e) { results.cluster = { error: e.message }; }
 
         // 5b. Default follow-up on the issues just clustered.
-        results.followUps = await runFollowUps({ deadline: start + 200000 });
+        results.followUps = await runFollowUps({ deadline: start + 200000, topVideos: true });
 
         // 6. Store finished Apify collections nobody checked from the browser.
         try {
@@ -253,7 +253,7 @@ async function sendDigests() {
 
 // Default follow-up after new data: positive issues → opportunities, risky issues → a case and an AI action plan
 // (one plan per workspace per run). Bounded by a time budget so the ingest call stays inside its limit.
-async function runFollowUps({ deadline }) {
+async function runFollowUps({ deadline, topVideos = false }) {
     const totals = { workspaces: 0, comments: 0, opportunities: 0, cases: 0, plans: 0 };
     try {
         const { runIssueFollowUp } = await import("../../lib/issue-follow-up.js");
@@ -267,7 +267,7 @@ async function runFollowUps({ deadline }) {
             try {
                 // Free social data: comments under the workspace's YouTube videos (skipped for paused workspaces).
                 if (!w.settings?.monitoringPaused) {
-                    const c = await collectYouTubeComments(w.id, { maxVideos: 5 });
+                    const c = await collectYouTubeComments(w.id, { maxVideos: 5, withTopVideos: topVideos });
                     totals.comments += c.comments || 0;
                 }
                 totals.opportunities += (await detectOpportunities(w.id)).length;
