@@ -1,6 +1,6 @@
 # Seri Edukasi Narriv · 10 feed (@narriv.digital)
 
-Satu postingan per gambar (1080×1350). Sumber: `frontend/app/pitch/social/edu/page.tsx`.
+Sepuluh carousel (4–5 slide, 1080×1350), urutan posting = nomor folder `post-01` … `post-10`. Slide terakhir tiap postingan: simpan, ikuti, coba demo. Sumber: `frontend/app/pitch/social/edu/page.tsx`.
 
 **1 · Apa itu narrative intelligence?**
 Media monitoring menghitung berapa kali kamu disebut. Narrative intelligence membaca cerita apa yang sedang terbentuk, seberapa cepat menyebar, dan apa yang perlu dilakukan. Bedanya: kamu bisa bertindak sebelum isunya ramai.

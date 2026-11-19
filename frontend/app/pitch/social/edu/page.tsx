@@ -1,57 +1,108 @@
-// /pitch/social/edu: ten single-image education posts (4:5) for @narriv.digital in the Narriv DNA: what narrative
-// intelligence is, what Narriv is, how it works, and the ideas behind it. Exported to docs/social-templates/edu.
+// /pitch/social/edu: the education series for @narriv.digital, ten carousel posts (4–5 slides each, 1080×1350) in the
+// Narriv DNA: what narrative intelligence is, what Narriv is, how it works, and the ideas behind it. Every post opens
+// with a cover, carries 2–3 content slides and closes on the same save/follow/demo slide. Exported to
+// docs/social-templates/edu/post-NN/. Not indexed.
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { AMBER, BLUE, INK, MONO, NEG, POS } from "../../kit";
 import { Brand, Brush, Frame, Kicker, PINK, Pager, VIOLET, card } from "../kit";
 
-export const metadata: Metadata = { title: "Narriv · Edukasi", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Narriv · Seri Edukasi", robots: { index: false, follow: false } };
 
 const MUTED = "#4A5578";
+const GRAD = "linear-gradient(90deg,#465FFF,#8B5CF6 55%,#EC4899)";
 
-function Head({ dark, kicker, children, sub, top = 230 }: { dark?: boolean; kicker: string; children: ReactNode; sub?: string; top?: number }) {
+type Slide = { dark?: boolean; body: ReactNode };
+type Post = { key: string; topic: string; slides: Slide[] };
+
+function Title({ kicker, children, sub, dark, top = 230, size = 80 }: { kicker: string; children: ReactNode; sub?: string; dark?: boolean; top?: number; size?: number }) {
   return (
     <div style={{ position: "absolute", left: 72, right: 72, top }}>
       <Kicker dark={dark}>{kicker}</Kicker>
-      <h2 style={{ margin: "24px 0 0", fontSize: 80, lineHeight: 1.04, fontWeight: 800, letterSpacing: "-0.045em" }}>{children}</h2>
+      <h2 style={{ margin: "24px 0 0", fontSize: size, lineHeight: 1.04, fontWeight: 800, letterSpacing: "-0.045em" }}>{children}</h2>
       {sub ? <p style={{ margin: "26px 0 0", fontSize: 32, lineHeight: 1.42, color: dark ? "rgba(255,255,255,.75)" : MUTED }}>{sub}</p> : null}
     </div>
   );
 }
 
-const Foot = ({ n, dark }: { n: number; dark?: boolean }) => <Pager n={0} of={0} dark={dark} note={`Edukasi · ${n}/10`} />;
-
 function Num({ n, c }: { n: number | string; c: string }) {
   return <span style={{ flexShrink: 0, display: "grid", placeItems: "center", width: 58, height: 58, borderRadius: 16, background: c, color: "#fff", fontSize: 28, fontWeight: 900, border: `3px solid ${INK}`, boxShadow: `0 4px 0 ${INK}` }}>{n}</span>;
 }
 
-function Row({ n, c, title, text }: { n: number | string; c: string; title: string; text: string }) {
+const COLORS = [BLUE, VIOLET, PINK, AMBER];
+
+function Rows({ items, top = 540, start = 1 }: { items: Array<[string, string]>; top?: number; start?: number }) {
   return (
-    <div style={{ ...card, display: "flex", gap: 24, alignItems: "flex-start", padding: "24px 30px" }}>
-      <Num n={n} c={c} />
-      <span><span style={{ display: "block", fontSize: 32, fontWeight: 800 }}>{title}</span><span style={{ display: "block", marginTop: 6, fontSize: 25, lineHeight: 1.42, color: MUTED }}>{text}</span></span>
+    <div style={{ position: "absolute", left: 72, right: 72, top, display: "grid", gap: 22 }}>
+      {items.map(([h, d], i) => (
+        <div key={h} style={{ ...card, display: "flex", gap: 24, alignItems: "flex-start", padding: "28px 30px" }}>
+          <Num n={start + i} c={COLORS[(start - 1 + i) % COLORS.length]} />
+          <span><span style={{ display: "block", fontSize: 33, fontWeight: 800 }}>{h}</span><span style={{ display: "block", marginTop: 6, fontSize: 26, lineHeight: 1.42, color: MUTED }}>{d}</span></span>
+        </div>
+      ))}
     </div>
   );
 }
 
-// 1 · What narrative intelligence is
-function P1() {
-  return (
-    <Frame id="edu-01" w={1080} h={1350} dark>
-      <Brand dark />
-      <Head dark top={300} kicker="Edukasi · istilah" sub="Membaca cerita apa yang sedang terbentuk tentang brand atau lembaga kamu, seberapa cepat menyebar, dan apa yang perlu dilakukan.">Apa itu <Brush>narrative intelligence?</Brush></Head>
-      <div style={{ position: "absolute", left: 72, right: 72, bottom: 150, display: "flex", gap: 14, flexWrap: "wrap" }}>
-        {["Bukan sekadar menghitung berita", "Membaca ceritanya", "Untuk bertindak lebih dulu"].map((x, i) => (
-          <span key={x} style={{ padding: "14px 22px", borderRadius: 999, background: i === 2 ? "linear-gradient(90deg,#465FFF,#8B5CF6 55%,#EC4899)" : "rgba(255,255,255,.1)", border: i === 2 ? "none" : "2px solid rgba(255,255,255,.25)", fontSize: 24, fontWeight: 800 }}>{x}</span>
-        ))}
-      </div>
-      <Foot n={1} dark />
-    </Frame>
-  );
-}
+// ── Slide makers ─────────────────────────────────────────────────────────────
 
-// 2 · Media monitoring vs narrative intelligence
-function P2() {
+const cover = (kicker: string, title: ReactNode, sub: string): Slide => ({
+  dark: true,
+  body: (
+    <>
+      <Title dark top={300} size={88} kicker={kicker} sub={sub}>{title}</Title>
+      <div style={{ position: "absolute", right: 72, bottom: 150, padding: "18px 28px", borderRadius: 999, background: "#fff", color: INK, fontSize: 28, fontWeight: 800 }}>Geser →</div>
+    </>
+  ),
+});
+
+const list = (kicker: string, title: ReactNode, items: Array<[string, string]>, dark = false, start = 1): Slide => ({
+  dark,
+  body: (
+    <>
+      <Title dark={dark} kicker={kicker} size={72}>{title}</Title>
+      <Rows items={items} top={items.length > 3 ? 470 : 520} start={start} />
+    </>
+  ),
+});
+
+const big = (kicker: string, text: ReactNode, note?: string, dark = false): Slide => ({
+  dark,
+  body: (
+    <div style={{ position: "absolute", left: 72, right: 72, top: 360 }}>
+      <Kicker dark={dark}>{kicker}</Kicker>
+      <p style={{ margin: "36px 0 0", fontSize: 92, lineHeight: 1.06, fontWeight: 800, letterSpacing: "-0.045em" }}>{text}</p>
+      {note ? <p style={{ margin: "44px 0 0", fontSize: 32, lineHeight: 1.45, color: dark ? "rgba(255,255,255,.75)" : MUTED }}>{note}</p> : null}
+    </div>
+  ),
+});
+
+const custom = (kicker: string, title: ReactNode, node: ReactNode, dark = false): Slide => ({ dark, body: (<><Title dark={dark} kicker={kicker} size={72}>{title}</Title>{node}</>) });
+
+const closing = (topic: string): Slide => ({
+  dark: true,
+  body: (
+    <>
+      <img src="/brand/logo-bulat-nv.webp" alt="" style={{ position: "absolute", left: 390, top: 230, width: 300, height: 300, filter: "drop-shadow(0 0 90px rgba(70,95,255,.6))" }} />
+      <div style={{ position: "absolute", left: 72, right: 72, top: 600, textAlign: "center" }}>
+        <Kicker dark>{topic}</Kicker>
+        <p style={{ margin: "26px 0 0", fontSize: 76, lineHeight: 1.06, fontWeight: 800, letterSpacing: "-0.045em" }}>Ketahui isunya. <Brush>Bertindak duluan.</Brush></p>
+      </div>
+      <div style={{ position: "absolute", left: 72, right: 72, top: 960, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+        <span style={{ ...card, display: "flex", alignItems: "center", gap: 16, padding: "22px 26px", fontSize: 27, fontWeight: 800 }}>
+          <svg width="30" height="36" viewBox="0 0 24 28" aria-hidden><path d="M3 2h18v24l-9-6-9 6z" fill="none" stroke={INK} strokeWidth="2.6" strokeLinejoin="round" /></svg>
+          Simpan untuk tim kamu
+        </span>
+        <span style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "22px 26px", borderRadius: 30, background: GRAD, fontSize: 27, fontWeight: 800, border: `3px solid ${INK}`, boxShadow: `0 8px 0 ${INK}` }}>Coba demo gratis</span>
+      </div>
+      <p style={{ position: "absolute", left: 72, right: 72, top: 1110, margin: 0, textAlign: "center", fontSize: 26, color: "rgba(255,255,255,.7)" }}>Ikuti @narriv.digital untuk seri berikutnya · link di bio</p>
+    </>
+  ),
+});
+
+// ── Custom content blocks ────────────────────────────────────────────────────
+
+const compareTable = (() => {
   const rows: Array<[string, string, string]> = [
     ["Hasilnya", "Daftar berita & angka", "Isu yang sedang terbentuk"],
     ["Pertanyaan", "Berapa kali disebut?", "Cerita apa, dari siapa, ke mana?"],
@@ -59,187 +110,154 @@ function P2() {
     ["Langkah", "Kamu simpulkan sendiri", "Rekomendasi & rencana aksi"],
   ];
   return (
-    <Frame id="edu-02" w={1080} h={1350}>
-      <Brand />
-      <Head kicker="Edukasi · bedanya" >Monitoring <Brush>vs</Brush> narrative intelligence.</Head>
-      <div style={{ ...card, position: "absolute", left: 72, right: 72, top: 540, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "210px 1fr 1fr", padding: "18px 26px", background: INK, color: "#C7D0FF", fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-          <span /><span>Media monitoring</span><span style={{ color: "#fff" }}>Narrative intel</span>
+    <div style={{ ...card, position: "absolute", left: 72, right: 72, top: 520, overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "210px 1fr 1fr", padding: "18px 26px", background: INK, color: "#C7D0FF", fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+        <span /><span>Media monitoring</span><span style={{ color: "#fff" }}>Narrative intel</span>
+      </div>
+      {rows.map(([k, a, b], i) => (
+        <div key={k} style={{ display: "grid", gridTemplateColumns: "210px 1fr 1fr", alignItems: "center", gap: 14, padding: "38px 26px", borderTop: i ? "2px solid #EEF0F6" : "none" }}>
+          <span style={{ fontSize: 27, fontWeight: 800 }}>{k}</span>
+          <span style={{ fontSize: 27, color: MUTED, lineHeight: 1.35 }}>{a}</span>
+          <span style={{ fontSize: 27, fontWeight: 800, lineHeight: 1.35, color: BLUE }}>{b}</span>
         </div>
-        {rows.map(([k, a, b], i) => (
-          <div key={k} style={{ display: "grid", gridTemplateColumns: "210px 1fr 1fr", alignItems: "center", gap: 14, padding: "38px 26px", borderTop: i ? "2px solid #EEF0F6" : "none" }}>
-            <span style={{ fontSize: 27, fontWeight: 800 }}>{k}</span>
-            <span style={{ fontSize: 27, color: MUTED, lineHeight: 1.35 }}>{a}</span>
-            <span style={{ fontSize: 27, fontWeight: 800, lineHeight: 1.35, color: BLUE }}>{b}</span>
-          </div>
-        ))}
-      </div>
-      <Foot n={2} />
-    </Frame>
+      ))}
+    </div>
   );
-}
+})();
 
-// 3 · What Narriv is
-function P3() {
-  const pillars: Array<[string, string, string]> = [["Dengar", "Berita, YouTube, Telegram, dan sosmed dipantau tiap jam.", BLUE], ["Pahami", "Ribuan percakapan dikelompokkan jadi isu, kubu, dan nada.", VIOLET], ["Bertindak", "Peringatan, rencana aksi, dan laporan siap direksi.", PINK]];
+const sourcesBlock = (() => {
+  const chip = (x: string, on: boolean) => <span key={x} style={{ padding: "18px 24px", borderRadius: 18, background: on ? "#fff" : "rgba(255,255,255,.08)", color: on ? INK : "#fff", border: on ? `3px solid ${INK}` : "2px dashed rgba(255,255,255,.35)", fontSize: 28, fontWeight: 800 }}>{x}</span>;
   return (
-    <Frame id="edu-03" w={1080} h={1350} dark>
-      <Brand dark />
-      <Head dark kicker="Edukasi · kenalan" sub="Platform narrative intelligence buatan Indonesia untuk tim komunikasi brand, pemerintah, dan lembaga publik.">Narriv itu <Brush>apa sih?</Brush></Head>
-      <div style={{ position: "absolute", left: 72, right: 72, top: 600, display: "grid", gap: 22 }}>
-        {pillars.map(([h, d, c], i) => <Row key={h} n={i + 1} c={c} title={h} text={d} />)}
-      </div>
-      <Foot n={3} dark />
-    </Frame>
+    <div style={{ position: "absolute", left: 72, right: 72, top: 500 }}>
+      <Kicker dark style={{ fontSize: 20 }}>Sudah termasuk</Kicker>
+      <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 14 }}>{["Berita online", "YouTube + komentar", "Telegram publik", "Google News"].map((x) => chip(x, true))}</div>
+      <Kicker dark style={{ fontSize: 20, marginTop: 64 }}>Add-on media sosial</Kicker>
+      <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 14 }}>{["X / Twitter", "TikTok", "Instagram", "Facebook"].map((x) => chip(x, false))}</div>
+    </div>
   );
-}
+})();
 
-// 4 · How it works
-function P4() {
-  const steps: Array<[string, string, string]> = [
-    ["Kumpulkan", "Setiap jam, semua yang menyebut kata kuncimu.", BLUE],
-    ["Bersihkan", "Duplikat, tutorial, dan konten rutin disaring.", VIOLET],
-    ["Kelompokkan", "Percakapan sejenis jadi satu isu, diberi nada.", PINK],
-    ["Peringatkan", "Isu berisiko langsung ke penanggung jawab.", AMBER],
-  ];
-  return (
-    <Frame id="edu-04" w={1080} h={1350}>
-      <Brand />
-      <Head kicker="Edukasi · cara kerja">Begini Narriv <Brush>bekerja.</Brush></Head>
-      <div style={{ position: "absolute", left: 72, right: 72, top: 470, display: "grid", gap: 18 }}>
-        {steps.map(([h, d, c], i) => (
-          <div key={h} style={{ display: "grid", gridTemplateColumns: "58px 1fr", gap: 24, alignItems: "center" }}>
-            <Num n={i + 1} c={c} />
-            <div style={{ ...card, padding: "22px 28px" }}><span style={{ display: "block", fontSize: 32, fontWeight: 800 }}>{h}</span><span style={{ display: "block", marginTop: 4, fontSize: 25, color: MUTED }}>{d}</span></div>
-          </div>
-        ))}
+const clusterBlock = (
+  <div style={{ position: "absolute", left: 72, right: 72, top: 600, display: "grid", gridTemplateColumns: "1fr 90px 1fr", alignItems: "center" }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      {Array.from({ length: 42 }, (_, i) => <span key={i} style={{ width: 34, height: 34, borderRadius: 8, background: [NEG, POS, "#C9CFDD", AMBER][i % 4], opacity: 0.85 }} />)}
+    </div>
+    <span style={{ textAlign: "center", fontSize: 64, fontWeight: 900, color: BLUE }}>→</span>
+    <div style={{ display: "grid", gap: 14 }}>
+      {[["Gangguan aplikasi", NEG], ["Program UMKM", POS], ["Promo cashback", AMBER]].map(([l, c]) => (
+        <span key={l} style={{ ...card, borderRadius: 18, display: "flex", alignItems: "center", gap: 12, padding: "24px 20px", fontSize: 26, fontWeight: 800 }}><span style={{ width: 16, height: 16, borderRadius: 99, background: c }} />{l}</span>
+      ))}
+    </div>
+  </div>
+);
+
+const timelineBlock = (
+  <div style={{ position: "absolute", left: 72, right: 72, top: 520, display: "grid", gap: 22 }}>
+    {([["Jam 0–1", "Isu pertama muncul, biasanya dari satu akun atau grup.", BLUE], ["Jam 1–3", "Golden hours: klarifikasi masih bisa meredam.", POS], ["Jam 3–12", "Media mulai mengutip. Cerita makin sulit dikoreksi.", AMBER], ["Jam 12+", "Sudah jadi isu nasional. Mode krisis.", NEG]] as const).map(([h, d, c], i) => (
+      <div key={h} style={{ ...card, display: "grid", gridTemplateColumns: "170px 1fr", gap: 20, alignItems: "center", padding: "34px 28px" }}>
+        <span style={{ fontFamily: MONO, fontSize: 27, fontWeight: 700, color: c }}>{h}</span>
+        <span style={{ fontSize: 27, lineHeight: 1.38, fontWeight: i === 1 ? 800 : 500 }}>{d}</span>
       </div>
-      <Foot n={4} />
-    </Frame>
-  );
-}
+    ))}
+  </div>
+);
 
-// 5 · Where the data comes from
-function P5() {
-  const free = ["Berita online", "YouTube + komentar", "Telegram publik", "Google News"];
-  const add = ["X / Twitter", "TikTok", "Instagram", "Facebook"];
-  const chip = (x: string, on: boolean) => <span key={x} style={{ padding: "16px 22px", borderRadius: 18, background: on ? "#fff" : "rgba(255,255,255,.08)", color: on ? INK : "#fff", border: on ? `3px solid ${INK}` : "2px dashed rgba(255,255,255,.35)", fontSize: 26, fontWeight: 800 }}>{x}</span>;
-  return (
-    <Frame id="edu-05" w={1080} h={1350} dark>
-      <Brand dark />
-      <Head dark kicker="Edukasi · sumber data">Narriv dengar <Brush>dari mana?</Brush></Head>
-      <div style={{ position: "absolute", left: 72, right: 72, top: 520 }}>
-        <Kicker dark style={{ fontSize: 20 }}>Termasuk</Kicker>
-        <div style={{ marginTop: 18, display: "flex", flexWrap: "wrap", gap: 14 }}>{free.map((x) => chip(x, true))}</div>
-        <Kicker dark style={{ fontSize: 20, marginTop: 50 }}>Add-on</Kicker>
-        <div style={{ marginTop: 18, display: "flex", flexWrap: "wrap", gap: 14 }}>{add.map((x) => chip(x, false))}</div>
-        <p style={{ margin: "50px 0 0", fontSize: 28, lineHeight: 1.45, color: "rgba(255,255,255,.75)" }}>Hanya data publik. Tanpa data nasabah atau pengguna.</p>
-      </div>
-      <Foot n={5} dark />
-    </Frame>
-  );
-}
-
-// 6 · From mentions to issues
-function P6() {
-  return (
-    <Frame id="edu-06" w={1080} h={1350}>
-      <Brand />
-      <Head kicker="Edukasi · isu" sub="Ratusan berita yang membahas hal sama digabung jadi satu isu, lengkap dengan nada, besar, dan arahnya.">Dari ratusan berita, jadi <Brush>beberapa isu.</Brush></Head>
-      <div style={{ position: "absolute", left: 72, right: 72, top: 720, display: "grid", gridTemplateColumns: "1fr 90px 1fr", alignItems: "center" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {Array.from({ length: 42 }, (_, i) => <span key={i} style={{ width: 34, height: 34, borderRadius: 7, background: [NEG, POS, "#C9CFDD", AMBER][i % 4], opacity: 0.85 }} />)}
+const aiBlock = (
+  <div style={{ ...card, position: "absolute", left: 72, right: 72, top: 560, padding: "40px 40px" }}>
+    <p style={{ margin: 0, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.12em", color: MUTED }}>PERTANYAAN KE 5 ASISTEN AI</p>
+    <p style={{ margin: "10px 0 0", fontSize: 34, fontWeight: 800, lineHeight: 1.3 }}>“Bank digital apa yang cocok untuk UMKM?”</p>
+    <div style={{ marginTop: 28, display: "grid", gap: 12 }}>
+      {([["ChatGPT", true], ["Claude", true], ["Gemini", false], ["Perplexity", true], ["DeepSeek", false]] as const).map(([e, ok]) => (
+        <div key={e} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderRadius: 14, background: "#F7F8FC" }}>
+          <span style={{ fontSize: 26, fontWeight: 800 }}>{e}</span>
+          <span style={{ padding: "6px 16px", borderRadius: 99, background: ok ? "#E5F6EE" : "#FDECEC", color: ok ? "#047857" : "#B42318", fontSize: 22, fontWeight: 800 }}>{ok ? "✓ brand disebut" : "✗ tidak disebut"}</span>
         </div>
-        <span style={{ textAlign: "center", fontSize: 60, fontWeight: 900, color: BLUE }}>→</span>
-        <div style={{ display: "grid", gap: 12 }}>
-          {[["Gangguan aplikasi", NEG], ["Program UMKM", POS], ["Promo cashback", AMBER]].map(([l, c]) => (
-            <span key={l} style={{ ...card, borderRadius: 18, display: "flex", alignItems: "center", gap: 12, padding: "24px 20px", fontSize: 26, fontWeight: 800 }}><span style={{ width: 16, height: 16, borderRadius: 99, background: c }} />{l}</span>
+      ))}
+    </div>
+    <p style={{ margin: "22px 0 0", fontFamily: MONO, fontSize: 16, letterSpacing: "0.1em", color: MUTED }}>CONTOH · BANK FIKTIF</p>
+  </div>
+);
+
+// ── The ten posts, in posting order ──────────────────────────────────────────
+
+const POSTS: Post[] = [
+  { key: "01", topic: "Apa itu narrative intelligence", slides: [
+    cover("Edukasi · istilah", <>Apa itu <Brush>narrative intelligence?</Brush></>, "Istilah yang makin sering dipakai tim komunikasi. Ini artinya, dalam 3 slide."),
+    big("Satu kalimat", <>Monitoring <Brush>menghitung.</Brush> Narrative intelligence <Brush>membaca.</Brush></>, "Bukan berapa kali kamu disebut, tapi cerita apa yang sedang terbentuk tentang kamu."),
+    list("Yang dijawab", <>3 pertanyaan <Brush>yang dijawab.</Brush></>, [["Cerita apa yang terbentuk?", "Isu, sudut pandang, dan nadanya."], ["Seberapa cepat menyebar?", "Dari satu akun, ke grup, ke media."], ["Apa yang harus dilakukan?", "Rekomendasi dan rencana aksi, bukan hanya grafik."]]),
+    closing("Edukasi · 1/10"),
+  ] },
+  { key: "02", topic: "Narriv itu apa", slides: [
+    cover("Edukasi · kenalan", <>Narriv itu <Brush>apa sih?</Brush></>, "Platform narrative intelligence buatan Indonesia untuk tim komunikasi brand, pemerintah, dan lembaga publik."),
+    list("Tiga hal", <>Dengar. Pahami. <Brush>Bertindak.</Brush></>, [["Dengar", "Berita, YouTube, Telegram, dan sosmed dipantau tiap jam."], ["Pahami", "Ribuan percakapan dikelompokkan jadi isu, kubu, dan nada."], ["Bertindak", "Peringatan, rencana aksi, dan laporan siap direksi."]], true),
+    big("Kenapa lokal penting", <>Dibuat untuk <Brush>bahasa Indonesia.</Brush></>, "Media daerah, bahasa gaul, dan sindiran sering terlewat oleh tool luar negeri."),
+    closing("Edukasi · 2/10"),
+  ] },
+  { key: "03", topic: "Monitoring vs narrative intelligence", slides: [
+    cover("Edukasi · bedanya", <>Monitoring <Brush>vs</Brush> narrative intelligence.</>, "Sama-sama memantau media. Hasilnya sangat berbeda."),
+    custom("Perbandingan", <>Bedanya <Brush>di sini.</Brush></>, compareTable),
+    big("Intinya", <>Bukan mengganti monitoring, tapi <Brush>melanjutkannya.</Brush></>, "Monitoring memberi data. Narrative intelligence memberi arti dan langkah berikutnya.", true),
+    closing("Edukasi · 3/10"),
+  ] },
+  { key: "04", topic: "Cara kerja Narriv", slides: [
+    cover("Edukasi · cara kerja", <>Begini Narriv <Brush>bekerja.</Brush></>, "Empat langkah yang berjalan otomatis setiap jam."),
+    list("Langkah 1–2", <>Kumpulkan, lalu <Brush>bersihkan.</Brush></>, [["Kumpulkan", "Setiap jam, semua yang menyebut kata kuncimu di berita, video, dan sosmed."], ["Bersihkan", "Duplikat, tutorial, kurs harian, dan konten rutin disaring keluar."]]),
+    list("Langkah 3–4", <>Kelompokkan, lalu <Brush>peringatkan.</Brush></>, [["Kelompokkan", "Percakapan sejenis jadi satu isu, diberi nada dan arah."], ["Peringatkan", "Isu berisiko langsung ke penanggung jawab, lengkap dengan langkah pertama."]], false, 3),
+    big("Hasilnya", <>Tim kamu cukup <Brush>membaca isunya.</Brush></>, "Bukan ratusan tautan berita setiap pagi.", true),
+    closing("Edukasi · 4/10"),
+  ] },
+  { key: "05", topic: "Sumber data Narriv", slides: [
+    cover("Edukasi · sumber data", <>Narriv dengar <Brush>dari mana?</Brush></>, "Dari mana datanya, dan apa yang tidak pernah kami ambil."),
+    custom("Sumber", <>Yang <Brush>kami pantau.</Brush></>, sourcesBlock, true),
+    big("Privasi", <>Hanya <Brush>data publik.</Brush></>, "Tanpa data nasabah atau pengguna. Grup dan percakapan pribadi tidak diakses."),
+    closing("Edukasi · 5/10"),
+  ] },
+  { key: "06", topic: "Dari berita jadi isu", slides: [
+    cover("Edukasi · isu", <>Dari ratusan berita, jadi <Brush>beberapa isu.</Brush></>, "Kenapa tim komunikasi tidak perlu membaca semuanya."),
+    custom("Pengelompokan", <>Yang sejenis <Brush>digabung.</Brush></>, clusterBlock),
+    list("Setiap isu punya", <>Setiap isu <Brush>punya 3 hal.</Brush></>, [["Nada", "Positif, netral, negatif, atau campuran."], ["Besar", "Berapa banyak media dan akun yang membahas."], ["Arah", "Sedang naik, stabil, atau mulai mereda."]], true),
+    closing("Edukasi · 6/10"),
+  ] },
+  { key: "07", topic: "Golden hours krisis", slides: [
+    cover("Edukasi · krisis PR", <>Kenapa <Brush>3 jam pertama</Brush> paling penting.</>, "Golden hours: waktu terbaik untuk meredam isu sebelum jadi krisis."),
+    custom("Linimasa", <>Begini isu <Brush>membesar.</Brush></>, timelineBlock),
+    list("Di 3 jam pertama", <>Yang perlu <Brush>dilakukan.</Brush></>, [["Verifikasi fakta", "Pastikan apa yang benar sebelum bicara."], ["Pernyataan sementara", "Akui, jelaskan langkah yang sedang diambil."], ["Satu juru bicara", "Supaya pesan tidak simpang siur."]], true),
+    closing("Edukasi · 7/10"),
+  ] },
+  { key: "08", topic: "Buzzer: indikasi bukan vonis", slides: [
+    cover("Edukasi · buzzer?", <>Indikasi, <Brush>bukan vonis.</Brush></>, "Cara membaca akun yang tampak terkoordinasi, tanpa menuduh."),
+    list("Tanda-tandanya", <>3 pola yang <Brush>patut dicek.</Brush></>, [["Teks sama, banyak akun", "Kalimat identik dari beberapa akun dalam hitungan menit."], ["Kecepatan tidak wajar", "Satu akun berkomentar puluhan kali di banyak video dalam sehari."], ["Kubu yang tiba-tiba muncul", "Kelompok akun baru yang langsung bernada seragam."]]),
+    big("Kenapa bukan vonis", <>Narriv menandai pola. <Brush>Tim kamu</Brush> yang memutuskan.</>, "Fans fanatik dan komunitas juga bisa terlihat serempak. Konteks tetap butuh manusia.", true),
+    closing("Edukasi · 8/10"),
+  ] },
+  { key: "09", topic: "Brand kamu di jawaban AI", slides: [
+    cover("Edukasi · AI visibility", <>Apa kata <Brush>ChatGPT</Brush> tentang brand kamu?</>, "Orang kini bertanya ke asisten AI sebelum mencari di Google."),
+    custom("Contoh pengecekan", <>Disebut atau <Brush>tidak?</Brush></>, aiBlock),
+    list("Kenapa penting", <>Reputasi kini <Brush>dibentuk AI juga.</Brush></>, [["Jadi rujukan pertama", "Jawaban AI sering dibaca sebelum situs resmi."], ["Bisa salah atau usang", "AI bisa mengulang isu lama yang sudah selesai."], ["Bisa dipantau", "Narriv mengecek 5 asisten AI secara berkala."]], true),
+    closing("Edukasi · 9/10"),
+  ] },
+  { key: "10", topic: "Siapa yang butuh Narriv", slides: [
+    cover("Edukasi · untuk siapa", <>Siapa yang <Brush>butuh Narriv?</Brush></>, "Tiga jenis tim yang paling terbantu."),
+    list("Untuk siapa", <>Tiga tim yang <Brush>paling terbantu.</Brush></>, [["Brand & perusahaan", "Jaga reputasi produk dan layanan."], ["Pemerintah & lembaga", "Tangkap hoaks dan keluhan warga lebih awal."], ["Agensi PR", "Laporan klien otomatis, tiap minggu dan bulan."]]),
+    big("Mulai dari mana", <>Coba dulu dengan <Brush>data contoh.</Brush></>, "Demo gratis dengan bank fiktif: peta isu, jaringan, peringatan, sampai laporan.", true),
+    closing("Edukasi · 10/10"),
+  ] },
+];
+
+export default function EduSeries() {
+  return (
+    <main style={{ display: "grid", gap: 60, padding: 60, background: "#2A2F4A" }}>
+      {POSTS.map((post) => (
+        <div key={post.key} style={{ display: "flex", gap: 30 }}>
+          {post.slides.map((s, i) => (
+            <Frame key={i} id={`p${post.key}-${i + 1}`} w={1080} h={1350} dark={s.dark}>
+              <Brand dark={s.dark} />
+              {s.body}
+              <Pager n={i + 1} of={post.slides.length} dark={s.dark} note={`Seri edukasi · ${Number(post.key)}/10`} />
+            </Frame>
           ))}
         </div>
-      </div>
-      <Foot n={6} />
-    </Frame>
-  );
-}
-
-// 7 · Golden hours
-function P7() {
-  const t: Array<[string, string, string]> = [["Jam 0–1", "Isu pertama muncul. Biasanya dari satu akun atau grup.", BLUE], ["Jam 1–3", "Golden hours: klarifikasi masih bisa meredam.", POS], ["Jam 3–12", "Media mulai mengutip. Cerita makin sulit dikoreksi.", AMBER], ["Jam 12+", "Sudah jadi isu nasional. Mode krisis.", NEG]];
-  return (
-    <Frame id="edu-07" w={1080} h={1350} dark>
-      <Brand dark />
-      <Head dark kicker="Edukasi · krisis PR">Kenapa <Brush>3 jam pertama</Brush> paling penting.</Head>
-      <div style={{ position: "absolute", left: 72, right: 72, top: 540, display: "grid", gap: 22 }}>
-        {t.map(([h, d, c], i) => (
-          <div key={h} style={{ ...card, display: "grid", gridTemplateColumns: "170px 1fr", gap: 20, alignItems: "center", padding: "34px 28px", background: i === 1 ? "#fff" : "#fff" }}>
-            <span style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: c }}>{h}</span>
-            <span style={{ fontSize: 26, lineHeight: 1.38, fontWeight: i === 1 ? 800 : 500 }}>{d}</span>
-          </div>
-        ))}
-      </div>
-      <Foot n={7} dark />
-    </Frame>
-  );
-}
-
-// 8 · Network & coordination signs
-function P8() {
-  const signs: Array<[string, string]> = [["Teks sama, banyak akun", "Kalimat identik dari beberapa akun dalam hitungan menit."], ["Kecepatan tidak wajar", "Satu akun berkomentar puluhan kali di banyak video dalam sehari."], ["Kubu yang tiba-tiba muncul", "Kelompok akun baru yang langsung bernada seragam."]];
-  return (
-    <Frame id="edu-08" w={1080} h={1350}>
-      <Brand />
-      <Head kicker="Edukasi · buzzer?" sub="Narriv menandai polanya. Tim kamu yang memutuskan.">Indikasi, <Brush>bukan vonis.</Brush></Head>
-      <div style={{ position: "absolute", left: 72, right: 72, top: 610, display: "grid", gap: 22 }}>
-        {signs.map(([h, d], i) => <Row key={h} n={i + 1} c={[AMBER, VIOLET, PINK][i]} title={h} text={d} />)}
-      </div>
-      <Foot n={8} />
-    </Frame>
-  );
-}
-
-// 9 · AI answers
-function P9() {
-  return (
-    <Frame id="edu-09" w={1080} h={1350} dark>
-      <Brand dark />
-      <Head dark kicker="Edukasi · AI visibility" sub="Orang kini bertanya ke asisten AI sebelum mencari. Jawabannya ikut membentuk reputasi.">Apa kata <Brush>ChatGPT</Brush> tentang brand kamu?</Head>
-      <div style={{ ...card, position: "absolute", left: 72, right: 72, top: 760, padding: "36px 36px" }}>
-        <p style={{ margin: 0, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.12em", color: MUTED }}>PERTANYAAN</p>
-        <p style={{ margin: "8px 0 0", fontSize: 28, fontWeight: 800 }}>“Bank digital apa yang cocok untuk UMKM?”</p>
-        <div style={{ marginTop: 20, display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {[["ChatGPT", true], ["Claude", true], ["Gemini", false], ["Perplexity", true], ["DeepSeek", false]].map(([e, ok]) => (
-            <span key={String(e)} style={{ padding: "8px 16px", borderRadius: 99, background: ok ? "#E5F6EE" : "#FDECEC", color: ok ? "#047857" : "#B42318", fontSize: 20, fontWeight: 800 }}>{String(e)} {ok ? "✓ disebut" : "✗ tidak"}</span>
-          ))}
-        </div>
-      </div>
-      <Foot n={9} dark />
-    </Frame>
-  );
-}
-
-// 10 · Who needs it
-function P10() {
-  const who: Array<[string, string, string]> = [["Brand & perusahaan", "Jaga reputasi produk dan layanan.", BLUE], ["Pemerintah & lembaga", "Tangkap hoaks dan keluhan warga lebih awal.", VIOLET], ["Agensi PR", "Laporan klien otomatis, tiap minggu dan bulan.", PINK]];
-  return (
-    <Frame id="edu-10" w={1080} h={1350}>
-      <Brand />
-      <Head kicker="Edukasi · untuk siapa">Siapa yang <Brush>butuh Narriv?</Brush></Head>
-      <div style={{ position: "absolute", left: 72, right: 72, top: 470, display: "grid", gap: 18 }}>
-        {who.map(([h, d, c], i) => <Row key={h} n={i + 1} c={c} title={h} text={d} />)}
-      </div>
-      <div style={{ position: "absolute", left: 72, right: 72, bottom: 140, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 30, fontWeight: 800 }}>Coba pakai data contoh</span>
-        <span style={{ padding: "18px 30px", borderRadius: 999, background: "linear-gradient(90deg,#465FFF,#8B5CF6 55%,#EC4899)", color: "#fff", fontSize: 28, fontWeight: 800 }}>Demo gratis · link di bio</span>
-      </div>
-      <Foot n={10} />
-    </Frame>
-  );
-}
-
-export default function EduPosts() {
-  return (
-    <main style={{ display: "flex", flexWrap: "wrap", gap: 40, padding: 60, background: "#2A2F4A" }}>
-      <P1 /><P2 /><P3 /><P4 /><P5 /><P6 /><P7 /><P8 /><P9 /><P10 />
+      ))}
     </main>
   );
 }
