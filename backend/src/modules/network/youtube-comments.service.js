@@ -1,7 +1,8 @@
 /**
  * YouTube comments under the videos Narriv already collected, free through the YouTube Data API
  * (commentThreads.list costs 1 quota unit per 100 comments; the free 10,000 units a day cover thousands of videos).
- * Stored in social_comments with who replied to whom, which the conversation network is built from.
+ * Stored as one raw_documents row per video (external_id "ytcomments:<videoId>", metadata.comments, capped) with
+ * who replied to whom. Not a signal: comments never inflate mention counts, and the signal lists stay light.
  */
 
 import supabase from "../../lib/supabase.js";
@@ -9,6 +10,7 @@ import { logStructured } from "../../lib/logger.js";
 import { commentSentiment } from "../../lib/conversation-network.js";
 
 const TIMEOUT_MS = 15_000;
+const MAX_STORED = 300; // per video, enough for its network, small enough for the record
 
 function apiKey() {
     const v = process.env.YOUTUBE_API_KEY;
@@ -89,7 +91,7 @@ export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days 
     const since = new Date(Date.now() - days * 86400000).toISOString();
     const { data: videos } = await db
         .from("signals")
-        .select("id, url, published_at, captured_at, metadata")
+        .select("id, title, url, published_at, captured_at, metadata")
         .eq("workspace_id", workspaceId)
         .eq("platform", "youtube")
         .gte("captured_at", since)
@@ -100,16 +102,17 @@ export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days 
     for (const video of due) {
         try {
             const rows = await fetchVideoComments(videoIdOf(video), { fetchImpl });
-            if (rows.length) {
-                const { error } = await db.from("social_comments").upsert(
-                    rows.map((r) => ({ ...r, workspace_id: workspaceId, signal_id: video.id, platform: "youtube", sentiment: commentSentiment(r.text) })),
-                    { onConflict: "workspace_id,platform,external_id" },
-                );
-                if (error) throw new Error(error.message);
-            }
+            const comments = rows.slice(0, MAX_STORED).map((r) => ({ ...r, text: String(r.text || "").slice(0, 400), sentiment: commentSentiment(r.text) }));
+            const externalId = `ytcomments:${videoIdOf(video)}`;
+            const doc = { workspace_id: workspaceId, external_id: externalId, title: video.title || null, url: video.url, metadata: { kind: "youtube_comments", signal_id: video.id, comments, total: rows.length, collected_at: new Date().toISOString() } };
+            const { data: existing } = await db.from("raw_documents").select("id").eq("workspace_id", workspaceId).eq("external_id", externalId).maybeSingle();
+            const { error } = existing
+                ? await db.from("raw_documents").update({ metadata: doc.metadata, title: doc.title }).eq("id", existing.id)
+                : await db.from("raw_documents").insert(doc);
+            if (error) throw new Error(error.message);
             await db.from("signals").update({ metadata: { ...(video.metadata || {}), comments_collected_at: new Date().toISOString(), comment_count: rows.length } }).eq("id", video.id);
             out.videos++;
-            out.comments += rows.length;
+            out.comments += Math.min(rows.length, MAX_STORED);
         } catch (error) {
             out.failed++;
             logStructured("warn", "youtube_comments_failed", { workspaceId, signalId: video.id, error: error.message });

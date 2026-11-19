@@ -50,7 +50,7 @@ function labelPropagation(adjacency, rounds = 12) {
 }
 
 /**
- * @param comments rows of social_comments
+ * @param comments comment rows (author, reply target, text, likes, time, sentiment, signal_id)
  * @param videos   signals the comments sit under: { id, title, author, url }
  */
 export function buildNetwork(comments, videos = [], { maxNodes = 150 } = {}) {

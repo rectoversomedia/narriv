@@ -43,18 +43,20 @@ router.get("/", async (req, res) => {
             const { data: links } = await supabase.from("narrative_cluster_signals").select("signal_id").eq("cluster_id", String(req.query.clusterId)).limit(200);
             signalFilter = (links || []).map((l) => l.signal_id);
         }
-        let q = supabase
-            .from("social_comments")
-            .select("signal_id, external_id, author_id, author_name, reply_to_author_id, reply_to_author_name, text, like_count, published_at, sentiment")
+        // Comments are stored per video in raw_documents (external_id "ytcomments:<videoId>").
+        const { data: docs, error } = await supabase
+            .from("raw_documents")
+            .select("metadata")
             .eq("workspace_id", workspaceId)
-            .gte("published_at", since)
-            .order("published_at", { ascending: false })
-            .limit(4000);
-        if (signalFilter) q = q.in("signal_id", signalFilter.length ? signalFilter : ["00000000-0000-0000-0000-000000000000"]);
-        const { data: comments, error } = await q;
+            .like("external_id", "ytcomments:%")
+            .limit(300);
         if (error) throw error;
-
-        const videoIds = [...new Set((comments || []).map((c) => c.signal_id).filter(Boolean))];
+        const wanted = signalFilter ? new Set(signalFilter) : null;
+        const kept = (docs || []).filter((d) => d.metadata?.signal_id && (!wanted || wanted.has(d.metadata.signal_id)));
+        const comments = kept.flatMap((d) => (Array.isArray(d.metadata.comments) ? d.metadata.comments : [])
+            .filter((c) => !c.published_at || c.published_at >= since)
+            .map((c) => ({ ...c, signal_id: d.metadata.signal_id })));
+        const videoIds = [...new Set(comments.map((c) => c.signal_id))];
         const { data: videos } = videoIds.length
             ? await supabase.from("signals").select("id, title, author, url").in("id", videoIds)
             : { data: [] };
@@ -65,11 +67,11 @@ router.get("/", async (req, res) => {
         const counts = (socialRows || []).reduce((m, r) => ({ ...m, [r.platform]: (m[r.platform] || 0) + 1 }), {});
         const { data: ws } = await supabase.from("workspaces").select("settings").eq("id", workspaceId).maybeSingle();
         const sources = [
-            { key: "youtube_comments", free: true, configured: isCommentCollectionConfigured(), items: comments?.length || 0, videos: counts.youtube || 0 },
+            { key: "youtube_comments", free: true, configured: isCommentCollectionConfigured(), items: comments.length, videos: counts.youtube || 0 },
             { key: "telegram", free: true, configured: true, items: counts.telegram || 0, channels: telegramChannels(ws?.settings) },
         ];
 
-        let net = { days, ...buildNetwork(comments || [], videos || []), sources, monitoringPaused: ws?.settings?.monitoringPaused === true };
+        let net = { days, ...buildNetwork(comments, videos || []), sources, monitoringPaused: ws?.settings?.monitoringPaused === true };
         const profile = await getWorkspaceProfile(workspaceId);
         if (profile?.privacyMode) net = { ...maskNetwork(net, requestLang()), privacyMode: true };
         res.json(net);
