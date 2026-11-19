@@ -46,11 +46,17 @@ function Brush({ children }: { children: ReactNode }) {
   return <span className="mk-brush" style={{ whiteSpace: "nowrap" }}>{children}</span>;
 }
 
-function Pager({ n, of, dark }: { n: number; of: number; dark?: boolean }) {
+/** Footer: the handle (same on every platform and as the website), an optional note, and the slide dots. */
+function Pager({ n, of, dark, note }: { n: number; of: number; dark?: boolean; note?: string }) {
+  const soft = dark ? "rgba(255,255,255,.55)" : "#6B7394";
   return (
-    <div style={{ position: "absolute", left: 72, right: 72, bottom: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, letterSpacing: "0.14em", color: dark ? "rgba(255,255,255,.55)" : "#6B7394" }}>NARRIV.DIGITAL</span>
-      <span style={{ display: "flex", gap: 10 }}>{Array.from({ length: of }, (_, i) => <span key={i} style={{ width: i + 1 === n ? 44 : 14, height: 14, borderRadius: 99, background: i + 1 === n ? (dark ? "#fff" : INK) : dark ? "rgba(255,255,255,.3)" : "#C9CFDD" }} />)}</span>
+    <div style={{ position: "absolute", left: 72, right: 72, bottom: 64, display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 20 }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 12, fontFamily: MONO, fontSize: 21, fontWeight: 700, letterSpacing: "0.08em", color: dark ? "#fff" : INK }}>
+        <span style={{ display: "inline-grid", placeItems: "center", width: 34, height: 34, borderRadius: 10, background: dark ? "#fff" : INK, color: dark ? INK : "#fff", fontSize: 20, fontWeight: 900 }}>@</span>
+        narriv.digital
+      </span>
+      <span style={{ fontFamily: MONO, fontSize: 17, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: soft, textAlign: "center" }}>{note ?? ""}</span>
+      <span style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>{Array.from({ length: of }, (_, i) => <span key={i} style={{ width: i + 1 === n ? 44 : 14, height: 14, borderRadius: 99, background: i + 1 === n ? (dark ? "#fff" : INK) : dark ? "rgba(255,255,255,.3)" : "#C9CFDD" }} />)}</span>
     </div>
   );
 }
@@ -71,7 +77,7 @@ function Feed1() {
         <p style={{ margin: "40px 0 0", fontSize: 38, lineHeight: 1.4, color: "rgba(255,255,255,.75)" }}>Begini cara krisis reputasi menyebar, dan kapan seharusnya tim komunikasi sudah tahu.</p>
       </div>
       <div style={{ position: "absolute", right: 72, bottom: 150, display: "inline-flex", alignItems: "center", gap: 14, padding: "18px 28px", borderRadius: 999, background: "#fff", color: INK, fontSize: 28, fontWeight: 800 }}>Geser →</div>
-      <Pager n={1} of={3} dark />
+      <Pager n={1} of={3} dark note="Data contoh · bank fiktif" />
     </Frame>
   );
 }
@@ -105,7 +111,7 @@ function Feed2() {
           </div>
         ))}
       </div>
-      <Pager n={2} of={3} />
+      <Pager n={2} of={3} note="Data contoh · bank fiktif" />
     </Frame>
   );
 }
@@ -132,10 +138,13 @@ function Feed3() {
         ))}
       </div>
       <div style={{ position: "absolute", left: 72, right: 72, bottom: 130, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 32, fontWeight: 800 }}>Coba demo gratis</span>
-        <span style={{ padding: "18px 30px", borderRadius: 999, background: "linear-gradient(90deg,#465FFF,#8B5CF6 55%,#EC4899)", fontSize: 28, fontWeight: 800 }}>narriv.digital</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 14, fontSize: 28, fontWeight: 800 }}>
+          <svg width="34" height="40" viewBox="0 0 24 28" aria-hidden><path d="M3 2h18v24l-9-6-9 6z" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinejoin="round" /></svg>
+          Simpan untuk tim kamu
+        </span>
+        <span style={{ padding: "18px 30px", borderRadius: 999, background: "linear-gradient(90deg,#465FFF,#8B5CF6 55%,#EC4899)", fontSize: 28, fontWeight: 800 }}>Coba demo gratis</span>
       </div>
-      <Pager n={3} of={3} dark />
+      <Pager n={3} of={3} dark note="Link di bio" />
     </Frame>
   );
 }
