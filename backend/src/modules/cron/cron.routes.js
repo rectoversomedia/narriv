@@ -268,7 +268,7 @@ async function runFollowUps({ deadline, topVideos = false }) {
             try {
                 // Free social data: comments under the workspace's YouTube videos (skipped for paused workspaces).
                 if (!w.settings?.monitoringPaused) {
-                    const c = await collectYouTubeComments(w.id, { maxVideos: 5, withTopVideos: topVideos });
+                    const c = await collectYouTubeComments(w.id, { maxVideos: 5, withTopVideos: topVideos, deadline: Math.min(deadline, Date.now() + 60000) });
                     totals.comments += c.comments || 0;
                     if (c.videos) await refreshCampSummaries(w.id);
                 }

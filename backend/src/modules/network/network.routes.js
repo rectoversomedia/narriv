@@ -77,8 +77,9 @@ router.post("/collect", requireWorkspaceRole(MANAGER_ROLES), async (req, res) =>
         const workspaceId = await resolveWorkspaceIdForUser(req.user.id, req.body?.workspaceId);
         if (!workspaceId) return res.status(403).json({ error: "Workspace access denied" });
         if (!isCommentCollectionConfigured()) return res.status(400).json({ error: "YouTube is not connected.", code: "YOUTUBE_NOT_CONFIGURED" });
-        const result = await collectYouTubeComments(workspaceId, { maxVideos: 15, withTopVideos: true });
-        const summaries = await refreshCampSummaries(workspaceId);
+        // Bounded to stay well inside the 30s request limit: the page calls again while `more` is true.
+        const result = await collectYouTubeComments(workspaceId, { maxVideos: 15, withTopVideos: true, deadline: Date.now() + 14000 });
+        const summaries = result.more ? { camps: 0 } : await refreshCampSummaries(workspaceId);
         res.status(201).json({ ...result, campsSummarized: summaries.camps });
     } catch (error) {
         logStructured("error", "network_collect_failed", { error: error?.message || error });

@@ -86,8 +86,9 @@ export async function fetchVideoComments(videoId, { fetchImpl = fetch, maxPages 
  * Collect comments for the workspace's most recent YouTube videos that have none stored yet (or were collected more
  * than a day ago). Bounded per run so the ingest call stays fast and the quota stays far below the free limit.
  */
-export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days = 30, db = supabase, fetchImpl = fetch, withTopVideos = false } = {}) {
-    const out = { videos: 0, comments: 0, failed: 0 };
+export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days = 30, db = supabase, fetchImpl = fetch, withTopVideos = false, deadline = Infinity } = {}) {
+    const out = { videos: 0, comments: 0, failed: 0, more: false };
+    const late = () => Date.now() > deadline;
     if (!apiKey()) return { ...out, skipped: "YOUTUBE_API_KEY not set" };
     const since = new Date(Date.now() - days * 86400000).toISOString();
     const { data: videos } = await db
@@ -101,6 +102,7 @@ export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days 
     const dayAgo = Date.now() - 86400000;
     const due = (videos || []).filter((v) => videoIdOf(v) && !(v.metadata?.comments_collected_at && Date.parse(v.metadata.comments_collected_at) > dayAgo)).slice(0, maxVideos);
     for (const video of due) {
+        if (late()) { out.more = true; break; }
         try {
             const rows = await fetchVideoComments(videoIdOf(video), { fetchImpl });
             await storeComments(db, workspaceId, videoIdOf(video), { signalId: video.id, title: video.title, channel: video.metadata?.publisher, url: video.url }, rows);
@@ -114,17 +116,23 @@ export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days 
     }
     // The newest videos are often small uploads with few comments. The most watched videos about the brand in the
     // period are where the conversation is, so add them (search: 100 quota units per keyword, comments: 1 per page).
-    if (withTopVideos) {
+    if (withTopVideos && !late()) {
         try {
-            const top = await collectTopVideoComments(workspaceId, { db, fetchImpl, days });
+            const top = await collectTopVideoComments(workspaceId, { db, fetchImpl, days, deadline });
             out.videos += top.videos; out.comments += top.comments; out.failed += top.failed;
+            if (top.more) out.more = true;
         } catch (error) {
             logStructured("warn", "youtube_top_videos_failed", { workspaceId, error: error.message });
         }
     }
     // Comments stored before the AI read existed (or while AI was unavailable) get it now, a few videos per run.
     try {
-        out.retoned = await retoneStoredComments(workspaceId, { db });
+        if (late()) out.more = true;
+        else {
+            const r = await retoneStoredComments(workspaceId, { db, deadline });
+            out.retoned = r.done;
+            if (r.more) out.more = true;
+        }
     } catch (error) {
         logStructured("warn", "youtube_comments_retone_failed", { workspaceId, error: error.message });
     }
@@ -132,17 +140,18 @@ export async function collectYouTubeComments(workspaceId, { maxVideos = 8, days 
     return out;
 }
 
-export async function retoneStoredComments(workspaceId, { db = supabase, maxVideos = 25 } = {}) {
+export async function retoneStoredComments(workspaceId, { db = supabase, maxVideos = 25, deadline = Infinity } = {}) {
     const { data: docs } = await db.from("raw_documents").select("id, title, metadata").eq("workspace_id", workspaceId).like("external_id", "ytcomments:%").limit(300);
-    const todo = (docs || []).filter((d) => Array.isArray(d.metadata?.comments) && d.metadata.comments.length && !d.metadata.comments.some((c) => c.tone_by === "ai")).slice(0, maxVideos);
+    const todo = (docs || []).filter((d) => Array.isArray(d.metadata?.comments) && d.metadata.comments.some((c) => c.tone_by !== "ai" && !c.tone_tried)).slice(0, maxVideos);
     let done = 0;
     for (const d of todo) {
+        if (Date.now() > deadline) return { done, more: true };
         const comments = await toneComments(d.metadata.comments, { workspaceId, subject: `${await brandOf(db, workspaceId)} (video: ${d.title || d.metadata.video?.title || ""})` });
-        if (!comments.some((c) => c.tone_by === "ai")) break; // AI unavailable or out of budget: stop, try next run
+        if (comments.every((c, i) => c === d.metadata.comments[i])) break; // AI unavailable or out of budget: try next run
         await db.from("raw_documents").update({ metadata: { ...d.metadata, comments } }).eq("id", d.id);
         done++;
     }
-    return done;
+    return { done, more: false };
 }
 
 const brandCache = new Map();
@@ -169,8 +178,8 @@ async function storeComments(db, workspaceId, videoId, video, rows) {
 }
 
 /** Most-viewed videos of the period for the workspace's first keywords, and their comments (refreshed daily). */
-export async function collectTopVideoComments(workspaceId, { db = supabase, fetchImpl = fetch, days = 30, perKeyword = 5 } = {}) {
-    const out = { videos: 0, comments: 0, failed: 0 };
+export async function collectTopVideoComments(workspaceId, { db = supabase, fetchImpl = fetch, days = 30, perKeyword = 5, deadline = Infinity } = {}) {
+    const out = { videos: 0, comments: 0, failed: 0, more: false };
     const { data: kws } = await db.from("monitoring_keywords").select("keyword").eq("workspace_id", workspaceId).eq("is_active", true).limit(2);
     const { data: docs } = await db.from("raw_documents").select("external_id, metadata").eq("workspace_id", workspaceId).like("external_id", "ytcomments:%").limit(300);
     const fresh = new Set((docs || []).filter((d) => Date.parse(d.metadata?.collected_at || 0) > Date.now() - 86400000).map((d) => d.external_id));
@@ -182,6 +191,7 @@ export async function collectTopVideoComments(workspaceId, { db = supabase, fetc
         for (const item of json.items || []) {
             const id = item.id?.videoId;
             if (!id || fresh.has(`ytcomments:${id}`)) continue;
+            if (Date.now() > deadline) { out.more = true; return out; }
             fresh.add(`ytcomments:${id}`);
             try {
                 const rows = await fetchVideoComments(id, { fetchImpl, maxPages: 3 });

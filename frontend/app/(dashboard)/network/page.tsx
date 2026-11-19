@@ -67,11 +67,25 @@ export default function NetworkPage() {
   const [days, setDays] = useState<7 | 30 | 90>(30);
   const [camp, setCamp] = useState<number | null>(null);
   const q = useQuery({ queryKey: ["conversation-network", days], queryFn: () => getConversationNetwork(days) });
+  const [step, setStep] = useState(0);
+  // The server works in short rounds (each well inside the request limit) and says when more is left.
   const collect = useMutation({
-    mutationFn: collectNetworkComments,
-    onSuccess: async (r) => {
-      await queryClient.invalidateQueries({ queryKey: ["conversation-network"] });
-      toast.success(L(`${r.comments} comments pulled from ${r.videos} videos.`, `${r.comments} komentar ditarik dari ${r.videos} video.`));
+    mutationFn: async () => {
+      const total = { videos: 0, comments: 0, failed: 0 };
+      for (let round = 1; round <= 20; round++) {
+        setStep(round);
+        const r = await collectNetworkComments();
+        total.videos += r.videos; total.comments += r.comments; total.failed += r.failed;
+        await queryClient.invalidateQueries({ queryKey: ["conversation-network"] });
+        if (!r.more) break;
+      }
+      return total;
+    },
+    onSettled: () => setStep(0),
+    onSuccess: (r) => {
+      toast.success(r.comments
+        ? L(`${r.comments} new comments from ${r.videos} videos. The map, camps and tone are up to date.`, `${r.comments} komentar baru dari ${r.videos} video. Peta, kubu, dan nada sudah diperbarui.`)
+        : L("Everything is up to date. The map, camps and tone are current.", "Semua sudah terbaru. Peta, kubu, dan nada sudah diperbarui."));
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : L("Pulling comments failed.", "Gagal menarik komentar.")),
   });
@@ -94,7 +108,7 @@ export default function NetworkPage() {
             ))}
           </div>
           <button type="button" onClick={() => collect.mutate()} disabled={collect.isPending} className="inline-flex h-10 items-center gap-2 rounded-[12px] bg-[#465FFF] px-4 text-[13.5px] font-black text-white shadow-[0_3px_0_#101334] transition hover:bg-[#3B52F5] disabled:opacity-60">
-            <Download size={15} /> {collect.isPending ? L("Pulling…", "Menarik…") : L("Pull Latest Comments", "Tarik Komentar Terbaru")}
+            <Download size={15} /> {collect.isPending ? L(`Working… (step ${step})`, `Memproses… (tahap ${step})`) : L("Pull Latest Comments", "Tarik Komentar Terbaru")}
           </button>
         </div>
       </header>

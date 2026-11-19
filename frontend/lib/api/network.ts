@@ -29,5 +29,5 @@ export function getConversationNetwork(days: 7 | 30 | 90 = 30, clusterId?: strin
 }
 
 export function collectNetworkComments() {
-  return apiClient<{ videos: number; comments: number; failed: number; skipped?: string }>("/api/network/collect", { method: "POST", body: JSON.stringify({}) });
+  return apiClient<{ videos: number; comments: number; failed: number; more?: boolean; retoned?: number; skipped?: string }>("/api/network/collect", { method: "POST", body: JSON.stringify({}) });
 }
