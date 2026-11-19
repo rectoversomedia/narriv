@@ -23,8 +23,8 @@ function DemoStart() {
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    startDemoLogin(scenario).catch((e: unknown) => setError(e instanceof Error ? e.message : "Demo login failed"));
-  }, [scenario]);
+    startDemoLogin(scenario, params.get("next")).catch((e: unknown) => setError(e instanceof Error ? e.message : "Demo login failed"));
+  }, [scenario, params]);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#070A1F] px-6 text-center text-white">

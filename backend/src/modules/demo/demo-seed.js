@@ -12,6 +12,7 @@
 import { baseSupabaseAdmin as defaultDb } from "../../lib/supabase.js";
 import { DEMO_WORKSPACE_ID, DEMO_WORKSPACES } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
+import { demoNetworkDocs } from "./demo-network.js";
 
 export const DEMO_BRAND = "Bank Arunika";
 const COMPETITORS = ["Bank Seroja", "KoinKu"];
@@ -243,7 +244,8 @@ export async function clearDemoWorkspace(db = defaultDb, ws = DEMO_WORKSPACE_ID)
  */
 export const BRAND_SCENARIO = {
     key: "brand",
-    version: 2,
+    version: 3,
+    network: demoNetworkDocs,
     // Workspace logo (workspaces.logo_url), served by the frontend from public/brand/demo-logos.
     logo: "/brand/demo-logos/arunika.png",
     ws: DEMO_WORKSPACE_ID,
@@ -503,6 +505,9 @@ export async function seedScenarioWorkspace(def, { now = new Date(), db = defaul
             };
         }));
     }
+
+    // Conversation network (Jaringan): fictional YouTube comments, camps and coordination signs.
+    if (def.network) await chunkedInsert(db, "raw_documents", def.network(t0).map((d) => ({ workspace_id: ws, source_id: sourceOf.youtube ?? null, url: null, author: null, content: null, published_at: at(2 * H), created_at: at(2 * H), ...d })));
 
     // In-app notifications and an activity trail
     await chunkedInsert(db, "app_notifications", def.notifications.map(({ ago, ...n }) => ({ workspace_id: ws, user_id: owner, data: { demo: true }, ...n, created_at: at(ago) })));

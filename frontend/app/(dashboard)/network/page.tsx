@@ -138,7 +138,7 @@ export default function NetworkPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-[18px] font-black text-[#101334]">{L("Network Map", "Peta Jaringan")}</h2>
-                    <p className="text-[13px] text-[#5F6B94]">{L("Circles are accounts (bigger = more influential, red ring = mostly negative), dark squares are videos. Lines: comments on a video, and replies between accounts (darker). Hover to follow one account.", "Lingkaran adalah akun (makin besar makin berpengaruh, garis tepi merah = dominan negatif), kotak gelap adalah video. Garis: komentar di video, dan balasan antar akun (lebih gelap). Arahkan kursor untuk menelusuri satu akun.")}</p>
+                    <p className="text-[13px] text-[#5F6B94]">{L("Each circle is a camp gathered around its video. Hover an account to follow who it talks to.", "Setiap lingkaran adalah satu kubu yang berkumpul di videonya. Arahkan kursor ke akun untuk melihat dengan siapa ia berinteraksi.")}</p>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     <button type="button" onClick={() => setCamp(null)} className={cn("rounded-full px-3 py-1 text-[12px] font-bold", camp == null ? "bg-[#101334] text-white" : "bg-[#F1F4FA] text-[#31406B]")}>{L("All", "Semua")}</button>
@@ -149,7 +149,7 @@ export default function NetworkPage() {
                     ))}
                   </div>
                 </div>
-                <NetworkGraph nodes={net.nodes} edges={net.edges} campFilter={camp} />
+                <NetworkGraph nodes={net.nodes} edges={net.edges} camps={net.camps} campFilter={camp} />
               </section>
 
               <section className="grid gap-4">

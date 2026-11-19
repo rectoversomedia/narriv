@@ -286,11 +286,13 @@ export function SocialButtons() {
 /** The demo cases a visitor can open (backend workspace-access.js DEMO_WORKSPACES). */
 export type DemoScenario = "brand" | "gov" | "cve";
 
-export async function startDemoLogin(scenario: DemoScenario = "brand") {
+export async function startDemoLogin(scenario: DemoScenario = "brand", next?: string | null) {
+  // Only an in-app path (pitch decks link straight to a page of the demo, e.g. /network).
+  const target = next && /^\/[a-z0-9/_-]*$/i.test(next) ? next : "/";
   track("start_demo", { scenario });
   // On the website the demo opens on the app, where its session cookie belongs.
   if (onMarketingHost()) {
-    window.location.href = `${APP_ORIGIN}/demo?case=${scenario}`;
+    window.location.href = `${APP_ORIGIN}/demo?case=${scenario}${target !== "/" ? `&next=${encodeURIComponent(target)}` : ""}`;
     return;
   }
   // Call frontend proxy route — it calls the backend and sets the narriv_auth cookie
@@ -336,7 +338,7 @@ export async function startDemoLogin(scenario: DemoScenario = "brand") {
   }));
 
   // Redirect to dashboard behind the launch screen
-  launchDashboard(() => { window.location.href = "/?demo=true"; });
+  launchDashboard(() => { window.location.href = `${target}?demo=true`; });
 }
 
 function DemoButton() {

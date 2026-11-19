@@ -92,6 +92,19 @@ export function buildNetwork(comments, videos = [], { maxNodes = 140 } = {}) {
 
     const influence = (a) => a.repliesReceived * 3 + a.likes + a.comments;
     const label = labelPropagation(adjacency);
+    // Camps are anchored on videos: an account belongs to the camp of the video it commented on most, so a camp
+    // always has a "where" (reply threads alone used to split off as camps without a video).
+    const perVideo = new Map();
+    for (const c of comments) {
+        if (!c.author_id || !c.signal_id) continue;
+        const m = perVideo.get(c.author_id) || new Map();
+        m.set(c.signal_id, (m.get(c.signal_id) || 0) + 1);
+        perVideo.set(c.author_id, m);
+    }
+    for (const [author, m] of perVideo) {
+        const top = [...m].sort((a, b) => b[1] - a[1])[0]?.[0];
+        if (top && label.has(`vid:${top}`)) label.set(`acc:${author}`, label.get(`vid:${top}`));
+    }
 
     // Camps: accounts sharing a label, with the videos in that label as their "where".
     const camps = new Map();
