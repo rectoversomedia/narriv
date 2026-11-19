@@ -48,6 +48,11 @@ function isStaticAsset(pathname: string): boolean {
   return staticAssetPrefixes.some((prefix) => pathname.startsWith(prefix)) || pathname.includes(".");
 }
 
+// The access token lives an hour; the refresh token 30 days. Page loads accept a correctly signed token that expired
+// within that window and let the app refresh it on its first API call, so an installed app (Add to Home Screen)
+// opened the next day goes straight in instead of to the login page. API calls still check expiry on the server.
+const SESSION_GRACE_S = 30 * 24 * 60 * 60;
+
 function verifyJwt(token: string, secret: string): boolean {
   try {
     const parts = token.split(".");
@@ -58,7 +63,7 @@ function verifyJwt(token: string, secret: string): boolean {
     if (expectedSig !== sigB64) return false;
     const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf-8")) as Record<string, unknown>;
     const exp = payload.exp as number | undefined;
-    if (exp !== undefined && Date.now() / 1000 > exp) return false;
+    if (exp !== undefined && Date.now() / 1000 > exp + SESSION_GRACE_S) return false;
     return true;
   } catch {
     return false;

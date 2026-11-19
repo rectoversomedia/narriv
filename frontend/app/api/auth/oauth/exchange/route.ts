@@ -31,7 +31,7 @@ export async function POST(
 
     // Set auth cookie on FRONTEND domain so middleware can verify JWT.
     // non-httpOnly so Edge middleware (not Node.js) can read it.
-    const cookieMaxAge = 7 * 24 * 60 * 60; // 7 days
+    const cookieMaxAge = 30 * 24 * 60 * 60; // 30 days, as long as the refresh token
     const responseHeaders = new Headers();
     responseHeaders.set(
       "Set-Cookie",

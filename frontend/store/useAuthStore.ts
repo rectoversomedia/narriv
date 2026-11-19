@@ -9,7 +9,8 @@ declare global {
 }
 
 const AUTH_COOKIE_NAME = "narriv_auth";
-const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+// As long as the refresh token (30 days): the app is remembered until the session really ends.
+const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
 function setAuthCookie(tokenOrClear: string | boolean | null) {
   if (typeof document === "undefined") return;

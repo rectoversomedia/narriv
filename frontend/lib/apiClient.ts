@@ -34,6 +34,40 @@ type ApiClientOptions = RequestInit & {
   timeout?: number; // Custom timeout per request
 };
 
+// One refresh at a time: the backend rotates refresh tokens, so several requests refreshing at once (a page opened
+// after the access token expired) would spend the same token twice and sign the user out. They share one call.
+let refreshing: Promise<string | null> | null = null;
+
+async function refreshSession(refreshToken: string, timeout: number): Promise<string | null> {
+  if (!refreshing) {
+    refreshing = (async () => {
+      try {
+        const res = await client("auth/refresh", { method: "POST", json: { refreshToken }, ...timingOptions(timeout) });
+        if (!res.ok) {
+          // The session really ended (refresh token expired or revoked): sign out and go to the login page once.
+          if (res.status === 400 || res.status === 401 || res.status === 403) {
+            useAuthStore.getState().logout();
+            if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+              window.location.href = `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+            }
+          }
+          return null;
+        }
+        const data = await res.json() as { token: string; refreshToken?: string };
+        const store = useAuthStore.getState();
+        store.setToken(data.token);
+        if (data.refreshToken) store.setRefreshToken(data.refreshToken);
+        return data.token;
+      } catch {
+        return null;
+      } finally {
+        setTimeout(() => { refreshing = null; }, 0);
+      }
+    })();
+  }
+  return refreshing;
+}
+
 export async function apiClient<T>(
   endpoint: string,
   options: ApiClientOptions = {}
@@ -80,21 +114,11 @@ export async function apiClient<T>(
   }
 
   if (refreshOnUnauthorized && response.status === 401 && authState?.refreshToken) {
-    const refreshResponse = await client("auth/refresh", {
-      method: "POST",
-      json: { refreshToken: authState.refreshToken },
-      ...timingOptions(timeout),
-    }).catch((err) => { throw toClientError(err, timeout); });
-
-    if (refreshResponse.ok) {
-      const refreshed = await refreshResponse.json() as { token: string; refreshToken?: string };
-      const store = useAuthStore.getState();
-      store.setToken(refreshed.token);
-      if (refreshed.refreshToken) store.setRefreshToken(refreshed.refreshToken);
-
+    const refreshed = await refreshSession(authState.refreshToken, timeout);
+    if (refreshed) {
       response = await client(kyPath, {
         ...requestOptions,
-        headers: buildHeaders(refreshed.token),
+        headers: buildHeaders(refreshed),
         ...timingOptions(timeout),
       }).catch((err) => { throw toClientError(err, timeout); });
     }
