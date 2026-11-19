@@ -560,30 +560,98 @@ const CAMPS: Array<{ label: [string, string]; stance: [string, string]; c: strin
   { label: ["Apresiasi UMKM Naik Kelas", "SME Level-Up praise"], stance: ["Mendukung", "Supportive"], c: "#EC4899", size: 30, neg: 8, pos: 70, video: "Cerita UMKM Naik Kelas", x: 90, y: 400 },
 ];
 
-/** A drawn network: each camp is a video (square) with its commenters around it; a few replies cross camps. */
-function NetworkArt() {
-  const dots: Array<{ x: number; y: number; r: number; c: string; neg: boolean }> = [];
-  const lines: Array<[number, number, number, number, boolean]> = [];
-  CAMPS.forEach((camp, ci) => {
-    const n = Math.round(camp.size / 2);
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + ci;
-      const rr = 52 + ((i * 37) % 48);
-      const x = camp.x + Math.cos(a) * rr, y = camp.y + Math.sin(a) * rr * 0.8;
-      const hub = i < 2;
-      dots.push({ x, y, r: hub ? 13 : 5 + ((i * 13) % 5), c: camp.c, neg: (i * 7) % 100 < camp.neg });
-      lines.push([camp.x, camp.y, x, y, false]);
-      if (!hub && i % 3 === 0) { const h = dots[dots.length - 1 - i]; if (h) lines.push([x, y, h.x, h.y, true]); }
-    }
-  });
-  lines.push([CAMPS[0].x, CAMPS[0].y, CAMPS[1].x, CAMPS[1].y, true], [CAMPS[1].x, CAMPS[1].y, CAMPS[2].x, CAMPS[2].y, true]);
+/** The network map as the app draws it: each camp its own circle, the video (play button) in the middle, accounts on
+ *  rings around it (bigger = more influential, red ring = mostly negative), a name tag per camp. */
+function NetworkArt({ en }: { en: boolean }) {
+  const t = tr(en);
+  const slots = [[150, 175], [400, 175], [650, 175], [275, 445], [525, 445]];
   return (
-    <svg viewBox="0 0 760 600" style={{ width: "100%", height: "100%" }} aria-hidden>
-      <rect width="760" height="600" rx="24" fill="#F7F8FC" />
-      {lines.map(([x1, y1, x2, y2, reply], i) => <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={reply ? INK : "#A3ACC2"} strokeOpacity={reply ? 0.45 : 0.3} strokeWidth={reply ? 1.6 : 1} />)}
-      {dots.map((d, i) => <circle key={i} cx={d.x} cy={d.y} r={d.r} fill={d.c} stroke={d.neg ? NEG : "#fff"} strokeWidth={d.neg ? 2 : 1.4} />)}
-      {CAMPS.map((camp) => <rect key={camp.video} x={camp.x - 11} y={camp.y - 11} width={22} height={22} rx={4} fill={INK} stroke="#fff" strokeWidth={2} />)}
+    <svg viewBox="0 0 800 600" style={{ width: "100%", height: "100%" }} aria-hidden>
+      <rect width="800" height="600" fill="#F7F8FC" />
+      {CAMPS.map((camp, ci) => {
+        const [cx, cy] = slots[ci];
+        const n = Math.round(camp.size * 0.62);
+        const nodes: Array<[number, number, number, boolean]> = [];
+        let placed = 0;
+        for (let ring = 0; placed < n; ring++) {
+          const rr = 34 + ring * 20;
+          const cap = Math.floor((2 * Math.PI * rr) / 19);
+          for (let k = 0; k < cap && placed < n; k++, placed++) {
+            const ang = (k / cap) * Math.PI * 2 + ring * 0.5 - Math.PI / 2;
+            const size = placed < 2 ? 11 : placed < 6 ? 7 : 4.5;
+            nodes.push([cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr, size, (placed * 37) % 100 < camp.neg]);
+          }
+        }
+        const reach = 34 + Math.ceil(n / 9) * 20;
+        const label = t(camp.label[0], camp.label[1]);
+        const w = label.length * 6.1 + 44;
+        return (
+          <g key={camp.video}>
+            <circle cx={cx} cy={cy} r={Math.min(reach, 112)} fill={camp.c} fillOpacity={0.08} stroke={camp.c} strokeOpacity={0.4} strokeWidth={1.5} strokeDasharray="5 6" />
+            {nodes.map(([x, y], i) => <line key={`l${i}`} x1={cx} y1={cy} x2={x} y2={y} stroke="#A3ACC2" strokeOpacity={0.35} strokeWidth={0.8} />)}
+            {nodes.slice(6, 14).map(([x, y], i) => <path key={`r${i}`} d={`M${x},${y} Q${cx},${cy - 40} ${nodes[i % 2][0]},${nodes[i % 2][1]}`} fill="none" stroke={INK} strokeOpacity={0.35} strokeWidth={1.2} />)}
+            {nodes.map(([x, y, r, neg], i) => <circle key={`n${i}`} cx={x} cy={y} r={r} fill={camp.c} stroke={neg ? NEG : "#fff"} strokeWidth={neg ? 2 : 1.3} />)}
+            <rect x={cx - 13} y={cy - 11} width={26} height={26} rx={6} fill={INK} />
+            <rect x={cx - 13} y={cy - 13} width={26} height={26} rx={6} fill={INK} stroke="#fff" strokeWidth={2} />
+            <path d={`M${cx - 4},${cy - 6} L${cx + 7},${cy} L${cx - 4},${cy + 6} Z`} fill="#fff" />
+            <g transform={`translate(${cx},${cy - Math.min(reach, 112) - 4})`}>
+              <rect x={-w / 2} y={-11} width={w} height={26} rx={13} fill={INK} />
+              <rect x={-w / 2} y={-13} width={w} height={26} rx={13} fill="#fff" stroke={INK} strokeWidth={1.5} />
+              <circle cx={-w / 2 + 15} cy={0} r={8} fill={camp.c} />
+              <text x={-w / 2 + 15} y={3.5} textAnchor="middle" fontSize={10} fontWeight={900} fill="#fff">{ci + 1}</text>
+              <text x={-w / 2 + 29} y={4} fontSize={11} fontWeight={800} fill={INK}>{label}</text>
+            </g>
+          </g>
+        );
+      })}
     </svg>
+  );
+}
+
+const TOP_ACCOUNTS: Array<{ name: string; camp: number; role: [string, string]; tone: "neg" | "pos"; comments: number; replies: number; likes: number; quote: string; video: string }> = [
+  { name: "@vina12320", camp: 2, role: ["Pemicu", "Trigger"], tone: "neg", comments: 1, replies: 9, likes: 500, quote: "Kalau beneran bocor, OJK harus turun tangan", video: "Bank Arunika Diduga Bocor Data Nasabah" },
+  { name: "@joko.sby99", camp: 3, role: ["Pemicu", "Trigger"], tone: "pos", comments: 1, replies: 12, likes: 447, quote: "Promo Arunika lebih banyak sih", video: "Adu Aplikasi: Arunika vs Seroja" },
+  { name: "@dimas.sby55", camp: 1, role: ["Pemicu", "Trigger"], tone: "neg", comments: 1, replies: 5, likes: 389, quote: "Udah 3 hari ga bisa login, pas gajian lagi. Parah sih Arunika", video: "Arunika Mobile Error Lagi Pas Gajian?" },
+  { name: "@kiki8883", camp: 5, role: ["Pemicu", "Trigger"], tone: "pos", comments: 1, replies: 9, likes: 373, quote: "Masya Allah, inspiratif banget ceritanya", video: "Cerita UMKM Naik Kelas" },
+  { name: "@citra8841", camp: 1, role: ["Pemicu", "Trigger"], tone: "neg", comments: 1, replies: 15, likes: 286, quote: "Tiap tanggal 25 pasti error, servernya ga pernah di-upgrade apa?", video: "Arunika Mobile Error Lagi Pas Gajian?" },
+];
+
+export function Influencers({ en }: P) {
+  const t = tr(en);
+  const campC = (n: number) => CAMPS[n - 1]?.c ?? BLUE;
+  return (
+    <Light tag={t("Akun berpengaruh", "Influential accounts")} v={3}>
+      <Head top={150} width={760} kicker={t("Klik akun untuk melihat isinya", "Click an account to see what it said")} title={t(<>Siapa yang <Brush>menggerakkan.</Brush></>, <>Who <Brush>drives it.</Brush></>)} sub={t("Diurutkan dari balasan yang diterima, suka, dan keaktifan. Setiap akun membawa komentar aslinya, videonya, dan kanalnya.", "Ranked by replies received, likes and activity. Each account comes with its own comment, the video and its channel.")} />
+      <a href={appLink("/network")} target="_blank" rel="noreferrer" className="pc pitch-link" style={{ position: "absolute", left: 900, right: 96, top: 150, padding: "26px 30px", borderRadius: 28, background: "#fff", color: INK, textDecoration: "none", display: "block", ...INKED }}>
+        <div style={{ display: "grid", gridTemplateColumns: "44px 1fr 96px 96px 96px", gap: 14, padding: "0 10px 12px", fontFamily: MONO, fontSize: 15, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED }}>
+          <span>#</span><span>{t("Akun", "Account")}</span><span style={{ textAlign: "right" }}>{t("Komentar", "Comments")}</span><span style={{ textAlign: "right" }}>{t("Balasan", "Replies")}</span><span style={{ textAlign: "right" }}>{t("Suka", "Likes")}</span>
+        </div>
+        <div style={{ display: "grid", gap: 10 }}>
+          {TOP_ACCOUNTS.map((a, i) => (
+            <div key={a.name} style={{ borderRadius: 18, border: `2px solid ${i === 0 ? INK : "#E6E9F4"}`, background: i === 0 ? "#fff" : "#FBFCFE", boxShadow: i === 0 ? `0 4px 0 ${INK}` : "none" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "44px 1fr 96px 96px 96px", gap: 14, alignItems: "center", padding: "14px 10px" }}>
+                <span style={{ display: "grid", placeItems: "center", width: 38, height: 38, borderRadius: 99, background: campC(a.camp), color: "#fff", fontSize: 18, fontWeight: 900 }}>{i + 1}</span>
+                <span>
+                  <span style={{ display: "block", fontSize: 24, fontWeight: 800 }}>{a.name}</span>
+                  <span style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                    <span style={{ padding: "2px 10px", borderRadius: 99, background: "#EEF1FF", color: "#3B52F5", fontSize: 15, fontWeight: 800 }}>{t(a.role[0], a.role[1])}</span>
+                    <span style={{ padding: "2px 10px", borderRadius: 99, background: a.tone === "neg" ? "#FDECEC" : "#E5F6EE", color: a.tone === "neg" ? "#B42318" : "#047857", fontSize: 15, fontWeight: 800 }}>{a.tone === "neg" ? t("Negatif", "Negative") : t("Positif", "Positive")}</span>
+                  </span>
+                </span>
+                {[a.comments, a.replies, a.likes].map((v, k) => <span key={k} style={{ textAlign: "right", fontSize: 28, fontWeight: 800 }}>{v}</span>)}
+              </div>
+              {i === 0 ? (
+                <div style={{ margin: "0 14px 14px", padding: "14px 18px", borderRadius: 14, background: "#F7F8FC" }}>
+                  <p style={{ margin: 0, fontSize: 21, lineHeight: 1.4 }}>“{a.quote}”</p>
+                  <p style={{ margin: "8px 0 0", fontSize: 16, fontWeight: 700, color: MUTED }}>{t(`Negatif · ${a.likes} suka · ${a.video}`, `Negative · ${a.likes} likes · ${a.video}`)}</p>
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </a>
+      <Source en={en} />
+    </Light>
   );
 }
 
@@ -593,7 +661,7 @@ export function Network({ en }: P) {
     <Light tag={t("Jaringan percakapan", "Conversation network")} v={2}>
       <Head top={150} width={860} kicker={t("185 akun · 104 balasan · gratis", "185 accounts · 104 replies · free")} title={t(<>Siapa bicara, <Brush>berkumpul di mana.</Brush></>, <>Who talks, <Brush>and where they gather.</Brush></>)} />
       <a href={appLink("/network")} target="_blank" rel="noreferrer" className="pc pitch-link" style={{ position: "absolute", left: 96, top: 420, width: 800, height: 580, borderRadius: 28, overflow: "hidden", display: "block", ...INKED }}>
-        <NetworkArt />
+        <NetworkArt en={en} />
         <span style={{ position: "absolute", right: 18, top: 14, display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 999, background: BLUE, color: "#fff", fontSize: 17, fontWeight: 800 }}>{t("Buka live", "Open live")} <ExternalLink size={16} aria-hidden /></span>
       </a>
       <div style={{ position: "absolute", left: 950, right: 96, top: 250, display: "grid", gap: 14 }}>
@@ -684,6 +752,7 @@ export function arunikaDeck(en: boolean) {
     <Issues key="issues" en={en} />,
     <WatchList key="watch" en={en} />,
     <Network key="network" en={en} />,
+    <Influencers key="influencers" en={en} />,
     <Coordination key="coord" en={en} />,
     <GoodNews key="good" en={en} />,
     <IfItGrows key="grows" en={en} />,

@@ -3,7 +3,7 @@
 import type { Metadata } from "next";
 import Deck from "./deck";
 import { deck } from "./slides";
-import { Coordination, DefaultFlow, Network } from "./arunika/slides";
+import { Coordination, DefaultFlow, Influencers, Network } from "./arunika/slides";
 
 export const metadata: Metadata = {
   title: "Narriv Pitch Deck",
@@ -20,6 +20,7 @@ function fullDeck(en: boolean) {
     ...slides.slice(0, at),
     <DefaultFlow key="flow" en={en} />,
     <Network key="network" en={en} />,
+    <Influencers key="influencers" en={en} />,
     <Coordination key="coord" en={en} />,
     ...slides.slice(at),
   ];
