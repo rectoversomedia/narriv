@@ -6,13 +6,13 @@ Sepuluh carousel (4–5 slide, 1080×1350), urutan posting = nomor folder `post-
 Media monitoring menghitung berapa kali kamu disebut. Narrative intelligence membaca cerita apa yang sedang terbentuk, seberapa cepat menyebar, dan apa yang perlu dilakukan. Bedanya: kamu bisa bertindak sebelum isunya ramai.
 #NarrativeIntelligence #PublicRelations #ManajemenReputasi #Narriv
 
-**2 · Monitoring vs narrative intelligence**
-Daftar berita tidak sama dengan pemahaman. Geser tabelnya: mana yang tim kamu pakai sekarang?
-#MediaMonitoring #PR #KomunikasiKorporat
-
-**3 · Narriv itu apa sih?**
+**2 · Narriv itu apa sih?**
 Dengar, pahami, bertindak. Narriv memantau berita, YouTube, Telegram, dan sosmed tiap jam, mengelompokkannya jadi isu, lalu mengirim peringatan dan rencana aksi ke tim kamu.
 #Narriv #NarrativeIntelligence
+
+**3 · Monitoring vs narrative intelligence**
+Daftar berita tidak sama dengan pemahaman. Geser tabelnya: mana yang tim kamu pakai sekarang?
+#MediaMonitoring #PR #KomunikasiKorporat
 
 **4 · Begini Narriv bekerja**
 Kumpulkan, bersihkan, kelompokkan, peringatkan. Empat langkah yang berjalan otomatis setiap jam.
