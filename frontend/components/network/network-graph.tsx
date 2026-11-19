@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { NetworkEdge, NetworkNode } from "@/lib/api-service";
 import { useL } from "@/lib/use-l";
 
-export const CAMP_COLORS = ["#465FFF", "#E5484D", "#12A66A", "#F59E0B", "#8B5CF6", "#0EA5E9", "#EC4899", "#64748B"];
+export const CAMP_COLORS = ["#465FFF", "#8B5CF6", "#0EA5E9", "#F59E0B", "#EC4899", "#14B8A6", "#64748B", "#A16207"]; // no red or green: those mean tone
 export const campColor = (camp: number | null | undefined) => (camp ? CAMP_COLORS[(camp - 1) % CAMP_COLORS.length] : "#B8C0D6");
 
 type P = { x: number; y: number; vx: number; vy: number };
