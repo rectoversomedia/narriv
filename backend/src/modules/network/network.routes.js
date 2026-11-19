@@ -25,7 +25,7 @@ function maskNetwork(net, lang) {
         ...net,
         nodes: net.nodes.map((n) => (n.kind === "account" ? { ...n, label: alias(n.label) } : n)),
         camps: net.camps.map((c) => ({ ...c, topAccounts: c.topAccounts.map(alias), samples: (c.samples || []).map(maskHandles) })),
-        topAccounts: net.topAccounts.map((a) => ({ ...a, name: alias(a.name) })),
+        topAccounts: net.topAccounts.map((a) => ({ ...a, id: alias(a.name), name: alias(a.name), url: null, samples: (a.samples || []).map((x) => ({ ...x, text: maskHandles(x.text) })) })),
         coordination: net.coordination.map((c) => ({ ...c, text: maskHandles(c.text), accounts: c.accounts?.map(alias), account: c.account ? alias(c.account) : undefined })),
     };
 }

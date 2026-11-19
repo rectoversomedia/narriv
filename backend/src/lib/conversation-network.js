@@ -163,8 +163,15 @@ export function buildNetwork(comments, videos = [], { maxNodes = 140 } = {}) {
         if (shownIds.has(from) && shownIds.has(to)) edges.push({ source: `acc:${from}`, target: `acc:${to}`, kind: "reply", weight: w });
     }
 
+    const byAuthor = new Map();
+    for (const c of comments) if (c.author_id) (byAuthor.get(c.author_id) || byAuthor.set(c.author_id, []).get(c.author_id)).push(c);
     const topAccounts = ranked.slice(0, 10).map((a) => ({
-        name: a.name, comments: a.comments, likes: a.likes, repliesReceived: a.repliesReceived, videos: a.videos.size, camp: campOf.get(a.id) ?? null,
+        id: a.id, name: a.name, comments: a.comments, likes: a.likes, repliesReceived: a.repliesReceived, videos: a.videos.size, camp: campOf.get(a.id) ?? null,
+        // YouTube channel ids start with "UC"; other ids (demo, handles) have no public page to link.
+        url: /^UC[\w-]{20,}$/.test(String(a.id)) ? `https://www.youtube.com/channel/${a.id}` : null,
+        // What they actually said: their most liked comments, with the video they sit under.
+        samples: (byAuthor.get(a.id) || []).sort((x, y) => (y.like_count || 0) - (x.like_count || 0)).slice(0, 3)
+            .map((c) => ({ text: String(c.text || "").slice(0, 240), likes: c.like_count || 0, tone: c.sentiment || "neutral", video: videoById.get(c.signal_id)?.title || null, at: c.published_at || null })),
         role: a.repliesReceived >= 3 ? "trigger" : a.comments >= 5 ? "amplifier" : a.likes >= 50 ? "voice" : "participant",
         tone: a.negative > a.positive ? "negative" : a.positive > a.negative ? "positive" : "neutral",
     }));

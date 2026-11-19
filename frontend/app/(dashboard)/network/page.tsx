@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Download, ExternalLink, Radio, Users } from "lucide-react";
+import { AlertTriangle, ChevronDown, Download, ExternalLink, Radio, Users } from "lucide-react";
 import { NetworkGraph, campColor } from "@/components/network/network-graph";
 import { StatStrip } from "@/components/ui/stamp";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -66,6 +66,7 @@ export default function NetworkPage() {
   const queryClient = useQueryClient();
   const [days, setDays] = useState<7 | 30 | 90>(30);
   const [camp, setCamp] = useState<number | null>(null);
+  const [openAccount, setOpenAccount] = useState<number | null>(0);
   const q = useQuery({ queryKey: ["conversation-network", days], queryFn: () => getConversationNetwork(days) });
   const [step, setStep] = useState(0);
   // The server works in short rounds (each well inside the request limit) and says when more is left.
@@ -198,17 +199,49 @@ export default function NetworkPage() {
               <div className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
                 <section className={cn(BOX, "grid gap-3")}>
                   <h2 className="text-[18px] font-black text-[#101334]">{L("Most Influential Accounts", "Akun Paling Berpengaruh")}</h2>
-                  <ol className="divide-y divide-[#EEF0F6]">
-                    {net.topAccounts.map((a, i) => (
-                      <li key={`${a.name}-${i}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">
-                        <span className="w-5 text-[13px] font-black text-[#5F6B94]">{i + 1}</span>
-                        <span className="size-2.5 rounded-full" style={{ background: campColor(a.camp) }} />
-                        <span className="min-w-0 flex-1 truncate text-[14px] font-black text-[#101334]">{a.name}</span>
-                        <span title={L(ROLE[a.role].note[0], ROLE[a.role].note[1])} className="rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[11px] font-bold text-[#3B52F5]">{L(ROLE[a.role].en, ROLE[a.role].id)}</span>
-                        <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", TONE[a.tone].chip)}>{L(TONE[a.tone].en, TONE[a.tone].id)}</span>
-                        <span className="w-full pl-8 text-[12px] font-semibold text-[#5A6478] sm:w-auto sm:pl-0">{L(`${a.comments} comments · ${a.repliesReceived} replies · ${a.likes} likes`, `${a.comments} komentar · ${a.repliesReceived} balasan · ${a.likes} suka`)}</span>
-                      </li>
-                    ))}
+                  <p className="text-[12.5px] text-[#5F6B94]">{L("Ranked by replies received, likes and activity. Click an account to see what it said.", "Diurutkan dari balasan yang diterima, suka, dan keaktifan. Klik akun untuk melihat apa yang ia tulis.")}</p>
+                  <div className="hidden grid-cols-[28px_1fr_64px_64px_64px_20px] items-center gap-3 px-3 pt-1 text-[10.5px] font-black uppercase tracking-[0.08em] text-[#8B93B0] sm:grid">
+                    <span>#</span><span>{L("Account", "Akun")}</span><span className="text-right">{L("Comments", "Komentar")}</span><span className="text-right">{L("Replies", "Balasan")}</span><span className="text-right">{L("Likes", "Suka")}</span><span />
+                  </div>
+                  <ol className="grid gap-2">
+                    {net.topAccounts.map((a, i) => {
+                      const open = openAccount === i;
+                      return (
+                        <li key={`${a.name}-${i}`} className={cn("rounded-[14px] border-[1.5px] transition", open ? "border-[#101334] bg-white shadow-[0_3px_0_#101334]" : "border-[#E6E9F4] bg-[#FBFCFE] hover:border-[#101334]")}>
+                          <button type="button" onClick={() => setOpenAccount(open ? null : i)} aria-expanded={open} className="grid w-full grid-cols-[28px_1fr_auto] items-center gap-3 px-3 py-2.5 text-left sm:grid-cols-[28px_1fr_64px_64px_64px_20px]">
+                            <span className="grid size-7 place-items-center rounded-full text-[12px] font-black text-white" style={{ background: campColor(a.camp) }}>{i + 1}</span>
+                            <span className="min-w-0">
+                              <span className="block truncate text-[14.5px] font-black text-[#101334]">{a.name}</span>
+                              <span className="mt-1 flex flex-wrap gap-1.5">
+                                <span title={L(ROLE[a.role].note[0], ROLE[a.role].note[1])} className="rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[10.5px] font-bold text-[#3B52F5]">{L(ROLE[a.role].en, ROLE[a.role].id)}</span>
+                                <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-bold", TONE[a.tone].chip)}>{L(TONE[a.tone].en, TONE[a.tone].id)}</span>
+                              </span>
+                            </span>
+                            {[a.comments, a.repliesReceived, a.likes].map((v, k) => (
+                              <span key={k} className="hidden text-right sm:block"><span className="block text-[16px] font-black tabular-nums text-[#101334]">{v.toLocaleString(intlLocale())}</span></span>
+                            ))}
+                            <span className="text-right text-[12px] font-bold tabular-nums text-[#5A6478] sm:hidden">{a.likes} {L("likes", "suka")}</span>
+                            <ChevronDown size={16} className={cn("hidden text-[#5F6B94] transition sm:block", open && "rotate-180")} />
+                          </button>
+                          {open ? (
+                            <div className="grid gap-2 border-t border-[#EEF0F6] px-4 pb-4 pt-3">
+                              <p className="text-[12px] font-semibold text-[#5A6478]">{L(`${ROLE[a.role].note[0]} · active on ${a.videos} video(s)`, `${ROLE[a.role].note[1]} · aktif di ${a.videos} video`)}{a.camp ? L(` · camp ${a.camp}`, ` · kubu ${a.camp}`) : ""}</p>
+                              {(a.samples ?? []).map((x, k) => (
+                                <div key={k} className="rounded-[12px] bg-[#F7F8FC] px-3 py-2.5">
+                                  <p className="text-[13.5px] leading-snug text-[#101334]">“{x.text}”</p>
+                                  <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[11.5px] font-semibold text-[#5A6478]">
+                                    <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-bold", TONE[x.tone].chip)}>{L(TONE[x.tone].en, TONE[x.tone].id)}</span>
+                                    <span>{x.likes.toLocaleString(intlLocale())} {L("likes", "suka")}</span>
+                                    {x.video ? <span className="truncate">· {x.video}</span> : null}
+                                  </p>
+                                </div>
+                              ))}
+                              {a.url ? <a href={a.url} target="_blank" rel="noreferrer" className="inline-flex w-fit items-center gap-1.5 text-[13px] font-bold text-[#3B52F5] hover:underline">{L("Open the YouTube channel", "Buka kanal YouTube")} <ExternalLink size={13} /></a> : null}
+                            </div>
+                          ) : null}
+                        </li>
+                      );
+                    })}
                   </ol>
                 </section>
 
