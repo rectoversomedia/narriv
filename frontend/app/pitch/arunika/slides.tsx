@@ -905,6 +905,83 @@ export function RiskAndClaims({ en }: P) {
   );
 }
 
+const FEED_BADGE: Record<string, [string, string, string, string]> = {
+  bot: ["Indikasi bot", "Bot-like", "#F1ECFF", "#6D28D9"],
+  toxic: ["Toksik", "Toxic", "#FDECEC", "#B42318"],
+  anom: ["Lonjakan anomali", "Anomalous", "#FFF4E5", "#A04606"],
+  hoax: ["Hoaks", "Hoax", INK, "#fff"],
+  polar: ["Terpolarisasi", "Polarized", "#E8F1FF", "#1D4ED8"],
+};
+
+export function NarrativeFeed({ en }: P) {
+  const t = tr(en);
+  const rows: Array<{ s: number; lv: [string, string]; c: string; title: string; meta: string; b: string[]; who: string }> = [
+    { s: 94, lv: ["Kritis", "Critical"], c: NEG, title: t("Isu kebocoran data nasabah", "Customer data-leak claim"), meta: t("15–19 Nov · 22 catatan · 3 platform", "15–19 Nov · 22 records · 3 platforms"), b: ["bot", "anom", "hoax"], who: t("Nasabah & pelanggan", "Customers") },
+    { s: 63, lv: ["Tinggi", "High"], c: "#F97316", title: t("Gangguan Arunika Mobile di jam sibuk", "Arunika Mobile outage at peak hours"), meta: t("22 Okt–19 Nov · 46 catatan · 5 platform", "22 Oct–19 Nov · 46 records · 5 platforms"), b: ["bot", "hoax"], who: t("Nasabah & pelanggan", "Customers") },
+    { s: 42, lv: ["Sedang", "Medium"], c: AMBER, title: t("Keluhan kenaikan biaya transfer", "Complaints on higher transfer fees"), meta: t("20 Okt–19 Nov · 24 catatan · 4 platform", "20 Oct–19 Nov · 24 records · 4 platforms"), b: [], who: t("Nasabah, UMKM & mitra", "Customers, SMEs") },
+  ];
+  return (
+    <Light tag={t("Feed Narasi", "Narrative Feed")} v={2}>
+      <Head kicker={t("Semua isu, satu daftar", "Every issue, one list")} title={t(<>Paling berbahaya <Brush>selalu di atas.</Brush></>, <>The most dangerous <Brush>always on top.</Brush></>)} />
+      <div style={{ position: "absolute", left: 96, width: 1120, top: 390, display: "grid", gap: 18 }}>
+        {rows.map((r) => (
+          <Card key={r.title} style={{ display: "flex", gap: 26, alignItems: "center", padding: "22px 28px" }}>
+            <div style={{ width: 112, height: 112, flexShrink: 0, borderRadius: 22, background: r.c, color: "#fff", display: "grid", placeItems: "center", textAlign: "center", border: `3px solid ${INK}` }}>
+              <div><p style={{ margin: 0, fontSize: 46, fontWeight: 800, lineHeight: 1 }}>{r.s}</p><p style={{ margin: "6px 0 0", fontSize: 15, fontWeight: 800, textTransform: "uppercase" }}>{t(r.lv[0], r.lv[1])}</p></div>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: 30, fontWeight: 800, lineHeight: 1.2 }}>{r.title}</p>
+              <p style={{ margin: "6px 0 0", fontSize: 19, fontWeight: 700, color: MUTED }}>{r.meta} · {r.who}</p>
+              <div style={{ marginTop: 12, display: "flex", gap: 10 }}>{!r.b.length ? <span style={{ fontSize: 18, fontWeight: 700, color: MUTED }}>{t("Belum ada tanda bahaya · organik", "No warning signs yet · organic")}</span> : null}{r.b.map((k) => { const [id, e, bg, fg] = FEED_BADGE[k]; return <span key={k} style={{ padding: "5px 16px", borderRadius: 999, background: bg, color: fg, fontSize: 18, fontWeight: 800 }}>{t(id, e)}</span>; })}</div>
+            </div>
+          </Card>
+        ))}
+      </div>
+      <div style={{ position: "absolute", left: 1270, right: 96, top: 390, display: "grid", gap: 16 }}>
+        <p style={{ margin: 0, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.14em", color: BLUE }}>{t("5 TANDA BAHAYA", "5 WARNING SIGNS")}</p>
+        {Object.entries(FEED_BADGE).map(([k, [id, e, bg, fg]]) => (
+          <div key={k} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <span style={{ padding: "6px 16px", borderRadius: 999, background: bg, color: fg, fontSize: 20, fontWeight: 800, whiteSpace: "nowrap" }}>{t(id, e)}</span>
+            <span style={{ fontSize: 18, color: MUTED, lineHeight: 1.35 }}>{({ bot: t("akun terkoordinasi", "coordinated accounts"), toxic: t("hinaan & kata kasar", "insults & abuse"), anom: t("lonjakan tak wajar", "unusual spikes"), hoax: t("klaim dibantah cek fakta", "claims refuted"), polar: t("publik terbelah", "a split public") } as Record<string, string>)[k]}</span>
+          </div>
+        ))}
+        <a href={appLink("/feed")} style={{ marginTop: 6, fontSize: 20, fontWeight: 800, color: BLUE, textDecoration: "none" }}>{t("Buka Feed Narasi →", "Open the Narrative Feed →")}</a>
+      </div>
+      <Source en={en} />
+    </Light>
+  );
+}
+
+export function RadarDigest({ en }: P) {
+  const t = tr(en);
+  const items: Array<[string, string, string, string]> = [
+    [t("Isu kebocoran data nasabah", "Customer data-leak claim"), "94", t("22 catatan, 20 dalam 48 jam. 2 indikasi akun terkoordinasi. Klaim “seluruh rekening dibobol” terbukti hoaks.", "22 records, 20 in 48 hours. 2 coordination signs. The “every account breached” claim is a hoax."), t("Keluarkan pernyataan sementara di kanal resmi hari ini.", "Publish a holding statement on owned channels today.")],
+    [t("Gangguan Arunika Mobile", "Arunika Mobile outage"), "63", t("46 catatan di 5 platform, 83% negatif. 1 indikasi lonjakan terkoordinasi. Klaim “saldo hilang permanen” terbukti hoaks.", "46 records on 5 platforms, 83% negative. 1 coordinated burst. The “balances lost for good” claim is a hoax."), t("Unggah status gangguan di X dan Instagram.", "Post an outage status on X and Instagram.")],
+  ];
+  const ch = ["Email", "WhatsApp", "Telegram", "Slack", "Teams"];
+  return (
+    <Dark tag={t("Narriv Radar", "Narriv Radar")} v={1}>
+      <Head dark kicker={t("Setiap pagi, tanpa buka dashboard", "Every morning, no dashboard needed")} title={t(<>Temuan <Brush>dan langkahnya.</Brush></>, <>What we found, <Brush>what to do.</Brush></>)} />
+      <div style={{ position: "absolute", left: 96, width: 1060, top: 390, padding: 28, borderRadius: 28, background: "#fff", color: INK, border: `3px solid ${INK}` }}>
+        <p style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>{t("Narriv Radar · Bank Arunika", "Narriv Radar · Bank Arunika")} <span style={{ marginLeft: 10, fontSize: 18, fontWeight: 700, color: MUTED }}>{t("Jumat 07.00", "Friday 07:00")}</span></p>
+        {items.map(([h, sc, f, a], i) => (
+          <div key={h} style={{ marginTop: 18, paddingTop: 18, borderTop: "2px solid #E7EAF3" }}>
+            <p style={{ margin: 0, fontSize: 25, fontWeight: 800 }}>{i + 1}. {h} <span style={{ marginLeft: 8, padding: "3px 12px", borderRadius: 999, background: i ? "#F97316" : NEG, color: "#fff", fontSize: 17 }}>{t("risiko", "risk")} {sc}</span></p>
+            <p style={{ margin: "10px 0 0", fontSize: 20, lineHeight: 1.45 }}><b>{t("Temuan:", "Found:")}</b> {f}</p>
+            <p style={{ margin: "6px 0 0", fontSize: 20, lineHeight: 1.45 }}><b style={{ color: POS }}>{t("Langkah:", "Do:")}</b> {a}</p>
+          </div>
+        ))}
+      </div>
+      <div style={{ position: "absolute", left: 1220, right: 96, top: 390, display: "grid", gap: 14 }}>
+        <p style={{ margin: 0, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.14em", color: "#A5B4FF" }}>{t("DIKIRIM KE", "DELIVERED TO")}</p>
+        {ch.map((c) => <div key={c} style={{ padding: "14px 22px", borderRadius: 16, background: "rgba(255,255,255,.08)", border: "1.5px solid rgba(255,255,255,.2)", fontSize: 24, fontWeight: 800 }}>{c}</div>)}
+        <p style={{ margin: "6px 0 0", fontSize: 19, lineHeight: 1.45, color: "rgba(255,255,255,.7)" }}>{t("Hanya isu berisiko. Satu kali sehari, tanpa spam.", "Risky issues only. Once a day, no spam.")}</p>
+      </div>
+      <Source en={en} dark />
+    </Dark>
+  );
+}
+
 export function arunikaDeck(en: boolean) {
   return [
     <ArunikaCover key="cover" en={en} />,
@@ -918,6 +995,7 @@ export function arunikaDeck(en: boolean) {
     <MediaBreakdown key="media" en={en} />,
     <StoryTrace key="trace" en={en} />,
     <Issues key="issues" en={en} />,
+    <NarrativeFeed key="feed" en={en} />,
     <WatchList key="watch" en={en} />,
     <Escalation key="escalation" en={en} />,
     <RiskAndClaims key="risk" en={en} />,
@@ -927,6 +1005,7 @@ export function arunikaDeck(en: boolean) {
     <GoodNews key="good" en={en} />,
     <IfItGrows key="grows" en={en} />,
     <DefaultFlow key="flow" en={en} />,
+    <RadarDigest key="radar" en={en} />,
     <Recommendations key="recs" en={en} />,
     <NextMonth key="next" en={en} />,
     <Capabilities key="caps" en={en} />,

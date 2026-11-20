@@ -3,7 +3,7 @@
 import type { Metadata } from "next";
 import Deck from "./deck";
 import { deck } from "./slides";
-import { ArunikaReport, Coordination, DefaultFlow, Escalation, FourLayers, Influencers, Network, RiskAndClaims } from "./arunika/slides";
+import { ArunikaReport, Coordination, DefaultFlow, Escalation, FourLayers, Influencers, NarrativeFeed, Network, RadarDigest, RiskAndClaims } from "./arunika/slides";
 import { Reports } from "./slides";
 
 export const metadata: Metadata = {
@@ -23,8 +23,10 @@ function fullDeck(en: boolean) {
     <FourLayers key="layers" en={en} />,
     <Escalation key="escalation" en={en} />,
     ...slides.slice(sol, at),
+    <NarrativeFeed key="feed" en={en} />,
     <RiskAndClaims key="risk" en={en} />,
     <DefaultFlow key="flow" en={en} />,
+    <RadarDigest key="radar" en={en} />,
     <Network key="network" en={en} />,
     <Influencers key="influencers" en={en} />,
     <Coordination key="coord" en={en} />,

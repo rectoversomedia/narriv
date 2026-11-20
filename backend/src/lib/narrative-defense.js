@@ -39,7 +39,12 @@ export async function runNarrativeDefense(workspaceId, { db = supabase, maxClaim
         const members = (cluster.narrative_cluster_signals || []).map((l) => l.signal).filter(Boolean);
         const comments = members.flatMap((m) => (commentsBySignal.get(m.id) || []).map((c) => ({ ...c, signal_id: m.id })));
         const signs = comments.length ? detectCoordination(comments) : [];
-        const coordination = { count: signs.length, kinds: [...new Set(signs.map((s) => s.kind))], at: new Date(now).toISOString() };
+        // No comments under the issue means nothing to measure, not "no coordination": keep what is stored.
+        // Demo issues carry seeded coordination and claims: never recompute or spend AI calls on fictional data.
+        const demo = Boolean(cluster.metadata?.demo);
+        const coordination = !demo && (comments.length || !cluster.metadata?.coordination)
+            ? { count: signs.length, kinds: [...new Set(signs.map((s) => s.kind))], at: new Date(now).toISOString() }
+            : (cluster.metadata?.coordination || { count: 0, kinds: [] });
         const metadata = { ...(cluster.metadata || {}), coordination };
         if ((cluster.metadata?.coordination?.count || 0) !== coordination.count) {
             await db.from("narrative_clusters").update({ metadata }).eq("id", cluster.id);
@@ -48,7 +53,7 @@ export async function runNarrativeDefense(workspaceId, { db = supabase, maxClaim
         if (signs.length) out.coordinated++;
 
         const risky = ["negative", "mixed"].includes(String(cluster.sentiment)) && members.length >= 2;
-        if (risky && claimCalls < maxClaims && cluster.metadata?.claims?.signature !== `${members.length}:${members.map((m) => m.id).sort().slice(0, 30).join(",")}`) {
+        if (!demo && risky && claimCalls < maxClaims && cluster.metadata?.claims?.signature !== `${members.length}:${members.map((m) => m.id).sort().slice(0, 30).join(",")}`) {
             claimCalls++;
             const claims = await checkClaims({ cluster, members, db, chat, lang });
             if (claims) { cluster.metadata = { ...cluster.metadata, claims }; out.claims++; }
