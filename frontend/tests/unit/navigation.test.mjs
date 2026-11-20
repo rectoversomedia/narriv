@@ -6,11 +6,11 @@ import { navGroups, SECTION_TABS, sectionForPath } from "../../lib/navigation.ts
 const page = (href) => `app/(dashboard)${href === "/" ? "" : href}/page.tsx`;
 const messages = (lang) => JSON.parse(readFileSync(`messages/${lang}.json`, "utf8")).DemoApp;
 
-test("navigation is four menus, one question each, and every menu's tabs start at its own page", () => {
+test("navigation is five menus, one question each, and every menu's tabs start at its own page", () => {
   assert.equal(navGroups.length, 1);
   const items = navGroups[0].items;
-  assert.deepEqual(items.map((i) => i.key), ["today", "issues", "tasks", "reports"]);
-  assert.deepEqual(items.map((i) => i.href), ["/", "/signals", "/alerts", "/reports"]);
+  assert.deepEqual(items.map((i) => i.key), ["today", "issues", "tools", "tasks", "reports"]);
+  assert.deepEqual(items.map((i) => i.href), ["/", "/feed", "/cek-klaim", "/alerts", "/reports"]);
   for (const item of items) assert.equal(SECTION_TABS[item.key][0].href, item.href, `${item.key}: first tab is the menu's page`);
   for (const item of items) for (const tab of SECTION_TABS[item.key]) assert.ok(tab.href === item.href || (item.match ?? []).includes(tab.href), `${tab.href} lights up ${item.key}`);
 });
@@ -19,7 +19,9 @@ test("a page belongs to the menu whose tabs list it", () => {
   assert.equal(sectionForPath("/brief"), "today");
   assert.equal(sectionForPath("/intelligence"), "issues");
   assert.equal(sectionForPath("/workspace/cases"), "tasks");
-  assert.equal(sectionForPath("/visibility"), "issues");
+  assert.equal(sectionForPath("/visibility"), "tools");
+  assert.equal(sectionForPath("/recon"), "tools");
+  assert.equal(sectionForPath("/opportunities"), "today");
   assert.equal(sectionForPath("/action-center"), "today");
   assert.deepEqual(SECTION_TABS.tasks.map((tab) => tab.href), ["/alerts", "/action-plans", "/workspace/cases"]);
   assert.equal(sectionForPath("/workspace/activity"), "settings");
@@ -62,7 +64,7 @@ test("every navigation and tab label is translated in English and Indonesian", (
 test("the analysis, opportunities and timeline pages are tabs again, and none of them ships sample content", () => {
   const tabsOf = (section) => SECTION_TABS[section].map((t) => t.href);
   assert.ok(tabsOf("today").includes("/insights"));
-  assert.ok(tabsOf("issues").includes("/opportunities"));
+  assert.ok(tabsOf("today").includes("/opportunities"));
   assert.ok(tabsOf("issues").includes("/timeline"));
   for (const route of ["insights", "opportunities", "timeline"]) {
     const src = readFileSync(`app/(dashboard)/${route}/page.tsx`, "utf8");
