@@ -24,7 +24,7 @@ function fullDeck(en: boolean) {
     <Escalation key="escalation" en={en} />,
     ...slides.slice(sol, at),
     <NarrativeFeed key="feed" en={en} />,
-    <RiskAndClaims key="risk" en={en} />,
+    <RiskAndClaims key="riskclaims" en={en} />,
     <DefaultFlow key="flow" en={en} />,
     <RadarDigest key="radar" en={en} />,
     <Network key="network" en={en} />,

@@ -10,10 +10,10 @@ const AI_ENGINES = ["ChatGPT", "Claude", "Gemini", "Perplexity", "DeepSeek"];
 const tr = (en: boolean) => <T,>(id: T, e: T): T => (en ? e : id);
 
 const PLANS = [
-  { name: "Pilot", price: "Rp 5 jt", priceEn: "Rp 5M", tag: ["Buktikan nilainya", "Validate the value"], rows: [["1 brand · 3 kata kunci", "1 brand · 3 keywords"], ["1 pengguna · simpan 30 hari", "1 user · 30-day retention"], ["Berita & YouTube tiap jam", "News & YouTube hourly"], ["Peringatan, briefing, laporan", "Alerts, briefing, reports"]] },
-  { name: "Intelligence", price: "Rp 25 jt", priceEn: "Rp 25M", tag: ["Pahami yang penting", "Understand what matters"], popular: true, rows: [["1 brand · 10 kata kunci", "1 brand · 10 keywords"], ["10 pengguna · simpan 12 bulan", "10 users · 12-month retention"], ["+ Visibilitas AI", "+ AI visibility"], ["+ Laporan direksi terjadwal, kasus", "+ Scheduled board reports, cases"]] },
-  { name: "Decision", price: "Rp 50 jt", priceEn: "Rp 50M", tag: ["Ubah jadi aksi", "Turn it into action"], rows: [["3 brand · 25 kata kunci/brand", "3 brands · 25 keywords each"], ["50 pengguna · simpan 12 bulan", "50 users · 12-month retention"], ["+ Instagram, TikTok, X, Facebook", "+ Instagram, TikTok, X, Facebook"], ["+ Slack, Teams, matriks eskalasi", "+ Slack, Teams, escalation matrix"]] },
-  { name: "Command", price: "Mulai Rp 100 jt", priceEn: "From Rp 100M", tag: ["Skala organisasi", "Scale across the org"], rows: [["Brand sesuai kebutuhan", "Brands as needed"], ["Pengguna tanpa batas", "Unlimited users"], ["+ Success manager khusus", "+ Dedicated success manager"], ["+ Review kuartalan & SLA", "+ Quarterly review & SLA"]] },
+  { name: "Pilot", tag: ["Buktikan nilainya", "Validate the value"], rows: [["1 brand · 3 kata kunci", "1 brand · 3 keywords"], ["1 pengguna · simpan 30 hari", "1 user · 30-day retention"], ["Berita & YouTube tiap jam", "News & YouTube hourly"], ["Peringatan, briefing, laporan", "Alerts, briefing, reports"]] },
+  { name: "Intelligence", tag: ["Pahami yang penting", "Understand what matters"], popular: true, rows: [["1 brand · 10 kata kunci", "1 brand · 10 keywords"], ["10 pengguna · simpan 12 bulan", "10 users · 12-month retention"], ["+ Visibilitas AI", "+ AI visibility"], ["+ Laporan direksi terjadwal, kasus", "+ Scheduled board reports, cases"]] },
+  { name: "Decision", tag: ["Ubah jadi aksi", "Turn it into action"], rows: [["3 brand · 25 kata kunci/brand", "3 brands · 25 keywords each"], ["50 pengguna · simpan 12 bulan", "50 users · 12-month retention"], ["+ Instagram, TikTok, X, Facebook", "+ Instagram, TikTok, X, Facebook"], ["+ Slack, Teams, matriks eskalasi", "+ Slack, Teams, escalation matrix"]] },
+  { name: "Command", tag: ["Skala organisasi", "Scale across the org"], rows: [["Brand sesuai kebutuhan", "Brands as needed"], ["Pengguna tanpa batas", "Unlimited users"], ["+ Success manager khusus", "+ Dedicated success manager"], ["+ Review kuartalan & SLA", "+ Quarterly review & SLA"]] },
 ];
 
 export function Cover({ en }: P) {
@@ -427,15 +427,15 @@ export function Pricing({ en }: P) {
   const t = tr(en);
   return (
     <Light tag={t("Harga", "Pricing")}>
-      <Head center kicker={t("Paket per bulan · belum termasuk PPN 11%", "Per month · excluding 11% VAT")} title={t(<>Mulai kecil, <Brush>tumbuh bersama.</Brush></>, <>Start small, <Brush>grow with it.</Brush></>)} sub={t("Tagihan tahunan hemat 20% · Coba gratis 14 hari, tanpa kartu kredit", "Annual billing saves 20% · Free 14-day trial, no card needed")} top={130} />
+      <Head center kicker={t("Paket", "Plans")} title={t(<>Mulai kecil, <Brush>tumbuh bersama.</Brush></>, <>Start small, <Brush>grow with it.</Brush></>)} sub={t("Harga disesuaikan kebutuhan · Coba gratis 14 hari, tanpa kartu kredit", "Pricing tailored to your needs · Free 14-day trial, no card needed")} top={130} />
       <div style={{ position: "absolute", left: 96, right: 96, top: 420, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 28, alignItems: "stretch" }}>
         {PLANS.map((p) => (
           <div key={p.name} className="pc" style={{ position: "relative", padding: "34px 34px 32px", borderRadius: 30, background: p.popular ? INK : "#fff", color: p.popular ? "#fff" : INK, border: `3px solid ${INK}`, boxShadow: p.popular ? `0 12px 0 ${BLUE}` : `0 8px 0 ${INK}`, transform: p.popular ? "translateY(-24px)" : undefined }}>
             {p.popular && <span style={{ position: "absolute", top: -26, left: 36, padding: "8px 18px", borderRadius: 12, background: "#FDE047", color: INK, border: `3px solid ${INK}`, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>{t("Paling dipilih", "Most popular")}</span>}
             <p style={{ margin: 0, fontSize: 36, fontWeight: 800 }}>{p.name}</p>
             <p style={{ margin: "6px 0 0", fontSize: 23, fontWeight: 700, color: p.popular ? "#A5B4FF" : BLUE }}>{t(p.tag[0], p.tag[1])}</p>
-            <p style={{ margin: "18px 0 0", fontSize: 46, fontWeight: 800, letterSpacing: "-0.03em" }}>{en ? p.priceEn : p.price}</p>
-            <p style={{ margin: "2px 0 0", fontSize: 21, fontWeight: 600, color: p.popular ? "rgba(255,255,255,.6)" : MUTED }}>{t("per bulan", "per month")}</p>
+            <p style={{ margin: "18px 0 0", fontSize: 40, fontWeight: 800, letterSpacing: "-0.03em" }}>{t("Diskusikan", "Let's talk")}</p>
+            <p style={{ margin: "2px 0 0", fontSize: 21, fontWeight: 600, color: p.popular ? "rgba(255,255,255,.6)" : MUTED }}>{t("dengan tim kami", "with our team")}</p>
             <div style={{ marginTop: 20, display: "grid", gap: 11 }}>
               {p.rows.map(([i, e]) => <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", fontSize: 21, fontWeight: 600, lineHeight: 1.3 }}><span style={{ marginTop: 2 }}><Check c={p.popular ? BLUE : POS} s={26} /></span>{t(i, e)}</div>)}
             </div>

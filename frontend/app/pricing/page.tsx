@@ -19,8 +19,6 @@ type Copy = [string, string];
 const PLANS: Array<{
   id: PlanId;
   name: string;
-  price: number | null;
-  from?: number;
   tagline: Copy;
   audience: Copy;
   popular?: boolean;
@@ -30,7 +28,6 @@ const PLANS: Array<{
   {
     id: "pilot",
     name: "Pilot",
-    price: 5_000_000,
     tagline: ["Validate the Value.", "Buktikan Nilainya."],
     audience: ["Pilot Projects and Proofs of Concept", "Proyek Percontohan dan Uji Konsep"],
     limits: { brands: ["1", "1"], users: ["1", "1"], retention: ["30 Days", "30 Hari"] },
@@ -44,7 +41,6 @@ const PLANS: Array<{
   {
     id: "intelligence",
     name: "Intelligence",
-    price: 25_000_000,
     popular: true,
     tagline: ["Understand What Matters.", "Pahami Hal yang Penting."],
     audience: ["Corporate Communications, Brand and Reputation Teams", "Tim Komunikasi Korporat, Brand, dan Reputasi"],
@@ -59,7 +55,6 @@ const PLANS: Array<{
   {
     id: "decision",
     name: "Decision",
-    price: 50_000_000,
     tagline: ["Turn Intelligence Into Action.", "Ubah Wawasan Menjadi Tindakan."],
     audience: ["Organisations With Multiple Brands or Products", "Organisasi dengan Beberapa Brand atau Produk"],
     limits: { brands: ["3", "3"], users: ["50", "50"], retention: ["12 Months", "12 Bulan"] },
@@ -73,8 +68,6 @@ const PLANS: Array<{
   {
     id: "command",
     name: "Command",
-    price: null,
-    from: 100_000_000,
     tagline: ["Scale Across the Organisation.", "Terapkan di Seluruh Organisasi."],
     audience: ["Banks, Telcos, Ministries and Agencies", "Bank, Telko, Kementerian, dan Agensi"],
     limits: { brands: ["As Needed", "Sesuai Kebutuhan"], users: ["Unlimited", "Tanpa Batas"], retention: ["Custom", "Kustom"] },
@@ -136,19 +129,15 @@ const COMPARE: Array<{ group: Copy; rows: Array<{ label: Copy; plans: PlanId[] |
   },
 ];
 
-const rupiah = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
-
 export default function PricingPage() {
   const L = useL();
   const P = (c: Copy) => L(c[0], c[1]);
   const href = useSiteHref();
-  const [annual, setAnnual] = useState(false);
-  const discount = annual ? 0.8 : 1;
 
   const faqs: Array<[Copy, Copy]> = [
     [["Is There a Free Trial?", "Apakah Tersedia Uji Coba Gratis?"], ["Yes. Sign up and start right away: 14 days on your own brand with three keywords checked every hour across online news and YouTube, plus every feature of the Pilot plan. No card is needed. The live demo needs no sign-up at all.", "Ya. Daftar dan langsung mulai: 14 hari untuk brand Anda sendiri, dengan tiga kata kunci dipantau tiap jam di berita online dan YouTube, plus seluruh fitur paket Pilot. Tidak perlu kartu kredit. Demo langsung bahkan tidak perlu mendaftar."]],
     [["What Happens After the Trial?", "Apa yang Terjadi Setelah Uji Coba?"], ["Hourly monitoring pauses until your plan is active. Nothing is deleted: your keywords, alerts and reports stay, and monitoring resumes as soon as the plan starts.", "Pemantauan tiap jam berhenti sementara sampai paket Anda aktif. Tidak ada yang dihapus: kata kunci, peringatan, dan laporan tetap tersimpan, dan pemantauan langsung berjalan lagi begitu paket dimulai."]],
-    [["How Does Billing Work?", "Bagaimana Sistem Pembayarannya?"], ["Payment is by bank transfer against an invoice, billed monthly or annually. Annual billing saves 20%. Prices exclude 11% VAT, which is added to the invoice.", "Pembayaran melalui transfer bank berdasarkan invoice, ditagih bulanan atau tahunan. Tagihan tahunan lebih hemat 20%. Harga belum termasuk PPN 11%, yang ditambahkan pada invoice."]],
+    [["How Does Billing Work?", "Bagaimana Sistem Pembayarannya?"], ["Pricing is agreed with our team based on your needs. Payment is by bank transfer against an invoice, monthly or annually.", "Harga disepakati bersama tim kami sesuai kebutuhan Anda. Pembayaran melalui transfer bank berdasarkan invoice, bulanan atau tahunan."]],
     [["Can We Change Plans Later?", "Apakah Paket Dapat Diubah?"], ["Yes. Contact the Narriv team and we will update your workspace plan.", "Ya. Hubungi tim Narriv dan kami akan menyesuaikan paket workspace Anda."]],
     [["What Counts as a Brand?", "Apa yang Dihitung sebagai Brand?"], ["One workspace: a brand, product or client with its own keywords, alerts and reports.", "Satu workspace: satu brand, produk, atau klien dengan kata kunci, peringatan, dan laporan tersendiri."]],
     [["Why Is Social Media Not in Every Plan?", "Mengapa Media Sosial Tidak Tersedia di Semua Paket?"], ["Collecting data from Instagram, TikTok, X and Facebook carries a direct cost per run, so it is included from the Decision plan and activated by the Narriv team.", "Pengambilan data dari Instagram, TikTok, X, dan Facebook memiliki biaya langsung setiap kali dijalankan, sehingga tersedia mulai paket Decision dan diaktifkan oleh tim Narriv."]],
@@ -168,17 +157,6 @@ export default function PricingPage() {
         name: `Narriv ${plan.name}`,
         description: `${P(plan.tagline)} ${P(plan.audience)}.`,
         url: SITE_URL + href("/pricing"),
-        priceCurrency: "IDR",
-        price: plan.price ?? plan.from ?? 0,
-        priceSpecification: {
-          "@type": "UnitPriceSpecification",
-          price: plan.price ?? plan.from ?? 0,
-          priceCurrency: "IDR",
-          unitText: "MONTH",
-          valueAddedTaxIncluded: false,
-          ...(plan.price ? {} : { minPrice: plan.from }),
-        },
-        availability: "https://schema.org/InStock",
       })),
     },
     faqJsonLd(faqs.map(([q, a]) => ({ q: P(q), a: P(a) }))),
@@ -197,23 +175,6 @@ export default function PricingPage() {
             <span className={cn("mk-brush", SERIF)}>{L("for Every Stage of Your Team.", "untuk Setiap Tahap Tim Anda.")}</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/60">{L("Start with a free 14-day trial on your own brand. No card needed.", "Mulai dengan uji coba gratis 14 hari untuk brand Anda sendiri. Tanpa kartu kredit.")}</p>
-          <div role="group" aria-label={L("Billing Period", "Periode Tagihan")} className="mt-8 inline-flex rounded-full bg-white/10 p-1">
-            {[
-              { v: false, label: L("Monthly", "Bulanan") },
-              { v: true, label: L("Annual", "Tahunan") },
-            ].map((o) => (
-              <button
-                key={String(o.v)}
-                type="button"
-                aria-pressed={annual === o.v}
-                onClick={() => setAnnual(o.v)}
-                className={cn("flex h-10 items-center gap-2 rounded-full px-5 text-[14px] font-bold transition", annual === o.v ? "bg-white text-[#101334]" : "text-white/75 hover:text-white")}
-              >
-                {o.label}
-                {o.v ? <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-black", annual ? "bg-[#E8F7F0] text-[#047857]" : "bg-[#22C55E]/20 text-[#86EFAC]")}>-20%</span> : null}
-              </button>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -243,22 +204,8 @@ export default function PricingPage() {
               </div>
 
               <div className="text-center">
-                {plan.price ? (
-                  <>
-                    <p className="whitespace-nowrap text-[28px] font-black leading-none tracking-[-0.03em] tabular-nums">{rupiah(Math.round(plan.price * discount))}</p>
-                    <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>
-                      {annual ? L("per month, billed annually", "per bulan, ditagih tahunan") : L("per month", "per bulan")}
-                      <span className="block">{L("excl. 11% VAT", "belum termasuk PPN 11%")}</span>
-                      {annual ? <span className={cn("mt-1 block font-bold", plan.popular ? "text-[#86EFAC]" : "text-[#047857]")}>{L("Save", "Hemat")} {rupiah((plan.price - Math.round(plan.price * discount)) * 12)} {L("a year", "per tahun")}</span> : null}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[28px] font-black leading-none tracking-[-0.03em]">{L("Custom", "Kustom")}</p>
-                    <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{L(`from ${rupiah(plan.from ?? 0)} per month`, `mulai ${rupiah(plan.from ?? 0)} per bulan`)}
-                      <span className="block">{L("excl. 11% VAT", "belum termasuk PPN 11%")}</span></p>
-                  </>
-                )}
+                <p className="text-[24px] font-black leading-none tracking-[-0.02em]">{L("Let's talk", "Diskusikan")}</p>
+                <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{L("Pricing tailored to your needs", "Harga disesuaikan kebutuhan Anda")}</p>
               </div>
 
               <dl className={cn("space-y-2 self-start rounded-2xl px-4 py-3.5", plan.popular ? "bg-white/[0.08]" : "bg-[#F6F7FC]")}>
@@ -284,13 +231,13 @@ export default function PricingPage() {
               </ul>
 
               <Link
-                href={plan.price ? `/signup?plan=${plan.id}` : href("/help#contact")}
+                href={plan.id === "command" ? href("/help#contact") : `/signup?plan=${plan.id}`}
                 className={cn(
                   "flex h-12 items-center justify-center gap-2 self-end rounded-xl text-[15px] font-bold transition",
                   plan.popular ? "bg-[#465FFF] text-white hover:bg-[#3B52F5]" : "bg-[#101334] text-white hover:bg-[#1B2155]",
                 )}
               >
-                {plan.price ? L("Start a 14-Day Trial", "Mulai Uji Coba 14 Hari") : L("Contact Sales", "Hubungi Tim Kami")}
+                {plan.id === "command" ? L("Contact Sales", "Hubungi Tim Kami") : L("Start a 14-Day Trial", "Mulai Uji Coba 14 Hari")}
                 <ArrowRight size={16} aria-hidden="true" />
               </Link>
             </div>

@@ -21,11 +21,11 @@ export const PAGE_SEO: Record<string, { en: Copy; id: Copy }> = {
   },
   "/pricing": {
     en: {
-      title: "Pricing: Media Monitoring Plans From Rp 5 Million a Month",
+      title: "Plans: Media Monitoring and Narrative Intelligence Packages",
       description: "Narriv plans for brands, agencies and institutions in Indonesia: Pilot, Intelligence, Decision and Command. Hourly news, YouTube and social media monitoring, alerts and board-ready reports. Start a free 14-day trial, no card needed.",
     },
     id: {
-      title: "Harga Media Monitoring: Paket Mulai Rp 5 Juta per Bulan",
+      title: "Paket Media Monitoring dan Narrative Intelligence",
       description: "Paket Narriv untuk brand, agensi, dan instansi di Indonesia: Pilot, Intelligence, Decision, dan Command. Pemantauan berita, YouTube, dan media sosial setiap jam, peringatan, dan laporan siap direksi. Coba gratis 14 hari tanpa kartu kredit.",
     },
   },
