@@ -44,6 +44,7 @@ async function getWorkspaceNotificationContext(workspaceId) {
         emailTo: workspaceSettings?.notification_email || null,
         ownerEmails: workspaceSettings?.notification_email ? [] : await ownerEmails(workspaceId),
         whatsappTo: workspaceSettings?.whatsapp_pic || null,
+        telegramChats: await supabase.from("workspaces").select("settings").eq("id", workspaceId).maybeSingle().then(({ data }) => (data?.settings?.telegram?.chats || []).map((c) => c.id)).catch(() => []),
         settings: {
             emailEnabled: notificationSettings?.email_enabled ?? true,
             whatsappEnabled: notificationSettings?.whatsapp_enabled ?? false,
@@ -85,6 +86,10 @@ async function dispatchByEnabledChannels({
         for (const to of emailTargets) {
             results.push(await providers.email.send({ to, subject, message, html, metadata: { ...metadata, workspaceId, brandName: ctx.brandName, lang } }));
         }
+    }
+
+    if (ctx.telegramChats.length) {
+        results.push(await providers.telegram.send({ chatIds: ctx.telegramChats, subject, message, text, metadata: { ...metadata, workspaceId } }));
     }
 
     if (ctx.settings.whatsappEnabled && ctx.whatsappTo) {
@@ -346,6 +351,8 @@ export async function notifyRadar({ workspaceId, radar }) {
             emailButton(`${appUrl()}/feed`, "Buka Feed Narasi"),
         ].join(""),
     });
+    const { dispatchTextToWebhooks } = await import("../integrations/webhook-dispatcher.service.js");
+    await dispatchTextToWebhooks(workspaceId, `${text}\n${appUrl()}/feed`).catch(() => null);
     return dispatchByEnabledChannels({
         workspaceId,
         subject: `[Narriv Radar] ${radar.items.length} isu perlu perhatian: ${brandName}`,

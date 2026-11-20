@@ -3080,6 +3080,8 @@
       "issueMap": "Issue Map",
       "network": "Network",
       "feed": "Narrative Feed",
+      "recon": "Profile Check",
+      "claimCheck": "Claim Check",
       "quality": "Accuracy Check",
       "alertsTab": "Alerts",
       "settingsTab": "General",

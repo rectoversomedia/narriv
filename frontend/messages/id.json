@@ -3080,6 +3080,8 @@
       "issueMap": "Peta Isu",
       "network": "Jaringan",
       "feed": "Feed Narasi",
+      "recon": "Cek Influencer",
+      "claimCheck": "Cek Klaim",
       "quality": "Uji Akurasi",
       "alertsTab": "Peringatan",
       "settingsTab": "Umum",

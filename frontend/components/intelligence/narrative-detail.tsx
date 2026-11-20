@@ -7,6 +7,7 @@ import { PlatformIcon } from "@/components/ui/platform-icon";
 import { pickL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 import { NarrativeEscalationPanel } from "./narrative-escalation";
+import { IssueAiTools } from "./issue-ai-tools";
 import { NarrativeClaimsPanel, NarrativeFramingPanel, NarrativeJourneyPanel, NarrativeRiskPanel } from "./narrative-framing";
 import { KICKER, NarrativePrecedents, NarrativeSpreadPanel, SectionHead, duration, platformName, when } from "./narrative-spread";
 
@@ -189,6 +190,7 @@ export function NarrativeDetailView({ detail, layout = "stack" }: { detail: Narr
   const num = () => String(++k).padStart(2, "0");
   const risk = detail.risk ? <NarrativeRiskPanel risk={detail.risk} n={num()} /> : null;
   const escalation = (detail.relatedSignals?.length ?? 0) >= 3 ? <NarrativeEscalationPanel detail={detail} n={num()} /> : null;
+  const tools = <IssueAiTools id={detail.id} n={num()} />;
   const claims = detail.claims?.length ? <NarrativeClaimsPanel claims={detail.claims} n={num()} /> : null;
   const framing = detail.framing?.frames?.length ? <NarrativeFramingPanel frames={detail.framing.frames} n={num()} /> : null;
   const journey = detail.journey ? <NarrativeJourneyPanel journey={detail.journey} n={num()} /> : null;
@@ -200,7 +202,7 @@ export function NarrativeDetailView({ detail, layout = "stack" }: { detail: Narr
       <div className="grid gap-8">
         <Summary detail={detail} />
         <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="grid gap-8">{risk}{escalation}{claims}{framing}{journey}{spread ?? history}</div>
+          <div className="grid gap-8">{risk}{escalation}{tools}{claims}{framing}{journey}{spread ?? history}</div>
           <div className="grid gap-8">{spread ? history : null}{records}</div>
         </div>
       </div>
@@ -211,6 +213,7 @@ export function NarrativeDetailView({ detail, layout = "stack" }: { detail: Narr
       <Summary detail={detail} />
       {risk}
       {escalation}
+      {tools}
       {claims}
       {framing}
       {journey}

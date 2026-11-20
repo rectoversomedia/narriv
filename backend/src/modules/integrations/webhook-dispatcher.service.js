@@ -245,3 +245,23 @@ export async function testIntegrationConnection(integration) {
 
     return { success: true, message: `Integration ${integration.platform} verified` };
 }
+
+/** Plain text (a digest such as Narriv Radar) to the workspace's Slack, Teams, Google Chat and WhatsApp integrations. */
+export async function dispatchTextToWebhooks(workspaceId, text) {
+    const { data: integrations } = await supabase.from("integrations").select("*").eq("workspace_id", workspaceId).eq("status", "active").in("platform", ["slack", "teams", "google_chat", "whatsapp"]);
+    let dispatched = 0;
+    for (const integration of integrations || []) {
+        const url = getWebhookUrl(integration);
+        try {
+            if (integration.platform === "slack" && url) await sendSlackMessage(await assertPublicHttpUrl(url), { text });
+            else if (integration.platform === "teams" && url) await sendTeamsMessage(await assertPublicHttpUrl(url), { text });
+            else if (integration.platform === "google_chat" && url) await sendGoogleChatMessage(url, text);
+            else if (integration.platform === "whatsapp") await sendWhatsAppMessage(integration.config, text);
+            else continue;
+            dispatched++;
+        } catch (error) {
+            logStructured("warn", "text_webhook_dispatch_failed", { integrationId: integration.id, platform: integration.platform, error: error.message });
+        }
+    }
+    return { dispatched, total: (integrations || []).length };
+}

@@ -45,6 +45,34 @@ export async function factChecks({ fetchImpl = fetch } = {}) {
     return items;
 }
 
+const FALSE_RE = /^\s*\[?\s*(hoaks|hoax|salah|keliru|disinformasi|misinformasi|menyesatkan|tidak benar|penipuan)\s*\]?\s*[:\-–]|\b(tidak benar|bukan fakta|hoaks)\b/i;
+const TRUE_RE = /^\s*\[?\s*(benar|fakta)\s*\]?\s*[:\-–]/i;
+const FACT_SITES = /tempo|kompas|turnbackhoax|jala hoaks|cekfakta|liputan6|antara|komdigi|kominfo|mafindo|tirto|detik/i;
+/**
+ * Fact-checks for one claim found through Google News ("<keywords> cek fakta"): Indonesian fact-check desks publish
+ * with verdict prefixes ("Keliru:", "[HOAKS]", "Salah:"). TurnBackHoax's own feed stopped carrying items, so this
+ * search is what finds older and per-claim checks.
+ */
+export async function searchFactChecks(claim, { fetchImpl = fetch } = {}) {
+    const q = [...words(claim)].slice(0, 7).join(" ");
+    if (!q) return [];
+    try {
+        const xml = (await Promise.all([`${q} cek fakta`, `${q} hoaks`].map((term) => fetchImpl(`https://news.google.com/rss/search?q=${encodeURIComponent(term)}&hl=id&gl=ID&ceid=ID:id`, { signal: AbortSignal.timeout(10000) })
+            .then((r) => (r.ok ? r.text() : "")).catch(() => "")))).join("\n");
+        const out = [];
+        for (const m of xml.matchAll(/<item>[\s\S]*?<title>([\s\S]*?)<\/title>[\s\S]*?<link>([^<]+)<\/link>/g)) {
+            const full = m[1].replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+            const publisher = full.match(/\s-\s([^-]+)$/)?.[1] || "";
+            const title = full.replace(/\s-\s[^-]+$/, "");
+            const verdict = TRUE_RE.test(title) ? "confirmed" : FALSE_RE.test(title) ? "refuted" : null;
+            if (verdict && FACT_SITES.test(`${publisher} ${title}`) && !out.some((o) => o.title === title)) out.push({ title, url: m[2].trim(), verdict, publisher });
+        }
+        return out.slice(0, 6);
+    } catch {
+        return [];
+    }
+}
+
 /** Match claims to fact-checks; the best match above the threshold sets the status. */
 export function matchClaims(claims, checks, threshold = 0.5) {
     return claims.map((c) => {
@@ -76,7 +104,9 @@ export async function checkClaims({ cluster, members, db, chat = getChatClient()
         });
         const parsed = JSON.parse(res?.choices?.[0]?.message?.content || "{}");
         const claims = (Array.isArray(parsed.claims) ? parsed.claims : []).map((c) => ({ claim: String(c?.claim || "").slice(0, 200) })).filter((c) => c.claim).slice(0, 3);
-        const items = matchClaims(claims, await factChecks({ fetchImpl }));
+        const feed = await factChecks({ fetchImpl });
+        const searched = (await Promise.all(claims.map((c) => searchFactChecks(c.claim, { fetchImpl })))).flat();
+        const items = matchClaims(claims, [...searched, ...feed]);
         const result = { signature, items, at: new Date().toISOString() };
         await db.from("narrative_clusters").update({ metadata: { ...(cluster.metadata || {}), claims: result } }).eq("id", cluster.id);
         return result;

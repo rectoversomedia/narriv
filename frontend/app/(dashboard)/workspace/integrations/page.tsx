@@ -16,6 +16,7 @@ import { BOX } from "@/lib/surface";
 import { intlLocale } from "@/store/useUiStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
+import { TelegramLink } from "@/components/settings/telegram-link";
 const emptyIntegrations: IntegrationRecord[] = [];
 
 function platformLabel(platform: string, options: { value: string; label: string }[]) {
@@ -197,6 +198,8 @@ export default function IntegrationsPage() {
         <p className="mt-1 text-[24px] font-black leading-tight">{banner.title}</p>
         <p className="mt-1 text-[13px] font-bold text-white/85">{banner.sub}</p>
       </section>
+
+      <TelegramLink />
 
       {/* One card per channel: how many are connected, and the button that starts connecting one. */}
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">

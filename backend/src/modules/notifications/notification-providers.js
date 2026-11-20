@@ -96,10 +96,42 @@ export function createWhatsAppProvider({ fetchImpl = fetch } = {}) {
     };
 }
 
+/** True when Narriv's Telegram bot is configured (TELEGRAM_BOT_TOKEN). Workspaces link a chat by sending /start <code>. */
+export const isTelegramConfigured = () => Boolean(process.env.TELEGRAM_BOT_TOKEN && !/placeholder/i.test(process.env.TELEGRAM_BOT_TOKEN));
+
+/** Telegram through Narriv's own bot, to the chats linked to the workspace (workspaces.settings.telegram.chats). */
+export function createTelegramProvider({ fetchImpl = fetch } = {}) {
+    return {
+        channel: "telegram",
+        async send({ chatIds, text, message, subject, metadata }) {
+            if (!isTelegramConfigured()) return { delivered: false, provider: "telegram", reason: "Telegram bot not configured" };
+            const targets = (chatIds || []).filter(Boolean);
+            if (!targets.length) return { delivered: false, provider: "telegram", reason: "No linked chat" };
+            let ok = 0;
+            for (const chat_id of targets) {
+                try {
+                    const res = await fetchImpl(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ chat_id, text: String(text || message || subject).slice(0, 4000), disable_web_page_preview: true }),
+                        signal: AbortSignal.timeout(15000),
+                    });
+                    if (res.ok) ok++;
+                    else logStructured("warn", "telegram_send_failed", { status: res.status, metadata });
+                } catch (error) {
+                    logStructured("warn", "telegram_send_failed", { error: error?.message || error, metadata });
+                }
+            }
+            return { delivered: ok > 0, provider: "telegram", recipients: ok };
+        },
+    };
+}
+
 export function createNotificationProviders() {
     return {
         email: createEmailProvider(),
         whatsapp: createWhatsAppProvider(),
+        telegram: createTelegramProvider(),
     };
 }
 

@@ -146,7 +146,7 @@ const CLAIM: Record<NarrativeClaim["status"], { en: string; id: string; chip: st
 export function NarrativeClaimsPanel({ claims, n }: { claims: NarrativeClaim[]; n?: string }) {
   return (
     <section className="grid gap-4">
-      <SectionHead n={n} icon={ShieldCheck} title={pickL("Claim Check", "Cek Klaim")} note={pickL("The claims this story rests on, matched against Indonesian fact-checkers (TurnBackHoax, CekFakta).", "Klaim yang jadi dasar cerita ini, dicocokkan dengan pemeriksa fakta Indonesia (TurnBackHoax, CekFakta).")} />
+      <SectionHead n={n} icon={ShieldCheck} title={pickL("Claim Check", "Cek Klaim")} note={pickL("The claims this story rests on, matched against Indonesian fact-checkers (CekFakta, Kompas, Tempo, Liputan6 and others).", "Klaim yang jadi dasar cerita ini, dicocokkan dengan pemeriksa fakta Indonesia (CekFakta, Kompas, Tempo, Liputan6, dan lainnya).")} />
       <div className={cn(BOX, "grid gap-3")}>
         {claims.map((c) => (
           <div key={c.claim} className="rounded-[14px] bg-[#F7F8FC] p-4">

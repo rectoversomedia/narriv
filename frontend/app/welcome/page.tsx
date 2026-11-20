@@ -2,6 +2,7 @@
 
 import { EscalationChart } from "@/components/charts/escalation-chart";
 import { FourLayers } from "@/components/marketing/four-layers";
+import { FeedDemo } from "@/components/marketing/feed-demo";
 import Link from "next/link";
 import { Fragment, useState, type CSSProperties, type ReactNode } from "react";
 import { ArrowRight, ArrowUpRight, BellRing, Building2, Check, ChevronDown, Clock3, FileText, LineChart, Megaphone, Minus, Radar, Sparkles, UserCheck, type LucideIcon } from "lucide-react";
@@ -551,6 +552,7 @@ export default function WelcomePage() {
             />
           </Reveal>
           <FourLayers />
+          <Reveal><FeedDemo /></Reveal>
         </div>
       </section>
 
