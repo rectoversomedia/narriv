@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronsLeft, ChevronsUpDown } from "lucide-react";
+import { ChevronDown, ChevronsLeft, ChevronsUpDown } from "lucide-react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BrandMark } from "@/components/dashboard/brand-hero";
@@ -25,8 +26,9 @@ function activeRoute(pathname: string, href: string, match: string[] = []) {
 const fade = (hidden: boolean) => cn("whitespace-nowrap transition-opacity duration-200", hidden ? "pointer-events-none opacity-0" : "opacity-100");
 
 /**
- * Desktop: the Narriv wordmark lined up with the top bar, the client's workspace, the four menus (the open one
- * lists its pages, the same ones as the tabs on the page), then whether monitoring is running. Settings and Help
+ * Desktop: the Narriv wordmark lined up with the top bar, the client's workspace, the five menus as an accordion (the
+ * current one lists its pages; the others open with their arrow; desktop has no tab row), then whether monitoring
+ * is running. Settings and Help
  * are in the account menu at the top right. Phones get the bottom bar instead.
  */
 export function Sidebar() {
@@ -37,6 +39,8 @@ export function Sidebar() {
   const collapsed = useUiStore((state) => state.sidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const mobileItems = navGroups.flatMap((group) => group.items);
+  // Accordion: the current menu's pages are always open; others open with their arrow (several may be open at once).
+  const [opened, setOpened] = useState<Record<string, boolean>>({});
   // Open alerts, shown beside Follow-up so what waits for a decision is visible from every page.
   const openAlerts = useQuery({ queryKey: ["nav-open-alerts"], queryFn: () => getAlerts({ status: "unresolved", type: "risk", limit: 1 }), staleTime: 60 * 1000, refetchInterval: 2 * 60 * 1000 });
   const openCount = openAlerts.data?.pagination?.total ?? 0;
@@ -105,7 +109,12 @@ export function Sidebar() {
                 const active = activeRoute(pathname, item.href, item.match);
                 const pages = (SECTION_TABS[item.key as SectionKey] ?? []).filter((page) => !isPageHidden(page.href, useCase));
                 return (
-                  <div key={item.href}>
+                  <div key={item.href} className="relative">
+                    {!collapsed && pages.length > 1 && !active ? (
+                      <button type="button" aria-label={L("Show pages", "Tampilkan halaman")} aria-expanded={Boolean(opened[item.key])} onClick={() => setOpened((o) => ({ ...o, [item.key]: !o[item.key] }))} className="absolute right-1.5 top-1.5 z-10 grid size-7 place-items-center rounded-[8px] text-white/45 hover:bg-white/[0.08] hover:text-white">
+                        <ChevronDown size={15} className={cn("transition-transform", opened[item.key] && "rotate-180")} />
+                      </button>
+                    ) : null}
                     <Link
                       href={item.href}
                       onMouseEnter={() => prefetchRoute(queryClient, item.href)}
@@ -118,12 +127,12 @@ export function Sidebar() {
                       <Icon size={18} strokeWidth={2} className="shrink-0" />
                       <span className={fade(collapsed)}>{t(`nav.${item.key}`)}</span>
                       {badgeFor(item.key) ? (
-                        <span className={cn("ml-auto rounded-full bg-[#EF4444] px-2 py-0.5 text-[12px] font-black tabular-nums leading-none text-white", collapsed && "absolute ml-0 translate-x-3 -translate-y-3 px-1.5")}>{badgeFor(item.key)}</span>
+                        <span className={cn("ml-auto rounded-full", !collapsed && !active && pages.length > 1 && "mr-7", " bg-[#EF4444] px-2 py-0.5 text-[12px] font-black tabular-nums leading-none text-white", collapsed && "absolute ml-0 translate-x-3 -translate-y-3 px-1.5")}>{badgeFor(item.key)}</span>
                       ) : null}
                     </Link>
-                    {/* The open menu shows its pages, so the structure is visible without reading the tab bar. */}
-                    {active && !collapsed && pages.length > 1 ? (
-                      <div className="mb-1 ml-[24px] mt-1 border-l border-white/10 pl-3">
+                    {/* The menu's pages (no tab bar on desktop): open for the current menu, on demand for the others. */}
+                    {!collapsed && pages.length > 1 && (active || opened[item.key]) ? (
+                      <div className="mb-1.5 ml-[24px] mt-0.5 border-l border-white/10 pl-3">
                         {pages.map((page) => {
                           const current = pathname === page.href;
                           return (
@@ -133,7 +142,7 @@ export function Sidebar() {
                               onMouseEnter={() => prefetchRoute(queryClient, page.href)}
                               onFocus={() => prefetchRoute(queryClient, page.href)}
                               aria-current={current ? "page" : undefined}
-                              className={cn("relative flex h-8 items-center whitespace-nowrap rounded-[8px] px-2.5 text-[12.5px] font-semibold transition-colors", current ? "bg-white/[0.10] text-white" : "text-white/55 hover:bg-white/[0.05] hover:text-white")}
+                              className={cn("relative flex h-[30px] items-center whitespace-nowrap rounded-[8px] px-2.5 text-[12.5px] font-semibold transition-colors", current ? "bg-white/[0.10] text-white" : "text-white/55 hover:bg-white/[0.05] hover:text-white")}
                             >
                               {current ? <span aria-hidden="true" className="absolute -left-[13px] top-1.5 h-5 w-[2px] rounded-full bg-[#8EA0FF]" /> : null}
                               {t(`nav.${page.key}`)}
@@ -178,7 +187,7 @@ export function Sidebar() {
         </div>
       </aside>
 
-      <nav className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 grid grid-cols-5 rounded-2xl border border-border bg-[#090D16]/90 p-1.5 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] lg:hidden">
+      <nav className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 grid grid-cols-6 rounded-2xl border border-border bg-[#090D16]/90 p-1.5 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] lg:hidden">
         {mobileItems.map((item) => {
           const Icon = item.icon;
           const active = activeRoute(pathname, item.href, item.match);

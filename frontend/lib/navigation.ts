@@ -1,9 +1,10 @@
 import type { LucideIcon } from "lucide-react";
-import { BadgeCheck, BarChart3, Rss, ShieldCheck, UserSearch, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, Share2, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
+import { BadgeCheck, BarChart3, Rss, ScanSearch, ShieldCheck, UserSearch, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, Share2, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
 
-// Four menus, each answering one question a director has:
-//   Hari Ini — what is happening and what do I decide today?
-//   Isu — what are people saying (online and in AI answers), and which of it is dangerous?
+// Five menus, in the order a team works (see → understand → investigate → act → report), each answering one question:
+//   Hari Ini — what is happening and what do I decide today? (incl. opportunities worth using today)
+//   Isu — which stories are out there and which are dangerous? The Narrative Feed opens it.
+//   Alat Analis — tools used when needed: check a claim, check a person or account, see what AI assistants answer.
 //   Tindak Lanjut — what needs handling, who owns it, how far along is it? (its open count shows beside it)
 //     Its tabs are the three steps of handling an issue in order (alert, plan, case), so they carry step numbers.
 //     Recommendations are suggestions still waiting on a decision, so they live under Hari Ini.
@@ -16,8 +17,9 @@ export const navGroups: Array<{ key: string; items: Array<{ key: string; href: s
   {
     key: "main",
     items: [
-      { key: "today", href: "/", icon: Home, match: ["/brief", "/insights", "/action-center"] },
-      { key: "issues", href: "/signals", icon: MessagesSquare, match: ["/feed", "/recon", "/cek-klaim", "/intelligence", "/network", "/opportunities", "/timeline", "/visibility"] },
+      { key: "today", href: "/", icon: Home, match: ["/brief", "/insights", "/action-center", "/opportunities"] },
+      { key: "issues", href: "/feed", icon: MessagesSquare, match: ["/signals", "/intelligence", "/network", "/timeline"] },
+      { key: "tools", href: "/cek-klaim", icon: ScanSearch, match: ["/recon", "/visibility"] },
       { key: "tasks", href: "/alerts", icon: Bell, match: ["/alert-center", "/action-plans", "/actions", "/workspace/cases"] },
       { key: "reports", href: "/reports", icon: FileText, match: ["/quality"] },
     ],
@@ -33,17 +35,19 @@ export const SECTION_TABS = {
   today: [
     { key: "todayTab", href: "/", icon: LayoutDashboard },
     { key: "actionsTab", href: "/action-center", icon: Lightbulb },
+    { key: "opportunities", href: "/opportunities", icon: Sparkle },
     { key: "analysis", href: "/insights", icon: BarChart3 },
   ],
   issues: [
-    { key: "conversations", href: "/signals", icon: MessagesSquare },
     { key: "feed", href: "/feed", icon: Rss },
     { key: "issueMap", href: "/intelligence", icon: Network },
     { key: "network", href: "/network", icon: Share2 },
-    { key: "recon", href: "/recon", icon: UserSearch },
-    { key: "claimCheck", href: "/cek-klaim", icon: ShieldCheck },
-    { key: "opportunities", href: "/opportunities", icon: Sparkle },
     { key: "timeline", href: "/timeline", icon: CalendarClock },
+    { key: "conversations", href: "/signals", icon: MessagesSquare },
+  ],
+  tools: [
+    { key: "claimCheck", href: "/cek-klaim", icon: ShieldCheck },
+    { key: "recon", href: "/recon", icon: UserSearch },
     { key: "visibility", href: "/visibility", icon: Sparkles },
   ],
   tasks: [

@@ -3080,6 +3080,7 @@
       "issueMap": "Issue Map",
       "network": "Network",
       "feed": "Narrative Feed",
+      "tools": "Analyst Tools",
       "recon": "Profile Check",
       "claimCheck": "Claim Check",
       "quality": "Accuracy Check",
@@ -3308,6 +3309,7 @@
     "navShort": {
       "today": "Today",
       "issues": "Issues",
+      "tools": "Tools",
       "tasks": "Follow-up",
       "reports": "Reports",
       "settings": "Settings"

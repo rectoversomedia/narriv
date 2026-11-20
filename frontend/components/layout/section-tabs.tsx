@@ -35,7 +35,8 @@ export function SectionTabs() {
   if (!group) return null;
   const stepped = STEPPED_SECTIONS.includes(group);
   return (
-    <div className="mb-4 flex items-center sm:mb-6">
+    // On desktop the sidebar lists every page, so the tab row only shows for Settings (not in the sidebar).
+    <div className={cn("mb-4 flex items-center sm:mb-6", group !== "settings" && "lg:hidden")}>
       <nav
         ref={navRef}
         aria-label={t(`nav.${group}`)}

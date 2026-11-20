@@ -3080,6 +3080,7 @@
       "issueMap": "Peta Isu",
       "network": "Jaringan",
       "feed": "Feed Narasi",
+      "tools": "Alat Analis",
       "recon": "Cek Influencer",
       "claimCheck": "Cek Klaim",
       "quality": "Uji Akurasi",
@@ -3308,6 +3309,7 @@
     "navShort": {
       "today": "Hari Ini",
       "issues": "Isu",
+      "tools": "Alat",
       "tasks": "Tindakan",
       "reports": "Laporan",
       "settings": "Atur"
