@@ -3086,7 +3086,8 @@
       "quality": "Uji Akurasi",
       "alertsTab": "Peringatan",
       "settingsTab": "Umum",
-      "analysis": "Analisis"
+      "analysis": "Analisis",
+      "forecast": "Prediksi Isu"
     },
     "sidebar": {
       "scoreTitle": "Skor Intelijen Narriv",
@@ -3312,7 +3313,8 @@
       "tools": "Alat",
       "tasks": "Tindakan",
       "reports": "Laporan",
-      "settings": "Atur"
+      "settings": "Atur",
+      "forecast": "Prediksi"
     }
   },
   "ActionPlans": {

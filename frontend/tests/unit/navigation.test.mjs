@@ -6,11 +6,11 @@ import { navGroups, SECTION_TABS, sectionForPath } from "../../lib/navigation.ts
 const page = (href) => `app/(dashboard)${href === "/" ? "" : href}/page.tsx`;
 const messages = (lang) => JSON.parse(readFileSync(`messages/${lang}.json`, "utf8")).DemoApp;
 
-test("navigation is five menus, one question each, and every menu's tabs start at its own page", () => {
+test("navigation is six menus, one question each, and every menu's tabs start at its own page", () => {
   assert.equal(navGroups.length, 1);
   const items = navGroups[0].items;
-  assert.deepEqual(items.map((i) => i.key), ["today", "issues", "tools", "tasks", "reports"]);
-  assert.deepEqual(items.map((i) => i.href), ["/", "/feed", "/cek-klaim", "/alerts", "/reports"]);
+  assert.deepEqual(items.map((i) => i.key), ["today", "forecast", "issues", "tools", "tasks", "reports"]);
+  assert.deepEqual(items.map((i) => i.href), ["/", "/forecast", "/feed", "/cek-klaim", "/alerts", "/reports"]);
   for (const item of items) assert.equal(SECTION_TABS[item.key][0].href, item.href, `${item.key}: first tab is the menu's page`);
   for (const item of items) for (const tab of SECTION_TABS[item.key]) assert.ok(tab.href === item.href || (item.match ?? []).includes(tab.href), `${tab.href} lights up ${item.key}`);
 });

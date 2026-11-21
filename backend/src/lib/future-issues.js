@@ -65,6 +65,9 @@ export function normalizeForecasts(raw, ctx) {
             earlySignals: arr(f.early_signals),
             prepare: arr(f.prepare),
             audiences: arr(f.audiences).slice(0, 3),
+            scenario: (Array.isArray(f.scenario) ? f.scenario : []).map((st) => ({ stage: stripEmoji(String(st?.stage || "")).trim().slice(0, 60), what: stripEmoji(String(st?.what || "")).trim().slice(0, 300) })).filter((st) => st.stage && st.what).slice(0, 4),
+            ifIgnored: stripEmoji(String(f.if_ignored || "")).trim().slice(0, 400),
+            lesson: stripEmoji(String(f.lesson || "")).trim().slice(0, 400),
             related: related.map((id) => ({ id, title: titleOf.get(id) })),
         };
     }).filter((f) => f.title && f.why).sort((a, b) => b.likelihood - a.likelihood).slice(0, 6);
@@ -84,7 +87,7 @@ export async function generateFutureIssues(workspaceId, { db = supabase, chat, n
             "Prefer specific, plausible, decision-useful forecasts over generic ones. Likelihood is a calibrated percentage.",
             `Write in ${id ? "Indonesian (professional, concise, no slang)" : "English"} for a board director: plain business language, never field names or data jargon (no "momentum72h", "level high", "acknowledged", "signals"), dates written as "18 November", platforms by their names (Instagram, YouTube, berita online). No emoji, no decorative symbols, no exclamation marks.`,
         ].join(" "),
-        user: `Today: ${ctx.today}\nData (last 30 days):\n${JSON.stringify(ctx)}\n\nReturn {"forecasts": [{"title": "the future issue as a headline-style phrase", "horizon": "${id ? "e.g. 1–2 minggu, bulan ini, 1–3 bulan" : "e.g. 1–2 weeks, this month, 1–3 months"}", "likelihood": 0-100, "impact": "high|medium|low", "why": "2–3 sentences: how it develops from the data, with numbers", "evidence": ["data points it rests on"], "early_signals": ["what to watch that would confirm it"], "prepare": ["concrete steps to take now"], "audiences": ["who it would hit"], "related_issue_ids": ["ids from issues"]}]} with 3 to 6 forecasts, most likely first.`,
+        user: `Today: ${ctx.today}\nData (last 30 days):\n${JSON.stringify(ctx)}\n\nReturn {"forecasts": [{"title": "the future issue as a headline-style phrase", "horizon": "${id ? "e.g. 1–2 minggu, bulan ini, 1–3 bulan" : "e.g. 1–2 weeks, this month, 1–3 months"}", "likelihood": 0-100, "impact": "high|medium|low", "why": "2–3 sentences: how it develops from the data, with numbers", "evidence": ["data points it rests on"], "early_signals": ["what to watch that would confirm it"], "prepare": ["concrete steps to take now"], "audiences": ["who it would hit"], "scenario": [{"stage": "short stage name, e.g. ${id ? "Sekarang, Memanas, Puncak" : "Now, Heating up, Peak"}", "what": "what happens at this stage"}] (3 stages, how it unfolds), "if_ignored": "1–2 sentences: the cost if nothing is done", "lesson": "1–2 sentences the team should learn from this pattern for the future", "related_issue_ids": ["ids from issues"]}]} with 3 to 6 forecasts, most likely first.`,
     });
     const forecasts = normalizeForecasts(raw, ctx);
     const result = { forecasts, basis: { records: ctx.records30d, issues: ctx.issues.length, alerts: ctx.alerts.length }, at: new Date(now).toISOString() };
@@ -93,6 +96,18 @@ export async function generateFutureIssues(workspaceId, { db = supabase, chat, n
         if (error) logStructured("warn", "future_issues_store_failed", { error: error.message });
     }
     return result;
+}
+
+/** Save which "prepare now" steps the team has done (by forecast title) on the latest stored forecast. */
+export async function saveFutureProgress(workspaceId, title, done, { db = supabase } = {}) {
+    const { data } = await db.from("raw_documents").select("id, metadata").eq("workspace_id", workspaceId).like("external_id", "future:%").order("created_at", { ascending: false }).limit(1);
+    const doc = data?.[0];
+    if (!doc?.metadata?.future) return null;
+    const future = doc.metadata.future;
+    const progress = { ...(future.progress || {}), [String(title).slice(0, 120)]: [...new Set((done || []).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < 10))] };
+    const { error } = await db.from("raw_documents").update({ metadata: { ...doc.metadata, future: { ...future, progress } } }).eq("id", doc.id);
+    if (error) throw error;
+    return progress;
 }
 
 /** The latest stored forecast when still fresh, else a new one. */

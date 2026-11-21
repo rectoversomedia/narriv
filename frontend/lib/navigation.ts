@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
-import { BadgeCheck, BarChart3, Rss, ScanSearch, ShieldCheck, UserSearch, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, Share2, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
+import { BadgeCheck, BarChart3, Telescope, Rss, ScanSearch, ShieldCheck, UserSearch, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, Share2, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
 
-// Five menus, in the order a team works (see → understand → investigate → act → report), each answering one question:
+// Six menus (Prediksi Isu: which issues come next, what to learn and prepare), in the order a team works (see → understand → investigate → act → report), each answering one question:
 //   Hari Ini — what is happening and what do I decide today? (incl. opportunities worth using today)
 //   Isu — which stories are out there and which are dangerous? The Narrative Feed opens it.
 //   Alat Analis — tools used when needed: check a claim, check a person or account, see what AI assistants answer.
@@ -18,6 +18,7 @@ export const navGroups: Array<{ key: string; items: Array<{ key: string; href: s
     key: "main",
     items: [
       { key: "today", href: "/", icon: Home, match: ["/brief", "/insights", "/action-center", "/opportunities"] },
+      { key: "forecast", href: "/forecast", icon: Telescope },
       { key: "issues", href: "/feed", icon: MessagesSquare, match: ["/signals", "/intelligence", "/network", "/timeline"] },
       { key: "tools", href: "/cek-klaim", icon: ScanSearch, match: ["/recon", "/visibility"] },
       { key: "tasks", href: "/alerts", icon: Bell, match: ["/alert-center", "/action-plans", "/actions", "/workspace/cases"] },
@@ -38,6 +39,7 @@ export const SECTION_TABS = {
     { key: "opportunities", href: "/opportunities", icon: Sparkle },
     { key: "analysis", href: "/insights", icon: BarChart3 },
   ],
+  forecast: [{ key: "forecast", href: "/forecast", icon: Telescope }],
   issues: [
     { key: "feed", href: "/feed", icon: Rss },
     { key: "issueMap", href: "/intelligence", icon: Network },

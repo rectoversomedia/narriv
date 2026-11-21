@@ -109,9 +109,14 @@ export function FutureIssuesPanel() {
           <h2 className="mt-1.5 text-[20px] font-black leading-tight text-[#101334]">{L("Future Issues", "Isu yang Akan Datang")}</h2>
           <p className="mt-1.5 text-[13.5px] leading-relaxed text-[#5F6B94]">{L("The stories most likely to become your next issue, read from every issue, alert and record, with the signs to watch and what to prepare now.", "Cerita yang paling mungkin menjadi isu berikutnya, dibaca dari semua isu, peringatan, dan catatan, lengkap dengan tanda yang perlu dipantau dan apa yang perlu disiapkan sekarang.")}</p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <Link href="/forecast" className="inline-flex h-10 items-center gap-2 rounded-[12px] border-[1.5px] border-[#101334] bg-[#465FFF] px-3.5 text-[12.5px] font-bold text-white shadow-[0_2px_0_#101334] hover:bg-[#3B52F5]">
+          {L("Open Issue Forecast", "Buka Prediksi Isu")} <ArrowUpRight size={14} aria-hidden="true" />
+        </Link>
         <button type="button" onClick={refresh} disabled={refreshing || q.isLoading} className="inline-flex h-10 items-center gap-2 rounded-[12px] border-[1.5px] border-[#101334] bg-white px-3.5 text-[12.5px] font-bold text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#F7F8FC] disabled:opacity-60">
           <RefreshCw size={14} className={cn(refreshing && "animate-spin")} aria-hidden="true" /> {refreshing ? L("Reading the data…", "Membaca data…") : L("Update Forecast", "Perbarui Prediksi")}
         </button>
+        </div>
       </div>
 
       {q.isLoading || refreshing ? (

@@ -187,6 +187,16 @@ export default function AskPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
+  // A question passed in the link (?q=, e.g. from Issue Forecast) is asked right away, once.
+  const askedFromLink = useRef(false);
+  useEffect(() => {
+    if (askedFromLink.current) return;
+    askedFromLink.current = true;
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) { window.history.replaceState(null, "", "/ask"); sendMessage(q); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function sendMessage(question: string) {
     const trimmed = question.trim();
     if (!trimmed) return;

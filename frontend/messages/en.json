@@ -3086,7 +3086,8 @@
       "quality": "Accuracy Check",
       "alertsTab": "Alerts",
       "settingsTab": "General",
-      "analysis": "Analysis"
+      "analysis": "Analysis",
+      "forecast": "Issue Forecast"
     },
     "sidebar": {
       "scoreTitle": "Narriv Intelligence Score",
@@ -3312,7 +3313,8 @@
       "tools": "Tools",
       "tasks": "Follow-up",
       "reports": "Reports",
-      "settings": "Settings"
+      "settings": "Settings",
+      "forecast": "Forecast"
     }
   },
   "ActionPlans": {

@@ -9,7 +9,7 @@ import { runRecon } from "../../lib/recon.js";
 import { checkClaimInput } from "../../lib/claim-box.js";
 import { investigationBrief, simulateResponse } from "../../lib/issue-ai.js";
 import { radarReply } from "../../lib/narrative-radar.js";
-import { futureIssues } from "../../lib/future-issues.js";
+import { futureIssues, saveFutureProgress } from "../../lib/future-issues.js";
 
 /**
  * Analyst tools on top of the monitored data:
@@ -136,6 +136,19 @@ router.get("/future-issues", rateLimiters.aiGeneration(), async (req, res) => {
     } catch (error) {
         logStructured("error", "future_issues_failed", { error: error?.message });
         res.status(503).json({ error: "Prediksi isu belum bisa dibuat. Coba lagi sebentar." });
+    }
+});
+
+// The team's progress on a forecast's "prepare now" steps.
+router.put("/future-issues/progress", async (req, res) => {
+    const id = await ws(req, res); if (!id) return;
+    const { title, done } = req.body || {};
+    if (!title || !Array.isArray(done)) return res.status(400).json({ error: "title and done are required." });
+    try {
+        res.json({ progress: await saveFutureProgress(id, title, done) });
+    } catch (error) {
+        logStructured("error", "future_progress_failed", { error: error?.message });
+        res.status(500).json({ error: "Progres belum tersimpan." });
     }
 });
 
