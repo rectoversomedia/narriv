@@ -1,5 +1,6 @@
 "use client";
 
+import { RichText } from "@/components/ui/rich-text";
 import { useState } from "react";
 import { Copy } from "lucide-react";
 import type { ActionPlanOption } from "@/lib/api-service";
@@ -52,7 +53,7 @@ export function PlanOptions({ options }: { options: ActionPlanOption[] }) {
         </div>
       ) : null}
 
-      {o.summary ? <p className="text-[15px] font-medium leading-relaxed text-[#31406B]">{o.summary}</p> : null}
+      {o.summary ? <RichText text={o.summary} className="text-[15px] font-medium leading-relaxed text-[#31406B]" /> : null}
 
       {o.steps?.length ? (
         <div>

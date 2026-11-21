@@ -1,5 +1,6 @@
 "use client";
 
+import { RichText } from "@/components/ui/rich-text";
 import { tidyText, tidyTitle } from "@/lib/tidy-text";
 import Link from "next/link";
 import { useState } from "react";
@@ -58,7 +59,7 @@ function FeaturedOpportunity({ alert, onPlan }: { alert: Alert; onPlan: () => vo
           <span className="text-[11.5px] font-medium text-[#5F6B94]">{shortDate(alert.createdAt)}</span>
         </div>
         <h2 className="mt-4 max-w-4xl text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] sm:text-[32px]">{tidyTitle(alert.title)}</h2>
-        {alert.whatHappened ? <p className="mt-2 max-w-3xl text-[15.5px] font-medium leading-relaxed text-[#31406B]">{tidyText(alert.whatHappened)}</p> : null}
+        {alert.whatHappened ? <RichText text={tidyText(alert.whatHappened)} className="mt-2 max-w-3xl text-[15.5px] font-medium leading-relaxed text-[#31406B]" /> : null}
         {!owner ? (
           <p className="mt-4 inline-flex items-center gap-2 rounded-[10px] bg-[#FFF7E8] px-3 py-2 text-[13px] font-bold text-[#92400E]">{L("No owner yet: assign someone so it is not missed.", "Belum ada penanggung jawab: tunjuk seseorang supaya tidak terlewat.")}</p>
         ) : null}

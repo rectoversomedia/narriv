@@ -1,5 +1,6 @@
 "use client";
 
+import { RichText } from "@/components/ui/rich-text";
 import { ExternalLink, Gauge, Route, ShieldCheck, Split } from "lucide-react";
 import type { NarrativeClaim, NarrativeFrame, NarrativeJourney, NarrativeRisk, Tone } from "@/lib/api-service";
 import { pickL } from "@/lib/use-l";
@@ -28,7 +29,7 @@ export function NarrativeFramingPanel({ frames, n }: { frames: NarrativeFrame[];
               <span className="text-[15px] font-black text-[#101334]">{f.label}</span>
               <span className="ml-auto text-[12px] font-bold text-[#5A6478]">{f.count} {pickL("records", "catatan")} · {Math.round((f.count / total) * 100)}%</span>
             </div>
-            {f.summary ? <p className="mt-1.5 text-[13.5px] leading-relaxed text-[#31406B]">{f.summary}</p> : null}
+            {f.summary ? <RichText text={f.summary} className="mt-1.5 text-[13.5px] leading-relaxed text-[#31406B]" /> : null}
             {f.outlets.length ? <p className="mt-1.5 text-[12px] font-semibold text-[#5A6478]">{pickL("Carried by", "Dibawa oleh")}: {f.outlets.join(", ")}</p> : null}
           </div>
         ))}

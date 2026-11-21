@@ -1,5 +1,6 @@
 "use client";
 
+import { RichText } from "@/components/ui/rich-text";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ChevronDown, Download, ExternalLink, Radio, Users } from "lucide-react";
@@ -174,7 +175,7 @@ export default function NetworkPage() {
                       </div>
                       <div>
                         <h3 className="text-[18px] font-black leading-snug text-[#101334]">{c.label ?? L(`Camp ${c.id}`, `Kubu ${c.id}`)}</h3>
-                        {c.summary ? <p className="mt-1 text-[14px] leading-relaxed text-[#31406B]">{c.summary}</p> : null}
+                        {c.summary ? <RichText text={c.summary} className="mt-1 text-[14px] leading-relaxed text-[#31406B]" /> : null}
                       </div>
                       <div className="flex h-2 overflow-hidden rounded-full bg-[#E2E6F2]">
                         <span style={{ width: `${c.positiveShare}%` }} className="bg-[#12A66A]" />

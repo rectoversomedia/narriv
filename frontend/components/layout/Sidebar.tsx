@@ -46,7 +46,7 @@ export function Sidebar() {
   const openCount = openAlerts.data?.pagination?.total ?? 0;
   const badgeFor = (key: string) => (key === "tasks" && openCount > 0 ? (openCount > 99 ? "99+" : String(openCount)) : null);
 
-  const workspace = useQuery({ queryKey: ["workspace-settings"], queryFn: getWorkspaceSettings, staleTime: 30 * 1000 }).data;
+  const workspace = useQuery({ queryKey: ["workspace-settings"], queryFn: getWorkspaceSettings, staleTime: 30 * 1000 , refetchInterval: (q) => (q.state.data?.logoPending ? 5000 : false) }).data;
   const { useCase } = useWorkspaceUseCase();
   const keywords = useQuery({ queryKey: ["monitoring-keywords"], queryFn: getMonitoringKeywords, staleTime: 30 * 1000 }).data;
 

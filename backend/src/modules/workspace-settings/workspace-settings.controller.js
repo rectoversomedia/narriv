@@ -25,6 +25,8 @@ function toSafeDefaults(workspaceId) {
     };
 }
 
+const logoLookups = new Set();
+
 export async function getWorkspaceSettings(req, res) {
     try {
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.query.workspaceId);
@@ -49,7 +51,15 @@ export async function getWorkspaceSettings(req, res) {
             .select("onboarding_completed, settings, logo_url")
             .eq("id", scopedWorkspaceId)
             .maybeSingle();
+        // A brand with no logo yet (new workspace, or created before automatic logos): find it now, once.
+        const logoPending = !workspaceData?.logo_url && !workspaceData?.settings?.logo_auto && Boolean(settings?.brand_name) && !/^(narriv|my workspace)$/i.test(String(settings.brand_name).trim());
+        if (logoPending && process.env.NODE_ENV !== "test" && !logoLookups.has(scopedWorkspaceId)) {
+            logoLookups.add(scopedWorkspaceId);
+            setTimeout(() => logoLookups.delete(scopedWorkspaceId), 10 * 60 * 1000);
+            ensureBrandLogoLater(scopedWorkspaceId);
+        }
         const workspaceFlags = {
+            logo_pending: logoPending,
             // The workspace's logo lives on the workspaces row (workspace_settings has no logo column).
             ...(workspaceData?.logo_url ? { logo_url: workspaceData.logo_url } : {}),
             onboarding_completed: workspaceData?.onboarding_completed ?? false,

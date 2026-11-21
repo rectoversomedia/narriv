@@ -1,5 +1,6 @@
 "use client";
 
+import { RichText } from "@/components/ui/rich-text";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, FileDown, Loader2, Search, UserSearch } from "lucide-react";
@@ -43,7 +44,7 @@ function Report({ r }: { r: ReconResult }) {
 
       <div className="rounded-[16px] bg-[#F7F8FC] p-4">
         <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("Executive summary", "Ringkasan eksekutif")}</p>
-        <p className="mt-1.5 text-[14.5px] leading-relaxed text-[#101334]">{r.summary}</p>
+        <RichText text={r.summary} className="mt-1.5 text-[14.5px] leading-relaxed text-[#101334]" />
         {r.recommendation ? <p className="mt-2 text-[14px] font-bold text-[#465FFF]">{r.recommendation}</p> : null}
       </div>
 

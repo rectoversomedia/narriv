@@ -1,5 +1,6 @@
 "use client";
 
+import { RichText } from "@/components/ui/rich-text";
 import { tidyText } from "@/lib/tidy-text";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -66,7 +67,7 @@ export default function IssueDetailPage() {
           <h1 className="mt-1.5 max-w-4xl text-balance text-[28px] font-black leading-[1.12] tracking-[-0.03em] text-[#101334] sm:text-[34px]">
             {data?.title ?? (detail.isPending ? "…" : L("Issue", "Isu"))}
           </h1>
-          {data?.description ? <p className="mt-2 max-w-3xl text-[15px] font-medium leading-relaxed text-[#31406B]">{tidyText(data.description)}</p> : null}
+          {data?.description ? <RichText text={tidyText(data.description)} className="mt-2 max-w-3xl text-[15px] font-medium leading-relaxed text-[#31406B]" /> : null}
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           <button type="button" onClick={() => void copyLink()} className="inline-flex h-11 items-center gap-2 rounded-[12px] border-[1.5px] border-[#101334] bg-white px-4 text-[13px] font-black text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#F7F8FC]">

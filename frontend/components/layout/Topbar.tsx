@@ -137,11 +137,11 @@ function AccountMenu({ name, email, onLogout }: { name: string; email: string; o
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger type="button" aria-label={L("Account", "Akun")} className="flex h-10 items-center gap-2.5 rounded-[10px] py-1 pl-1 pr-2 transition hover:bg-[#EEF1F7]">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-gradient-to-br from-[#465FFF] to-[#8B5CFF] text-[12px] font-black text-white">{initials(name)}</span>
-        <span className="hidden min-w-0 max-w-[160px] text-left sm:block">
+        <span className="hidden min-w-0 max-w-[160px] text-left sm:block lg:hidden xl:block">
           <span className="block truncate text-[13px] font-black leading-tight text-[#101334]">{name}</span>
           <span className="block truncate text-[12px] font-semibold leading-tight text-[#5A6478]">{role}</span>
         </span>
-        <ChevronDown size={15} aria-hidden="true" className="hidden shrink-0 text-[#6B7591] sm:block" />
+        <ChevronDown size={15} aria-hidden="true" className="hidden shrink-0 text-[#6B7591] sm:block lg:hidden xl:block" />
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={10} className="w-[min(300px,calc(100vw-2rem))] gap-0 rounded-[14px] border border-slate-200 bg-white p-1.5 text-slate-900 shadow-[0_18px_50px_rgba(15,23,42,0.14)] ring-0">
         <div className="px-2.5 pb-2.5 pt-1.5">
@@ -379,7 +379,7 @@ export function Topbar() {
         {/* Right under the wordmark (the image has ~10% empty space below the letters). */}
         <span className="-mt-[1px] text-[7.5px] font-bold uppercase leading-none tracking-[0.1em] text-[#5F6B94]">Narrative Intelligence</span>
       </Link>
-      <div ref={searchRef} className={`lg:relative lg:block lg:w-full lg:max-w-[530px] ${mobileSearch ? "fixed inset-x-4 top-[96px] z-[110] block rounded-[12px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)]" : "hidden"}`}>
+      <div ref={searchRef} className={`lg:relative lg:block lg:min-w-0 lg:flex-1 lg:max-w-[530px] ${mobileSearch ? "fixed inset-x-4 top-[96px] z-[110] block rounded-[12px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)]" : "hidden"}`}>
         <label className="flex h-[48px] items-center gap-4 rounded-[8px] border border-border bg-slate-50 px-5 text-[var(--text-soft)] focus-within:border-[#465FFF]/50 focus-within: transition-all">
           <Search size={20} className="text-[var(--text-muted)]" />
           <input
@@ -435,7 +435,7 @@ export function Topbar() {
         )}
       </div>
 
-      <div className="flex flex-1 items-center justify-end gap-3">
+      <div className="flex flex-1 items-center justify-end gap-3 lg:ml-4 lg:flex-none lg:shrink-0 lg:gap-2 xl:gap-3">
         {/* Live connection status indicator */}
         {/* Only claim live updates while the event stream is actually connected. */}
         {sseStatus === "connected" ? <LiveIndicator status={sseStatus} /> : null}
@@ -444,10 +444,11 @@ export function Topbar() {
           href="/ask"
           aria-label="Ask narriv"
           aria-current={pathname?.startsWith("/ask") ? "page" : undefined}
-          className="hidden h-10 shrink-0 items-center gap-2 rounded-[10px] bg-[#101334] pl-1.5 pr-3.5 text-[12.5px] font-black text-white transition hover:bg-[#2B2F9E] lg:inline-flex"
+          className="hidden h-10 shrink-0 items-center gap-2 rounded-[10px] bg-[#101334] pl-1.5 pr-1.5 text-[12.5px] font-black text-white transition hover:bg-[#2B2F9E] lg:inline-flex xl:pr-3.5"
         >
           <Image src="/brand/app-nv-round-192.png" alt="" width={28} height={28} unoptimized className="size-7 rounded-full" />
-          <span>Ask narriv</span>
+          {/* Tablets (iPad): the round mark only, so the bar never squeezes the search box. */}
+          <span className="hidden xl:inline">Ask narriv</span>
         </Link>
         {/* Both languages visible; the active one is filled, a click switches. */}
         <div role="group" aria-label="Language" className="hidden h-10 items-center rounded-[10px] bg-[#EEF1F7] p-1 sm:flex">

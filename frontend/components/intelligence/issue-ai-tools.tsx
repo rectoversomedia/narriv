@@ -1,5 +1,6 @@
 "use client";
 
+import { RichText } from "@/components/ui/rich-text";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { FileDown, FlaskConical, Loader2, Sparkles } from "lucide-react";
@@ -29,7 +30,7 @@ function Brief({ b }: { b: IssueBrief }) {
         </div>
         <button type="button" onClick={() => window.print()} className={cn(BTN, "no-print h-9 border-[1.5px] border-[#101334] bg-white text-[#101334]")}><FileDown size={14} /> PDF</button>
       </div>
-      <p className="text-[14.5px] leading-relaxed text-[#101334]">{b.summary}</p>
+      <RichText text={b.summary} className="text-[14.5px] leading-relaxed text-[#101334]" />
       {b.timeline?.length ? <div><p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{pickL("Timeline", "Kronologi")}</p><ol className="mt-1.5 grid gap-1.5 border-l-2 border-[#C9D0FF] pl-4">{b.timeline.map((t, i) => <li key={i} className="text-[13.5px] text-[#31406B]"><b className="text-[#101334]">{t.when}</b> · {t.what}</li>)}</ol></div> : null}
       {b.actors?.length ? <div><p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{pickL("Actors", "Aktor")}</p><ul className="mt-1.5 grid gap-1 sm:grid-cols-2">{b.actors.map((a) => <li key={a.name} className="rounded-[10px] bg-white px-3 py-2 text-[13px]"><b className="text-[#101334]">{a.name}</b><span className="block text-[#5A6478]">{a.role}</span></li>)}</ul></div> : null}
       <div className="grid gap-2 sm:grid-cols-3">

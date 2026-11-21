@@ -8,6 +8,7 @@ import { getNarratives, getDashboardSummary } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import type { NarrativeRecord, DashboardSummary } from "@/lib/api-service";
 import { pickL } from "@/lib/use-l";
+import { RichText } from "@/components/ui/rich-text";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -412,23 +413,8 @@ export default function AskPage() {
                       )}
                     </div>
 
-                    {/* Content — render newlines as paragraphs */}
-                    <div className="space-y-2">
-                      {msg.content.split("\n\n").map((para, i) => {
-                        if (para.startsWith("**") && para.endsWith("**")) {
-                          return (
-                            <p key={i} className="text-[13px] font-black text-slate-900">
-                              {para.slice(2, -2)}
-                            </p>
-                          );
-                        }
-                        return (
-                          <p key={i} className="text-[13px] font-semibold leading-relaxed text-slate-600">
-                            {para}
-                          </p>
-                        );
-                      })}
-                    </div>
+                    {/* Content: paragraphs, bold figures, headings and lists (components/ui/rich-text). */}
+                    <RichText text={msg.content} className="gap-2.5 text-[13.5px] font-medium leading-relaxed text-slate-600" />
 
                     {msg.coverage ? (
                       <p className="mt-2 text-[12px] font-semibold text-[#5A6478]">{msg.coverage}</p>

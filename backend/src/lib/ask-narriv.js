@@ -28,7 +28,8 @@ Rules:
 5. Always include a "sources" array of evidence IDs you actually referenced.
 6. Always include a "grounded" boolean — true if the answer is fully supported by the data, false otherwise.
 7. Answer in the language of the question (Indonesian or English).
-8. Start the answer with the direct conclusion in one or two sentences. Then, briefly: why it matters; the supporting evidence; the period and source platforms covered; limitations or uncertainty (say when only news is covered); and one suggested next step. Under 160 words.
+8. Start the answer with the direct conclusion in one or two sentences. Then, briefly: why it matters; the supporting evidence; the period and source platforms covered; limitations or uncertainty (say when only news is covered); and one suggested next step. Under 180 words.
+10. Format for easy reading: short paragraphs of 1–2 sentences separated by a blank line ("\n\n"); use a short bold heading line like "**Mengapa penting**" before each part after the conclusion; bold (**...**) the key figures and names, at most a few per paragraph; lists as lines starting with "- ". No other markdown, no tables, no emoji.
 9. Separate observed facts from interpretation. Negative coverage is not by itself a crisis.`;
 
 async function gatherContext(workspaceId, windowHours) {

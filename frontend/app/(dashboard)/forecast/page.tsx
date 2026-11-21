@@ -12,6 +12,7 @@ import { StatStrip } from "@/components/ui/stamp";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
+import { RichText } from "@/components/ui/rich-text";
 
 /**
  * Prediksi Isu: the forecast as a workspace of its own. Left, the ranked forecasts; right, one forecast to learn
@@ -73,7 +74,7 @@ function Detail({ f, done, onToggle, onPlan }: { f: FutureIssue; done: number[];
         </div>
         <h2 className="text-[21px] font-black leading-snug text-[#101334]">{f.title}</h2>
         <Likelihood p={f.likelihood} label={L("likely", "kemungkinan")} />
-        <p className="text-[14.5px] leading-relaxed text-[#31406B]">{f.why}</p>
+        <RichText text={f.why} className="text-[14.5px] leading-relaxed text-[#31406B]" />
         <div className="flex flex-wrap gap-2 pt-1">
           {f.related.length ? (
             <button type="button" onClick={onPlan} className="inline-flex h-10 items-center gap-2 rounded-[12px] border-[1.5px] border-[#101334] bg-[#465FFF] px-3.5 text-[12.5px] font-bold text-white shadow-[0_2px_0_#101334] hover:bg-[#3B52F5]">
@@ -105,7 +106,7 @@ function Detail({ f, done, onToggle, onPlan }: { f: FutureIssue; done: number[];
 
       {f.ifIgnored ? (
         <Section icon={TriangleAlert} title={L("If nothing is done", "Kalau dibiarkan")}>
-          <p className="rounded-[12px] bg-[#FDF3F2] px-4 py-3 text-[13.5px] leading-relaxed text-[#7A271A]">{f.ifIgnored}</p>
+          <RichText text={f.ifIgnored} className="rounded-[12px] bg-[#FDF3F2] px-4 py-3 text-[13.5px] leading-relaxed text-[#7A271A]" />
         </Section>
       ) : null}
 
@@ -135,13 +136,13 @@ function Detail({ f, done, onToggle, onPlan }: { f: FutureIssue; done: number[];
 
       {f.fromPast ? (
         <Section icon={History} title={L("From what the team handled before", "Belajar dari penanganan sebelumnya")}>
-          <p className="rounded-[12px] bg-[#F0FAF5] px-4 py-3 text-[13.5px] leading-relaxed text-[#14532D]">{f.fromPast}</p>
+          <RichText text={f.fromPast} className="rounded-[12px] bg-[#F0FAF5] px-4 py-3 text-[13.5px] leading-relaxed text-[#14532D]" />
         </Section>
       ) : null}
 
       {f.lesson ? (
         <Section icon={GraduationCap} title={L("Lesson for the team", "Pelajaran untuk tim")}>
-          <p className="rounded-[12px] bg-[#EEF1FF] px-4 py-3 text-[13.5px] leading-relaxed text-[#26357F]">{f.lesson}</p>
+          <RichText text={f.lesson} className="rounded-[12px] bg-[#EEF1FF] px-4 py-3 text-[13.5px] leading-relaxed text-[#26357F]" />
         </Section>
       ) : null}
 

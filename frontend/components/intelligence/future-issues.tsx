@@ -11,6 +11,7 @@ import { MonoLabel } from "@/components/ui/stamp";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
+import { RichText } from "@/components/ui/rich-text";
 
 /**
  * Future Issues: the stories most likely to become the brand's next issue, forecast from all of the workspace's data
@@ -66,7 +67,7 @@ function Forecast({ f, rank, open, onToggle }: { f: FutureIssue; rank: number; o
       </button>
       {open ? (
         <div className="grid gap-5 border-t border-[#EEF0F6] p-4 sm:p-5">
-          <p className="text-[14px] leading-relaxed text-[#31406B]">{f.why}</p>
+          <RichText text={f.why} className="text-[14px] leading-relaxed text-[#31406B]" />
           <div className="grid gap-5 md:grid-cols-3">
             <List title={L("Based on", "Berdasarkan data")} items={f.evidence} />
             <List title={L("Early signs to watch", "Tanda awal yang perlu dipantau")} items={f.earlySignals} />

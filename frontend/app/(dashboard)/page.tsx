@@ -226,7 +226,7 @@ export default function DashboardPage() {
 
   // A workspace that has not finished onboarding goes there first.
   // Also gives the brand name shown in the focus strip (demo sessions read the demo workspace's settings).
-  const workspaceQuery = useQuery({ queryKey: ["workspace-settings"], queryFn: () => getWorkspaceSettings(), staleTime: 60 * 1000 });
+  const workspaceQuery = useQuery({ queryKey: ["workspace-settings"], queryFn: () => getWorkspaceSettings(), staleTime: 60 * 1000 , refetchInterval: (q) => (q.state.data?.logoPending ? 5000 : false) });
   useEffect(() => {
     if (isDemoSession || workspaceQuery.isLoading) return;
     if (workspaceQuery.data && workspaceQuery.data.onboarding_completed !== true) router.push("/onboarding");

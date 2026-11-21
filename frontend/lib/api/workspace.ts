@@ -207,6 +207,8 @@ export interface WorkspaceSettingsResponse {
   /** Language of the content Narriv writes and stores for the workspace (alerts); "id" by default. */
   language: "id" | "en";
   logoUrl: string | null;
+  /** True while Narriv is still looking up the brand's logo (refetch until it is set). */
+  logoPending?: boolean;
   createdAt: string | null;
   updatedAt: string | null;
   onboarding_completed?: boolean;
@@ -283,6 +285,7 @@ export async function getWorkspaceSettings(): Promise<WorkspaceSettingsResponse 
       whatsappPIC: (raw.whatsappPIC as string) || (raw.whatsapp_pic as string) || null,
       language: raw.language === "en" ? "en" : "id",
       logoUrl: (raw.logoUrl as string) || (raw.logo_url as string) || null,
+      logoPending: raw.logo_pending === true,
       createdAt: (raw.createdAt as string) || (raw.created_at as string) || null,
       updatedAt: (raw.updatedAt as string) || (raw.updated_at as string) || null,
       onboarding_completed: raw.onboarding_completed as boolean | undefined,

@@ -1,5 +1,6 @@
 "use client";
 
+import { RichText } from "@/components/ui/rich-text";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -243,7 +244,7 @@ export function NarrativeCard({
       </h3>
 
       {/* Summary */}
-      <p className="mb-3 text-[14px] leading-relaxed text-[#5F6B94]">{summary}</p>
+      <RichText text={summary} className="mb-3 text-[14px] leading-relaxed text-[#5F6B94]" />
 
       {/* Sentiment + emotion row */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
