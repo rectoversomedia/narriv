@@ -51,20 +51,23 @@ export function SiteHeader() {
   const L = useL();
   const href = useSiteHref();
   return (
-    // Phones: language on the left, the brand centred, sign-in on the right. Wider screens: brand left, menu right.
-    <header className="relative mx-auto grid h-[72px] max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:flex sm:justify-between sm:px-6">
+    // The brand sits in the centre on every screen. Phones: language left, sign-in right. Wider screens: menu left,
+    // language and sign-in right.
+    <header className="relative mx-auto grid h-[72px] max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6">
       <div className="justify-self-start sm:hidden"><LanguageSwitch dark /></div>
+      <nav className="hidden items-center gap-5 justify-self-start sm:flex">
+        <Link href={href("/pricing")} className="text-[14px] font-semibold text-white/75 hover:text-white">{L("Pricing", "Harga")}</Link>
+        <Link href={href("/#faq")} className="text-[14px] font-semibold text-white/75 hover:text-white">FAQ</Link>
+        <Link href={href("/blog")} className="hidden text-[14px] font-semibold text-white/75 hover:text-white md:block">Blog</Link>
+        <Link href={href("/help")} className="hidden text-[14px] font-semibold text-white/75 hover:text-white md:block">{L("Help", "Bantuan")}</Link>
+      </nav>
       <Link href={href("/")} aria-label="Narriv" className="justify-self-center">
         <Image src="/brand/logo-p-nv.webp" alt="Narriv" width={128} height={48} priority className="h-8 w-auto" />
       </Link>
-      <nav className="flex items-center justify-self-end gap-2 sm:gap-4">
-        <Link href={href("/pricing")} className="hidden text-[14px] font-semibold text-white/75 hover:text-white sm:block">{L("Pricing", "Harga")}</Link>
-        <Link href={href("/#faq")} className="hidden text-[14px] font-semibold text-white/75 hover:text-white sm:block">FAQ</Link>
-        <Link href={href("/blog")} className="hidden text-[14px] font-semibold text-white/75 hover:text-white md:block">Blog</Link>
-        <Link href={href("/help")} className="hidden text-[14px] font-semibold text-white/75 hover:text-white md:block">{L("Help", "Bantuan")}</Link>
+      <div className="flex items-center justify-self-end gap-2 sm:gap-4">
         <span className="hidden sm:block"><LanguageSwitch dark /></span>
         <Link href="/login" className="flex h-9 items-center rounded-[10px] bg-white px-3.5 text-[14px] font-bold text-[#101334] hover:bg-white/90">{L("Sign In", "Masuk")}</Link>
-      </nav>
+      </div>
     </header>
   );
 }
@@ -81,8 +84,8 @@ export function SiteFooter() {
           {L("Install the App on Your Phone", "Pasang Aplikasi di HP")}
         </Link>
       </div>
-      <div className="flex flex-col items-center justify-between gap-4 text-[13px] font-semibold text-[#5F6B94] sm:flex-row">
-        <Image src="/brand/logo-h-nv.webp" alt="Narriv" width={96} height={36} loading="eager" className="h-6 w-auto" />
+      <div className="flex flex-col items-center gap-5 text-center text-[13px] font-semibold text-[#5F6B94]">
+        <Image src="/brand/logo-h-nv.webp" alt="Narriv" width={96} height={36} loading="eager" className="h-7 w-auto" />
         <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2">
           <Link href={href("/pricing")} className="hover:text-[#101334]">{L("Pricing", "Harga")}</Link>
           <Link href={href("/#faq")} className="hover:text-[#101334]">FAQ</Link>

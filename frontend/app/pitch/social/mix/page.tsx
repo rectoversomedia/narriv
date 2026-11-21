@@ -57,7 +57,7 @@ const cover = (title: ReactNode, sub: string, note?: string): Slide => ({
   body: (
     <>
       <Title dark size={88} sub={sub}>{title}</Title>
-      <div style={{ position: "absolute", right: 0, bottom: 10, padding: "18px 28px", borderRadius: 999, background: "#fff", color: INK, fontSize: 28, fontWeight: 800 }}>Geser →</div>
+      <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", bottom: 0, padding: "18px 28px", borderRadius: 999, background: "#fff", color: INK, fontSize: 28, fontWeight: 800 }}>Geser →</div>
     </>
   ),
 });
@@ -186,7 +186,7 @@ export default function MixSeries() {
           {post.slides.map((s, i) => (
             <Frame key={i} id={`${post.key}-${i + 1}`} w={1080} h={1350} dark={s.dark}>
               <Brand dark={s.dark} />
-              <div style={{ position: "absolute", left: 72, right: 72, top: 190, bottom: 130, display: "flex", flexDirection: "column", justifyContent: "center" }}>{s.body}</div>
+              <div style={{ position: "absolute", left: 72, right: 72, top: 190, bottom: 190, display: "flex", flexDirection: "column", justifyContent: "center" }}>{s.body}</div>
               <Pager n={i + 1} of={post.slides.length} dark={s.dark} note={s.note} />
             </Frame>
           ))}
