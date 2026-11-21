@@ -35,7 +35,18 @@ export function isEmailConfigured() {
  * @returns {Promise<{ id: string } | null>} Resend message ID or null on failure / not configured.
  */
 /** attachments: [{ filename, content: Buffer }] (Resend accepts them as-is). */
+/** Addresses that can never receive mail (demo accounts, .test/.example domains): sending to them only bounces and
+ * hurts the sender reputation of narriv.digital. */
+export function isUndeliverable(address) {
+    const a = String(address || "").trim().toLowerCase();
+    return !a.includes("@") || /@demo\.narriv\.digital$|\.(test|example|invalid|localhost)$/.test(a);
+}
+
 export async function sendEmail({ to, subject, html, text, from, attachments }) {
+    if (isUndeliverable(to)) {
+        logStructured("info", "email_skipped_undeliverable", { to, subject });
+        return null;
+    }
     const client = getClient();
 
     if (!client) {
