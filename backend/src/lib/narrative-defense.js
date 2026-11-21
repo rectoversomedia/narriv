@@ -67,17 +67,17 @@ export async function runNarrativeDefense(workspaceId, { db = supabase, maxClaim
             cluster.metadata = { ...cluster.metadata, riskHistory };
             await db.from("narrative_clusters").update({ metadata: cluster.metadata }).eq("id", cluster.id);
         }
-        if (risk && risk.score >= 70 && coordination.count > 0 && !attacked.has(cluster.id)) {
+        if (!demo && risk && risk.score >= 70 && coordination.count > 0 && !attacked.has(cluster.id)) {
             const id = lang === "id";
             const { error } = await db.from("alerts").insert({
                 workspace_id: workspaceId,
                 type: "risk",
                 severity: "critical",
                 status: "open",
-                title: id ? `Indikasi serangan narasi: ${cluster.title}` : `Possible narrative attack: ${cluster.title}`,
+                title: id ? `Indikasi serangan narasi: ${cluster.title.replace(/^isu\s+/i, "")}` : `Possible narrative attack: ${cluster.title}`,
                 description: risk.factors.map((f) => f.label).join(" · "),
                 what_happened: id
-                    ? `Isu "${cluster.title}" bernilai risiko ${risk.score}/100 dan menunjukkan ${coordination.count} indikasi akun terkoordinasi.`
+                    ? `"${cluster.title}" bernilai risiko ${risk.score}/100 dan menunjukkan ${coordination.count} indikasi akun terkoordinasi.`
                     : `"${cluster.title}" scores ${risk.score}/100 on risk and shows ${coordination.count} coordination sign(s).`,
                 why_it_matters: id
                     ? "Isu berisiko tinggi yang didorong akun terkoordinasi bisa menyebar jauh lebih cepat dari isu organik dan membentuk persepsi sebelum fakta keluar."

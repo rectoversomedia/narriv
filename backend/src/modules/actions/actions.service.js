@@ -76,7 +76,169 @@ async function callOpenAIWithRetry(messages, context) {
 // PROMPT BUILDERS
 // ─────────────────────────────────────────────────────────────────────────────
 
+const GENERIC_STRATEGIES = new Set(["fact_check_response", "spokesperson_brief", "customer_care", "employee_comms", "regulator_engagement", "legal_review", "platform_reporting", "monitor_hold", "reputation_recovery", "community_engagement"]);
+
 const STRATEGY_PROMPTS = {
+    fact_check_response: {
+        system: `You are a fact-check and hoax rebuttal specialist. Counter false claims with verifiable facts, sources, and shareable clarification assets, without amplifying the hoax.
+Return ONLY a raw JSON object with these fields:
+{
+  "title": "<plan title>",
+  "executive_summary": "<2-3 sentence overview>",
+  "steps": [{"action": "<concrete step>", "owner": "<team or role>", "when": "<e.g. Today, 6h, 24h, 3 days>"}],
+  "key_messages": ["<message 1>", "<message 2>", "<message 3>"],
+  "channels": ["<channel 1>", "<channel 2>"],
+  "draft": "<a ready-to-use draft: statement, script, Q&A, report text or internal memo as fits this plan>",
+  "success_metrics": ["<metric 1>", "<metric 2>"],
+  "risks": ["<risk 1>", "<risk 2>"]
+}
+Give 4 to 6 steps. No emoji anywhere.`,
+        user: (context) => `Based on the following intelligence context, generate this plan:\n\n${context}`
+    },
+    spokesperson_brief: {
+        system: `You are a media relations director. Prepare the spokesperson: core lines, likely hard questions with answers, and what never to say.
+Return ONLY a raw JSON object with these fields:
+{
+  "title": "<plan title>",
+  "executive_summary": "<2-3 sentence overview>",
+  "steps": [{"action": "<concrete step>", "owner": "<team or role>", "when": "<e.g. Today, 6h, 24h, 3 days>"}],
+  "key_messages": ["<message 1>", "<message 2>", "<message 3>"],
+  "channels": ["<channel 1>", "<channel 2>"],
+  "draft": "<a ready-to-use draft: statement, script, Q&A, report text or internal memo as fits this plan>",
+  "success_metrics": ["<metric 1>", "<metric 2>"],
+  "risks": ["<risk 1>", "<risk 2>"]
+}
+Give 4 to 6 steps. No emoji anywhere.`,
+        user: (context) => `Based on the following intelligence context, generate this plan:\n\n${context}`
+    },
+    customer_care: {
+        system: `You are a customer experience lead. Handle affected customers: service fixes, contact-centre script, compensation guidance (only if already approved), and follow-up.
+Return ONLY a raw JSON object with these fields:
+{
+  "title": "<plan title>",
+  "executive_summary": "<2-3 sentence overview>",
+  "steps": [{"action": "<concrete step>", "owner": "<team or role>", "when": "<e.g. Today, 6h, 24h, 3 days>"}],
+  "key_messages": ["<message 1>", "<message 2>", "<message 3>"],
+  "channels": ["<channel 1>", "<channel 2>"],
+  "draft": "<a ready-to-use draft: statement, script, Q&A, report text or internal memo as fits this plan>",
+  "success_metrics": ["<metric 1>", "<metric 2>"],
+  "risks": ["<risk 1>", "<risk 2>"]
+}
+Give 4 to 6 steps. No emoji anywhere.`,
+        user: (context) => `Based on the following intelligence context, generate this plan:\n\n${context}`
+    },
+    employee_comms: {
+        system: `You are an internal communications lead. Brief employees and frontline staff so they give one consistent answer and do not leak or speculate.
+Return ONLY a raw JSON object with these fields:
+{
+  "title": "<plan title>",
+  "executive_summary": "<2-3 sentence overview>",
+  "steps": [{"action": "<concrete step>", "owner": "<team or role>", "when": "<e.g. Today, 6h, 24h, 3 days>"}],
+  "key_messages": ["<message 1>", "<message 2>", "<message 3>"],
+  "channels": ["<channel 1>", "<channel 2>"],
+  "draft": "<a ready-to-use draft: statement, script, Q&A, report text or internal memo as fits this plan>",
+  "success_metrics": ["<metric 1>", "<metric 2>"],
+  "risks": ["<risk 1>", "<risk 2>"]
+}
+Give 4 to 6 steps. No emoji anywhere.`,
+        user: (context) => `Based on the following intelligence context, generate this plan:\n\n${context}`
+    },
+    regulator_engagement: {
+        system: `You are a regulatory affairs head in Indonesia (OJK, BI, Kominfo/Komdigi, relevant ministries). Plan proactive, compliant engagement with regulators.
+Return ONLY a raw JSON object with these fields:
+{
+  "title": "<plan title>",
+  "executive_summary": "<2-3 sentence overview>",
+  "steps": [{"action": "<concrete step>", "owner": "<team or role>", "when": "<e.g. Today, 6h, 24h, 3 days>"}],
+  "key_messages": ["<message 1>", "<message 2>", "<message 3>"],
+  "channels": ["<channel 1>", "<channel 2>"],
+  "draft": "<a ready-to-use draft: statement, script, Q&A, report text or internal memo as fits this plan>",
+  "success_metrics": ["<metric 1>", "<metric 2>"],
+  "risks": ["<risk 1>", "<risk 2>"]
+}
+Give 4 to 6 steps. No emoji anywhere.`,
+        user: (context) => `Based on the following intelligence context, generate this plan:\n\n${context}`
+    },
+    legal_review: {
+        system: `You are a corporate legal and compliance counsel. Assess legal exposure, defamation or data-protection (UU PDP) angles, evidence preservation, and approvals before any statement.
+Return ONLY a raw JSON object with these fields:
+{
+  "title": "<plan title>",
+  "executive_summary": "<2-3 sentence overview>",
+  "steps": [{"action": "<concrete step>", "owner": "<team or role>", "when": "<e.g. Today, 6h, 24h, 3 days>"}],
+  "key_messages": ["<message 1>", "<message 2>", "<message 3>"],
+  "channels": ["<channel 1>", "<channel 2>"],
+  "draft": "<a ready-to-use draft: statement, script, Q&A, report text or internal memo as fits this plan>",
+  "success_metrics": ["<metric 1>", "<metric 2>"],
+  "risks": ["<risk 1>", "<risk 2>"]
+}
+Give 4 to 6 steps. No emoji anywhere.`,
+        user: (context) => `Based on the following intelligence context, generate this plan:\n\n${context}`
+    },
+    platform_reporting: {
+        system: `You are a trust-and-safety specialist. Document coordinated or inauthentic accounts and report them through each platform's official channels; never engage them directly.
+Return ONLY a raw JSON object with these fields:
+{
+  "title": "<plan title>",
+  "executive_summary": "<2-3 sentence overview>",
+  "steps": [{"action": "<concrete step>", "owner": "<team or role>", "when": "<e.g. Today, 6h, 24h, 3 days>"}],
+  "key_messages": ["<message 1>", "<message 2>", "<message 3>"],
+  "channels": ["<channel 1>", "<channel 2>"],
+  "draft": "<a ready-to-use draft: statement, script, Q&A, report text or internal memo as fits this plan>",
+  "success_metrics": ["<metric 1>", "<metric 2>"],
+  "risks": ["<risk 1>", "<risk 2>"]
+}
+Give 4 to 6 steps. No emoji anywhere.`,
+        user: (context) => `Based on the following intelligence context, generate this plan:\n\n${context}`
+    },
+    monitor_hold: {
+        system: `You are a risk analyst who recommends not responding publicly yet. Define what to watch, the thresholds that would trigger a response, and a ready-to-use reactive line.
+Return ONLY a raw JSON object with these fields:
+{
+  "title": "<plan title>",
+  "executive_summary": "<2-3 sentence overview>",
+  "steps": [{"action": "<concrete step>", "owner": "<team or role>", "when": "<e.g. Today, 6h, 24h, 3 days>"}],
+  "key_messages": ["<message 1>", "<message 2>", "<message 3>"],
+  "channels": ["<channel 1>", "<channel 2>"],
+  "draft": "<a ready-to-use draft: statement, script, Q&A, report text or internal memo as fits this plan>",
+  "success_metrics": ["<metric 1>", "<metric 2>"],
+  "risks": ["<risk 1>", "<risk 2>"]
+}
+Give 4 to 6 steps. No emoji anywhere.`,
+        user: (context) => `Based on the following intelligence context, generate this plan:\n\n${context}`
+    },
+    reputation_recovery: {
+        system: `You are a reputation strategist. Rebuild trust after the issue over weeks: proof points, third-party voices, and positive storytelling.
+Return ONLY a raw JSON object with these fields:
+{
+  "title": "<plan title>",
+  "executive_summary": "<2-3 sentence overview>",
+  "steps": [{"action": "<concrete step>", "owner": "<team or role>", "when": "<e.g. Today, 6h, 24h, 3 days>"}],
+  "key_messages": ["<message 1>", "<message 2>", "<message 3>"],
+  "channels": ["<channel 1>", "<channel 2>"],
+  "draft": "<a ready-to-use draft: statement, script, Q&A, report text or internal memo as fits this plan>",
+  "success_metrics": ["<metric 1>", "<metric 2>"],
+  "risks": ["<risk 1>", "<risk 2>"]
+}
+Give 4 to 6 steps. No emoji anywhere.`,
+        user: (context) => `Based on the following intelligence context, generate this plan:\n\n${context}`
+    },
+    community_engagement: {
+        system: `You are a community and partnerships manager. Mobilise loyal customers, partners, associations and community figures to share facts and their own experience.
+Return ONLY a raw JSON object with these fields:
+{
+  "title": "<plan title>",
+  "executive_summary": "<2-3 sentence overview>",
+  "steps": [{"action": "<concrete step>", "owner": "<team or role>", "when": "<e.g. Today, 6h, 24h, 3 days>"}],
+  "key_messages": ["<message 1>", "<message 2>", "<message 3>"],
+  "channels": ["<channel 1>", "<channel 2>"],
+  "draft": "<a ready-to-use draft: statement, script, Q&A, report text or internal memo as fits this plan>",
+  "success_metrics": ["<metric 1>", "<metric 2>"],
+  "risks": ["<risk 1>", "<risk 2>"]
+}
+Give 4 to 6 steps. No emoji anywhere.`,
+        user: (context) => `Based on the following intelligence context, generate this plan:\n\n${context}`
+    },
     pr_response: {
         system: `You are an expert PR strategist. Generate a professional PR response strategy.
 Return ONLY a raw JSON object with these fields:
@@ -386,6 +548,29 @@ export function normalizeStrategyOutput(strategyType, raw, toneSuffix) {
         };
     }
 
+    if (GENERIC_STRATEGIES.has(strategyType)) {
+        const steps = Array.isArray(raw?.steps)
+            ? raw.steps.map((st) => (typeof st === "string" ? { action: st } : st)).filter((st) => st && typeof st.action === "string" && st.action.trim())
+            : [];
+        const keyMessages = toStringArray(raw?.key_messages, []);
+        const channels = toStringArray(raw?.channels, []);
+        const metrics = toStringArray(raw?.success_metrics, []);
+        const risks = toStringArray(raw?.risks, []);
+        const draft = toStringOrFallback(raw?.draft, "");
+        return {
+            title: commonTitle,
+            executive_summary: commonSummary,
+            steps: steps.map((st) => ({ action: st.action.trim(), owner: toStringOrFallback(st.owner, ""), when: toStringOrFallback(st.when, "") })),
+            key_messages: keyMessages,
+            channels,
+            draft,
+            success_metrics: metrics,
+            risks,
+            outputs: [["Primary action", commonTitle], ["Channels", channels.join(", ")]],
+            plan: steps.slice(0, 6).map((st, i) => [st.action.trim(), toStringOrFallback(st.when, ["Today", "Next 6h", "24h", "48h", "3 days", "1 week"][i] || "Later")]),
+        };
+    }
+
     const severity = toStringOrFallback(raw?.severity_assessment, "high");
     const immediateActions = toStringArray(raw?.immediate_actions, ["Acknowledge issue", "Publish holding statement", "Activate response team"]);
     const holdingStatement = toStringOrFallback(raw?.holding_statement, "We are aware of the situation and are actively addressing it.");
@@ -601,9 +786,9 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
 
     // The plan is stored and shared by the whole team, so it is written in the workspace's content language.
     const lang = deps.lang || await workspaceLanguage(workspaceId);
-    const langNote = lang === "id"
+    const langNote = (lang === "id"
         ? "\n\nWrite every text value in the JSON in Bahasa Indonesia (natural, professional). Keep the JSON keys in English."
-        : "";
+        : "") + "\nProfessional tone for a board-level reader: no emoji, no decorative symbols, no exclamation marks.";
 
     // 5. Generate 3 strategic options in parallel
     const results = await Promise.all([
@@ -676,6 +861,15 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
 /**
  * Generates a single strategic option via OpenAI.
  */
+const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu;
+/** Plans are read by directors: emoji and decorative symbols are removed from every generated string. */
+export function stripEmoji(value) {
+    if (typeof value === "string") return value.replace(EMOJI, "").replace(/^\s*[•▪►▶✓✔-]\s*/, "").replace(/\s{2,}/g, " ").trim();
+    if (Array.isArray(value)) return value.map(stripEmoji);
+    if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, stripEmoji(v)]));
+    return value;
+}
+
 async function generateOption(strategyType, promptConfig, context, toneSuffix, complete = callOpenAIWithRetry) {
     try {
         const messages = [
@@ -685,7 +879,7 @@ async function generateOption(strategyType, promptConfig, context, toneSuffix, c
         const response = await complete(messages, { toneSuffix });
         const usage = { input: response?.usage?.prompt_tokens || 0, output: response?.usage?.completion_tokens || 0 };
         const raw = response?.choices?.[0]?.message?.content || "";
-        const parsed = JSON.parse(raw);
+        const parsed = stripEmoji(JSON.parse(raw));
         if (!parsed || typeof parsed !== "object" || !parsed.executive_summary) return { option: null, usage };
         return { option: normalizeStrategyOutput(strategyType, parsed, toneSuffix), usage };
     } catch (error) {
@@ -713,6 +907,16 @@ function formatStrategyName(type, lang = "en") {
         social_response: "Respons Media Sosial",
         stakeholder_update: "Kabar untuk Pemangku Kepentingan",
         data_driven: "Berbasis Data",
+        fact_check_response: "Klarifikasi Hoaks",
+        spokesperson_brief: "Brief Juru Bicara & Media",
+        customer_care: "Layanan & Pemulihan Nasabah",
+        employee_comms: "Komunikasi Internal Karyawan",
+        regulator_engagement: "Komunikasi Regulator",
+        legal_review: "Tinjauan Hukum & Kepatuhan",
+        platform_reporting: "Laporan Akun Terkoordinasi",
+        monitor_hold: "Pantau & Tahan",
+        reputation_recovery: "Pemulihan Reputasi",
+        community_engagement: "Pelibatan Komunitas & Mitra",
     };
     if (lang === "id" && id[type]) return id[type];
     const names = {
@@ -723,6 +927,16 @@ function formatStrategyName(type, lang = "en") {
         social_response: "Social Response",
         stakeholder_update: "Stakeholder Update",
         data_driven: "Data-Driven Plan",
+        fact_check_response: "Hoax Rebuttal",
+        spokesperson_brief: "Spokesperson & Media Brief",
+        customer_care: "Customer Care & Recovery",
+        employee_comms: "Employee Communications",
+        regulator_engagement: "Regulator Engagement",
+        legal_review: "Legal & Compliance Review",
+        platform_reporting: "Coordinated Account Reporting",
+        monitor_hold: "Monitor & Hold",
+        reputation_recovery: "Reputation Recovery",
+        community_engagement: "Community & Partner Engagement",
     };
     return names[type] || type;
 }

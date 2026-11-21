@@ -36,6 +36,7 @@ import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-char
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/toast";
+import { RiskBoard } from "@/components/dashboard/risk-board";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { issueHref, monitoringHref, type MonitoringPeriod } from "@/lib/evidence-links";
 import { CompetitorCard } from "@/components/dashboard/competitor-card";
@@ -220,6 +221,7 @@ export default function DashboardPage() {
   const isDemoSession = isDemoUser(user);
   const [period, setPeriod] = useState<DateRangeKey>("30d");
   const [planOpen, setPlanOpen] = useState(false);
+  const [planCluster, setPlanCluster] = useState<string | undefined>(undefined);
   const router = useRouter();
 
   // A workspace that has not finished onboarding goes there first.
@@ -290,7 +292,10 @@ export default function DashboardPage() {
     .slice(0, 5);
 
   // What to do: open alerts by severity, then recommendations
+  // Near-identical alerts about one story (e.g. a spike and an attack alert) show once.
+  const alertKey = (a: AlertRow) => String(a.title ?? "").toLowerCase().replace(/indikasi serangan narasi:?|possible narrative attack:?|\(.*?\)|\bisu\b|melonjak|[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3).slice(0, 4).sort().join(" ");
   const openAlerts = [...((alertsQuery.data?.data ?? []) as AlertRow[])]
+    .filter((a, i, all) => all.findIndex((b) => alertKey(b) === alertKey(a)) === i)
     .sort((a, b) => (SEVERITY_RANK[a.severity ?? "info"] ?? 9) - (SEVERITY_RANK[b.severity ?? "info"] ?? 9) || +new Date(alertTime(b) ?? 0) - +new Date(alertTime(a) ?? 0))
     .slice(0, 3);
   const recommendations = [...(recsQuery.data?.recommendations ?? [])].sort((a, b) => (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9)).slice(0, 2);
@@ -382,6 +387,9 @@ export default function DashboardPage() {
       {neverCollected ? (
         <FirstRun />      ) : (
         <>
+          {useCase !== "cve" && (issuesQuery.isLoading || (issuesQuery.data?.data ?? []).some((n) => n.risk)) ? (
+            <RiskBoard issues={issuesQuery.data?.data ?? []} loading={issuesQuery.isLoading} onPlan={(id) => { setPlanCluster(id); setPlanOpen(true); }} />
+          ) : null}
           {useCase === "cve" ? <CveProvinceSection days={PERIOD_DAYS[period] as 1 | 7 | 30} hours={hours} /> : null}
           <div className="grid gap-5 xl:grid-cols-2">
             <Card className="flex flex-col" title={L("Overall Sentiment", "Sentimen Keseluruhan")} link={{ href: monitoringHref({ hours }), label: L("See All Data", "Lihat Semua Data") }}>
@@ -486,7 +494,7 @@ export default function DashboardPage() {
                             <span className="text-[11px] font-bold text-[#5A6478]">{codes.urgency(rec.urgency)}</span>
                           </span>
                           <span className="mt-1.5 block text-[15px] font-black text-[#101334]">{codes.action(rec.action)}</span>
-                          {rec.observedIssue && (index === 0 || firstSentence(rec.observedIssue) !== firstSentence(recommendations[index - 1]?.observedIssue ?? "")) ? <span className="mt-0.5 block line-clamp-2 text-[12px] font-semibold text-[#53608C]">{firstSentence(rec.observedIssue)}</span> : null}
+                          {rec.observedIssue || rec.reason ? <span className="mt-0.5 block line-clamp-2 text-[12.5px] font-semibold text-[#53608C]">{firstSentence(rec.observedIssue || rec.reason)}</span> : null}
                         </span>
                         <span className="inline-flex h-9 shrink-0 items-center rounded-full bg-[#EEF1FF] px-4 text-[12.5px] font-bold text-[#3B52F5]">{L("Create Action Plan", "Buat Rencana Aksi")}</span>
                       </button>
@@ -625,7 +633,7 @@ export default function DashboardPage() {
           )}
         </>
       )}
-      <CreateActionPlanModal open={planOpen} onOpenChange={setPlanOpen} />
+      <CreateActionPlanModal open={planOpen} onOpenChange={(o) => { setPlanOpen(o); if (!o) setPlanCluster(undefined); }} initialClusterId={planCluster} />
     </div>
   );
 }

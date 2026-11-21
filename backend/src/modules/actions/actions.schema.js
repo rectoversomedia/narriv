@@ -8,6 +8,16 @@ const STRATEGY_TYPES = [
     "social_response",
     "stakeholder_update",
     "data_driven",
+    "fact_check_response",
+    "spokesperson_brief",
+    "customer_care",
+    "employee_comms",
+    "regulator_engagement",
+    "legal_review",
+    "platform_reporting",
+    "monitor_hold",
+    "reputation_recovery",
+    "community_engagement",
 ];
 
 export const createActionPlanBodySchema = z.object({

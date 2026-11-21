@@ -25,7 +25,7 @@ router.post("/", rateLimiters.aiGeneration(), validateRequest({ body: createActi
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
-        const validTypes = ["pr_response", "content_strategy", "influencer_strategy", "crisis_response", "social_response", "stakeholder_update", "data_driven"];
+        const validTypes = ["pr_response", "content_strategy", "influencer_strategy", "crisis_response", "social_response", "stakeholder_update", "data_driven", "fact_check_response", "spokesperson_brief", "customer_care", "employee_comms", "regulator_engagement", "legal_review", "platform_reporting", "monitor_hold", "reputation_recovery", "community_engagement"];
         if (!strategyType || !validTypes.includes(strategyType)) {
             return badRequest(
                 res,
@@ -214,7 +214,7 @@ router.post("/multi-step", rateLimiters.aiGeneration(), async (req, res) => {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
-        const validTypes = ["pr_response", "content_strategy", "influencer_strategy", "crisis_response", "social_response", "stakeholder_update", "data_driven"];
+        const validTypes = ["pr_response", "content_strategy", "influencer_strategy", "crisis_response", "social_response", "stakeholder_update", "data_driven", "fact_check_response", "spokesperson_brief", "customer_care", "employee_comms", "regulator_engagement", "legal_review", "platform_reporting", "monitor_hold", "reputation_recovery", "community_engagement"];
         if (!strategyType || !validTypes.includes(strategyType)) {
             return badRequest(
                 res,

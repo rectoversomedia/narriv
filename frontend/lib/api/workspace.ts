@@ -53,6 +53,8 @@ export interface ActionPlanResponse {
   deadline?: string | null;
   escalationLevel?: EscalationLevel | null;
   workflowStatus?: string | null;
+  strategyType?: ActionStrategyType | null;
+  options?: ActionPlanOption[];
 }
 
 export interface ActionPlanLearningResponse {
@@ -84,7 +86,29 @@ export type ActionStrategyType =
   | "crisis_response"
   | "social_response"
   | "stakeholder_update"
-  | "data_driven";
+  | "data_driven"
+  | "fact_check_response"
+  | "spokesperson_brief"
+  | "customer_care"
+  | "employee_comms"
+  | "regulator_engagement"
+  | "legal_review"
+  | "platform_reporting"
+  | "monitor_hold"
+  | "reputation_recovery"
+  | "community_engagement";
+
+/** One alternative of a plan (careful / balanced / firm) as the detail view shows it. */
+export interface ActionPlanOption {
+  key: "conservative" | "balanced" | "bold";
+  summary?: string;
+  steps?: Array<{ action: string; owner?: string; when?: string }>;
+  keyMessages?: string[];
+  channels?: string[];
+  draft?: string;
+  metrics?: string[];
+  risks?: string[];
+}
 
 export interface CreateActionPlanInput {
   workspaceId?: string;

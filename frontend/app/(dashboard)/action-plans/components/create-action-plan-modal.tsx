@@ -21,15 +21,35 @@ interface CreateActionPlanModalProps {
   initialStrategyType?: ActionStrategyType;
 }
 
-// Each strategy keeps one colour so it reads the same here and in the plan list.
-const strategyTypes: Array<{ value: ActionStrategyType; descriptionKey: string; color: string }> = [
-  { value: "crisis_response", descriptionKey: "crDesc", color: "#C81E1E" },
-  { value: "pr_response", descriptionKey: "prDesc", color: "#465FFF" },
-  { value: "stakeholder_update", descriptionKey: "suDesc", color: "#101334" },
-  { value: "social_response", descriptionKey: "srDesc", color: "#0EA5E9" },
-  { value: "content_strategy", descriptionKey: "csDesc", color: "#12A66A" },
-  { value: "influencer_strategy", descriptionKey: "isDesc", color: "#8B5CFF" },
-  { value: "data_driven", descriptionKey: "ddDesc", color: "#F59E0B" },
+// Each strategy keeps one colour so it reads the same here and in the plan list. Grouped by what the team needs:
+// act now, communicate, protect (legal, platforms, regulators) and rebuild over time.
+type Strategy = { value: ActionStrategyType; descriptionKey: string; color: string };
+const strategyGroups: Array<{ id: string; en: string; items: Strategy[] }> = [
+  { id: "Tangani sekarang", en: "Handle now", items: [
+    { value: "crisis_response", descriptionKey: "crDesc", color: "#C81E1E" },
+    { value: "fact_check_response", descriptionKey: "fcDesc", color: "#B42318" },
+    { value: "spokesperson_brief", descriptionKey: "sbDesc", color: "#101334" },
+    { value: "monitor_hold", descriptionKey: "mhDesc", color: "#64748B" },
+  ] },
+  { id: "Komunikasi", en: "Communicate", items: [
+    { value: "pr_response", descriptionKey: "prDesc", color: "#465FFF" },
+    { value: "social_response", descriptionKey: "srDesc", color: "#0EA5E9" },
+    { value: "customer_care", descriptionKey: "ccDesc", color: "#0D9488" },
+    { value: "employee_comms", descriptionKey: "ecDesc", color: "#4F46E5" },
+    { value: "stakeholder_update", descriptionKey: "suDesc", color: "#1E3A8A" },
+  ] },
+  { id: "Lindungi", en: "Protect", items: [
+    { value: "platform_reporting", descriptionKey: "plDesc", color: "#7C3AED" },
+    { value: "regulator_engagement", descriptionKey: "reDesc", color: "#0F766E" },
+    { value: "legal_review", descriptionKey: "lrDesc", color: "#334155" },
+  ] },
+  { id: "Bangun kembali", en: "Rebuild", items: [
+    { value: "reputation_recovery", descriptionKey: "rrDesc", color: "#12A66A" },
+    { value: "content_strategy", descriptionKey: "csDesc", color: "#16A34A" },
+    { value: "influencer_strategy", descriptionKey: "isDesc", color: "#8B5CFF" },
+    { value: "community_engagement", descriptionKey: "ceDesc", color: "#D97706" },
+    { value: "data_driven", descriptionKey: "ddDesc", color: "#F59E0B" },
+  ] },
 ];
 
 export function CreateActionPlanModal({
@@ -109,6 +129,7 @@ export function CreateActionPlanModal({
   return (
     <ModalShell
       open={open}
+      size="lg"
       onClose={close}
       title={t("title")}
       description={L("Pick the kind of response. Narriv drafts the plan. You review it before anything is used.", "Pilih jenis respons. Narriv menyusun drafnya; Anda yang meninjau sebelum dipakai.")}
@@ -130,30 +151,36 @@ export function CreateActionPlanModal({
       ) : null}
 
       <p className="mb-2 text-[12px] font-black text-[#101334]">{t("strategyLabel")}</p>
-      <div role="radiogroup" aria-label={t("strategyLabel")} className="grid gap-2.5 sm:grid-cols-2">
-        {strategyTypes.map((st, index) => {
-          const isActive = strategyType === st.value;
-          const last = index === strategyTypes.length - 1 && strategyTypes.length % 2 === 1;
-          return (
-            <button
-              key={st.value}
-              type="button"
-              role="radio"
-              aria-checked={isActive}
-              onClick={() => setStrategyType(st.value)}
-              className={cn("flex items-start gap-3 rounded-[12px] p-3.5 text-left transition", last && "sm:col-span-2", isActive ? "bg-[#EEF1FF] ring-2 ring-[#465FFF]" : "bg-[#F7F8FC] hover:bg-[#EEF1F7]")}
-            >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full text-[13px] font-black text-white" style={{ background: st.color }}>{isActive ? "✓" : index + 1}</span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center justify-between gap-2">
-                  <span className="text-[14px] font-black text-[#101334]">{t(`strategy.${st.value}`)}</span>
-                  {st.value === suggested ? <span className="shrink-0 rounded-full bg-[#12A66A] px-2 py-0.5 text-[11px] font-black text-white">{L("Suggested", "Disarankan")}</span> : null}
-                </span>
-                <span className="mt-0.5 block text-[12px] font-semibold leading-snug text-[#5A6478]">{t(st.descriptionKey)}</span>
-              </span>
-            </button>
-          );
-        })}
+      <div role="radiogroup" aria-label={t("strategyLabel")} className="grid gap-4">
+        {strategyGroups.map((group) => (
+          <div key={group.en}>
+            <p className="mb-1.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#5A6478]">{L(group.en, group.id)}</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {group.items.map((st) => {
+                const isActive = strategyType === st.value;
+                return (
+                  <button
+                    key={st.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={isActive}
+                    onClick={() => setStrategyType(st.value)}
+                    className={cn("flex items-start gap-3 rounded-[12px] p-3 text-left transition", isActive ? "bg-[#EEF1FF] ring-2 ring-[#465FFF]" : "bg-[#F7F8FC] hover:bg-[#EEF1F7]")}
+                  >
+                    <span className="mt-1 size-3 shrink-0 rounded-full ring-2 ring-offset-2" style={{ background: st.color, ["--tw-ring-color" as string]: isActive ? st.color : "transparent" }} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="text-[13.5px] font-black leading-snug text-[#101334]">{t(`strategy.${st.value}`)}</span>
+                        {st.value === suggested ? <span className="shrink-0 rounded-full bg-[#12A66A] px-2 py-0.5 text-[10.5px] font-black text-white">{L("Suggested", "Disarankan")}</span> : null}
+                      </span>
+                      <span className="mt-0.5 block text-[12px] font-semibold leading-snug text-[#5A6478]">{t(st.descriptionKey)}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="mt-5 rounded-[12px] bg-[#F7F8FC]">

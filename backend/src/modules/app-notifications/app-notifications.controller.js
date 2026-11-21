@@ -1,5 +1,6 @@
 import supabase from "../../lib/supabase.js";
-import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
+import { demoWorkspaceIdFor, getUserWorkspaceIds } from "../../lib/workspace-access.js";
+import { tr } from "../../lib/request-context.js";
 import { notificationEvents, globalEvents } from "./app-notifications.events.js";
 import { logStructured } from "../../lib/logger.js";
 
@@ -7,38 +8,34 @@ import { logStructured } from "../../lib/logger.js";
 export const getNotifications = async (req, res) => {
     try {
         if (req.user?.isDemo) {
+            // Demo sessions see notifications built from their own sample workspace (open alerts, plans, risky
+            // issues), so every item opens a real page of the demo instead of a placeholder.
+            const ws = demoWorkspaceIdFor(req.user.id);
+            const [{ data: alerts }, { data: plans }] = await Promise.all([
+                supabase.from("alerts").select("id, title, description, severity, created_at").eq("workspace_id", ws).in("status", ["open", "new", "acknowledged"]).order("created_at", { ascending: false }).limit(30),
+                supabase.from("action_plans").select("id, title, status, created_at").eq("workspace_id", ws).order("created_at", { ascending: false }).limit(1),
+            ]);
+            const RANK = { critical: 0, high: 1, medium: 2, low: 3 };
+            const sevWord = { critical: tr("Critical", "Kritis"), high: tr("High", "Tinggi"), medium: tr("Medium", "Sedang"), low: tr("Low", "Rendah") };
             const mockNotifications = [
+                ...[...(alerts || [])].sort((x, y) => (RANK[x.severity] ?? 9) - (RANK[y.severity] ?? 9)).slice(0, 2).map((a, i) => ({
+                    id: `demo-alert-${a.id}`, workspace_id: ws, type: "alert",
+                    title: `${sevWord[a.severity] || tr("Alert", "Peringatan")}: ${a.title}`,
+                    message: String(a.description || "").split(" · ")[0].slice(0, 140),
+                    link: `/alerts/${a.id}`, is_read: i > 0, created_at: a.created_at,
+                })),
+                ...(plans || []).map((p) => ({
+                    id: `demo-plan-${p.id}`, workspace_id: ws, type: "action_plan",
+                    title: tr("Action plan ready for review", "Rencana aksi siap ditinjau"),
+                    message: p.title, link: "/action-plans", is_read: false, created_at: p.created_at,
+                })),
                 {
-                    id: "demo-notif-1",
-                    workspace_id: "demo-workspace",
-                    type: "alert",
-                    title: "High Negative Spike Detected",
-                    message: "Negative sentiment spiked by 42% on Twitter/X in the last 2 hours.",
-                    link: "/alert-center",
-                    is_read: false,
-                    created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+                    id: "demo-radar", workspace_id: ws, type: "signal",
+                    title: tr("Narriv Radar: today's risky stories", "Narriv Radar: isu berisiko hari ini"),
+                    message: tr("The most dangerous stories with findings and next steps.", "Isu paling berbahaya beserta temuan dan langkahnya."),
+                    link: "/feed", is_read: true, created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
                 },
-                {
-                    id: "demo-notif-2",
-                    workspace_id: "demo-workspace",
-                    type: "action_plan",
-                    title: "Action Plan Ready for Review",
-                    message: "AI generated an urgent response strategy for PR crisis mitigation.",
-                    link: "/action-plans",
-                    is_read: false,
-                    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-                },
-                {
-                    id: "demo-notif-3",
-                    workspace_id: "demo-workspace",
-                    type: "signal",
-                    title: "Emerging Topic: AI Governance",
-                    message: "New narrative cluster identified across 12 articles and posts.",
-                    link: "/signals",
-                    is_read: true,
-                    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-                },
-            ];
+            ].sort((x, y) => Date.parse(y.created_at) - Date.parse(x.created_at));
 
             return res.json({
                 data: mockNotifications,

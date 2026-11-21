@@ -29,7 +29,7 @@ export function TelegramLink() {
       ) : null}
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => gen.mutate()} disabled={gen.isPending} className="inline-flex h-10 items-center rounded-[12px] bg-[#101334] px-4 text-[13px] font-black text-white disabled:opacity-60">{d?.code ? pickL("New code", "Kode baru") : pickL("Get link code", "Ambil kode")}</button>
-        {(d?.chats ?? []).map((c) => <span key={c.name + c.at} className="rounded-full bg-[#E5F6EE] px-3 py-1 text-[12px] font-bold text-[#047857]">✓ {c.name}</span>)}
+        {(d?.chats ?? []).map((c) => <span key={c.name + c.at} className="rounded-full bg-[#E5F6EE] px-3 py-1 text-[12px] font-bold text-[#047857]">{c.name}</span>)}
       </div>
     </section>
   );

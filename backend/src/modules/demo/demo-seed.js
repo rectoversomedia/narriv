@@ -9,6 +9,7 @@
  * Only demo workspaces are touched. Members and the escalation matrix are kept.
  */
 
+import { DATALEAK_OPTIONS } from "./demo-plan-options.js";
 import { baseSupabaseAdmin as defaultDb } from "../../lib/supabase.js";
 import { DEMO_WORKSPACE_ID, DEMO_WORKSPACES } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
@@ -490,7 +491,7 @@ export async function seedScenarioWorkspace(def, { now = new Date(), db = defaul
     const plans = await chunkedInsert(db, "action_plans", PLANS.map((p, i) => ({
         workspace_id: ws, title: p.title, description: p.summary, type: p.type, priority: p.priority, status: p.status, assigned_to: p.to, created_by: owner,
         alert_id: alertOf[p.key] ?? null, cluster_id: clusterOf[p.key] ?? null,
-        strategy: { executive_summary: p.summary, immediate_actions: p.steps, talking_points: [], severity_assessment: p.priority },
+        strategy: { executive_summary: p.summary, immediate_actions: p.steps, talking_points: [], severity_assessment: p.priority, ...(p.key === "dataleak" && p.type === "crisis_response" ? DATALEAK_OPTIONS : {}) },
         created_at: at((i + 1) * 9 * H), updated_at: at(i * 5 * H),
     })), "id");
     await chunkedInsert(db, "ai_feedback", def.feedback.map(({ plan, ...f }, i) => ({ workspace_id: ws, action_plan_id: plans[plan].id, ...f, created_at: at((i + 1) * 6 * H) })));

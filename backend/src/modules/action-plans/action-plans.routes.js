@@ -68,6 +68,27 @@ function collectActionSteps(...options) {
         .filter((step, index, steps) => steps.indexOf(step) === index);
 }
 
+const arr = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === "string" && x.trim()) : typeof v === "string" && v.trim() ? [v] : []);
+/** One option (conservative / balanced / bold) as the detail view shows it. */
+function optionView(option) {
+    if (!option || typeof option !== "object") return null;
+    const slots = [tr("Today", "Hari ini"), tr("Next 6h", "6 jam ke depan"), tr("24h", "24 jam"), tr("48h", "48 jam"), tr("3 days", "3 hari"), tr("1 week", "1 minggu")];
+    const structured = Array.isArray(option.steps) && option.steps.some((st) => st && typeof st === "object" && st.action)
+        ? option.steps.filter((st) => st?.action).map((st, i) => ({ action: st.action, owner: st.owner || "", when: st.when || slots[i] || "" }))
+        : Array.isArray(option.recommended_actions)
+            ? option.recommended_actions.map((a, i) => ({ action: a.action, owner: a.owner || "", when: a.deadline || slots[i] || "" }))
+            : collectActionSteps(option).slice(0, 6).map((a, i) => ({ action: a, owner: "", when: slots[i] || "" }));
+    return {
+        summary: option.executive_summary || "",
+        steps: structured.slice(0, 6),
+        keyMessages: arr(option.key_messages).concat(arr(option.key_messages_for_influencers), arr(option.talking_points)).slice(0, 5),
+        channels: arr(option.channels).concat(arr(option.media_channels), arr(option.distribution_channels), arr(option.platforms), arr(option.communication_channels)).slice(0, 6),
+        draft: option.draft || option.holding_statement || arr(option.response_templates)[0] || "",
+        metrics: arr(option.success_metrics).concat(arr(option.kpis_to_track)).slice(0, 4),
+        risks: arr(option.risks).concat(arr(option.risk_factors), arr(option.risk_considerations), arr(option.escalation_triggers)).slice(0, 4),
+    };
+}
+
 function buildActionPlanResponse(plan) {
     // Use strategy JSONB field instead of option1/2/3
     const strategy = plan.strategy || {};
@@ -101,6 +122,12 @@ function buildActionPlanResponse(plan) {
             [tr("Channel", "Kanal"), channel],
         ],
         plan: steps.slice(0, 4).map((step, index) => [step, timelineSlots[index] || tr("Later", "Nanti")]),
+        strategyType: plan.type || null,
+        // The three alternatives the AI drafted; older plans without them show their one plan as "balanced".
+        options: (["conservative", "balanced", "bold"].some((k) => primaryOption[k])
+            ? ["conservative", "balanced", "bold"].map((key) => ({ key, ...(optionView(primaryOption[key]) || {}) }))
+            : [{ key: "balanced", ...(optionView(primaryOption) || {}) }])
+            .filter((o) => o.summary || o.steps?.length),
     };
 }
 

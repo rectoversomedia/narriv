@@ -14,6 +14,7 @@ import { assigneeName } from "@/lib/member-name";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
 import { CreateActionPlanModal } from "./components/create-action-plan-modal";
+import { PlanOptions } from "./components/plan-options";
 import { PlanWorkflowControls } from "./components/plan-workflow-controls";
 import { RejectActionPlanModal } from "./components/reject-action-plan-modal";
 import { readableTone } from "@/lib/readable-tone";
@@ -551,19 +552,21 @@ export default function ActionPlansPage() {
               </div>
             </dl>
 
-            {/* The steps, numbered, each with when it should happen. */}
+            {/* The alternatives the AI drafted, each with steps, messages, a draft and how to measure it. */}
+            {latestPlan?.options?.length ? <PlanOptions key={latestPlan.id} options={latestPlan.options} /> : (
             <div className="mt-6">
               <p className="text-[12px] font-bold text-[#5F6B94]">{t("aiStepsTitle")}</p>
               <ol className="mt-2 divide-y divide-[#EEF0F6]">
                 {(detailSteps ?? []).map(([item, when], stepIndex) => (
                   <li key={`${stepIndex}:${item}`} className="flex items-start gap-3 py-3">
-                    <span className="grid size-7 shrink-0 place-items-center rounded-full border-[1.5px] border-[#101334] text-[12px] font-bold text-[#101334]">{String(stepIndex + 1).padStart(2, "0")}</span>
+                    <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#101334] text-[12px] font-black text-white">{stepIndex + 1}</span>
                     <span className="min-w-0 flex-1 pt-0.5 text-[15px] font-bold leading-snug text-[#101334]">{item}</span>
-                    {when ? <span className="shrink-0 rounded-[6px] bg-[#EEF1FF] px-2 py-1 text-[11.5px] font-bold text-[#3B52F5]">{when}</span> : null}
+                    {when ? <span className="shrink-0 rounded-[8px] bg-[#EEF1FF] px-2.5 py-1 text-[11.5px] font-black text-[#3B52F5]">{when}</span> : null}
                   </li>
                 ))}
               </ol>
             </div>
+            )}
 
             {/* The decision on the AI's draft. */}
             <div className="mt-5 rounded-[18px] bg-[#101334] p-5 text-white">

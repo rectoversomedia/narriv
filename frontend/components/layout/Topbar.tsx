@@ -1,5 +1,6 @@
 "use client";
 
+import { pickL } from "@/lib/use-l";
 import Image from "next/image";
 import { isPageHidden, useWorkspaceUseCase } from "@/lib/use-case";
 import Link from "next/link";
@@ -63,10 +64,10 @@ const navLinks = [
   { href: "/workspace/activity", title: { en: "Activity history", id: "Riwayat aktivitas" }, subtitle: { en: "Settings", id: "Pengaturan" } },
 ];
 
-const typeLabel: Record<string, string> = {
-  alert: "Alert",
-  narrative: "Narasi",
-  nav: "Halaman",
+const typeLabel: Record<string, [string, string]> = {
+  alert: ["Alert", "Peringatan"],
+  narrative: ["Issue", "Isu"],
+  nav: ["Page", "Halaman"],
 };
 
 const typeColor: Record<string, string> = {
@@ -95,11 +96,11 @@ function formatNotificationTime(createdAt: string, nowMs: number, locale: string
 }
 
 function getNotificationMeta(type: string) {
-  if (type.includes("alert")) return { dotTone: "red" as NotificationTone, badgeVariant: "red" as const, label: "Alert" };
-  if (type.includes("report")) return { dotTone: "green" as NotificationTone, badgeVariant: "green" as const, label: "Report" };
-  if (type.includes("action")) return { dotTone: "purple" as NotificationTone, badgeVariant: "purple" as const, label: "Action" };
-  if (type.includes("system")) return { dotTone: "amber" as NotificationTone, badgeVariant: "amber" as const, label: "System" };
-  return { dotTone: "blue" as NotificationTone, badgeVariant: "default" as const, label: "Info" };
+  if (type.includes("alert")) return { dotTone: "red" as NotificationTone, badgeVariant: "red" as const, label: pickL("Alert", "Peringatan") };
+  if (type.includes("report")) return { dotTone: "green" as NotificationTone, badgeVariant: "green" as const, label: pickL("Report", "Laporan") };
+  if (type.includes("action")) return { dotTone: "purple" as NotificationTone, badgeVariant: "purple" as const, label: pickL("Action", "Rencana") };
+  if (type.includes("system")) return { dotTone: "amber" as NotificationTone, badgeVariant: "amber" as const, label: pickL("System", "Sistem") };
+  return { dotTone: "blue" as NotificationTone, badgeVariant: "default" as const, label: pickL("Info", "Info") };
 }
 
 function NotificationState({ icon: _Icon, title, description, action }: { icon: LucideIcon; title: string; description: string; action?: React.ReactNode }) {
@@ -408,7 +409,7 @@ export function Topbar() {
                   className="group flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left transition hover:bg-slate-50"
                 >
                   <span className={`shrink-0 rounded-lg px-2 py-1 text-[11px] font-black ${typeColor[result.type]}`}>
-                    {typeLabel[result.type]}
+                    {typeLabel[result.type] ? pickL(typeLabel[result.type][0], typeLabel[result.type][1]) : null}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-bold text-slate-900 group-hover:text-[#3B52F5]">{result.title}</span>
