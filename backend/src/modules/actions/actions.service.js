@@ -28,7 +28,7 @@ async function callOpenAIWithTimeout(messages, timeoutMs) {
                 model: "gpt-4o-mini",
                 messages,
                 temperature: 0.7,
-                max_tokens: 2500,
+                max_tokens: 6000,
                 response_format: { type: "json_object" },
             },
             {

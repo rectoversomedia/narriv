@@ -45,7 +45,7 @@ export function toClaudeRequest(params) {
         user,
         // Thinking is on for current Claude models and counts toward max_tokens: leave room so a short JSON
         // answer is not cut off after the reasoning (OpenAI callers ask for as little as 300).
-        maxTokens: Math.min(Math.max(Number(params.max_tokens || params.max_completion_tokens || 1024), 2048), 8192),
+        maxTokens: Math.min(Math.max(Number(params.max_tokens || params.max_completion_tokens || 1024), 4096), 8192),
         effort: "low",
         wantsJson,
     };
