@@ -338,13 +338,15 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
   // Same rule as the Overview verdict: net (positive − negative) share of the day's records.
   const net = total > 0 ? ((positive - negative) / total) * 100 : 0;
   const verdict = total === 0
-    ? { word: L("No Data Yet", "Belum Ada Data"), color: "#5A6478", bg: "#F1F4FA" }
+    ? { word: L("Quiet", "Sepi"), color: "#5A6478", bg: "#F1F4FA" }
     : net <= -15 ? { word: L("Negative", "Negatif"), color: "#C81E1E", bg: "#FDECEC" }
       : net >= 15 ? { word: L("Positive", "Positif"), color: "#047857", bg: "#E5F6EE" }
         : { word: L("Balanced", "Seimbang"), color: "#31406B", bg: "#EEF1F8" };
   const aiSummary = meta?.aiSummary;
-  const headline = aiSummary ? aiSummary.content[uiLanguage as "en" | "id"] || aiSummary.content.en : null;
-  const advice = aiSummary ? aiSummary.insight[uiLanguage as "en" | "id"] || aiSummary.insight.en : null;
+  // The AI summary can cover a wider window than the 24-hour numbers beside it; with no records today it is left out
+  // so the card never says "8 mentions" next to zeros.
+  const headline = aiSummary && total > 0 ? aiSummary.content[uiLanguage as "en" | "id"] || aiSummary.content.en : null;
+  const advice = aiSummary && total > 0 ? aiSummary.insight[uiLanguage as "en" | "id"] || aiSummary.insight.en : null;
 
   const segments = [
     { key: "neg", label: L("Negative", "Negatif"), value: negative, color: "#E5484D" },
@@ -386,7 +388,7 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
                 );
               })()
             ) : (
-              <p className="text-[18px] font-bold text-[#5A6478]">{L("No mentions in the last 24 hours yet.", "Belum ada percakapan dalam 24 jam terakhir.")}</p>
+              <p className="text-[18px] font-bold text-[#5A6478]">{L("No new mentions in the last 24 hours. Earlier mentions are listed below.", "Belum ada percakapan baru dalam 24 jam terakhir. Percakapan sebelumnya ada di daftar di bawah.")}</p>
             )}
             {total > 0 ? (
               <div className="mt-4">
@@ -418,7 +420,7 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
           <div className="mt-5 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:items-center">
             <p className="min-w-0 flex-1 px-1 text-[15px] font-bold leading-snug text-white">
               <span className="mb-1 block text-[12px] font-bold text-[#A5B4FF]">{L("Next Step", "Langkah Berikutnya")}</span>
-              {advice ?? L("Review today's negative mentions and decide on a response.", "Tinjau percakapan negatif hari ini dan putuskan responsnya.")}
+              {advice ?? (total > 0 ? L("Review today's negative mentions and decide on a response.", "Tinjau percakapan negatif hari ini dan putuskan responsnya.") : L("Nothing new today. Check the Narrative Feed for stories still running.", "Belum ada yang baru hari ini. Cek Feed Narasi untuk isu yang masih berjalan."))}
             </p>
             {onPlan ? <button type="button" onClick={onPlan} className="inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5] sm:w-auto">{L("Create Action Plan", "Buat Rencana Aksi")}</button> : null}
             {onShowNegative && negative > 0 ? <button type="button" onClick={onShowNegative} className="inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[12px] border-[1.5px] border-white/80 px-5 text-[14px] font-black text-white transition hover:bg-white/10 sm:w-auto">{L(`See ${num(negative)} Negative`, `Lihat ${num(negative)} Negatif`)}</button> : null}

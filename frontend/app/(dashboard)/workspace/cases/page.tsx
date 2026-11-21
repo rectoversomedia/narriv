@@ -820,7 +820,7 @@ export default function CasesPage() {
             })}
           </div>
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[960px] text-left text-sm">
+            <table className="w-full min-w-[1040px] text-left text-sm">
               <thead className="border-b border-[#EEF0F6]">
                 <tr>
                   <th className="px-6 py-4 text-[11.5px] font-bold text-[#5F6B94]">
@@ -835,7 +835,7 @@ export default function CasesPage() {
                   <th className="px-4 py-4 text-[11.5px] font-bold text-[#5F6B94]">
                     {t("table.assignee")}
                   </th>
-                  <th className="px-4 py-4 text-[11.5px] font-bold text-[#5F6B94]">
+                  <th className="whitespace-nowrap px-4 py-4 text-[11.5px] font-bold text-[#5F6B94]">
                     {t("table.deadline")}
                   </th>
                   <th className="px-4 py-4 text-[11.5px] font-bold text-[#5F6B94]">
@@ -963,10 +963,10 @@ export default function CasesPage() {
 
                       {/* Created */}
                       <td className="px-4 py-4 align-top">
-                        <p className="text-[12px] font-black text-slate-900">
+                        <p className="whitespace-nowrap text-[12px] font-black text-slate-900">
                           {formatRelativeTime(item.createdAt, locale)}
                         </p>
-                        <p className="mt-1 text-[11.5px] font-medium text-[#5A6478]">
+                        <p className="mt-1 whitespace-nowrap text-[11.5px] font-medium text-[#5A6478]">
                           {formatDateTime(item.createdAt, locale)}
                         </p>
                       </td>

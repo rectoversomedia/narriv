@@ -83,7 +83,7 @@ export default function InsightsPage() {
   const t = useTranslations("IntelPanels");
   const code = useCodeLabels();
   const queryClient = useQueryClient();
-  const [windowId, setWindowId] = useState<(typeof WINDOWS)[number]["id"]>("24h");
+  const [windowId, setWindowId] = useState<(typeof WINDOWS)[number]["id"]>("7d");
   const hours = (WINDOWS.find((w) => w.id === windowId) ?? WINDOWS[0]).hours;
 
   const narrative = useQuery({ queryKey: ["intelligence", "narrative", hours], queryFn: () => getNarrativeIntelligence(hours), staleTime: 60 * 1000, retry: 1 });

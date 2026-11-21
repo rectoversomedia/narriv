@@ -37,6 +37,7 @@ type Cluster = {
   tone: Tone;
   sentiment: "positive" | "negative" | "neutral" | "mixed";
   memberSignalIds: string[];
+  riskScore?: number | null;
   color: string;
   size?: "high" | "large" | "medium" | "small";
   priority: LocalizedText;
@@ -158,6 +159,7 @@ function buildNarrativeClusters(records: NarrativeRecord[], labels: { sources: (
       id: record.id,
       topic: { en: record.title, id: record.title },
       signals: record.signalCount,
+      riskScore: record.risk?.score ?? null,
       growth: record.velocity,
       tone,
       sentiment: tone === "green" ? "positive" : tone === "red" ? "negative" : "neutral",
@@ -313,7 +315,11 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
   const total = live.reduce((sum, c) => sum + c.signals, 0) || 1;
   const top = [...live].sort((a, b) => b.signals - a.signals)[0];
   const fastest = [...live].sort((a, b) => (b.growth === "new" ? 1e9 : parseGrowthPercent(b.growth)) - (a.growth === "new" ? 1e9 : parseGrowthPercent(a.growth)))[0];
-  const risk = live.filter((c) => c.sentiment === "negative").sort((a, b) => b.signals - a.signals)[0];
+  // The biggest risk is the highest narrative risk score; without scores, the largest negative issue.
+  const risk = live.some((c) => c.riskScore != null)
+    ? [...live].filter((c) => c.riskScore != null).sort((a, b) => (b.riskScore ?? 0) - (a.riskScore ?? 0))[0]
+    : live.filter((c) => c.sentiment === "negative").sort((a, b) => b.signals - a.signals)[0];
+  const rising = fastest.growth === "new" || parseGrowthPercent(fastest.growth) > 0;
   const share = Math.round((top.signals / total) * 100);
   const topTone = toneStyles[top.tone];
   const topIsRisk = top.sentiment === "negative";
@@ -321,9 +327,11 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
   const growthLabel = (g: string) => (g === "new" ? L("New", "Baru") : g);
 
   const tiles: Array<{ key: string; label: string; value: string; topic?: string; tone: Tone; onClick?: () => void }> = [
-    { key: "fast", label: L("Fastest rising", "Naik paling cepat"), value: growthLabel(fastest.growth), topic: name(fastest), tone: parseGrowthPercent(fastest.growth) > 0 || fastest.growth === "new" ? "amber" : "slate", onClick: () => onOpen(fastest.id) },
+    rising
+      ? { key: "fast", label: L("Fastest rising", "Naik paling cepat"), value: growthLabel(fastest.growth), topic: name(fastest), tone: "amber", onClick: () => onOpen(fastest.id) }
+      : { key: "fast", label: L("Fastest rising", "Naik paling cepat"), value: "—", topic: L("No issue is rising in this period", "Tidak ada isu yang naik di periode ini"), tone: "slate" },
     risk
-      ? { key: "risk", label: L("Biggest risk", "Risiko terbesar"), value: formatSignals(risk.signals), topic: name(risk), tone: "red", onClick: () => onOpen(risk.id) }
+      ? { key: "risk", label: L("Biggest risk", "Risiko terbesar"), value: risk.riskScore != null ? `${risk.riskScore}/100` : formatSignals(risk.signals), topic: name(risk), tone: "red", onClick: () => onOpen(risk.id) }
       : { key: "risk", label: L("Biggest risk", "Risiko terbesar"), value: "0", topic: L("No negative issue", "Tidak ada isu negatif"), tone: "green" },
     { key: "new", label: L("New issues", "Isu baru"), value: String(emergingCount), topic: emergingCount > 0 ? L("to watch", "perlu dipantau") : L("none this period", "tidak ada"), tone: emergingCount > 0 ? "purple" : "slate" },
   ];
@@ -348,12 +356,12 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
             <span className="mt-1 text-[11px] font-black text-[#5A6478]">{L("of talk", "porsi")}</span>
           </div>
           <div className="min-w-0 self-center">
-            <p className="text-[12px] font-black" style={{ color: readableTone(topTone.color) }}>{L("Main issue", "Isu utama")}</p>
+            <p className="text-[12px] font-black" style={{ color: readableTone(topTone.color) }}>{L("Most talked about", "Paling banyak dibicarakan")}</p>
             <p className="mt-1 text-[24px] font-black leading-tight tracking-[-0.03em] text-[#101334] sm:text-[28px]">{name(top)}</p>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[12px] font-black">
               <span className="rounded-full bg-white px-2.5 py-1 text-[#101334]">{formatSignals(top.signals)} {L("mentions", "percakapan")}</span>
               <span className={cn("rounded-full px-2.5 py-1", topIsRisk ? "bg-[#C81E1E] text-white" : top.sentiment === "positive" ? "bg-[#047857] text-white" : "bg-white text-[#31406B]")}>{L(...SENTIMENT_LABEL[top.sentiment])}</span>
-              {top.growth && top.growth !== "0%" ? <span className="rounded-full bg-white px-2.5 py-1 text-[#B45309]">{growthLabel(top.growth)}</span> : null}
+              {top.growth === "new" || parseGrowthPercent(top.growth) > 0 ? <span className="rounded-full bg-white px-2.5 py-1 text-[#B45309]">{L("Rising", "Naik")} {growthLabel(top.growth)}</span> : null}
             </div>
             <p className="mt-2 line-clamp-2 text-[14.5px] font-medium leading-relaxed text-[#31406B]">{text(top.description, language)}</p>
           </div>

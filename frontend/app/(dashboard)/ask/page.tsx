@@ -128,9 +128,9 @@ function AskPulse({ summary, topIssue, onAsk, language }: { summary: DashboardSu
           </div>
         ))}
         <div className="rounded-[14px] bg-[#101334] p-4 text-white">
-          <p className="text-[12px] font-black text-[#A9B4FF]">{L("Top issue", "Isu utama")}</p>
+          <p className="text-[12px] font-black text-[#A9B4FF]">{L("Most dangerous issue", "Isu paling berbahaya")}</p>
           <p className="mt-1.5 line-clamp-3 text-[14px] font-black leading-snug">{topIssue?.title ?? L("No issue yet", "Belum ada isu")}</p>
-          {topIssue ? <p className="mt-1.5 text-[12px] font-bold text-white/70">{topIssue.signalCount} {L("mentions", "percakapan")}</p> : null}
+          {topIssue ? <p className="mt-1.5 text-[12px] font-bold text-white/70">{topIssue.risk ? `${L("Risk", "Risiko")} ${topIssue.risk.score}/100 · ` : ""}{topIssue.signalCount} {L("mentions", "percakapan")}</p> : null}
         </div>
       </div>
       <div>
@@ -482,7 +482,7 @@ export default function AskPage() {
             })}
 
             {messages.length <= 1 && dashboardSummary ? (
-              <AskPulse summary={dashboardSummary} topIssue={narratives?.data?.[0] ?? null} onAsk={sendMessage} language={language} />
+              <AskPulse summary={dashboardSummary} topIssue={[...(narratives?.data ?? [])].sort((a, b) => (b.risk?.score ?? 0) - (a.risk?.score ?? 0) || b.signalCount - a.signalCount)[0] ?? null} onAsk={sendMessage} language={language} />
             ) : null}
 
             {isTyping && (
