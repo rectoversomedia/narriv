@@ -41,3 +41,18 @@ describe("Radar text", () => {
         expect(t).toContain("detail 1");
     });
 });
+
+describe("brand scope", () => {
+    test("a line of business only counts next to its brand", async () => {
+        const b = await import("../src/lib/brand-scope.js");
+        const A = b.brandAliases("FIFGROUP", ["FIFGROUP", "FIF", "FIF GROUP", "Spektra"]);
+        expect(A).toEqual(["FIF GROUP", "FIFGROUP", "FIF"]);
+        expect(b.scopedQuery("Spektra", A)).toBe('Spektra ("FIF GROUP" OR FIFGROUP OR FIF)');
+        expect(b.isOnBrand("SAIE Bologna 2026 - SPEKTRA SRL", "Spektra", A)).toBe(false);
+        expect(b.isOnBrand("FIF Group luncurkan Spektra baru", "Spektra", A)).toBe(true);
+        expect(b.isOnBrand("Laba FIF Group naik", "FIFGROUP", A)).toBe(true);
+        const M = b.brandAliases("Bank Mandiri", ["Livin by Mandiri", "Kopra"]);
+        expect(b.isBrandKeyword("Livin by Mandiri", M)).toBe(true);
+        expect(b.isOnBrand("Kopra kelapa naik", "Kopra", M)).toBe(false);
+    });
+});

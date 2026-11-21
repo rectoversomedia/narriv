@@ -2,7 +2,7 @@ import { Resend } from "resend";
 import { logStructured } from "./logger.js";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const EMAIL_FROM = process.env.EMAIL_FROM || "Narriv <noreply@narriv.digital>";
+const EMAIL_FROM = process.env.EMAIL_FROM || "Narriv | Narrative Intelligence <noreply@narriv.digital>";
 // Replies go to a person, not the no-reply sender (set once that mailbox receives mail).
 const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || null;
 

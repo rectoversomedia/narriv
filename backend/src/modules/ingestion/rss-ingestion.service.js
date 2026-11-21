@@ -13,6 +13,8 @@ import { logStructured } from "../../lib/logger.js";
 import { assertPublicHttpUrl } from "../../lib/url-safety.js";
 import { persistCollectedRecords, existsInWorkspace, runWithConcurrency } from "./signal-persistence.js";
 import { phraseQuery } from "../../lib/keyword-match.js";
+import { scopedQuery, workspaceBrandAliases } from "../../lib/brand-scope.js";
+import { maxRecordAgeDays } from "../../lib/record-age.js";
 
 export { assertPublicHttpUrl, existsInWorkspace, runWithConcurrency };
 
@@ -165,7 +167,9 @@ export const GOOGLE_NEWS_EDITIONS = {
  */
 export async function fetchGoogleNewsRss(keyword, options = {}) {
   // A multi-word keyword is searched as an exact phrase, so "Kopi Senja" does not return every story about coffee.
-  const query = phraseQuery(keyword || "perbankan indonesia");
+  // `options.query` is an already-formed query (brand-scoped, see lib/brand-scope.js). Only recent stories are asked
+  // for: the same window the records are kept for (record-age.js), 30 days by default.
+  const query = `${options.query || phraseQuery(keyword || "perbankan indonesia")} when:${maxRecordAgeDays()}d`;
   const edition = GOOGLE_NEWS_EDITIONS[options.edition] || GOOGLE_NEWS_EDITIONS.id;
   const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&${edition.params}`;
 
@@ -184,11 +188,11 @@ export const headlineLanguage = (title, fallback) => (INDONESIAN_WORDS.test(Stri
  * are not the same story (same link or same title). Every item becomes an analysed signal, so the English
  * share is kept small to hold AI cost down. The English edition failing never fails the run.
  */
-export async function fetchGoogleNewsAllEditions(keyword, { limit = 10, fetchEdition = fetchGoogleNewsRss } = {}) {
+export async function fetchGoogleNewsAllEditions(keyword, { limit = 10, query, fetchEdition = fetchGoogleNewsRss } = {}) {
   const extra = Math.max(1, Math.ceil(limit / 3));
   const [local, english] = await Promise.all([
-    fetchEdition(keyword, { limit, edition: "id" }),
-    fetchEdition(keyword, { limit: extra * 2, edition: "en" }).catch((error) => {
+    fetchEdition(keyword, { limit, edition: "id", query }),
+    fetchEdition(keyword, { limit: extra * 2, edition: "en", query }).catch((error) => {
       logStructured("warn", "google_news_en_failed", { keyword, error: error?.message || String(error) });
       return [];
     }),
@@ -323,7 +327,8 @@ export async function ingestRssSignals({
       const safeUrl = await assertPublicHttpUrl(rssUrl);
       fetchedItems = await fetchRssFeed(safeUrl, { limit, untrusted: true });
     } else {
-      fetchedItems = await fetchGoogleNewsAllEditions(targetKeyword, { limit });
+      const aliases = await workspaceBrandAliases(workspaceId).catch(() => []);
+      fetchedItems = await fetchGoogleNewsAllEditions(targetKeyword, { limit, query: scopedQuery(targetKeyword, aliases) });
     }
   } catch (fetchErr) {
     logStructured("error", "rss_fetch_failed", { error: fetchErr.message, keyword: targetKeyword, rssUrl });

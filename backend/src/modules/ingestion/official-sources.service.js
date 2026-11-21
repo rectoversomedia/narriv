@@ -10,9 +10,10 @@ import { persistCollectedRecords } from "./signal-persistence.js";
 import { mentionsKeyword, phraseQuery } from "../../lib/keyword-match.js";
 import { fetchTelegramPosts } from "./telegram.service.js";
 import { fetchPublisherArticles } from "./publisher-rss.service.js";
+import { scopedQuery, workspaceBrandAliases } from "../../lib/brand-scope.js";
 
 const TIMEOUT_MS = 15_000;
-const LOOKBACK_DAYS = 7;
+const LOOKBACK_DAYS = 30; // the dashboard window (record-age.js)
 
 function env(name) {
     const value = process.env[name];
@@ -41,10 +42,10 @@ async function getJson(url, init = {}, fetchImpl = fetch) {
 const decodeEntities = (s) => String(s || "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 
 /** Recent Indonesian-region YouTube videos for a keyword, as persistable records. */
-export async function fetchYouTubeVideos(keyword, { limit = 8, fetchImpl = fetch, now = Date.now() } = {}) {
+export async function fetchYouTubeVideos(keyword, { limit = 8, fetchImpl = fetch, now = Date.now(), query } = {}) {
     const params = new URLSearchParams({
         part: "snippet",
-        q: phraseQuery(keyword),
+        q: query || phraseQuery(keyword),
         type: "video",
         order: "date",
         maxResults: String(Math.min(Math.max(limit, 1), 25)),
@@ -127,11 +128,13 @@ const COLLECTORS = [
  * (dedup → store → AI analysis → clustering → alerts). One failing source never stops the other.
  */
 export async function ingestOfficialSources({ workspaceId, keyword, limit = 8, persist = persistCollectedRecords, collectors = COLLECTORS } = {}) {
+    const aliases = workspaceId ? await workspaceBrandAliases(workspaceId).catch(() => []) : [];
+    const query = scopedQuery(keyword, aliases);
     const totals = { totalFetched: 0, newSignalsCreated: 0, skippedDuplicates: 0, analyzed: 0, analysisFailed: 0, insertFailed: 0, clustersCreated: 0, alerts: [], sources: [] };
     for (const collector of collectors) {
         if (!collector.configured()) continue;
         try {
-            const records = await collector.fetch(keyword, { limit });
+            const records = await collector.fetch(keyword, { limit, query });
             const r = records.length
                 ? await persist(records, { workspaceId, platform: collector.platform, keyword, ingestionType: collector.platform, signalDefaults: { region: "ID" } })
                 : { createdSignals: [], skippedDuplicates: 0, analyzed: 0, analysisFailed: 0, insertFailed: 0, alerts: [] };

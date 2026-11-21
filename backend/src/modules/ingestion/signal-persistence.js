@@ -18,6 +18,7 @@ import { checkBudgetAllowance } from "../../lib/cost-management.js";
 import { analyzeSignal } from "../ai/ai.service.js";
 import { getWorkspaceProfile } from "../../lib/workspace-profile.js";
 import { isStaleRecord } from "../../lib/record-age.js";
+import { isOnBrand, workspaceBrandAliases } from "../../lib/brand-scope.js";
 import { runClustering } from "../clustering/clustering.service.js";
 import { detectAlerts } from "../alerts/alerts.service.js";
 
@@ -96,6 +97,9 @@ export async function persistCollectedRecords(records, {
   let insertFailed = 0;
   let skippedInvalid = 0;
   let skippedStale = 0;
+  let skippedOffBrand = 0;
+  // Every keyword is read in the brand's context: "Spektra" for FIFGROUP must be FIFGROUP's Spektra (brand-scope.js).
+  const brandAliases = keyword ? await workspaceBrandAliases(workspaceId).catch(() => []) : [];
 
   // Budget gate: when the workspace's AI budget is exhausted, records are
   // still stored (unanalyzed) so the backfill can analyze them later.
@@ -120,6 +124,10 @@ export async function persistCollectedRecords(records, {
       }
       if (isStaleRecord(record.publishedAt)) {
         skippedStale++;
+        return;
+      }
+      if (keyword && !isOnBrand(`${record.title || ""} ${content} ${record.author || ""} ${record.metadata?.channelTitle || ""}`, keyword, brandAliases)) {
+        skippedOffBrand++;
         return;
       }
       const url = safeRecordUrl(record.url);
@@ -304,6 +312,7 @@ export async function persistCollectedRecords(records, {
     skippedDuplicates,
     skippedInvalid,
     skippedStale,
+    skippedOffBrand,
     analyzed,
     analysisFailed,
     insertFailed,
