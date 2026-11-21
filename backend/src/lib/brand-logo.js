@@ -155,7 +155,9 @@ export async function ensureBrandLogo(workspaceId, { db = supabase, chat, fetchI
     if (ws.logo_url && !auto) return null; // the client's own logo
     if (!force && auto?.brand === brand) return null; // already done for this name
 
-    const site = await findBrandDomain(brand, { workspaceId, chat, fetchImpl });
+    // One retry: the AI answer or the site can fail once (timeouts, a cut-off reply).
+    const site = await findBrandDomain(brand, { workspaceId, chat, fetchImpl })
+        || await findBrandDomain(brand, { workspaceId, chat, fetchImpl });
     const img = site ? await fetchBrandLogo(site, { fetchImpl }) : null;
     if (!img) {
         logStructured("info", "brand_logo_not_found", { workspaceId, brand, domain: site?.domain || null });

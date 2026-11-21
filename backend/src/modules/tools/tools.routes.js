@@ -9,6 +9,7 @@ import { runRecon } from "../../lib/recon.js";
 import { checkClaimInput } from "../../lib/claim-box.js";
 import { investigationBrief, simulateResponse } from "../../lib/issue-ai.js";
 import { radarReply } from "../../lib/narrative-radar.js";
+import { futureIssues } from "../../lib/future-issues.js";
 
 /**
  * Analyst tools on top of the monitored data:
@@ -125,6 +126,17 @@ router.post("/issues/:id/simulate", rateLimiters.aiGeneration(), async (req, res
     const out = await simulateResponse({ workspaceId: id, clusterId: req.params.id, response: String(req.body?.response || "").slice(0, 400) }).catch(() => null);
     if (!out) return res.status(503).json({ error: "Simulasi belum bisa dibuat. Coba lagi sebentar." });
     res.json(out);
+});
+
+// Future Issues (Analysis page): forecasts from all of the workspace's data; stored, reused for 12 hours.
+router.get("/future-issues", rateLimiters.aiGeneration(), async (req, res) => {
+    const id = await ws(req, res); if (!id) return;
+    try {
+        res.json(await futureIssues(id, { refresh: req.query.refresh === "1" }));
+    } catch (error) {
+        logStructured("error", "future_issues_failed", { error: error?.message });
+        res.status(503).json({ error: "Prediksi isu belum bisa dibuat. Coba lagi sebentar." });
+    }
 });
 
 router.get("/telegram/link", async (req, res) => {

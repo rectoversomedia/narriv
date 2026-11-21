@@ -23,6 +23,7 @@ import { issueHref, monitoringHref, type MonitoringPeriod } from "@/lib/evidence
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
+import { FutureIssuesPanel } from "@/components/intelligence/future-issues";
 
 // "Analisis": why today's risk score is what it is, and what to do about it. The top card is the verdict (risk and
 // reputation, the main driver in one sentence, and where to act); below, each driver with a link to its evidence,
@@ -222,6 +223,9 @@ export default function InsightsPage() {
           </div>
         </section>
       )}
+
+      {/* Future Issues: what is likely to become the next issue, from all of the data. */}
+      <FutureIssuesPanel />
 
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
         {/* Each driver of the score, biggest first, with a link to the records behind it. */}

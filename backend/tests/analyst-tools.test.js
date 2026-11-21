@@ -56,3 +56,20 @@ describe("brand scope", () => {
         expect(b.isOnBrand("Kopra kelapa naik", "Kopra", M)).toBe(false);
     });
 });
+
+describe("future issues", () => {
+    test("forecasts are cleaned, tied to real issues and sorted by likelihood", async () => {
+        const { normalizeForecasts } = await import("../src/lib/future-issues.js");
+        const ctx = { issues: [{ id: "c1", title: "Gangguan aplikasi" }] };
+        const out = normalizeForecasts({ forecasts: [
+            { title: "Keluhan meluas ke OJK", likelihood: 40, impact: "high", why: "Dari 12 catatan.", related_issue_ids: ["c1", "zzz"], prepare: ["Siapkan FAQ"] },
+            { title: "Gelombang tagihan ganda 🔥", likelihood: 150, impact: "odd", why: "Naik 2x." },
+            { title: "", why: "x" },
+        ] }, ctx);
+        expect(out).toHaveLength(2);
+        expect(out[0].likelihood).toBe(95);
+        expect(out[0].title).not.toMatch(/🔥/);
+        expect(out[0].impact).toBe("medium");
+        expect(out[1].related).toEqual([{ id: "c1", title: "Gangguan aplikasi" }]);
+    });
+});

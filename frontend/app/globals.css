@@ -111,6 +111,8 @@ body {
   background: var(--app-bg);
   color: var(--text);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  /* Plus Jakarta Sans sets narrow word spaces; a little more makes every sentence, label and chip easier to read. */
+  word-spacing: 0.1em;
 }
 
 button,

@@ -17,3 +17,6 @@ export const getIssueBrief = (id: string) => post<IssueBrief>(`/api/tools/issues
 export const simulateIssue = (id: string, response: string) => post<IssueSimulation>(`/api/tools/issues/${id}/simulate`, { response });
 export const getTelegramLink = () => apiClient<TelegramLink>("/api/tools/telegram/link");
 export const newTelegramCode = () => post<{ code: string; bot: string | null }>("/api/tools/telegram/link", {});
+export type FutureIssue = { title: string; horizon: string; likelihood: number; impact: "high" | "medium" | "low"; why: string; evidence: string[]; earlySignals: string[]; prepare: string[]; audiences: string[]; related: Array<{ id: string; title: string }> };
+export type FutureIssues = { forecasts: FutureIssue[]; basis: { records: number; issues: number; alerts: number }; at: string; cached?: boolean; empty?: boolean };
+export const getFutureIssues = (refresh = false) => apiClient<FutureIssues>(`/api/tools/future-issues${refresh ? "?refresh=1" : ""}`);
