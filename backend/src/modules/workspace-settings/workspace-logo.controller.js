@@ -19,7 +19,7 @@ export function detectImageType(buffer) {
 }
 
 let bucketReady = false;
-async function ensureBucket() {
+export async function ensureBucket() {
     if (bucketReady) return;
     const { data } = await supabase.storage.getBucket(BUCKET);
     if (!data) {

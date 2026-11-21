@@ -12,7 +12,7 @@ import supabase from "./supabase.js";
 import { aiJson } from "./ai-json.js";
 import { assertPublicHttpUrl } from "./url-safety.js";
 import { logStructured } from "./logger.js";
-import { detectImageType } from "../modules/workspace-settings/workspace-logo.controller.js";
+import { detectImageType, ensureBucket } from "../modules/workspace-settings/workspace-logo.controller.js";
 
 const BUCKET = "workspace-logos";
 const UA = { "user-agent": "Mozilla/5.0 (compatible; NarrivLogo/1.0; +https://narriv.digital)" };
@@ -162,6 +162,7 @@ export async function ensureBrandLogo(workspaceId, { db = supabase, chat, fetchI
         await db.from("workspaces").update({ settings: { ...(ws.settings || {}), logo_auto: { brand, at: new Date().toISOString(), found: false } } }).eq("id", workspaceId);
         return null;
     }
+    if (db === supabase) await ensureBucket();
     const path = `${workspaceId}/auto-${crypto.randomUUID()}.${img.type.ext}`;
     const { error } = await db.storage.from(BUCKET).upload(path, img.buffer, { contentType: img.type.mime, cacheControl: "31536000", upsert: false });
     if (error) throw error;
