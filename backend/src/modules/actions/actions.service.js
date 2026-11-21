@@ -11,7 +11,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 // OpenAI or Claude, with a fallback between them (lib/chat-client).
 const client = anyAiConfigured() ? getChatClient() : null;
 
-const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 20000);
+const OPENAI_TIMEOUT_MS = Number(process.env.ACTIONS_AI_TIMEOUT_MS || 45000);
 const OPENAI_MAX_RETRIES = 1;
 
 function isAbortError(error) {
@@ -28,7 +28,7 @@ async function callOpenAIWithTimeout(messages, timeoutMs) {
                 model: "gpt-4o-mini",
                 messages,
                 temperature: 0.7,
-                max_tokens: 800,
+                max_tokens: 2500,
                 response_format: { type: "json_object" },
             },
             {
