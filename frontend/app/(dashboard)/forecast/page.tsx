@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUpRight, Check, ClipboardList, GraduationCap, MessageCircleQuestion, RefreshCw, Telescope, TriangleAlert, Eye, Route } from "lucide-react";
+import { ArrowUpRight, Check, ClipboardList, GraduationCap, MessageCircleQuestion, RefreshCw, Telescope, TriangleAlert, Eye, Route, History } from "lucide-react";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { getFutureIssues, saveFutureProgress, type FutureIssue, type FutureIssues } from "@/lib/api-service";
 import { issueHref } from "@/lib/evidence-links";
@@ -133,6 +133,12 @@ function Detail({ f, done, onToggle, onPlan }: { f: FutureIssue; done: number[];
         </ul>
       </Section>
 
+      {f.fromPast ? (
+        <Section icon={History} title={L("From what the team handled before", "Belajar dari penanganan sebelumnya")}>
+          <p className="rounded-[12px] bg-[#F0FAF5] px-4 py-3 text-[13.5px] leading-relaxed text-[#14532D]">{f.fromPast}</p>
+        </Section>
+      ) : null}
+
       {f.lesson ? (
         <Section icon={GraduationCap} title={L("Lesson for the team", "Pelajaran untuk tim")}>
           <p className="rounded-[12px] bg-[#EEF1FF] px-4 py-3 text-[13.5px] leading-relaxed text-[#26357F]">{f.lesson}</p>
@@ -187,7 +193,7 @@ export default function ForecastPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-2xl">
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Issue Forecast", "Prediksi Isu")}</h1>
-          <p className="mt-1 text-[14px] leading-relaxed text-[#5F6B94]">{L("The issues most likely to come next, read from all your data in the last 30 days. Learn how each could unfold, and prepare before it happens.", "Isu yang paling mungkin datang berikutnya, dibaca dari semua data 30 hari terakhir. Pelajari bagaimana tiap isu bisa berkembang, dan siapkan langkah sebelum terjadi.")}</p>
+          <p className="mt-1 text-[14px] leading-relaxed text-[#5F6B94]">{L("The issues most likely to come next and how to handle them, read from the last 30 days and from what your team handled before.", "Isu yang berpeluang muncul berikutnya dan cara mengatasinya, dibaca dari data 30 hari terakhir dan dari isu yang pernah ditangani tim.")}</p>
         </div>
         <button type="button" onClick={refresh} disabled={refreshing || q.isLoading} className="inline-flex h-10 items-center gap-2 rounded-[12px] border-[1.5px] border-[#101334] bg-white px-3.5 text-[12.5px] font-bold text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#F7F8FC] disabled:opacity-60">
           <RefreshCw size={14} className={cn(refreshing && "animate-spin")} aria-hidden="true" /> {refreshing ? L("Reading the data…", "Membaca data…") : L("Update Forecast", "Perbarui Prediksi")}

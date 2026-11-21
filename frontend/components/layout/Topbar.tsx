@@ -47,7 +47,7 @@ const navLinks = [
   { href: "/", title: { en: "Today", id: "Hari Ini" }, subtitle: { en: "Summary and today's decisions", id: "Ringkasan dan keputusan hari ini" } },
   { href: "/brief", title: { en: "Daily brief", id: "Briefing harian" }, subtitle: { en: "Today", id: "Hari Ini" } },
   { href: "/insights", title: { en: "Analysis", id: "Analisis" }, subtitle: { en: "Today", id: "Hari Ini" } },
-  { href: "/forecast", title: { en: "Issue forecast", id: "Prediksi isu" }, subtitle: { en: "Forecast", id: "Prediksi" } },
+  { href: "/forecast", title: { en: "Issue forecast", id: "Prediksi isu" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/signals", title: { en: "Conversations", id: "Percakapan" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/intelligence", title: { en: "Issue map", id: "Peta isu" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/opportunities", title: { en: "Opportunities", id: "Peluang" }, subtitle: { en: "Issues", id: "Isu" } },

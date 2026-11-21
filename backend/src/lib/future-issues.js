@@ -20,11 +20,16 @@ const toneOf = (s) => String((s.analyses || []).find((a) => a?.analysis?.sentime
 /** The workspace's data, condensed for the forecast (no AI). */
 export async function futureContext(workspaceId, { db = supabase, now = Date.now() } = {}) {
     const since30 = new Date(now - 30 * DAY).toISOString();
-    const [radar, { data: settings }, { data: signals }, { data: alerts }] = await Promise.all([
+    const since180 = new Date(now - 180 * DAY).toISOString();
+    const [radar, { data: settings }, { data: signals }, { data: alerts }, { data: plans }, { data: cases }, { data: closed }] = await Promise.all([
         buildRadar(workspaceId, { db, now, limit: 12 }),
         db.from("workspace_settings").select("brand_name, industry").eq("workspace_id", workspaceId).maybeSingle(),
         db.from("signals").select("title, platform, sentiment, captured_at, analyses:signal_analyses(analysis)").eq("workspace_id", workspaceId).gte("captured_at", since30).order("captured_at", { ascending: false }).limit(600),
         db.from("alerts").select("title, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", since30).order("created_at", { ascending: false }).limit(15),
+        // What the team handled before (last 6 months): plans, cases with their resolution, alerts closed.
+        db.from("action_plans").select("title, status, created_at").eq("workspace_id", workspaceId).gte("created_at", since180).order("created_at", { ascending: false }).limit(15),
+        db.from("cases").select("title, status, resolution, created_at").eq("workspace_id", workspaceId).gte("created_at", since180).order("created_at", { ascending: false }).limit(15),
+        db.from("alerts").select("title, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", since180).in("status", ["resolved", "closed"]).order("created_at", { ascending: false }).limit(15),
     ]);
     const list = signals || [];
     const week = (from, to) => list.filter((s) => { const t = now - Date.parse(s.captured_at); return t >= from * DAY && t < to * DAY; });
@@ -40,6 +45,11 @@ export async function futureContext(workspaceId, { db = supabase, now = Date.now
         week: { now: thisWeek.length, before: lastWeek.length, negativeNow: share(thisWeek, "negative"), negativeBefore: share(lastWeek, "negative"), platforms },
         issues: radar.items.map((it) => ({ id: it.id, title: it.title, risk: it.score, level: it.level, momentum72h: it.momentum, last72h: it.last72h, drivers: it.factors.slice(0, 3).map((f) => f.label), finding: it.finding })),
         alerts: (alerts || []).map((a) => ({ title: a.title, severity: a.severity, status: a.status, date: String(a.created_at).slice(0, 10) })),
+        handled: {
+            plans: (plans || []).map((p) => ({ title: p.title, status: p.status, date: String(p.created_at).slice(0, 10) })),
+            cases: (cases || []).map((c) => ({ title: c.title, status: c.status, resolution: c.resolution ? String(c.resolution).slice(0, 200) : null, date: String(c.created_at).slice(0, 10) })),
+            alertsClosed: (closed || []).map((a) => ({ title: a.title, severity: a.severity, date: String(a.created_at).slice(0, 10) })),
+        },
         headlines: list.slice(0, 40).map((s) => `${String(s.captured_at).slice(0, 10)} [${s.platform}${toneOf(s) ? `, ${toneOf(s)}` : ""}] ${String(s.title || "").slice(0, 140)}`),
     };
 }
@@ -67,6 +77,7 @@ export function normalizeForecasts(raw, ctx) {
             audiences: arr(f.audiences).slice(0, 3),
             scenario: (Array.isArray(f.scenario) ? f.scenario : []).map((st) => ({ stage: stripEmoji(String(st?.stage || "")).trim().slice(0, 60), what: stripEmoji(String(st?.what || "")).trim().slice(0, 300) })).filter((st) => st.stage && st.what).slice(0, 4),
             ifIgnored: stripEmoji(String(f.if_ignored || "")).trim().slice(0, 400),
+            fromPast: stripEmoji(String(f.from_past || "")).trim().slice(0, 500),
             lesson: stripEmoji(String(f.lesson || "")).trim().slice(0, 400),
             related: related.map((id) => ({ id, title: titleOf.get(id) })),
         };
@@ -84,10 +95,10 @@ export async function generateFutureIssues(workspaceId, { db = supabase, chat, n
             `You are a senior narrative-risk analyst forecasting the next issues for ${ctx.brand}${ctx.industry ? ` (${ctx.industry})` : ""} in Indonesia.`,
             "Forecast only from the data given: every forecast must grow out of the listed issues, alerts, week-over-week figures or headlines, and cite them with their numbers.",
             "Think about how current stories escalate (to regulators, media, customers, employees), how they combine, and dated moments ahead (paydays, holidays, end of year, results seasons) that could trigger them.",
-            "Prefer specific, plausible, decision-useful forecasts over generic ones. Likelihood is a calibrated percentage.",
+            "Learn from what the team already handled (handled.plans, handled.cases with their resolution, handled.alertsClosed): reuse what worked, name it, and say what to do differently.", "Prefer specific, plausible, decision-useful forecasts over generic ones. Likelihood is a calibrated percentage.",
             `Write in ${id ? "Indonesian (professional, concise, no slang)" : "English"} for a board director: plain business language, never field names or data jargon (no "momentum72h", "level high", "acknowledged", "signals"), dates written as "18 November", platforms by their names (Instagram, YouTube, berita online). No emoji, no decorative symbols, no exclamation marks.`,
         ].join(" "),
-        user: `Today: ${ctx.today}\nData (last 30 days):\n${JSON.stringify(ctx)}\n\nReturn {"forecasts": [{"title": "the future issue as a headline-style phrase", "horizon": "${id ? "e.g. 1–2 minggu, bulan ini, 1–3 bulan" : "e.g. 1–2 weeks, this month, 1–3 months"}", "likelihood": 0-100, "impact": "high|medium|low", "why": "2–3 sentences: how it develops from the data, with numbers", "evidence": ["data points it rests on"], "early_signals": ["what to watch that would confirm it"], "prepare": ["concrete steps to take now"], "audiences": ["who it would hit"], "scenario": [{"stage": "short stage name, e.g. ${id ? "Sekarang, Memanas, Puncak" : "Now, Heating up, Peak"}", "what": "what happens at this stage"}] (3 stages, how it unfolds), "if_ignored": "1–2 sentences: the cost if nothing is done", "lesson": "1–2 sentences the team should learn from this pattern for the future", "related_issue_ids": ["ids from issues"]}]} with 3 to 6 forecasts, most likely first.`,
+        user: `Today: ${ctx.today}\nData (last 30 days):\n${JSON.stringify(ctx)}\n\nReturn {"forecasts": [{"title": "the future issue as a headline-style phrase", "horizon": "${id ? "e.g. 1–2 minggu, bulan ini, 1–3 bulan" : "e.g. 1–2 weeks, this month, 1–3 months"}", "likelihood": 0-100, "impact": "high|medium|low", "why": "2–3 sentences: how it develops from the data, with numbers", "evidence": ["data points it rests on"], "early_signals": ["what to watch that would confirm it"], "prepare": ["concrete steps to take now"], "audiences": ["who it would hit"], "scenario": [{"stage": "short stage name, e.g. ${id ? "Sekarang, Memanas, Puncak" : "Now, Heating up, Peak"}", "what": "what happens at this stage"}] (3 stages, how it unfolds), "if_ignored": "1–2 sentences: the cost if nothing is done", "from_past": "2–3 sentences: how the team handled similar issues before (from handled: plans, cases and their resolution, closed alerts) and what worked or should be done differently now; empty string if nothing similar was handled", "lesson": "1–2 sentences the team should learn from this pattern for the future", "related_issue_ids": ["ids from issues"]}]} with 3 to 6 forecasts, most likely first.`,
     });
     const forecasts = normalizeForecasts(raw, ctx);
     const result = { forecasts, basis: { records: ctx.records30d, issues: ctx.issues.length, alerts: ctx.alerts.length }, at: new Date(now).toISOString() };
