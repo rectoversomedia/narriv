@@ -1,3 +1,4 @@
+import { ensureBrandLogoLater } from "../../lib/brand-logo.js";
 import supabase from "../../lib/supabase.js";
 import { forgetWorkspaceProfile, profileFromSettings } from "../../lib/workspace-profile.js";
 import { badRequest, forbidden, internalError, notFound } from "../../lib/api-error.js";
@@ -205,6 +206,9 @@ export async function updateWorkspaceSettings(req, res) {
             }
             updated = data;
         }
+
+        // A brand with no logo of its own gets its real logo automatically (lib/brand-logo.js).
+        if (brandName !== undefined && process.env.NODE_ENV !== "test") ensureBrandLogoLater(scopedWorkspaceId);
 
         await recordAuditLog({
             userId: req.user.id,

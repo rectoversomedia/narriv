@@ -226,6 +226,19 @@ const runDaily = async (req, res) => {
             results.radar = { sent };
         } catch (e) { results.radar = { error: e.message }; }
 
+        // 5e. Brand logos: workspaces with a brand name and no logo get the brand's real logo (at most 5 a day).
+        try {
+            const { ensureBrandLogo } = await import("../../lib/brand-logo.js");
+            const { data: lws } = await supabase.from("workspaces").select("id, logo_url, settings").is("logo_url", null).limit(50);
+            let set = 0, tried = 0;
+            for (const w of lws || []) {
+                if (w.settings?.logo_auto || tried >= 5 || Date.now() > start + 240000) continue;
+                tried++;
+                if (await ensureBrandLogo(w.id).catch(() => null)) set++;
+            }
+            results.brandLogos = { tried, set };
+        } catch (e) { results.brandLogos = { error: e.message }; }
+
         // 6. Store finished Apify collections nobody checked from the browser.
         try {
             const { syncPendingCollections } = await import("../ingestion/apify-collection.service.js");

@@ -53,7 +53,16 @@ export async function uploadWorkspaceLogo(req, res) {
         if (uploadError) throw uploadError;
         const logo_url = supabase.storage.from(BUCKET).getPublicUrl(objectPath).data.publicUrl;
 
-        const { error: updateError } = await supabase.from("workspaces").update({ logo_url }).eq("id", scopedWorkspaceId);
+        // An uploaded logo is the client's own: drop the automatic-logo mark so it is never replaced (lib/brand-logo.js).
+        let updates = { logo_url };
+        try {
+            const { data: wsRow } = await supabase.from("workspaces").select("settings").eq("id", scopedWorkspaceId).maybeSingle();
+            if (wsRow?.settings?.logo_auto) {
+                const { logo_auto: _auto, ...restSettings } = wsRow.settings;
+                updates = { logo_url, settings: restSettings };
+            }
+        } catch { /* settings unreadable: keep the logo update alone */ }
+        const { error: updateError } = await supabase.from("workspaces").update(updates).eq("id", scopedWorkspaceId);
         if (updateError) throw updateError;
 
         await recordAuditLog({

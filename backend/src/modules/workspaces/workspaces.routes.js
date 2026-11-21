@@ -1,3 +1,4 @@
+import { ensureBrandLogoLater } from "../../lib/brand-logo.js";
 /**
  * Workspaces the signed-in user belongs to, and creation of client workspaces.
  *
@@ -112,6 +113,7 @@ router.post("/", validateRequest({ body: createBody }), async (req, res) => {
             updated_at: new Date().toISOString(),
         }, { onConflict: "workspace_id" });
         if (settingsError) logStructured("warn", "workspace_settings_seed_failed", { workspaceId: workspace.id, error: settingsError.message });
+        else if (process.env.NODE_ENV !== "test") ensureBrandLogoLater(workspace.id);
 
         await recordAuditLog({ userId: req.user.id, event: "workspace_created", workspaceId: workspace.id, metadata: { name } });
         logStructured("info", "workspace_created", { workspaceId: workspace.id });
