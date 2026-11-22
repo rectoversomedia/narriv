@@ -220,14 +220,18 @@ export function Typewriter({ segments, speed = 32, delay = 0, className, onDone 
     <span ref={ref} className={className} aria-label={label}>
       {segments.map((seg, i) => {
         const shown = Math.max(0, Math.min(seg.text.length, count - start));
+        // A brush stroke on a segment paints only what is typed, so it grows with the words instead of waiting empty.
+        const brushed = /\bmk-brush\b/.test(seg.className ?? "");
+        const mark = seg.mark ?? (brushed ? "mk-brush" : undefined);
+        const segClass = brushed ? (seg.className ?? "").replace(/\bmk-brush\b/, "") : seg.className;
         // The caret sits in the segment being typed: from its first letter until the next segment begins.
         const caretHere = typing && count >= start && count < start + seg.text.length;
         start += seg.text.length;
         return (
           <Fragment key={i}>
           {seg.breakBefore ? <br /> : null}
-          <span aria-hidden="true" className={cn(seg.className, seg.block && "block")}>
-            {seg.mark && shown > 0 ? <span className={seg.mark}>{seg.text.slice(0, shown)}</span> : seg.text.slice(0, shown)}
+          <span aria-hidden="true" className={cn(segClass, seg.block && "block")}>
+            {mark && shown > 0 ? <span className={mark}>{seg.text.slice(0, shown)}</span> : seg.text.slice(0, shown)}
             {/* The caret floats over the gap so it never adds a line-break point mid-word. */}
             {caretHere ? <span className="relative"><span className="mk-caret" /></span> : null}
             <span className="invisible">{seg.text.slice(shown)}</span>

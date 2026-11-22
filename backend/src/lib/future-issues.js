@@ -90,7 +90,7 @@ export async function generateFutureIssues(workspaceId, { db = supabase, chat, n
     const lang = await workspaceLanguage(workspaceId).catch(() => "id");
     const id = lang !== "en";
     const raw = await aiJson({
-        workspaceId, chat, operation: "future_issues", maxTokens: 6000,
+        workspaceId, chat, operation: "future_issues", maxTokens: 14000,
         system: [
             `You are a senior narrative-risk analyst forecasting the next issues for ${ctx.brand}${ctx.industry ? ` (${ctx.industry})` : ""} in Indonesia.`,
             "Forecast only from the data given: every forecast must grow out of the listed issues, alerts, week-over-week figures or headlines, and cite them with their numbers.",
@@ -101,6 +101,8 @@ export async function generateFutureIssues(workspaceId, { db = supabase, chat, n
         user: `Today: ${ctx.today}\nData (last 30 days):\n${JSON.stringify(ctx)}\n\nReturn {"forecasts": [{"title": "the future issue as a headline-style phrase", "horizon": "${id ? "e.g. 1–2 minggu, bulan ini, 1–3 bulan" : "e.g. 1–2 weeks, this month, 1–3 months"}", "likelihood": 0-100, "impact": "high|medium|low", "why": "2–3 sentences: how it develops from the data, with numbers", "evidence": ["data points it rests on"], "early_signals": ["what to watch that would confirm it"], "prepare": ["concrete steps to take now"], "audiences": ["who it would hit"], "scenario": [{"stage": "short stage name, e.g. ${id ? "Sekarang, Memanas, Puncak" : "Now, Heating up, Peak"}", "what": "what happens at this stage"}] (3 stages, how it unfolds), "if_ignored": "1–2 sentences: the cost if nothing is done", "from_past": "2–3 sentences: how the team handled similar issues before (from handled: plans, cases and their resolution, closed alerts) and what worked or should be done differently now; empty string if nothing similar was handled", "lesson": "1–2 sentences the team should learn from this pattern for the future", "related_issue_ids": ["ids from issues"]}]} with 3 to 6 forecasts, most likely first.`,
     });
     const forecasts = normalizeForecasts(raw, ctx);
+    // The data was there but the AI answer was cut off or empty: say so, rather than "not enough data".
+    if (!forecasts.length) throw new Error("future_issues_ai_empty");
     const result = { forecasts, basis: { records: ctx.records30d, issues: ctx.issues.length, alerts: ctx.alerts.length }, at: new Date(now).toISOString() };
     if (forecasts.length) {
         const { error } = await db.from("raw_documents").insert({ workspace_id: workspaceId, external_id: `future:${now}`, title: "Future issues", metadata: { future: result } });
