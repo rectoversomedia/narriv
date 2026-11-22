@@ -30,7 +30,7 @@ export function MonitoringProfileCard({ settings }: { settings?: WorkspaceSettin
       toast.showToast({
         title: L("Monitoring updated", "Pemantauan diperbarui"),
         description: r.use_case === "cve"
-          ? L(`CVE monitoring is on. Privacy mode is ${r.privacy_mode ? "on" : "off"}.`, `Pemantauan CVE aktif. Mode privasi ${r.privacy_mode ? "aktif" : "nonaktif"}.`)
+          ? L(`Information resilience monitoring is on. Privacy mode is ${r.privacy_mode ? "on" : "off"}.`, `Pemantauan ketahanan informasi aktif. Mode privasi ${r.privacy_mode ? "aktif" : "nonaktif"}.`)
           : L(`Brand monitoring. Privacy mode is ${r.privacy_mode ? "on" : "off"}.`, `Pemantauan reputasi brand. Mode privasi ${r.privacy_mode ? "aktif" : "nonaktif"}.`),
         tone: "success",
       });
@@ -54,7 +54,7 @@ export function MonitoringProfileCard({ settings }: { settings?: WorkspaceSettin
     {
       id: "cve",
       icon: ShieldAlert,
-      title: L("Information resilience (PCVE)", "Ketahanan Informasi (PCVE)"),
+      title: L("Information resilience", "Ketahanan Informasi"),
       body: L("Narratives of incitement, glorified violence, recruitment and incident hoaxes, plus counter-narratives, by region.", "Narasi ajakan kekerasan, glorifikasi, perekrutan, dan hoaks insiden, serta kontra-narasi, per wilayah."),
     },
   ];

@@ -344,7 +344,7 @@ function DemoSeedCard() {
     onSuccess: (r) => toast.showToast({ title: L("Demo ready", "Demo siap"), description: L(`${r.scenario}: ${r.signals} mentions, ${r.alerts} alerts, ${r.reports} reports.`, `${r.scenario}: ${r.signals} percakapan, ${r.alerts} peringatan, ${r.reports} laporan.`), tone: "success" }),
     onError: (e) => toast.error(e instanceof Error ? e.message : L("Seeding failed.", "Pengisian gagal."), L("Demo not filled", "Demo belum terisi")),
   });
-  const cases: Array<["brand" | "gov" | "cve", string]> = [["brand", L("Brand", "Brand")], ["gov", L("Government", "Pemerintahan")], ["cve", "CVE"]];
+  const cases: Array<["brand" | "gov" | "cve", string]> = [["brand", L("Brand", "Brand")], ["gov", L("Government", "Pemerintahan")], ["cve", L("Information resilience", "Ketahanan Informasi")]];
   return (
     <section className="flex flex-col gap-3 rounded-[22px] bg-white p-4 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)] sm:flex-row sm:items-center sm:p-5">
       <div className="flex min-w-0 flex-1 items-center gap-3">

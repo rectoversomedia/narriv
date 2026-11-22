@@ -108,7 +108,7 @@ function CveDemoButton() {
       className="group inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#101334] px-5 text-[14px] font-bold text-white transition hover:bg-[#1A1F4A] disabled:opacity-70"
     >
       {state === "loading" ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : null}
-      {state === "failed" ? L("Could Not Open. Try Again", "Gagal Dibuka. Coba Lagi") : L("Try the CVE Demo", "Coba Demo CVE")}
+      {state === "failed" ? L("Could Not Open. Try Again", "Gagal Dibuka. Coba Lagi") : L("Try the Information Resilience Demo", "Coba Demo Ketahanan Informasi")}
       {state === "idle" ? <ArrowRight size={16} aria-hidden="true" className="transition group-hover:translate-x-0.5" /> : null}
     </button>
   );

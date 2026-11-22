@@ -344,7 +344,7 @@ function MonitoringFilterBar({ filters, onChange, narrativeTitle, relevanceAvail
         </label>
         {cveMode ? (
           <label className={label}>
-            {pickL("CVE Category", "Kategori CVE")}
+            {pickL("Narrative Category", "Kategori Narasi")}
             <select className={select} value={filters.cve ?? ""} onChange={(e) => onChange({ ...filters, cve: e.target.value || undefined })}>
               <option value="">{pickL("All", "Semua")}</option>
               <option value="flagged">{pickL("Flagged, Not Dismissed", "Ditandai, Belum Ditolak")}</option>

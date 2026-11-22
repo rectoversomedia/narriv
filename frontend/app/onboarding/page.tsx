@@ -138,7 +138,7 @@ const DEFAULT_GOALS: Array<{
 const USE_CASES: Array<{ id: WorkspaceUseCase; icon: LucideIcon; title: [string, string]; desc: [string, string]; org: [string, string]; orgPh: [string, string] }> = [
   { id: "brand", icon: Megaphone, title: ["Brand reputation", "Reputasi Brand"], desc: ["Customer talk, issues and competitors around your brand.", "Percakapan konsumen, isu, dan kompetitor seputar brand Anda."], org: ["Company / brand", "Perusahaan / brand"], orgPh: ["e.g. Bank Arunika", "mis. Bank Arunika"] },
   { id: "gov", icon: Landmark, title: ["Government & public services", "Pemerintahan & Layanan Publik"], desc: ["Citizen sentiment and public-service issues for an institution.", "Sentimen warga dan isu layanan publik untuk sebuah instansi."], org: ["Institution", "Instansi"], orgPh: ["e.g. Pemkot Lestari", "mis. Pemkot Lestari"] },
-  { id: "cve", icon: ShieldAlert, title: ["Information resilience", "Ketahanan Informasi"], desc: ["Hoaxes, propaganda and violent extremism (PCVE). Accounts are hidden by default.", "Hoaks, propaganda, dan ekstremisme kekerasan (PCVE). Nama akun disembunyikan otomatis."], org: ["Institution / program", "Lembaga / program"], orgPh: ["e.g. Kesbangpol Jawa Tengah", "mis. Kesbangpol Jawa Tengah"] },
+  { id: "cve", icon: ShieldAlert, title: ["Information resilience", "Ketahanan Informasi"], desc: ["Hoaxes, propaganda and violent extremism. Accounts are hidden by default.", "Hoaks, propaganda, dan ekstremisme kekerasan. Nama akun disembunyikan otomatis."], org: ["Institution / program", "Lembaga / program"], orgPh: ["e.g. Kesbangpol Jawa Tengah", "mis. Kesbangpol Jawa Tengah"] },
 ];
 
 // Starter watch lists for an information-resilience workspace. A keyword can be a group of terms ("a OR b"), so

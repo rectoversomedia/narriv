@@ -49,7 +49,7 @@ export default function QualityPage() {
       <header>
         <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-[#101334] sm:text-[28px]">{L("Accuracy Check", "Uji Akurasi")}</h1>
         <p className="mt-1 max-w-2xl text-[14px] text-[#5F6B94]">{useCase === "cve"
-          ? L("How often the AI's PCVE category and tone are right, measured only from your team's reviews, so the numbers you report are measured, not claimed.", "Seberapa sering kategori PCVE dan nada dari AI tepat, diukur hanya dari tinjauan tim Anda, jadi angka yang dilaporkan benar-benar terukur, bukan klaim.")
+          ? L("How often the AI's narrative category and tone are right, measured only from your team's reviews, so the numbers you report are measured, not claimed.", "Seberapa sering kategori narasi dan nada dari AI tepat, diukur hanya dari tinjauan tim Anda, jadi angka yang dilaporkan benar-benar terukur, bukan klaim.")
           : L("Check the AI's tone on real records. The accuracy is computed only from these checks, so the number you show a client is measured, not claimed.", "Periksa nada AI pada catatan asli. Akurasi dihitung hanya dari pemeriksaan ini, jadi angka yang ditunjukkan ke klien benar-benar terukur, bukan klaim.")}</p>
       </header>
 
@@ -57,7 +57,7 @@ export default function QualityPage() {
         <section className={cn(BOX, "grid gap-5 md:grid-cols-[260px_1fr]")}>
           <div className="grid place-items-center rounded-[16px] bg-[#070A1F] p-5 text-center text-white">
             <div>
-              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#A5B4FF]">{L("PCVE category accuracy", "Akurasi kategori PCVE")}</p>
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#A5B4FF]">{L("Narrative category accuracy", "Akurasi kategori narasi")}</p>
               <p className="mt-2 text-[56px] font-black leading-none">{cveAcc.data.accuracy != null ? `${cveAcc.data.accuracy}%` : "—"}</p>
               <p className="mt-2 text-[12.5px] text-white/70">{cveAcc.data.n ? L(`from ${cveAcc.data.n} reviewed records`, `dari ${cveAcc.data.n} catatan yang ditinjau`) : L("No records reviewed yet", "Belum ada catatan yang ditinjau")}</p>
               {cveAcc.data.interval ? <p className="mt-1 text-[11.5px] text-white/55">{L(`95% range ${cveAcc.data.interval.low}–${cveAcc.data.interval.high}%`, `Rentang 95%: ${cveAcc.data.interval.low}–${cveAcc.data.interval.high}%`)}</p> : null}
