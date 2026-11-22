@@ -507,7 +507,7 @@ export async function seedScenarioWorkspace(def, { now = new Date(), db = defaul
     })));
 
     // Uji Akurasi: 60 records the team already checked (about nine in ten agreed with the AI), so the page shows a score.
-    const reviewed = signals.filter((s) => !pending.has(s.id)).slice(0, 60);
+    const reviewed = signals.filter((s, i) => !pending.has(s.id) && i % 3 === 0).slice(0, 60);
     const flip = { NEGATIVE: "mixed", POSITIVE: "neutral", NEUTRAL: "negative", MIXED: "negative" };
     for (const [i, s] of reviewed.entries()) {
         const ai = s.sentiment.toLowerCase();
