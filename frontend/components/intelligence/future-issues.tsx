@@ -12,6 +12,7 @@ import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
 import { RichText } from "@/components/ui/rich-text";
+import { ForecastLoading } from "@/components/intelligence/forecast-loading";
 
 /**
  * Future Issues: the stories most likely to become the brand's next issue, forecast from all of the workspace's data
@@ -121,7 +122,7 @@ export function FutureIssuesPanel() {
       </div>
 
       {q.isLoading || refreshing ? (
-        <div className="grid gap-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-[104px] w-full rounded-[16px]" />)}</div>
+        <ForecastLoading />
       ) : q.isError ? (
         <p className="rounded-[12px] bg-[#F7F8FC] px-4 py-3 text-[13.5px] font-semibold text-[#5F6B94]">{L("The forecast could not be made right now. Try again in a moment.", "Prediksi belum bisa dibuat saat ini. Coba lagi sebentar.")}</p>
       ) : !d?.forecasts.length ? (

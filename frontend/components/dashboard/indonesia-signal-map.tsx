@@ -129,7 +129,25 @@ export function IndonesiaSignalMap({ className, hideTitle = false }: { className
   const provinces = useMemo(() => (q.data?.provinces ?? []).filter((p) => PROVINCE_COORDS[p.code]), [q.data]);
   const max = Math.max(1, ...provinces.map((p) => p.total));
   const busiest = provinces[0]?.code;
-  const hovered = provinces.find((p) => p.code === hover);
+  // Zoom: provinces too close to tell apart (Jakarta, Banten, Jawa Barat) form one group; opening it zooms in.
+  const BASE = { scale: 1000, center: [118.2, -2.6] as [number, number] };
+  const [view, setView] = useState(BASE);
+  const zoomed = view.scale !== BASE.scale;
+  const groups = useMemo(() => {
+    const degPerPx = 180 / (Math.PI * view.scale);
+    const near = 26 * degPerPx;
+    const out: Array<{ items: typeof provinces; lng: number; lat: number }> = [];
+    for (const p of provinces) {
+      const [lng, lat] = PROVINCE_COORDS[p.code];
+      const g = out.find((c) => Math.hypot(c.lng - lng, c.lat - lat) < near);
+      if (g) { g.items.push(p); g.lng = g.items.reduce((n, x) => n + PROVINCE_COORDS[x.code][0], 0) / g.items.length; g.lat = g.items.reduce((n, x) => n + PROVINCE_COORDS[x.code][1], 0) / g.items.length; }
+      else out.push({ items: [p], lng, lat });
+    }
+    return out;
+  }, [provinces, view.scale]);
+  const openGroup = (g: { lng: number; lat: number }) => setView({ scale: BASE.scale * 4, center: [g.lng, g.lat] });
+  const hoverGroup = hover?.includes("-") ? provinces.filter((p) => hover.split("-").includes(p.code)) : null;
+  const hovered = hoverGroup?.length ? { name: hoverGroup.map((p) => p.name).join(", "), total: hoverGroup.reduce((n, p) => n + p.total, 0), negative: hoverGroup.reduce((n, p) => n + p.negative, 0) } : provinces.find((p) => p.code === hover);
 
   return (
     <section className={cn(BOX, "grid gap-4", className)}>
@@ -149,7 +167,7 @@ export function IndonesiaSignalMap({ className, hideTitle = false }: { className
         <div className="grid gap-3">
         <div className="relative overflow-hidden rounded-[16px] border border-[#E4E8F2] bg-[radial-gradient(circle_at_20%_10%,#EEF1FF_0%,transparent_45%),radial-gradient(circle_at_85%_90%,#FCE7F3_0%,transparent_45%),#FAFBFE]">
           {geo ? (
-            <ComposableMap projection="geoMercator" projectionConfig={{ scale: 1000, center: createCoordinates(118.2, -2.6) }} width={900} height={360} style={{ width: "100%", height: "auto" }}>
+            <ComposableMap projection="geoMercator" projectionConfig={{ scale: view.scale, center: createCoordinates(view.center[0], view.center[1]) }} width={900} height={360} style={{ width: "100%", height: "auto" }}>
               <defs>
                 <radialGradient id="nv-dot-blue"><stop offset="0%" stopColor="#8EA0FF" /><stop offset="100%" stopColor="#465FFF" /></radialGradient>
                 <radialGradient id="nv-dot-violet"><stop offset="0%" stopColor="#C4B5FD" /><stop offset="100%" stopColor="#8B5CF6" /></radialGradient>
@@ -162,9 +180,29 @@ export function IndonesiaSignalMap({ className, hideTitle = false }: { className
                   return <Geography key={`${id}-${i}`} geography={g} style={{ default: { fill: indo ? "#DCE2F5" : "#EEF1F7", stroke: indo ? "#B8C2E6" : "#E2E6F0", strokeWidth: 0.6, outline: "none" }, hover: { fill: indo ? "#D2DAF2" : "#EEF1F7", outline: "none" }, pressed: { outline: "none" } }} />;
                 })}
               </Geographies>
-              {provinces.map((p) => {
+              {groups.map((g) => {
+                if (g.items.length > 1) {
+                  const total = g.items.reduce((n, x) => n + x.total, 0);
+                  const negative = g.items.reduce((n, x) => n + x.negative, 0);
+                  const neg = total ? negative / total : 0;
+                  const r = 6 + Math.sqrt(total / max) * 12;
+                  const key = g.items.map((x) => x.code).join("-");
+                  const names = g.items.map((x) => x.name).join(", ");
+                  return (
+                    <Marker key={key} coordinates={createCoordinates(g.lng, g.lat)}>
+                      <g role="button" tabIndex={0} aria-label={`${names}: ${total}`} style={{ cursor: "zoom-in" }} onClick={() => openGroup(g)} onKeyDown={(e) => { if (e.key === "Enter") openGroup(g); }} onMouseEnter={() => setHover(key)} onMouseLeave={() => setHover(null)}>
+                        <circle r={r} fill={toneColor(neg)} opacity={0.35} className="nv-map-pulse" style={{ pointerEvents: "none" }} />
+                        <circle r={r + 7} fill="none" stroke={toneColor(neg)} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.6} />
+                        <circle r={r} fill={`url(#nv-dot-${neg >= 0.5 ? "pink" : neg >= 0.3 ? "violet" : "blue"})`} stroke="#FFFFFF" strokeWidth={2} />
+                        <text textAnchor="middle" y={-1} style={{ fontSize: 10, fontWeight: 900, fill: "#FFFFFF", pointerEvents: "none" }}>{total}</text>
+                        <text textAnchor="middle" y={9} style={{ fontSize: 6.5, fontWeight: 800, fill: "#FFFFFF", pointerEvents: "none" }}>{g.items.length} {L("prov.", "prov.")}</text>
+                      </g>
+                    </Marker>
+                  );
+                }
+                const p = g.items[0];
                 const [lng, lat] = PROVINCE_COORDS[p.code];
-                const r = 4 + Math.sqrt(p.total / max) * 12;
+                const r = (4 + Math.sqrt(p.total / max) * 12) * (zoomed ? 1.3 : 1);
                 const neg = p.total ? p.negative / p.total : 0;
                 const tone = neg >= 0.5 ? "pink" : neg >= 0.3 ? "violet" : "blue";
                 const active = sel === p.code;
@@ -175,6 +213,7 @@ export function IndonesiaSignalMap({ className, hideTitle = false }: { className
                       <circle r={r + 4} fill={toneColor(neg)} opacity={0.14} />
                       <circle r={r} fill={`url(#nv-dot-${tone})`} stroke={active ? "#101334" : "#FFFFFF"} strokeWidth={active ? 2.5 : 1.5} />
                       {r > 10 ? <text textAnchor="middle" y={4} style={{ fontSize: 9, fontWeight: 900, fill: "#FFFFFF", pointerEvents: "none" }}>{p.total}</text> : null}
+                      {zoomed ? <text textAnchor="middle" y={r + 12} style={{ fontSize: 10, fontWeight: 800, fill: "#101334", pointerEvents: "none", paintOrder: "stroke", stroke: "#FFFFFF", strokeWidth: 3 }}>{p.name}</text> : null}
                     </g>
                   </Marker>
                 );
@@ -183,6 +222,11 @@ export function IndonesiaSignalMap({ className, hideTitle = false }: { className
           ) : (
             <Skeleton className="aspect-[900/360] w-full" />
           )}
+          {zoomed ? (
+            <button type="button" onClick={() => setView(BASE)} className="absolute right-3 top-3 inline-flex h-9 items-center gap-1.5 rounded-[10px] border-[1.5px] border-[#101334] bg-white px-3 text-[12px] font-bold text-[#101334] shadow-[0_2px_0_#101334] hover:bg-[#F7F8FC]">{L("Whole Indonesia", "Seluruh Indonesia")}</button>
+          ) : groups.some((g) => g.items.length > 1) ? (
+            <p className="pointer-events-none absolute bottom-12 right-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold text-[#5F6B94]">{L("Dashed points group nearby provinces: click to zoom", "Titik bergaris putus = beberapa provinsi berdekatan, klik untuk perbesar")}</p>
+          ) : null}
           {hovered ? (
             <div className="pointer-events-none absolute left-3 top-3 rounded-[12px] border border-[#E4E8F2] bg-white px-3 py-2 shadow-[0_10px_30px_rgba(16,19,52,0.12)]">
               <p className="text-[13px] font-black text-[#101334]">{hovered.name}</p>
