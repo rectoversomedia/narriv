@@ -52,7 +52,8 @@ REQUIRED OUTPUT FORMAT (pure JSON, no other text):
   "impact": "low | medium | high | critical",
   "summary": "<max 2 sentences summarizing the key signal>",
   "recommended_action": "<1 sentence strategic response recommendation>",
-  "confidence_score": <0.0 to 1.0>
+  "confidence_score": <0.0 to 1.0>,
+  "voice": "public | internal"
 }`;
 }
 
@@ -238,10 +239,15 @@ export const analyzeSignal = async (title, content, usageCtx = null) => {
         ? '\n\nLANGUAGE: write "summary" and "recommended_action" in Bahasa Indonesia (natural, professional), whatever language the content is in. Keep "sentiment", "impact", "narrative_type" and "stakeholder" in English.'
         : "");
     const userMessage = buildSignalUserMessage(title, content);
+    // Who the brand is, how words are meant, and the team's own corrections (lib/tone-learning.js).
+    let learned = "";
+    if (usageCtx?.workspaceId) {
+        try { learned = await (await import("../../lib/tone-learning.js")).toneContext(usageCtx.workspaceId); } catch { learned = ""; }
+    }
 
     // Build the initial messages array
     const messages = [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: systemPrompt + learned },
         { role: "user", content: userMessage }
     ];
 

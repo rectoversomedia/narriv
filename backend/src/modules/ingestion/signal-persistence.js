@@ -239,6 +239,7 @@ export async function persistCollectedRecords(records, {
             narrative_type: aiResult?.narrative_type || null,
             stakeholder: aiResult?.stakeholder || null,
             recommended_action: aiResult?.recommended_action || null,
+            voice: aiResult?.voice || "public",
             ingestion_type: ingestionType,
             keyword,
             ...(place.geo ? { geo: place.geo } : {}),

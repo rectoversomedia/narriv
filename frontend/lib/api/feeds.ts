@@ -65,6 +65,8 @@ export interface GetSignalsOptions {
   region?: string;
   /** "flagged", "unclassified" or a CVE category. */
   cve?: string;
+  /** "internal": the brand's own people; "public": everyone else. */
+  voice?: "public" | "internal";
 }
 
 export interface SignalsMeta {
@@ -106,7 +108,7 @@ export type SignalListPage = PaginatedResponse<Signal> & {
 export async function getSignals(
   options: GetSignalsOptions = {}
 ): Promise<SignalListPage | null> {
-  const { page = 1, limit = 20, keyword, platform, startDate, endDate, sentiment, narrativeId, relevance, analysis, region, cve } = options;
+  const { page = 1, limit = 20, keyword, platform, startDate, endDate, sentiment, narrativeId, relevance, analysis, region, cve, voice } = options;
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (keyword) params.set("keyword", keyword);
   if (platform) params.set("platform", platform);
@@ -118,6 +120,7 @@ export async function getSignals(
   if (analysis) params.set("analysis", analysis);
   if (region) params.set("region", region);
   if (cve) params.set("cve", cve);
+  if (voice) params.set("voice", voice);
 
   try {
     return await apiClient<SignalListPage>(`/signals?${params.toString()}`);

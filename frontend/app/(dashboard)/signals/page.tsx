@@ -59,6 +59,7 @@ type SignalRow = {
   placeBasis: "text" | "location" | null;
   /** Where the account says it is (a platform label, not an IP address), when that differs from `place`. */
   accountPlace: string | null;
+  internal: boolean;
   /** The CVE category suggested for review, in CVE workspaces. */
   cve: CveTag | null;
 };
@@ -156,6 +157,7 @@ function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): S
       placeBasis: signal.regionBasis === "text" || signal.regionBasis === "location" ? signal.regionBasis : null,
       accountPlace: signal.accountLocation?.province && signal.accountLocation.province !== signal.region ? signal.accountLocation.province : null,
       cve: signal.cve && signal.cve.category !== "none" ? signal.cve : null,
+      internal: signal.voice === "internal",
     };
   });
 }
@@ -246,7 +248,7 @@ function MonitoringFilterBar({ filters, onChange, narrativeTitle, relevanceAvail
   const t = useTranslations("Signals.filters");
   const select = "mt-1 block h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-2 text-[12px] font-semibold text-[#31406B] disabled:opacity-60";
   const label = "min-w-0 text-[12px] font-bold text-[#5A6478]";
-  const active = Boolean(filters.hours || filters.narrative || filters.relevance || filters.analysis || filters.platform || filters.region || filters.cve);
+  const active = Boolean(filters.hours || filters.narrative || filters.relevance || filters.analysis || filters.platform || filters.region || filters.cve || filters.voice);
   // The chosen province stays listed even when the current period has no records for it.
   const regionOptions = regions ?? [];
   const selectedMissing = filters.region && !regionOptions.some((r) => r.code === filters.region);
@@ -281,6 +283,14 @@ function MonitoringFilterBar({ filters, onChange, narrativeTitle, relevanceAvail
             <option value="">{pickL("All Regions", "Semua Wilayah")}</option>
             {selectedMissing ? <option value={filters.region}>{filters.region}</option> : null}
             {regionOptions.map((r) => <option key={r.code} value={r.code}>{`${r.name} (${r.total})`}</option>)}
+          </select>
+        </label>
+        <label className={label}>
+          {pickL("Voice", "Suara")}
+          <select className={select} value={filters.voice ?? ""} onChange={(e) => onChange({ ...filters, voice: (e.target.value || undefined) as MonitoringFilters["voice"] })}>
+            <option value="">{pickL("Everyone", "Semua")}</option>
+            <option value="public">{pickL("Public", "Publik")}</option>
+            <option value="internal">{pickL("Internal (own people)", "Internal (karyawan & mitra)")}</option>
           </select>
         </label>
         {cveMode ? (
@@ -608,6 +618,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     <RelevanceBadge relevance={row.relevance} />
                     <PlaceChip place={row.place} basis={row.placeBasis} account={row.accountPlace} />
                     <CveChip id={row.id} cve={row.cve} />
+                    {row.internal ? <span title={pickL("Posted by the brand's own people (employees, agents, official teams). Not counted as public criticism.", "Diunggah pihak brand sendiri (karyawan, agen, tim resmi). Tidak dihitung sebagai kritik publik.")} className="inline-flex items-center rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[11px] font-bold text-[#3B52F5]">{pickL("Internal", "Internal")}</span> : null}
                   </div>
                   <p className="mt-1 text-[12px] text-[#5A6478]">
                     {row.tags.join(" · ")}
@@ -687,7 +698,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     ) : (
                       <span title={row.title} className="line-clamp-2 break-words text-[14px] font-bold leading-snug text-navy">{row.title}</span>
                     )}
-                    {row.place || row.accountPlace || row.cve ? <div className="mt-1 flex flex-wrap items-center gap-1.5"><PlaceChip place={row.place} basis={row.placeBasis} account={row.accountPlace} /><CveChip id={row.id} cve={row.cve} /></div> : null}
+                    {row.place || row.accountPlace || row.cve || row.internal ? <div className="mt-1 flex flex-wrap items-center gap-1.5"><PlaceChip place={row.place} basis={row.placeBasis} account={row.accountPlace} /><CveChip id={row.id} cve={row.cve} />{row.internal ? <span title={pickL("Posted by the brand's own people (employees, agents, official teams). Not counted as public criticism.", "Diunggah pihak brand sendiri (karyawan, agen, tim resmi). Tidak dihitung sebagai kritik publik.")} className="inline-flex items-center rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[11px] font-bold text-[#3B52F5]">{pickL("Internal", "Internal")}</span> : null}</div> : null}
                   </td>
                   <td className="px-2.5 py-3 align-middle"><span className="line-clamp-2 break-words text-[12px] font-bold leading-snug text-[#31406B]" title={row.publisher}>{row.publisher}</span></td>
                   <td className="px-2.5 py-3 align-middle"><SentimentCorrector id={row.id} sentiment={row.sentiment} /></td>
@@ -1142,7 +1153,7 @@ export default function SignalsPage() {
   };
 
   const signalsQuery = useQuery({
-    queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter, hours: filters.hours, narrative: filters.narrative, relevance: filters.relevance, analysis: filters.analysis, platform: filters.platform, region: filters.region, cve: filters.cve }],
+    queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter, hours: filters.hours, narrative: filters.narrative, relevance: filters.relevance, analysis: filters.analysis, platform: filters.platform, region: filters.region, cve: filters.cve, voice: filters.voice }],
     queryFn: async () => {
       const res = await getSignals({
         page,
@@ -1157,6 +1168,7 @@ export default function SignalsPage() {
         platform: filters.platform,
         region: filters.region,
         cve: filters.cve,
+        voice: filters.voice,
       });
       if (res) return res;
       return { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } };

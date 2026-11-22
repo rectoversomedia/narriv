@@ -74,6 +74,7 @@ router.post("/review", async (req, res) => {
         if (!review.correct) patch.sentiment = human.toUpperCase();
         const { error } = await supabase.from("signals").update(patch).eq("id", s.id);
         if (error) throw error;
+        (await import("../../lib/tone-learning.js")).forgetToneContext(ws);
         res.status(201).json(review);
     } catch (error) {
         logStructured("error", "quality_review_failed", { error: error?.message });

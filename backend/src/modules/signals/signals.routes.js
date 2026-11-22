@@ -65,6 +65,8 @@ export function toSignalListItem(row, workspaceIds = []) {
         // location label), or null. accountLocation is where the account says it is, kept apart.
         regionBasis: signal.metadata?.geo?.source ?? null,
         accountLocation: signal.metadata?.account_location ?? null,
+        // "internal" when the author is the brand's own side (lib/tone-learning.js).
+        voice: signal.metadata?.voice === "internal" ? "internal" : "public",
     };
 }
 
@@ -93,7 +95,7 @@ router.get("/", async (req, res) => {
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
 
-        const { keyword, platform, startDate, endDate, sentiment, narrativeId, relevance, analysis, region, cve } = req.query;
+        const { keyword, platform, startDate, endDate, sentiment, narrativeId, relevance, analysis, region, cve, voice } = req.query;
 
         const safePage = Math.max(1, page);
         const safeLimit = Math.min(100, Math.max(1, limit));
@@ -129,6 +131,9 @@ router.get("/", async (req, res) => {
         // A province matches its own name and the city names older records stored as their region.
         if (region) query = query.in('region', regionValuesFor(region));
         if (cve) query = applyCveFilter(query, cve);
+        // Whose voice (lib/tone-learning.js): the brand's own people, or everyone else.
+        if (voice === "internal") query = query.eq('metadata->>voice', 'internal');
+        if (voice === "public") query = query.or('metadata->>voice.is.null,metadata->>voice.neq.internal');
 
         // Analysis status: a stored sentiment exists only after AI analysis.
         if (analysis === "analyzed") query = query.not('sentiment', 'is', null);
