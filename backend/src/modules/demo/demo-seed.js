@@ -245,7 +245,7 @@ export async function clearDemoWorkspace(db = defaultDb, ws = DEMO_WORKSPACE_ID)
  */
 export const BRAND_SCENARIO = {
     key: "brand",
-    version: 4,
+    version: 5,
     recon: (t0) => ({
         id: null, subject: "@finfluencer.id", days: 365, at: new Date(t0 - 26 * 3600000).toISOString(), sources: 64, platforms: ["tiktok", "youtube", "news"], score: 38, level: "medium",
         lenses: [
@@ -261,6 +261,47 @@ export const BRAND_SCENARIO = {
             { title: "5 cara mulai menabung untuk Gen Z", url: "", source: "TikTok", publishedAt: new Date(t0 - 6 * 86400000).toISOString(), platform: "tiktok" },
         ],
     }),
+    moreRecons: (t0) => [
+        {
+            id: null, subject: "@cuanbareng", days: 365, at: new Date(t0 - 3 * 86400000).toISOString(), sources: 41, platforms: ["tiktok", "instagram", "news"], score: 12, level: "low",
+            lenses: [
+                { key: "controversy", label: { id: "Kontroversi & skandal", en: "Controversy & scandal" }, hits: 0, byPlatform: { tiktok: 0, news: 0 }, level: "none", examples: [] },
+                { key: "promo", label: { id: "Promosi bermasalah", en: "Problematic promotion" }, hits: 1, byPlatform: { tiktok: 1, news: 0 }, level: "low", examples: [{ title: "Lupa mencantumkan tanda #iklan di satu video endorse, lalu diperbaiki", url: "", source: "TikTok" }] },
+                { key: "legal", label: { id: "Hukum & kriminal", en: "Legal & criminal" }, hits: 0, byPlatform: { tiktok: 0, news: 0 }, level: "none", examples: [] },
+                { key: "gambling", label: { id: "Judi online & pinjol", en: "Online gambling & illegal lending" }, hits: 0, byPlatform: { tiktok: 0, news: 0 }, level: "none", examples: [] },
+            ],
+            summary: "Kreator konten hemat dan keuangan keluarga dengan audiens ibu muda dan pekerja kantoran. Dalam setahun terakhir tidak ada kasus hukum, judi online, atau pinjol ilegal. Satu catatan kecil: pernah lupa menandai video endorse sebagai iklan, lalu langsung diperbaiki.\n\nRisikonya **rendah**: aman untuk kampanye tabungan dan promo produk harian.",
+            recommendation: "Aman diajak kerja sama. Pastikan setiap konten berbayar diberi tanda #iklan atau #kerjasama sejak awal.",
+            recent: [
+                { title: "Cara bagi gaji 50-30-20 buat keluarga muda", url: "", source: "TikTok", publishedAt: new Date(t0 - 4 * 86400000).toISOString(), platform: "tiktok" },
+                { title: "Kreator keuangan keluarga makin dilirik brand perbankan (contoh)", url: "", source: "Warta Finansial (fiktif)", publishedAt: new Date(t0 - 30 * 86400000).toISOString(), platform: "news" },
+            ],
+        },
+        {
+            id: null, subject: "@info.cuan.kilat", days: 365, at: new Date(t0 - 9 * 86400000).toISOString(), sources: 23, platforms: ["tiktok", "instagram", "news"], score: 81, level: "high",
+            lenses: [
+                { key: "controversy", label: { id: "Kontroversi & skandal", en: "Controversy & scandal" }, hits: 4, byPlatform: { tiktok: 3, news: 1 }, level: "high", examples: [{ title: "Video 'cuan 10 juta seminggu' dilaporkan warganet sebagai penipuan", url: "", source: "TikTok" }] },
+                { key: "promo", label: { id: "Promosi bermasalah", en: "Problematic promotion" }, hits: 5, byPlatform: { tiktok: 4, news: 1 }, level: "high", examples: [{ title: "Mempromosikan aplikasi investasi yang masuk daftar waspada (contoh)", url: "", source: "Kabar Finansial (fiktif)" }] },
+                { key: "legal", label: { id: "Hukum & kriminal", en: "Legal & criminal" }, hits: 0, byPlatform: { tiktok: 0, news: 0 }, level: "none", examples: [] },
+                { key: "gambling", label: { id: "Judi online & pinjol", en: "Online gambling & illegal lending" }, hits: 3, byPlatform: { tiktok: 3, news: 0 }, level: "high", examples: [{ title: "Kode promo situs slot terselip di kolom komentar dan bio", url: "", source: "TikTok" }] },
+            ],
+            summary: "Akun 'cepat kaya' yang berkali-kali mempromosikan investasi tanpa izin dan menyelipkan tautan judi online. Beberapa videonya sudah dilaporkan warganet sebagai penipuan.\n\nRisikonya **tinggi**: jangan dipakai untuk brand keuangan.",
+            recommendation: "Jangan diajak kerja sama. Bila nama brand muncul di kontennya, siapkan bantahan bahwa brand tidak terlibat.",
+            recent: [{ title: "Warganet minta akun investasi bodong diblokir (contoh)", url: "", source: "Kabar Finansial (fiktif)", publishedAt: new Date(t0 - 12 * 86400000).toISOString(), platform: "news" }],
+        },
+    ],
+    voiceAccounts: [{ name: "@arunika.care", voice: "internal" }, { name: "@cuanbareng", voice: "partner" }],
+    claimChecks: [
+        { ago: 5 * 3600000, input: "Data seluruh nasabah Bank Arunika dijual di forum gelap", claim: "Data seluruh nasabah Bank Arunika dijual di forum gelap", verdict: "unverified", method: "ai_assessment",
+            reason: "Belum ada cek fakta yang membahas klaim ini. Pemberitaan baru mengutip unggahan anonim tanpa contoh data yang bisa diperiksa, dan Bank Arunika belum memberi keterangan resmi. Klaim ini perlu diklarifikasi, bukan diabaikan.",
+            factChecks: [], coverage: [{ title: "Warganet ramai bahas dugaan kebocoran data nasabah Bank Arunika (contoh)", url: "", source: "Warta Finansial" }, { title: "Pakar keamanan siber minta bank segera verifikasi klaim kebocoran (contoh)", url: "", source: "Fintech Harian" }] },
+        { ago: 2 * 86400000, input: "Saldo nasabah Arunika hilang permanen akibat gangguan aplikasi", claim: "Saldo nasabah Arunika hilang permanen akibat gangguan aplikasi", verdict: "refuted", method: "fact_check",
+            reason: "Cocok dengan cek fakta: [SALAH] Saldo nasabah Arunika hilang permanen (contoh). Transaksi yang gagal saat gangguan dikembalikan otomatis dalam 1x24 jam.",
+            factChecks: [{ title: "[SALAH] Saldo nasabah Arunika hilang permanen (contoh)", url: "", verdict: "Salah", publisher: "Cek Fakta Nusantara (fiktif)" }], coverage: [{ title: "Bank Arunika: dana transaksi gagal kembali otomatis (contoh)", url: "", source: "Kabar Ekonomi Nusantara" }] },
+        { ago: 6 * 86400000, input: "Bank Arunika naikkan biaya transfer antarbank mulai bulan depan", claim: "Bank Arunika naikkan biaya transfer antarbank mulai bulan depan", verdict: "confirmed", method: "fact_check",
+            reason: "Cocok dengan pengumuman resmi: biaya transfer antarbank naik dari Rp6.500 menjadi Rp7.500 mulai bulan depan (contoh).",
+            factChecks: [{ title: "[BENAR] Biaya transfer Bank Arunika naik Rp1.000 (contoh)", url: "", verdict: "Benar", publisher: "Cek Fakta Nusantara (fiktif)" }], coverage: [] },
+    ],
     network: demoNetworkDocs,
     // Narrative defence on the sample data: coordination signs and checked claims per issue (risk score reads them).
     issueIntel: {
@@ -401,13 +442,13 @@ export async function seedScenarioWorkspace(def, { now = new Date(), db = defaul
     const at = (msAgo) => new Date(t0 - msAgo).toISOString();
     if (def.workspace) {
         const { data: existing } = await db.from("workspaces").select("id, settings").eq("id", ws).maybeSingle();
-        const row = { name: def.workspace.name, onboarding_completed: true, logo_url: def.logo ?? null, settings: { ...(existing?.settings || {}), ...(def.workspace.settings || {}), demoVersion: def.version ?? 1 } };
+        const row = { name: def.workspace.name, onboarding_completed: true, logo_url: def.logo ?? null, settings: { ...(existing?.settings || {}), ...(def.workspace.settings || {}), demoVersion: def.version ?? 1, ...(def.voiceAccounts ? { voice_accounts: def.voiceAccounts } : {}) } };
         if (existing) await must(db.from("workspaces").update(row).eq("id", ws), "workspace");
         else await must(db.from("workspaces").insert({ id: ws, ...row }), "workspace");
     } else {
         // An existing workspace (the brand demo) keeps its name and settings; only the dataset version is noted.
         const { data: existing } = await db.from("workspaces").select("settings").eq("id", ws).maybeSingle();
-        if (existing) await must(db.from("workspaces").update({ logo_url: def.logo ?? null, settings: { ...(existing.settings || {}), demoVersion: def.version ?? 1 } }).eq("id", ws), "workspace version");
+        if (existing) await must(db.from("workspaces").update({ logo_url: def.logo ?? null, settings: { ...(existing.settings || {}), demoVersion: def.version ?? 1, ...(def.voiceAccounts ? { voice_accounts: def.voiceAccounts } : {}) } }).eq("id", ws), "workspace version");
     }
     await clearDemoWorkspace(db, ws);
 
@@ -436,7 +477,10 @@ export async function seedScenarioWorkspace(def, { now = new Date(), db = defaul
             const ago = hoursAgo(n.shape, r) * H;
             const title = n.titles[i % n.titles.length];
             const sentiment = signalSentiment(n, r);
-            const author = authorFor(platform, r, def.authors);
+            let author = authorFor(platform, r, def.authors);
+            // The brand's own account posts the good news; a paid creator posts the promo (see def.voiceAccounts).
+            if (def.voiceAccounts && sentiment === "POSITIVE" && platform === "twitter" && i % 3 === 0) author = def.voiceAccounts[0].name;
+            const listed = def.voiceAccounts?.find((a) => a.name.toLowerCase() === String(author).toLowerCase());
             signalRows.push({
                 workspace_id: ws, source_id: sourceOf[platform] ?? null, title,
                 content: `${title}. ${n.summary}`, platform, url: null, author,
@@ -445,7 +489,7 @@ export async function seedScenarioWorkspace(def, { now = new Date(), db = defaul
                 severity: n.impact === "HIGH" && sentiment === "NEGATIVE" ? (n.key === def.criticalKey ? "critical" : "high") : sentiment === "NEGATIVE" ? "medium" : "low",
                 region: def.region(platform, r, n),
                 language: "id", topics: [n.keyword, n.key],
-                metadata: { keyword: n.keyword, demo: true, narrative: n.key, ai_summary: n.summary, mentions_brand: true, ...(def.signalMetadata ? def.signalMetadata(n, r, i) : {}) },
+                metadata: { keyword: n.keyword, demo: true, narrative: n.key, ai_summary: n.summary, mentions_brand: true, voice: listed?.voice || "public", ...(def.signalMetadata ? def.signalMetadata(n, r, i) : {}) },
             });
             owners.push(n.key);
         }
@@ -461,6 +505,19 @@ export async function seedScenarioWorkspace(def, { now = new Date(), db = defaul
         signal_id: s.id, model: "demo", confidence: 0.7 + ((i * 37) % 25) / 100, created_at: s.captured_at,
         analysis: { sentiment: s.sentiment.toLowerCase(), confidence_score: 0.7 + ((i * 37) % 25) / 100, narrative_type: owners[signals.indexOf(s)], summary: "Contoh analisis untuk demo." },
     })));
+
+    // Uji Akurasi: 60 records the team already checked (about nine in ten agreed with the AI), so the page shows a score.
+    const reviewed = signals.filter((s) => !pending.has(s.id)).slice(0, 60);
+    const flip = { NEGATIVE: "mixed", POSITIVE: "neutral", NEUTRAL: "negative", MIXED: "negative" };
+    for (const [i, s] of reviewed.entries()) {
+        const ai = s.sentiment.toLowerCase();
+        const human = i % 11 === 5 ? flip[s.sentiment] || "neutral" : ai;
+        const row = signalRows[signals.indexOf(s)];
+        await db.from("signals").update({ metadata: { ...row.metadata, tone_review: { ai, human, correct: ai === human, by: owner, at: at((i % 9) * D + H), demo: true } } }).eq("id", s.id);
+    }
+
+    // Cek Klaim: past checks, so the page shows what a result looks like.
+    if (def.claimChecks) await chunkedInsert(db, "raw_documents", def.claimChecks.map((c, i) => ({ workspace_id: ws, external_id: `claim:demo-${def.key}-${i}`, title: c.input, url: null, author: null, content: null, published_at: at(c.ago), created_at: at(c.ago), metadata: { demo: true, claim_check: { ...c, ago: undefined, at: at(c.ago) } } })));
 
     // Collection history: one job per source per day for a week
     const jobs = [];
@@ -552,8 +609,8 @@ export async function seedScenarioWorkspace(def, { now = new Date(), db = defaul
 
     // Cek Influencer: one past check of a fictional creator, so the page shows what a result looks like.
     if (def.recon) {
-        const recon = def.recon(t0);
-        await chunkedInsert(db, "raw_documents", [{ workspace_id: ws, external_id: `recon:demo-${def.key}`, title: recon.subject, url: null, author: null, content: null, published_at: recon.at, created_at: recon.at, metadata: { demo: true, recon } }]);
+        const recons = [def.recon(t0), ...(def.moreRecons ? def.moreRecons(t0) : [])];
+        await chunkedInsert(db, "raw_documents", recons.map((recon, i) => ({ workspace_id: ws, external_id: `recon:demo-${def.key}-${i}`, title: recon.subject, url: null, author: null, content: null, published_at: recon.at, created_at: recon.at, metadata: { demo: true, recon } })));
     }
 
     // In-app notifications and an activity trail

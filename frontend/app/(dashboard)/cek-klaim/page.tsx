@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Loader2, ShieldCheck } from "lucide-react";
-import { checkClaim, type ClaimResult, type ClaimVerdict } from "@/lib/api-service";
+import { checkClaim, getClaimHistory, type ClaimResult, type ClaimVerdict } from "@/lib/api-service";
 import { useL } from "@/lib/use-l";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
@@ -25,10 +25,12 @@ export default function ClaimCheckPage() {
   const toast = useToast();
   const [input, setInput] = useState("");
   const [r, setR] = useState<ClaimResult | null>(null);
+  const qc = useQueryClient();
+  const history = useQuery({ queryKey: ["claim-history"], queryFn: getClaimHistory, staleTime: 60_000 });
   const run = useMutation({
     meta: { silent: true },
     mutationFn: (v: string) => checkClaim(v),
-    onSuccess: setR,
+    onSuccess: (v) => { setR(v); qc.invalidateQueries({ queryKey: ["claim-history"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : L("Check failed.", "Pengecekan gagal.")),
   });
   const go = (v = input) => { if (v.trim().length >= 8) { setInput(v); run.mutate(v.trim()); } };
@@ -57,14 +59,44 @@ export default function ClaimCheckPage() {
           </div>
           {r.factChecks.length ? (
             <div><p className="text-[13px] font-black text-[#101334]">{L("Fact-checks", "Cek fakta")}</p>
-              <ul className="mt-1.5 grid gap-1">{r.factChecks.map((f) => <li key={f.url}><a href={f.url} target="_blank" rel="noreferrer" className="inline-flex items-start gap-1.5 text-[13.5px] text-[#3B52F5] hover:underline"><ExternalLink size={13} className="mt-0.5 shrink-0" />{f.title}{f.publisher ? ` · ${f.publisher}` : ""}</a></li>)}</ul></div>
+              <ul className="mt-1.5 grid gap-1">{r.factChecks.map((f, i) => <li key={i}><a href={f.url || undefined} target="_blank" rel="noreferrer" className="inline-flex items-start gap-1.5 text-[13.5px] text-[#3B52F5] hover:underline"><ExternalLink size={13} className="mt-0.5 shrink-0" />{f.title}{f.publisher ? ` · ${f.publisher}` : ""}</a></li>)}</ul></div>
           ) : null}
           {r.coverage.length ? (
             <div><p className="text-[13px] font-black text-[#101334]">{L("Related coverage", "Pemberitaan terkait")}</p>
-              <ul className="mt-1.5 grid gap-1">{r.coverage.slice(0, 6).map((c) => <li key={c.url}><a href={c.url} target="_blank" rel="noreferrer" className="text-[13px] text-[#31406B] hover:underline">{c.title}{c.source ? <span className="text-[#8B93B0]"> · {c.source}</span> : null}</a></li>)}</ul></div>
+              <ul className="mt-1.5 grid gap-1">{r.coverage.slice(0, 6).map((c, i) => <li key={i}><a href={c.url || undefined} target="_blank" rel="noreferrer" className="text-[13px] text-[#31406B] hover:underline">{c.title}{c.source ? <span className="text-[#8B93B0]"> · {c.source}</span> : null}</a></li>)}</ul></div>
           ) : null}
         </section>
       ) : null}
+      {history.data?.data?.length ? (
+        <section className={cn(BOX, "grid gap-3")}>
+          <h2 className="text-[16px] font-black text-[#101334]">{L("Past checks", "Pengecekan sebelumnya")}</h2>
+          <ul className="grid gap-2">
+            {history.data.data.map((h) => (
+              <li key={h.id}>
+                <button type="button" onClick={() => { setR(h); setInput(h.input); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="flex w-full flex-wrap items-center justify-between gap-2 rounded-[12px] border border-[#E4E8F2] px-3.5 py-3 text-left hover:border-[#465FFF]">
+                  <span className="min-w-0 flex-1 text-[14px] font-bold text-[#101334]">{h.input}</span>
+                  <span className="flex items-center gap-2">
+                    <span className={cn("rounded-full px-2.5 py-0.5 text-[11.5px] font-black", V[h.verdict].cls)}>{L(V[h.verdict].en, V[h.verdict].id).split(" · ")[0]}</span>
+                    {h.at ? <span className="text-[11.5px] font-semibold text-[#8B93B0]">{new Date(h.at).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span> : null}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      <section className={cn(BOX, "grid gap-3")}>
+        <h2 className="text-[16px] font-black text-[#101334]">{L("How it works", "Cara kerjanya")}</h2>
+        <ol className="grid gap-3 sm:grid-cols-3">
+          {[
+            [L("Fact-checks first", "Cek fakta dulu"), L("Narriv looks for published Indonesian fact-checks. If one matches, its verdict decides.", "Narriv mencari cek fakta yang sudah terbit di Indonesia. Kalau ada yang cocok, putusannya yang dipakai.")],
+            [L("Then the news", "Lalu pemberitaan"), L("Without a fact-check, the AI reads the coverage and says what it suggests, clearly marked as an AI assessment.", "Kalau belum ada cek fakta, AI membaca pemberitaan dan menyampaikan arahnya, dengan tanda jelas sebagai penilaian AI.")],
+            [L("Honest when unsure", "Jujur kalau ragu"), L("Too little evidence means \"Unverified\", never a guess. Every check is kept for the team.", "Bukti terlalu sedikit berarti \"Belum terverifikasi\", bukan tebakan. Setiap pengecekan tersimpan untuk tim.")],
+          ].map(([t, d], i) => (
+            <li key={i} className="rounded-[12px] bg-[#F6F7FC] p-3.5"><p className="text-[13.5px] font-black text-[#101334]">{i + 1}. {t}</p><p className="mt-1 text-[13px] leading-relaxed text-[#5A6478]">{d}</p></li>
+          ))}
+        </ol>
+      </section>
     </div>
   );
 }

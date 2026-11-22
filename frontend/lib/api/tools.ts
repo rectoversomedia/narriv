@@ -4,7 +4,7 @@ import { apiClient } from "@/lib/apiClient";
 export type ReconLens = { key: string; label: { id: string; en: string }; hits: number; byPlatform: Record<string, number>; level: "high" | "medium" | "low" | "none"; examples: Array<{ title: string; url: string; source?: string; publishedAt?: string | null }> };
 export type ReconResult = { id: string | null; subject: string; days: number; at: string; sources: number; platforms: string[]; score: number; level: "critical" | "high" | "medium" | "low"; lenses: ReconLens[]; summary: string; recommendation: string | null; recent: Array<{ title: string; url: string; source?: string; publishedAt?: string | null; platform: string }> };
 export type ClaimVerdict = "refuted" | "confirmed" | "likely_false" | "likely_true" | "unverified";
-export type ClaimResult = { input: string; claim: string | null; verdict: ClaimVerdict; method: "fact_check" | "ai_assessment" | "none"; reason: string; factChecks: Array<{ title: string; url: string; verdict: string; publisher?: string }>; coverage: Array<{ title: string; url: string; source: string | null }> };
+export type ClaimResult = { input: string; claim: string | null; verdict: ClaimVerdict; method: "fact_check" | "ai_assessment" | "none"; reason: string; factChecks: Array<{ title: string; url: string; verdict: string; publisher?: string }>; coverage: Array<{ title: string; url: string; source: string | null }>; at?: string };
 export type IssueBrief = { at: string; title: string; riskScore: number | null; records: number; summary: string; timeline: Array<{ when: string; what: string }>; actors: Array<{ name: string; role: string }>; coordination: string; claims: string; risk: string; recommendations: string[] };
 export type IssueSimulation = { at: string; response: string | null; title: string; steps: Array<{ t: string; headline: string; sentiment: string; volume: string; note: string }>; audiences: Array<{ group: string; now: string; movable: boolean }>; risks: string[]; verdict: string; better?: string };
 export type TelegramLink = { configured: boolean; bot: string | null; code: string | null; chats: Array<{ name: string; at: string }> };
@@ -13,6 +13,7 @@ const post = <T,>(path: string, body: unknown) => apiClient<T>(path, { method: "
 export const runRecon = (subject: string, days = 365) => post<ReconResult>("/api/tools/recon", { subject, days });
 export const getReconHistory = () => apiClient<{ data: ReconResult[] }>("/api/tools/recon");
 export const checkClaim = (input: string) => post<ClaimResult>("/api/tools/claim-check", { input });
+export const getClaimHistory = () => apiClient<{ data: Array<ClaimResult & { id: string; at: string }> }>("/api/tools/claim-checks");
 export const getIssueBrief = (id: string) => post<IssueBrief>(`/api/tools/issues/${id}/brief`, {});
 export const simulateIssue = (id: string, response: string) => post<IssueSimulation>(`/api/tools/issues/${id}/simulate`, { response });
 export const getTelegramLink = () => apiClient<TelegramLink>("/api/tools/telegram/link");

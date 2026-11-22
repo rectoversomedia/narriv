@@ -102,12 +102,23 @@ router.get("/recon", async (req, res) => {
     res.json({ data: (data || []).map((d) => ({ id: d.id, ...d.metadata?.recon })) });
 });
 
+// GET /tools/claim-checks — the workspace's past claim checks, newest first.
+router.get("/claim-checks", async (req, res) => {
+    const id = await ws(req, res); if (!id) return;
+    const { data } = await supabase.from("raw_documents").select("id, created_at, metadata").eq("workspace_id", id).like("external_id", "claim:%").order("created_at", { ascending: false }).limit(20);
+    res.json({ data: (data || []).filter((d) => d.metadata?.claim_check).map((d) => ({ id: d.id, at: d.created_at, ...d.metadata.claim_check })) });
+});
+
 router.post("/claim-check", rateLimiters.aiGeneration(), async (req, res) => {
     const id = await ws(req, res); if (!id) return;
     const input = String(req.body?.input || "").trim().slice(0, 1000);
     if (input.length < 8) return res.status(400).json({ error: "Tempel klaim atau tautan yang ingin dicek." });
     try {
-        res.json(await checkClaimInput({ workspaceId: id, input }));
+        const result = await checkClaimInput({ workspaceId: id, input });
+        const at = new Date().toISOString();
+        // Kept so the page can show the team's past checks.
+        await supabase.from("raw_documents").insert({ workspace_id: id, external_id: `claim:${Date.now()}`, title: input.slice(0, 200), metadata: { claim_check: { ...result, at } } }).then(() => null, () => null);
+        res.json({ ...result, at });
     } catch (error) {
         logStructured("error", "claim_box_failed", { error: error?.message });
         res.status(500).json({ error: "Pengecekan gagal. Coba lagi." });
