@@ -393,7 +393,7 @@ export function Agenda({ en }: P) {
   const items = [
     t("Ringkasan bulan ini", "This month in brief"),
     t("Tren, kata kunci, dan sumber", "Trend, keywords and sources"),
-    t("Isu, jaringan, dan akun terkoordinasi", "Issues, network and coordinated accounts"),
+    t("Isu, prediksi, peta sebaran, dan akun terkoordinasi", "Issues, forecast, signal map and coordinated accounts"),
     t("Peluang cerita positif", "Positive stories to use"),
     t("Rekomendasi dan rencana bulan depan", "Recommendations and next month"),
     t("Kemampuan, dashboard, dan laporan (live)", "Capabilities, dashboard and reports (live)"),
@@ -982,6 +982,126 @@ export function RadarDigest({ en }: P) {
   );
 }
 
+/** Prediksi Isu: what is likely to come next, read from the last 30 days and from issues the team already handled. */
+export function Forecast({ en }: P) {
+  const t = tr(en);
+  const rows: Array<[number, string, string, string, string]> = [
+    [70, t("Gangguan Arunika Mobile terulang saat gajian akhir November", "Arunika Mobile outage repeats on the end-of-November payday"), t("Dampak tinggi", "High impact"), t("bulan ini", "this month"), NEG],
+    [55, t("Regulator atau DPR minta klarifikasi resmi soal klaim kebocoran data", "Regulator or parliament asks for a statement on the data-leak claim"), t("Dampak tinggi", "High impact"), t("1–2 minggu", "1–2 weeks"), NEG],
+    [50, t("Keluhan transfer gagal jadi pengaduan resmi ke regulator", "Failed-transfer complaints become formal regulator complaints"), t("Dampak sedang", "Medium impact"), t("1–2 minggu", "1–2 weeks"), AMBER],
+    [40, t("Klaim saldo dibobol beredar lagi di Instagram dan TikTok", "\"Balances hacked\" claim resurfaces on Instagram and TikTok"), t("Dampak tinggi", "High impact"), t("1–3 bulan", "1–3 months"), NEG],
+  ];
+  return (
+    <Light tag={t("Prediksi isu", "Issue forecast")} v={2}>
+      <Head kicker={t("Prediksi isu · 4 teratas dari 5", "Issue forecast · top 4 of 5")} title={t(<>Yang kemungkinan muncul, <Brush>sebelum muncul.</Brush></>, <>What is likely to come, <Brush>before it does.</Brush></>)} sub={t("Dibaca dari data 30 hari terakhir dan dari isu yang pernah ditangani tim: apa yang berhasil, apa yang tidak.", "Read from the last 30 days and from issues the team already handled: what worked and what did not.")} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 440, display: "grid", gap: 14 }}>
+        {rows.map(([pct, title, impact, when, c]) => (
+          <a key={title} href={appLink("/forecast")} target="_blank" rel="noreferrer" className="pc pitch-link" style={{ display: "grid", gridTemplateColumns: "150px 1fr 220px", gap: 28, alignItems: "center", padding: "16px 30px", borderRadius: 24, background: "#fff", color: INK, textDecoration: "none", ...INKED }}>
+            <span style={{ fontSize: 58, fontWeight: 800, letterSpacing: "-0.03em", color: c }}>{pct}%</span>
+            <span style={{ fontSize: 29, fontWeight: 800, lineHeight: 1.25 }}>{title}</span>
+            <span style={{ textAlign: "right" }}><span style={{ display: "inline-block", padding: "6px 14px", borderRadius: 999, background: c === NEG ? "#FDECEC" : "#FFF4E5", color: c === NEG ? "#B42318" : "#A04606", fontSize: 19, fontWeight: 800 }}>{impact}</span><br /><span style={{ fontSize: 19, color: MUTED }}>{when}</span></span>
+          </a>
+        ))}
+      </div>
+      <Source en={en} />
+    </Light>
+  );
+}
+
+/** Peta Sebaran: where in Indonesia the brand is talked about, and who leads the talk there. */
+export function SignalMap({ en }: P) {
+  const t = tr(en);
+  const prov: Array<[string, number, string, string]> = [
+    ["Jawa Barat", 43, NEG, t("@nadia_rk · Warta Finansial", "@nadia_rk · Warta Finansial")],
+    ["Sumatera Utara", 43, "#8B5CF6", t("Grup UMKM · Kabar Ekonomi", "SME group · Kabar Ekonomi")],
+    ["Sulawesi Selatan", 31, "#8B5CF6", t("@ibu_umkm · Suara Konsumen", "@ibu_umkm · Suara Konsumen")],
+    ["DKI Jakarta", 29, BLUE, t("Portal Bisnis Indonesia", "Portal Bisnis Indonesia")],
+    ["Jawa Timur", 29, NEG, t("Grup UMKM Jawa Timur", "Grup UMKM Jawa Timur")],
+  ];
+  return (
+    <Dark tag={t("Peta sebaran", "Signal map")} glow="left">
+      <Head dark kicker={t("175 dari 220 catatan menyebut lokasi", "175 of 220 records name a place")} title={t(<>Di mana brand Anda <Brush>dibicarakan.</Brush></>, <>Where your brand <Brush>is talked about.</Brush></>)} />
+      <a href={appLink("/map")} target="_blank" rel="noreferrer" className="pc pitch-link" style={{ position: "absolute", left: 96, top: 400, width: 1080, height: 560, borderRadius: 30, background: "#0E1126", border: "2px solid rgba(255,255,255,.16)", overflow: "hidden" }}>
+        <img src="/pitch/arunika-map.webp" alt="" style={{ position: "absolute", left: 0, top: 30, width: "100%", height: "auto" }} />
+        <span style={{ position: "absolute", left: 26, bottom: 20, fontSize: 19, color: "rgba(255,255,255,.6)" }}>{t("Klik titik: akun dan sumber terkuat di provinsi itu", "Click a dot: the strongest accounts and sources there")}</span>
+      </a>
+      <div style={{ position: "absolute", left: 1220, right: 96, top: 400, display: "grid", gap: 10 }}>
+        {prov.map(([name, n, c, who], i) => (
+          <Card dark key={name} style={{ padding: "12px 22px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><span style={{ fontSize: 26, fontWeight: 800 }}>{i + 1}. {name}</span><span style={{ fontSize: 28, fontWeight: 800 }}>{n}</span></div>
+            <div style={{ marginTop: 10, height: 8, borderRadius: 99, background: "rgba(255,255,255,.1)" }}><div style={{ width: `${(n / 43) * 100}%`, height: 8, borderRadius: 99, background: c }} /></div>
+            <p style={{ margin: "8px 0 0", fontSize: 18, color: "rgba(255,255,255,.6)" }}>{who}</p>
+          </Card>
+        ))}
+      </div>
+      <Source en={en} dark />
+    </Dark>
+  );
+}
+
+/** Voices: public talk is scored; the brand's own accounts and paid partners are labelled and kept out of the risk. */
+export function Voices({ en }: P) {
+  const t = tr(en);
+  const cols: Array<[string, string, string, string, string, string]> = [
+    [t("Publik", "Public"), t("Dihitung di skor risiko", "Counts toward risk"), t("Orang luar yang membahas brand atas kemauan sendiri, termasuk influencer yang mengulas tanpa dibayar.", "Outsiders talking about the brand on their own, including unpaid reviews."), "@nadia_rk · Warta Finansial", BLUE, "#EEF1FF"],
+    [t("Internal", "Internal"), t("Tidak dihitung", "Not counted"), t("Karyawan, cabang, dan akun resmi brand. Kampanye anti-penipuan dibaca sebagai edukasi, bukan isu negatif.", "Staff, branches and official accounts. Anti-fraud campaigns read as education, not bad news."), "@arunika.care", "#0E7490", "#E6F6F9"],
+    [t("Mitra", "Partner"), t("Tidak dihitung", "Not counted"), t("Kreator berbayar, KOL, dan media partner. Kontennya dipantau, tapi bukan suara organik.", "Paid creators, KOLs and media partners. Tracked, but not organic talk."), "@cuanbareng", "#7C3AED", "#F3EEFF"],
+  ];
+  return (
+    <Light tag={t("Siapa yang bicara", "Who is talking")} v={4}>
+      <Head kicker={t("Publik · Internal · Mitra", "Public · Internal · Partner")} title={t(<>Skor risiko hanya dari <Brush>suara publik.</Brush></>, <>Risk comes only from <Brush>public voices.</Brush></>)} sub={t("Narriv membedakan siapa yang bicara. Tim bisa mengoreksi label di setiap baris, dan AI belajar dari koreksi itu.", "Narriv tells who is talking. The team can correct the label on any row, and the AI learns from it.")} />
+      <div style={{ position: "absolute", left: 96, right: 96, top: 480, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 26 }}>
+        {cols.map(([h, tag, d, ex, c, bg]) => (
+          <Card key={h} style={{ padding: "34px 36px" }}>
+            <span style={{ display: "inline-block", padding: "8px 20px", borderRadius: 999, background: bg, color: c, fontSize: 26, fontWeight: 800 }}>{h}</span>
+            <p style={{ margin: "18px 0 0", fontSize: 22, fontWeight: 800, color: tag.startsWith("Dihitung") || tag.startsWith("Counts") ? NEG : MUTED }}>{tag}</p>
+            <p style={{ margin: "12px 0 0", fontSize: 24, lineHeight: 1.45 }}>{d}</p>
+            <p style={{ margin: "18px 0 0", fontFamily: MONO, fontSize: 19, color: MUTED }}>{t("Contoh", "Example")}: {ex}</p>
+          </Card>
+        ))}
+      </div>
+      <Source en={en} />
+    </Light>
+  );
+}
+
+/** Trust: measured tone accuracy and creator checks, so the numbers can be shown to the board. */
+export function Trust({ en }: P) {
+  const t = tr(en);
+  const tones: Array<[string, string, number]> = [[t("Negatif", "Negative"), "93%", 30], [t("Positif", "Positive"), "88%", 17], [t("Netral", "Neutral"), "86%", 7], [t("Campuran", "Mixed"), "100%", 6]];
+  const creators: Array<[string, string, string, string]> = [
+    ["@cuanbareng", t("12 · Rendah", "12 · Low"), "#E5F6EE", "#047857"],
+    ["@finfluencer.id", t("38 · Sedang", "38 · Medium"), "#FFF4E5", "#A04606"],
+    ["@info.cuan.kilat", t("81 · Tinggi", "81 · High"), "#FDECEC", "#B42318"],
+  ];
+  return (
+    <Dark tag={t("Bisa dipercaya", "Trustworthy")} glow="right">
+      <Head dark kicker={t("Uji akurasi · cek influencer", "Accuracy test · creator check")} title={t(<>Angkanya <Brush>terukur,</Brush> bukan klaim.</>, <>The numbers are <Brush>measured,</Brush> not claimed.</>)} />
+      <a href={appLink("/quality")} target="_blank" rel="noreferrer" className="pc pitch-link" style={{ position: "absolute", left: 96, top: 400, width: 820, padding: "36px 40px", borderRadius: 30, background: "#fff", color: INK, textDecoration: "none", ...INKED }}>
+        <p style={{ margin: 0, fontFamily: MONO, fontSize: 20, fontWeight: 700, letterSpacing: "0.14em", color: BLUE }}>{t("AKURASI NADA AI", "AI TONE ACCURACY")}</p>
+        <p style={{ margin: "8px 0 0", fontSize: 120, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.04em" }}>92%</p>
+        <p style={{ margin: "8px 0 0", fontSize: 22, color: MUTED }}>{t("dari 60 catatan yang dicek tim · rentang 95%: 82–96%", "from 60 records checked by the team · 95% range: 82–96%")}</p>
+        <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {tones.map(([l, v, n]) => <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "12px 18px", borderRadius: 14, background: "#F7F8FC", fontSize: 22, fontWeight: 800 }}><span>{l}</span><span>{v} <span style={{ color: MUTED, fontWeight: 600, fontSize: 18 }}>n={n}</span></span></div>)}
+        </div>
+      </a>
+      <div style={{ position: "absolute", left: 980, right: 96, top: 400 }}>
+        <p style={{ margin: 0, fontSize: 30, fontWeight: 800 }}>{t("Cek influencer sebelum kontrak", "Check a creator before signing")}</p>
+        <p style={{ margin: "10px 0 0", fontSize: 22, lineHeight: 1.45, color: "rgba(255,255,255,.7)" }}>{t("Rekam jejak setahun: kontroversi, promosi bermasalah, hukum, judi online dan pinjol.", "A year of track record: controversy, problematic promotion, legal, online gambling and illegal lending.")}</p>
+        <div style={{ marginTop: 24, display: "grid", gap: 14 }}>
+          {creators.map(([name, lv, bg, fg]) => (
+            <a key={name} href={appLink("/recon")} target="_blank" rel="noreferrer" className="pc pitch-link" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "22px 28px", borderRadius: 22, background: "#fff", color: INK, textDecoration: "none", ...INKED }}>
+              <span style={{ fontSize: 28, fontWeight: 800 }}>{name}</span>
+              <span style={{ padding: "6px 16px", borderRadius: 999, background: bg, color: fg, fontSize: 20, fontWeight: 800 }}>{lv}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+      <Source en={en} dark />
+    </Dark>
+  );
+}
+
 export function arunikaDeck(en: boolean) {
   return [
     <ArunikaCover key="cover" en={en} />,
@@ -999,9 +1119,12 @@ export function arunikaDeck(en: boolean) {
     <WatchList key="watch" en={en} />,
     <Escalation key="escalation" en={en} />,
     <RiskAndClaims key="risk" en={en} />,
+    <Forecast key="forecast" en={en} />,
+    <SignalMap key="map" en={en} />,
     <Network key="network" en={en} />,
     <Influencers key="influencers" en={en} />,
     <Coordination key="coord" en={en} />,
+    <Voices key="voices" en={en} />,
     <GoodNews key="good" en={en} />,
     <IfItGrows key="grows" en={en} />,
     <DefaultFlow key="flow" en={en} />,
@@ -1009,6 +1132,7 @@ export function arunikaDeck(en: boolean) {
     <Recommendations key="recs" en={en} />,
     <NextMonth key="next" en={en} />,
     <Capabilities key="caps" en={en} />,
+    <Trust key="trust" en={en} />,
     <Alerts key="alerts" en={en} sample={en
       ? { title: "Bank Arunika data-leak claim is surging", text: "Claims of leaked customer data spread on X and forums over 36 hours. Mostly negative.", owner: "Rina Wulandari · Corp Comm", due: "In 26 hours", todo: "Holding statement within 2 hours, IT verifies the claim, name one spokesperson.", note: "Sample data · fictional bank", level: "Critical" }
       : { title: "Isu kebocoran data Bank Arunika melonjak", text: "Klaim kebocoran data nasabah menyebar di X dan forum dalam 36 jam terakhir. Mayoritas bernada negatif.", owner: "Rina Wulandari · Corp Comm", due: "26 jam lagi", todo: "Pernyataan sementara dalam 2 jam, tim IT verifikasi klaim, tunjuk satu juru bicara.", note: "Data contoh · bank fiktif", level: "Kritis" }} />,
