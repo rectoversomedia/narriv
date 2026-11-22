@@ -466,7 +466,9 @@ router.get("/meta", async (req, res) => {
             totalSignals24h,
             negativeSignals24h,
             positiveSignals24h: positiveCount || 0,
-            criticalSignals24h: criticalAlerts24h
+            criticalSignals24h: criticalAlerts24h,
+            // The advice follows what the workspace is for (brand, government, information resilience / PCVE).
+            useCase: (await getProfilesFor(workspaceIds).catch(() => null))?.useCase || "brand",
         };
 
         const aiSummary = await generateSignalsSummary(recentSignalsForSummary || [], metrics);

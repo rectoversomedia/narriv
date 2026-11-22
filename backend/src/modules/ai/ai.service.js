@@ -500,7 +500,13 @@ function buildFallbackSummary(signals = [], contextInfo = {}) {
                 id: `${negative} dari ${total} percakapan hari ini negatif.${short && topNegative ? ` Terbanyak soal "${short}".` : ""}`,
             },
         // "Amplify the positive stories" only when there are some; a tie at zero is an unread or quiet day.
-        insight: mostlyNegative
+        insight: contextInfo.useCase === "cve"
+            ? (mostlyNegative
+                ? { en: "Review the flagged narratives, escalate real threats and prepare a counter-narrative.", id: "Tinjau narasi yang ditandai, eskalasi ancaman nyata, dan siapkan kontra-narasi." }
+                : { en: "Keep reviewing new records and strengthen counter-narratives that are spreading.", id: "Terus tinjau catatan baru dan perkuat kontra-narasi yang sedang menyebar." })
+            : contextInfo.useCase === "gov" && mostlyNegative
+            ? { en: "Clarify the main public-service complaint on official channels and fix it with the unit in charge.", id: "Klarifikasi keluhan layanan utama di kanal resmi dan tindak lanjuti bersama unit terkait." }
+            : mostlyNegative
             ? { en: "Prepare a holding statement and answer the main complaint on the busiest channel.", id: "Siapkan pernyataan sementara dan jawab keluhan utama di kanal yang paling ramai." }
             : positive > 0
                 ? { en: "Amplify the positive stories while they trend.", id: "Perkuat cerita positif selagi sedang ramai." }
@@ -560,13 +566,18 @@ async function generateSignalsSummaryUncached(signals, contextInfo) {
         .map((s, idx) => `${idx + 1}. [${(s.sentiment || "NEUTRAL").toUpperCase()}] (${s.platform || "news"}) ${s.title}: ${s.content ? s.content.substring(0, 100) : ""}`)
         .join("\n");
 
-    const systemPrompt = `You are an executive media intelligence analyst for a corporate reputation and PR crisis management platform.
+    const role = contextInfo.useCase === "cve"
+        ? "an analyst for an information-resilience programme (preventing violent extremism, hoaxes and propaganda) at an Indonesian institution. The next step is for the monitoring team: review flagged narratives, escalate real threats to the right authority, or strengthen counter-narratives. Never suggest PR statements, brand messaging or promotions."
+        : contextInfo.useCase === "gov"
+            ? "an executive public-communication analyst for an Indonesian government institution: public services, policies and citizen sentiment."
+            : "an executive media intelligence analyst for a corporate reputation and PR crisis management platform.";
+    const systemPrompt = `You are ${role}
 Your task is to analyze recent media signals and generate a high-level executive summary and actionable insight in both English and Indonesian.
 
 STRICT RULES:
 1. Return ONLY a valid JSON object. No markdown. No code fences.
 2. "content.en" and "content.id" must be ONE plain sentence of at most 22 words: what is happening and the overall tone, for a board member.
-3. "insight.en" and "insight.id" must be ONE imperative sentence of at most 16 words: the next step for the communication team.
+3. "insight.en" and "insight.id" must be ONE imperative sentence of at most 16 words: the next step for the ${contextInfo.useCase === "cve" ? "monitoring team" : "communication team"}.
 4. Base your summary directly on the provided signals.
 
 REQUIRED OUTPUT FORMAT (pure JSON):
