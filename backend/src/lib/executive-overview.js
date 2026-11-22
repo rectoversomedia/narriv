@@ -14,6 +14,7 @@
  * name the brand. When none qualifies the overview says so rather than
  * promoting the largest unrelated topic.
  */
+import { getWorkspaceProfile } from "./workspace-profile.js";
 import { baseSupabaseAdmin } from "./supabase.js";
 import { computeNarrativeIntelligence } from "./narrative-intelligence.js";
 import { computeReputationIntelligence } from "./reputation-intelligence.js";
@@ -35,6 +36,7 @@ export async function computeWorkspaceRecommendations({ workspaceId, windowHours
     const signalCount = narrative.facts.find((f) => f.kind === "signal_count_window")?.value || 0;
     const negCount = narrative.facts.find((f) => f.kind === "sentiment_breakdown")?.value?.NEGATIVE || 0;
     const out = deriveRecommendations({
+        useCase: (await getWorkspaceProfile(workspaceId).catch(() => null))?.useCase || "brand",
         riskScore: narrative.riskScore || 0,
         riskBand: narrative.riskBand || "low",
         reputationBand: rep.reputationBand || "neutral",

@@ -6,6 +6,7 @@
  * data. If a section has no data, the function says so explicitly.
  */
 
+import { getWorkspaceProfile } from "./workspace-profile.js";
 import { tr } from "./request-context.js";
 import { computeNarrativeIntelligence } from "./narrative-intelligence.js";
 import { computeReputationIntelligence } from "./reputation-intelligence.js";
@@ -33,6 +34,7 @@ export async function generateExecutiveBrief({ workspaceId, windowHours = 24 }) 
     const repScore = typeof reputation.reputationScore === "number" ? reputation.reputationScore : null;
 
     const recs = deriveRecommendations({
+        useCase: (await getWorkspaceProfile(workspaceId).catch(() => null))?.useCase || "brand",
         riskScore: biggestRisk,
         riskBand: biggestRiskBand,
         reputationBand: repBand,

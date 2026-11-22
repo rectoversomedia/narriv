@@ -19,6 +19,7 @@
  * model. Treat all numbers as guidance for human review.
  */
 
+import { getWorkspaceProfile } from "./workspace-profile.js";
 import { tr } from "./request-context.js";
 import { computeRisk } from "./risk-model.js";
 import { narrativeMomentum } from "./narrative-momentum.js";
@@ -233,6 +234,7 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
 
     // RECOMMENDATIONS — gated, never auto-executed; each cites real record IDs.
     recommendations.push(...deriveRecommendations({
+        useCase: (await getWorkspaceProfile(workspaceId).catch(() => null))?.useCase || "brand",
         riskScore,
         riskBand,
         activeAlerts: activeAlerts.length,

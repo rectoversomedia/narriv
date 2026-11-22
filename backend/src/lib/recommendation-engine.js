@@ -30,7 +30,7 @@ function urgencyFromBand(band) {
     return "monitor";
 }
 
-export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputationBand = "neutral", activeAlerts = 0, emergingNarratives = 0, negativeShare = 0, volumeRatio = 1, risk = null }) {
+export function deriveRecommendations({ useCase = "brand", riskScore = 0, riskBand = "low", reputationBand = "neutral", activeAlerts = 0, emergingNarratives = 0, negativeShare = 0, volumeRatio = 1, risk = null }) {
     const out = [];
     const evidence = [];
 
@@ -60,7 +60,32 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
         });
     }
 
-    if (negativeShare >= 0.5) {
+    // Information resilience (preventing violent extremism, hoaxes): no brand to defend; the work is reviewing,
+    // escalating to the right authority and strengthening counter-narratives.
+    if (useCase === "cve") {
+        if (negativeShare >= 0.5) out.push({
+            action: "escalate_internal",
+            reason: tr("Most recent mentions are harmful. Review the flagged narratives and escalate real threats to the right authority.", "Sebagian besar percakapan terbaru berbahaya. Tinjau narasi yang ditandai dan eskalasikan ancaman nyata ke pihak berwenang."),
+            priority: "high",
+            urgency: "today",
+            expectedOutcome: tr("Flagged narratives are reviewed and real threats are reported with evidence.", "Narasi yang ditandai sudah ditinjau dan ancaman nyata dilaporkan beserta buktinya."),
+            evidence: ["sentiment_breakdown"],
+            confidence: 0.65,
+            requiresApproval: true,
+        });
+        if (reputationBand === "at_risk" || reputationBand === "critical" || negativeShare >= 0.5) out.push({
+            action: "prepare_clarification",
+            reason: tr("Harmful narratives outweigh counter-narratives. Prepare counter-messages with credible voices (religious and community leaders, former extremists).", "Narasi berbahaya lebih banyak dari kontra-narasi. Siapkan pesan tandingan bersama suara yang dipercaya (tokoh agama, tokoh masyarakat, mantan pelaku)."),
+            priority: "medium",
+            urgency: "this_week",
+            expectedOutcome: tr("Counter-narratives are ready and their reach is tracked.", "Kontra-narasi siap disebar dan jangkauannya dipantau."),
+            evidence: ["sentiment_breakdown"],
+            confidence: 0.6,
+            requiresApproval: true,
+        });
+    }
+
+    if (useCase !== "cve" && negativeShare >= 0.5) {
         out.push({
             action: "prepare_clarification",
             reason: tr("More than half of recent mentions are negative. A clarification may pre-empt further escalation.", "Lebih dari separuh percakapan terbaru bernada negatif. Klarifikasi bisa mencegah eskalasi lebih lanjut."),
@@ -86,7 +111,7 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
         });
     }
 
-    if (reputationBand === "at_risk" || reputationBand === "critical") {
+    if (useCase !== "cve" && (reputationBand === "at_risk" || reputationBand === "critical")) {
         out.push({
             action: "prepare_statement",
             reason: tr("Reputation has declined; prepare a statement draft in case the situation escalates.", "Reputasi menurun; siapkan draf pernyataan kalau situasinya membesar."),
