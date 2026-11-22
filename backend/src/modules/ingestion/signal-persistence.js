@@ -9,6 +9,7 @@
  * Unknown values stay unknown: no invented publication dates, sentiment or
  * engagement. Clustering and alert rules run once per batch afterwards.
  */
+import { cachedVoiceAccounts, listedVoice } from "../../lib/tone-learning.js";
 import { isNearDuplicate } from "../../lib/near-duplicate.js";
 import supabaseAdmin from "../../lib/supabase.js";
 import { primaryModelLabel } from "../../lib/chat-client.js";
@@ -239,7 +240,7 @@ export async function persistCollectedRecords(records, {
             narrative_type: aiResult?.narrative_type || null,
             stakeholder: aiResult?.stakeholder || null,
             recommended_action: aiResult?.recommended_action || null,
-            voice: aiResult?.voice || "public",
+            voice: listedVoice(record.author, await cachedVoiceAccounts(workspaceId)) || aiResult?.voice || "public",
             ingestion_type: ingestionType,
             keyword,
             ...(place.geo ? { geo: place.geo } : {}),

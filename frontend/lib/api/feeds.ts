@@ -66,7 +66,7 @@ export interface GetSignalsOptions {
   /** "flagged", "unclassified" or a CVE category. */
   cve?: string;
   /** "internal": the brand's own people; "public": everyone else. */
-  voice?: "public" | "internal";
+  voice?: "public" | "internal" | "partner";
 }
 
 export interface SignalsMeta {

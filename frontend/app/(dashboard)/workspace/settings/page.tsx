@@ -1,6 +1,7 @@
 "use client";
 
 import { AppearanceCard } from "@/components/settings/appearance-card";
+import { VoiceAccountsCard } from "@/components/settings/voice-accounts-card";
 import { BrandMark } from "@/components/dashboard/brand-hero";
 import Link from "next/link";
 import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
@@ -512,6 +513,9 @@ export default function SettingsPage() {
 
       {/* What the workspace watches comes first: it decides everything else on Narriv. */}
       <MonitoringKeywordsPanel />
+
+      {/* Accounts that are the brand's own people or its paid partners (left out of risk). */}
+      <VoiceAccountsCard />
 
       {/* What it monitors for (brand reputation or CVE) and privacy mode. */}
       <MonitoringProfileCard settings={workspaceSettingsQuery.data} />

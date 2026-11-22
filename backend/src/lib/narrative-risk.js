@@ -42,7 +42,7 @@ export function riskLevel(score) {
  */
 export function narrativeRisk(cluster, signals, now = Date.now()) {
     // The brand's own people (voice "internal", lib/tone-learning.js) are not public risk.
-    const list = (signals || []).filter((s) => s?.metadata?.voice !== "internal");
+    const list = (signals || []).filter((s) => !["internal", "partner"].includes(s?.metadata?.voice));
     const total = list.length;
     if (!total) return null;
     const factors = [];

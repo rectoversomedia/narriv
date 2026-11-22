@@ -44,7 +44,7 @@ export function validateAIOutput(output) {
         recommended_action: normalizeText(output.recommended_action),
         confidence_score: clampConfidence(output.confidence_score),
         // Whose voice: the brand's own people ("internal") or the public. Optional; anything else reads as public.
-        voice: String(output.voice || "").toLowerCase() === "internal" ? "internal" : "public",
+        voice: ["internal", "partner"].includes(String(output.voice || "").toLowerCase()) ? String(output.voice).toLowerCase() : "public",
     };
 
     // sentiment: required, must be one of the valid values

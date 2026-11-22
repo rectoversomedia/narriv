@@ -53,7 +53,7 @@ REQUIRED OUTPUT FORMAT (pure JSON, no other text):
   "summary": "<max 2 sentences summarizing the key signal>",
   "recommended_action": "<1 sentence strategic response recommendation>",
   "confidence_score": <0.0 to 1.0>,
-  "voice": "public | internal"
+  "voice": "public | internal | partner"
 }`;
 }
 

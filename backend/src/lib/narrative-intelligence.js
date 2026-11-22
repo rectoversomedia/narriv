@@ -77,7 +77,7 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
             .select("id, sentiment, severity, platform, captured_at, source_id")
             .eq("workspace_id", workspaceId)
             // The brand's own people (voice "internal", lib/tone-learning.js) are not public risk.
-            .or("metadata->>voice.is.null,metadata->>voice.neq.internal")
+            .or("metadata->>voice.is.null,metadata->>voice.eq.public")
             .gte("captured_at", sinceIso)
             .then((r) => r.data || []),
         baseSupabaseAdmin

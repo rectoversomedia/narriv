@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { intlLocale, useUiStore } from "@/store/useUiStore";
 import { MONITORING_PERIODS, hoursToDays, issueHref, monitoringHref, parseMonitoringFilters, periodStart, type MonitoringFilters } from "@/lib/evidence-links";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRight, Check, EyeOff, Loader2, MapPin, Search, Sparkles, Trash2, X, ExternalLink } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, ChevronDown, EyeOff, Loader2, MapPin, Search, Sparkles, Trash2, X, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
@@ -20,7 +20,7 @@ import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { correctSignalSentiment, getCveSummary, getMediaBreakdown, getRegionBreakdown, getWorkspaceSettings, reviewCve, type CorrectableSentiment, type CveTag, type RegionBreakdown } from "@/lib/api-service";
+import { correctSignalSentiment, reviewVoice, getCveSummary, getMediaBreakdown, getRegionBreakdown, getWorkspaceSettings, reviewCve, type CorrectableSentiment, type CveTag, type RegionBreakdown } from "@/lib/api-service";
 import { MediaBreakdownPanel } from "@/components/dashboard/media-breakdown";
 import { RegionPanel } from "@/components/dashboard/region-panel";
 import { IndonesiaSignalMap } from "@/components/dashboard/indonesia-signal-map";
@@ -59,7 +59,7 @@ type SignalRow = {
   placeBasis: "text" | "location" | null;
   /** Where the account says it is (a platform label, not an IP address), when that differs from `place`. */
   accountPlace: string | null;
-  internal: boolean;
+  voice: "public" | "internal" | "partner";
   /** The CVE category suggested for review, in CVE workspaces. */
   cve: CveTag | null;
 };
@@ -157,7 +157,7 @@ function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): S
       placeBasis: signal.regionBasis === "text" || signal.regionBasis === "location" ? signal.regionBasis : null,
       accountPlace: signal.accountLocation?.province && signal.accountLocation.province !== signal.region ? signal.accountLocation.province : null,
       cve: signal.cve && signal.cve.category !== "none" ? signal.cve : null,
-      internal: signal.voice === "internal",
+      voice: signal.voice === "internal" || signal.voice === "partner" ? signal.voice : "public",
     };
   });
 }
@@ -244,6 +244,36 @@ const PLATFORM_OPTIONS = ["news", "x", "tiktok", "instagram", "youtube", "facebo
  * Filters that the API applies to stored records. The URL carries them, so a
  * link from Overview opens on the same evidence and the view can be shared.
  */
+/**
+ * Whose voice a record is (lib/tone-learning.js on the API): Publik, Internal (the brand's own people) or Mitra
+ * (paid creators and partners). Internal and Mitra are left out of risk. A person can change it; the AI learns from it.
+ */
+const VOICE_STYLE = {
+  public: { cls: "bg-[#F1F4FA] text-[#5A6478]", en: "Public", id: "Publik" },
+  internal: { cls: "bg-[#EEF1FF] text-[#3B52F5]", en: "Internal", id: "Internal" },
+  partner: { cls: "bg-[#F5EEFF] text-[#6E44E8]", en: "Partner", id: "Mitra" },
+} as const;
+function VoiceChip({ id, voice }: { id: string; voice: "public" | "internal" | "partner" }) {
+  const qc = useQueryClient();
+  const [value, setValue] = useState(voice);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => setValue(voice), [voice]);
+  const change = async (next: "public" | "internal" | "partner") => {
+    const prev = value;
+    setValue(next); setSaving(true);
+    try { await reviewVoice(id, next); void qc.invalidateQueries({ queryKey: ["signals"] }); } catch { setValue(prev); } finally { setSaving(false); }
+  };
+  const st = VOICE_STYLE[value];
+  return (
+    <label title={pickL("Whose voice. Internal and Partner are not counted as public risk. Change it if it is wrong; Narriv learns from it.", "Suara siapa. Internal dan Mitra tidak dihitung sebagai risiko publik. Ubah kalau salah; Narriv belajar dari koreksi ini.")} className={cn("relative inline-flex items-center rounded-full pl-2 pr-1 text-[11px] font-bold", st.cls, saving && "opacity-60")}>
+      <select aria-label={pickL("Voice", "Suara")} value={value} disabled={saving} onChange={(e) => void change(e.target.value as "public" | "internal" | "partner")} className="cursor-pointer appearance-none bg-transparent py-0.5 pr-3.5 outline-none">
+        {(Object.keys(VOICE_STYLE) as Array<keyof typeof VOICE_STYLE>).map((k) => <option key={k} value={k}>{pickL(VOICE_STYLE[k].en, VOICE_STYLE[k].id)}</option>)}
+      </select>
+      <ChevronDown size={11} aria-hidden="true" className="pointer-events-none absolute right-1" />
+    </label>
+  );
+}
+
 function MonitoringFilterBar({ filters, onChange, narrativeTitle, relevanceAvailable, brand, regions, cveMode = false }: { filters: MonitoringFilters; onChange: (next: MonitoringFilters) => void; narrativeTitle: string | null; relevanceAvailable: boolean; brand: string | null; regions?: RegionBreakdown["provinces"]; cveMode?: boolean }) {
   const t = useTranslations("Signals.filters");
   const select = "mt-1 block h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-2 text-[12px] font-semibold text-[#31406B] disabled:opacity-60";
@@ -290,7 +320,8 @@ function MonitoringFilterBar({ filters, onChange, narrativeTitle, relevanceAvail
           <select className={select} value={filters.voice ?? ""} onChange={(e) => onChange({ ...filters, voice: (e.target.value || undefined) as MonitoringFilters["voice"] })}>
             <option value="">{pickL("Everyone", "Semua")}</option>
             <option value="public">{pickL("Public", "Publik")}</option>
-            <option value="internal">{pickL("Internal (own people)", "Internal (karyawan & mitra)")}</option>
+            <option value="internal">{pickL("Internal (own people)", "Internal (karyawan & cabang)")}</option>
+            <option value="partner">{pickL("Partners & influencers", "Mitra & influencer")}</option>
           </select>
         </label>
         {cveMode ? (
@@ -618,7 +649,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     <RelevanceBadge relevance={row.relevance} />
                     <PlaceChip place={row.place} basis={row.placeBasis} account={row.accountPlace} />
                     <CveChip id={row.id} cve={row.cve} />
-                    {row.internal ? <span title={pickL("Posted by the brand's own people (employees, agents, official teams). Not counted as public criticism.", "Diunggah pihak brand sendiri (karyawan, agen, tim resmi). Tidak dihitung sebagai kritik publik.")} className="inline-flex items-center rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[11px] font-bold text-[#3B52F5]">{pickL("Internal", "Internal")}</span> : null}
+                    <VoiceChip id={row.id} voice={row.voice} />
                   </div>
                   <p className="mt-1 text-[12px] text-[#5A6478]">
                     {row.tags.join(" · ")}
@@ -698,7 +729,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     ) : (
                       <span title={row.title} className="line-clamp-2 break-words text-[14px] font-bold leading-snug text-navy">{row.title}</span>
                     )}
-                    {row.place || row.accountPlace || row.cve || row.internal ? <div className="mt-1 flex flex-wrap items-center gap-1.5"><PlaceChip place={row.place} basis={row.placeBasis} account={row.accountPlace} /><CveChip id={row.id} cve={row.cve} />{row.internal ? <span title={pickL("Posted by the brand's own people (employees, agents, official teams). Not counted as public criticism.", "Diunggah pihak brand sendiri (karyawan, agen, tim resmi). Tidak dihitung sebagai kritik publik.")} className="inline-flex items-center rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[11px] font-bold text-[#3B52F5]">{pickL("Internal", "Internal")}</span> : null}</div> : null}
+                    {true ? <div className="mt-1 flex flex-wrap items-center gap-1.5"><PlaceChip place={row.place} basis={row.placeBasis} account={row.accountPlace} /><CveChip id={row.id} cve={row.cve} /><VoiceChip id={row.id} voice={row.voice} /></div> : null}
                   </td>
                   <td className="px-2.5 py-3 align-middle"><span className="line-clamp-2 break-words text-[12px] font-bold leading-snug text-[#31406B]" title={row.publisher}>{row.publisher}</span></td>
                   <td className="px-2.5 py-3 align-middle"><SentimentCorrector id={row.id} sentiment={row.sentiment} /></td>

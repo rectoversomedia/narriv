@@ -152,6 +152,37 @@ router.put("/future-issues/progress", async (req, res) => {
     }
 });
 
+// Whose voice (lib/tone-learning.js): the team's list of internal and partner accounts, and per-record corrections.
+router.get("/voice-accounts", async (req, res) => {
+    const id = await ws(req, res); if (!id) return;
+    const { voiceAccounts } = await import("../../lib/tone-learning.js");
+    res.json({ accounts: await voiceAccounts(id) });
+});
+router.put("/voice-accounts", async (req, res) => {
+    const id = await ws(req, res); if (!id) return;
+    const { getWorkspaceRole } = await import("../../lib/workspace-access.js");
+    if (!["owner", "admin"].includes(await getWorkspaceRole(req.user.id, id))) return res.status(403).json({ error: "Hanya owner dan admin yang bisa mengubah daftar akun." });
+    try {
+        const { saveVoiceAccounts } = await import("../../lib/tone-learning.js");
+        res.json(await saveVoiceAccounts(id, req.body?.accounts));
+    } catch (error) {
+        logStructured("error", "voice_accounts_failed", { error: error?.message });
+        res.status(500).json({ error: "Daftar akun belum tersimpan." });
+    }
+});
+router.post("/voice-review", async (req, res) => {
+    const id = await ws(req, res); if (!id) return;
+    try {
+        const { reviewVoice } = await import("../../lib/tone-learning.js");
+        const review = await reviewVoice(id, String(req.body?.signalId || ""), req.body?.voice, req.user.id);
+        if (!review) return res.status(404).json({ error: "Catatan tidak ditemukan." });
+        res.status(201).json(review);
+    } catch (error) {
+        logStructured("error", "voice_review_failed", { error: error?.message });
+        res.status(500).json({ error: "Belum tersimpan." });
+    }
+});
+
 router.get("/telegram/link", async (req, res) => {
     const id = await ws(req, res); if (!id) return;
     const { data: w } = await supabase.from("workspaces").select("settings").eq("id", id).maybeSingle();

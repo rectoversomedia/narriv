@@ -66,7 +66,7 @@ export function toSignalListItem(row, workspaceIds = []) {
         regionBasis: signal.metadata?.geo?.source ?? null,
         accountLocation: signal.metadata?.account_location ?? null,
         // "internal" when the author is the brand's own side (lib/tone-learning.js).
-        voice: signal.metadata?.voice === "internal" ? "internal" : "public",
+        voice: ["internal", "partner"].includes(signal.metadata?.voice) ? signal.metadata.voice : "public",
     };
 }
 
@@ -132,8 +132,8 @@ router.get("/", async (req, res) => {
         if (region) query = query.in('region', regionValuesFor(region));
         if (cve) query = applyCveFilter(query, cve);
         // Whose voice (lib/tone-learning.js): the brand's own people, or everyone else.
-        if (voice === "internal") query = query.eq('metadata->>voice', 'internal');
-        if (voice === "public") query = query.or('metadata->>voice.is.null,metadata->>voice.neq.internal');
+        if (voice === "internal" || voice === "partner") query = query.eq('metadata->>voice', voice);
+        if (voice === "public") query = query.or('metadata->>voice.is.null,metadata->>voice.eq.public');
 
         // Analysis status: a stored sentiment exists only after AI analysis.
         if (analysis === "analyzed") query = query.not('sentiment', 'is', null);

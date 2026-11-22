@@ -208,7 +208,7 @@ export interface Signal {
   /** How the region was found: named in the text, or only from the platform's location label. */
   regionBasis?: "text" | "location" | null;
   /** "internal" when the author is the brand's own people (employees, agents, official teams). */
-  voice?: "public" | "internal";
+  voice?: "public" | "internal" | "partner";
   /** Where the account says it is (platform label, never an IP address). */
   accountLocation?: { label: string; province: string | null } | null;
   metadata?: { geo?: { provinces?: string[]; cities?: string[] } | null } & Record<string, unknown>;

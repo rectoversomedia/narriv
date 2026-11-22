@@ -22,3 +22,10 @@ export type FutureIssues = { forecasts: FutureIssue[]; basis: { records: number;
 export const getFutureIssues = (refresh = false) => apiClient<FutureIssues>(`/api/tools/future-issues${refresh ? "?refresh=1" : ""}`);
 
 export const saveFutureProgress = (title: string, done: number[]) => apiClient<{ progress: Record<string, number[]> }>("/api/tools/future-issues/progress", { method: "PUT", body: JSON.stringify({ title, done }) });
+
+/** Whose voice: the brand's own people ("internal"), its paid creators and partners ("partner"), or the public. */
+export type Voice = "public" | "internal" | "partner";
+export type VoiceAccount = { name: string; voice: Exclude<Voice, "public"> };
+export const getVoiceAccounts = () => apiClient<{ accounts: VoiceAccount[] }>("/api/tools/voice-accounts");
+export const saveVoiceAccounts = (accounts: VoiceAccount[]) => apiClient<{ accounts: VoiceAccount[]; updated: number }>("/api/tools/voice-accounts", { method: "PUT", body: JSON.stringify({ accounts }) });
+export const reviewVoice = (signalId: string, voice: Voice) => apiClient<{ human: Voice }>("/api/tools/voice-review", { method: "POST", body: JSON.stringify({ signalId, voice }) });

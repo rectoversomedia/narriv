@@ -22,7 +22,7 @@ export interface MonitoringFilters {
   /** CVE workspaces: "flagged", "unclassified" or a category id. */
   cve?: string;
   /** Whose voice: the brand's own people ("internal") or everyone else ("public"). */
-  voice?: "public" | "internal";
+  voice?: "public" | "internal" | "partner";
   /** Search text, e.g. a monitoring keyword; it fills Monitoring's search box. */
   q?: string;
 }
@@ -72,7 +72,7 @@ export function parseMonitoringFilters(search: string): MonitoringFilters {
   const cve = p.get("cve");
   if (cve && PLATFORM.test(cve)) out.cve = cve;
   const voice = p.get("voice");
-  if (voice === "public" || voice === "internal") out.voice = voice;
+  if (voice === "public" || voice === "internal" || voice === "partner") out.voice = voice;
   const q = p.get("q")?.trim();
   if (q) out.q = q.slice(0, 80);
   return out;

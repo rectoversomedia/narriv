@@ -300,7 +300,7 @@ async function detectAlertsNow(workspaceId) {
     }
     // The brand's own people (voice "internal", lib/tone-learning.js) never raise a risk alert.
     if (Array.isArray(recentSignals)) {
-        for (let i = recentSignals.length - 1; i >= 0; i--) if (recentSignals[i]?.metadata?.voice === "internal") recentSignals.splice(i, 1);
+        for (let i = recentSignals.length - 1; i >= 0; i--) if (["internal", "partner"].includes(recentSignals[i]?.metadata?.voice)) recentSignals.splice(i, 1);
     }
 
     if (!recentSignals || recentSignals.length === 0) {
