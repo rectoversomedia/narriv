@@ -140,7 +140,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
 
           <dl className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
             {[
-              { label: L("New Mentions", "Percakapan Baru"), value: newSignals === null ? "—" : String(newSignals), sub: L("in this period", "di periode ini"), color: "#101334" },
+              { label: L("New Mentions", "Percakapan Baru"), value: newSignals === null ? "—" : String(newSignals), sub: L("in this period", "di periode ini"), color: "var(--narriv-ink, #101334)" },
               { label: L("Active Alerts", "Peringatan Aktif"), value: activeAlerts === null ? String(newAlerts) : String(activeAlerts), sub: L(`${newAlerts} new in this window`, `${newAlerts} baru di periode ini`), color: (activeAlerts ?? newAlerts) ? "#B45309" : "#101334" },
               { label: L("Risk Index", "Indeks Risiko"), value: risk ? `${riskScore}` : "—", sub: risk ? `/100 · ${L(...risk.word)}` : L("not enough data", "data belum cukup"), color: risk?.color ?? "#5A6478", bar: risk ? riskScore : undefined, barColor: risk?.bar },
               { label: L("Reputation", "Reputasi"), value: repLook ? `${repScore}` : "—", sub: repLook ? `/100 · ${L(...repLook.word)}` : L("not enough data", "data belum cukup"), color: repLook?.color ?? "#5A6478", bar: repLook ? repScore : undefined, barColor: repLook?.bar },

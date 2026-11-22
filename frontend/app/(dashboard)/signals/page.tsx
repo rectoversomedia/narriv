@@ -452,7 +452,7 @@ function SummaryPanel({ meta, onPlan, onShowNegative }: { meta?: SignalsMeta; on
             {tiles.map((tile) => (
               <div key={tile.key} className="rounded-[14px] bg-[#F6F7FC] px-4 py-3">
                 <dt className="text-[11.5px] font-bold text-[#5F6B94]">{tile.label}</dt>
-                <dd className="mt-1 text-[28px] font-black leading-none tracking-[-0.03em] tabular-nums" style={{ color: tile.tone }}>{tile.value}</dd>
+                <dd className={cn("mt-1 text-[28px] font-black leading-none tracking-[-0.03em] tabular-nums", tile.tone === "#B42318" ? "text-[#B42318]" : tile.tone === "#047857" ? "text-[#047857]" : "text-[#101334]")}>{tile.value}</dd>
               </div>
             ))}
           </dl>
