@@ -429,3 +429,15 @@ export async function correctSignalSentiment({ signalId, to }: { signalId: strin
   // A correction is a tone review: it fixes the record and counts toward the measured accuracy (Uji Akurasi).
   await apiClient("/api/quality/review", { method: "POST", body: JSON.stringify({ signalId, tone: String(to).toLowerCase() }) });
 }
+
+/** One province on the map: tone, cities, the accounts and sources carrying the most of it, and the latest records. */
+export type RegionPerson = { name: string; platform: string; total: number; negative: number; reach: number; lastAt: string; url: string | null };
+export interface RegionDetail {
+  code: string; name: string; days: number; total: number; negative: number; positive: number;
+  cities: Array<{ name: string; total: number }>;
+  accounts: RegionPerson[]; sources: RegionPerson[]; accountsHidden: boolean;
+  records: Array<{ id: string; title: string; platform: string; at: string; sentiment: "positive" | "neutral" | "negative"; url: string | null }>;
+}
+export function getRegionDetail(code: string, days: 1 | 7 | 30 | 90 = 30) {
+  return apiClient<RegionDetail>(`/signals/regions/${encodeURIComponent(code)}?days=${days}`);
+}

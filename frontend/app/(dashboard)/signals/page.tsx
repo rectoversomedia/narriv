@@ -23,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { correctSignalSentiment, getCveSummary, getMediaBreakdown, getRegionBreakdown, getWorkspaceSettings, reviewCve, type CorrectableSentiment, type CveTag, type RegionBreakdown } from "@/lib/api-service";
 import { MediaBreakdownPanel } from "@/components/dashboard/media-breakdown";
 import { RegionPanel } from "@/components/dashboard/region-panel";
+import { IndonesiaSignalMap } from "@/components/dashboard/indonesia-signal-map";
 import { CvePanel } from "@/components/dashboard/cve-panel";
 import { CVE_CATEGORIES, cveCategory } from "@/lib/cve";
 
@@ -1453,6 +1454,8 @@ export default function SignalsPage() {
         <TimelineChart data={meta?.timeline} labels={meta?.timelineLabels} />
         <InvestigationQueue data={meta?.investigationQueue} />
       </div>
+
+      <IndonesiaSignalMap />
 
       <MediaBreakdownPanel data={mediaQuery.data} days={regionDays} loading={mediaQuery.isPending} />
     </div>

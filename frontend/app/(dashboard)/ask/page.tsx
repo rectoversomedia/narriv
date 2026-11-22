@@ -120,15 +120,16 @@ function AskPulse({ summary, topIssue, onAsk, language }: { summary: DashboardSu
   ];
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-4">
+      {/* Phones: the three figures in one compact row, so the questions and the chat stay in view. */}
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
         {tiles.map((t) => (
-          <div key={t.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
-            <p className="text-[12px] font-black" style={{ color: t.color }}>{t.label}</p>
-            <p className="mt-1.5 text-[28px] font-black leading-none tracking-[-0.04em] text-[#101334]">{t.value}</p>
-            <p className="mt-1.5 text-[12px] font-bold text-[#5A6478]">{t.sub}</p>
+          <div key={t.label} className="flex flex-col items-center justify-center rounded-[14px] border-[1.5px] border-[#101334] bg-white px-2 py-2.5 text-center shadow-[0_3px_0_#101334] sm:rounded-[18px] sm:px-4 sm:py-5 sm:shadow-[0_4px_0_#101334]">
+            <p className="text-[11px] font-black sm:text-[12px]" style={{ color: t.color }}>{t.label}</p>
+            <p className="mt-1 text-[20px] font-black leading-none tracking-[-0.04em] text-[#101334] sm:mt-1.5 sm:text-[28px]">{t.value}</p>
+            <p className="mt-1.5 hidden text-[12px] font-bold text-[#5A6478] sm:block">{t.sub}</p>
           </div>
         ))}
-        <div className="rounded-[14px] bg-[#101334] p-4 text-white">
+        <div className="col-span-3 rounded-[14px] bg-[#101334] p-3 text-white sm:col-span-1 sm:p-4">
           <p className="text-[12px] font-black text-[#A9B4FF]">{L("Most dangerous issue", "Isu paling berbahaya")}</p>
           <p className="mt-1.5 line-clamp-3 text-[14px] font-black leading-snug">{topIssue?.title ?? L("No issue yet", "Belum ada isu")}</p>
           {topIssue ? <p className="mt-1.5 text-[12px] font-bold text-white/70">{topIssue.risk ? `${L("Risk", "Risiko")} ${topIssue.risk.score}/100 · ` : ""}{topIssue.signalCount} {L("mentions", "percakapan")}</p> : null}
@@ -301,7 +302,7 @@ export default function AskPage() {
   }, [initialized, WELCOME_MESSAGE]);
 
   return (
-    <div className="relative flex h-[calc(100dvh-250px)] min-h-[420px] overflow-hidden rounded-card border border-line bg-white lg:h-[calc(100dvh-152px)]">
+    <div className="relative flex h-[calc(100dvh-210px)] min-h-[480px] overflow-hidden rounded-card border border-line bg-white lg:h-[calc(100dvh-152px)]">
       {/* ── Sidebar (overlay on small screens, column on desktop) ── */}
       {sidebarOpen ? <button type="button" aria-label="Close suggestions" onClick={() => setSidebarOpen(false)} className="absolute inset-0 z-10 bg-navy/20 lg:hidden" /> : null}
       <aside

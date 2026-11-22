@@ -3087,7 +3087,8 @@
       "alertsTab": "Peringatan",
       "settingsTab": "Umum",
       "analysis": "Analisis",
-      "forecast": "Prediksi Isu"
+      "forecast": "Prediksi Isu",
+      "signalMap": "Peta Sebaran"
     },
     "sidebar": {
       "scoreTitle": "Skor Intelijen Narriv",

@@ -582,6 +582,64 @@ router.get("/regions", async (req, res) => {
     }
 });
 
+// GET /regions/:code?days=30 - one province on the map: its records, the accounts and sources that carry the most
+// of them (by count, then reach), the tone, cities and the latest records. In privacy mode account names are hidden.
+router.get("/regions/:code", async (req, res) => {
+    try {
+        const workspaceId = await resolveWorkspaceIdForUser(req.user.id);
+        const province = provinceByCode(String(req.params.code || ""));
+        const days = [1, 7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
+        if (!workspaceId || !province) return res.status(404).json({ error: "Not found" });
+        const since = new Date(Date.now() - days * 86400000).toISOString();
+        const { data, error } = await supabase
+            .from("signals")
+            .select("id, title, url, platform, author, sentiment, captured_at, published_at, metadata")
+            .eq("workspace_id", workspaceId)
+            .in("region", regionValuesFor(province.code))
+            .gte("captured_at", since)
+            .order("captured_at", { ascending: false })
+            .limit(2000);
+        if (error) throw error;
+        const { privacyMode } = await getWorkspaceProfile(workspaceId);
+        const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+        const reachOf = (m = {}) => num(m.likes ?? m.like_count) + num(m.comments ?? m.comment_count) + num(m.shares ?? m.share_count) + num(m.views ?? m.view_count);
+        const accounts = new Map(), sources = new Map(), cities = new Map();
+        let negative = 0, positive = 0;
+        for (const row of data || []) {
+            const platform = String(row.platform || "news").toLowerCase();
+            const social = SOCIAL_PLATFORMS.has(platform);
+            const tone = String(row.sentiment || "").toUpperCase();
+            if (tone === "NEGATIVE") negative++;
+            if (tone === "POSITIVE") positive++;
+            const reach = reachOf(row.metadata || {});
+            const name = social ? (privacyMode ? null : row.author || row.metadata?.author_handle) : (row.metadata?.publisher || row.author || platform);
+            if (name) {
+                const bucket = social ? accounts : sources;
+                const key = `${platform}:${String(name).toLowerCase()}`;
+                const e = bucket.get(key) || { name, platform, total: 0, negative: 0, reach: 0, lastAt: row.captured_at, url: social ? null : row.url };
+                e.total++; e.reach += reach; if (tone === "NEGATIVE") e.negative++;
+                bucket.set(key, e);
+            }
+            for (const c of Array.isArray(row.metadata?.geo?.cities) ? row.metadata.geo.cities : []) cities.set(c, (cities.get(c) || 0) + 1);
+        }
+        const rank = (m) => [...m.values()].sort((a, b) => b.total - a.total || b.reach - a.reach).slice(0, 6);
+        const total = (data || []).length;
+        res.json({
+            code: province.code, name: province.name, days, total, negative, positive,
+            cities: [...cities.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, n]) => ({ name, total: n })),
+            accounts: rank(accounts), sources: rank(sources), accountsHidden: privacyMode,
+            records: (data || []).slice(0, 6).map((r) => {
+                const social = SOCIAL_PLATFORMS.has(String(r.platform || "").toLowerCase());
+                const tone = String(r.sentiment || "").toUpperCase();
+                return { id: r.id, title: r.title, platform: r.platform, at: r.published_at || r.captured_at, sentiment: tone === "NEGATIVE" ? "negative" : tone === "POSITIVE" ? "positive" : "neutral", url: social && privacyMode ? null : r.url };
+            }),
+        });
+    } catch (error) {
+        logStructured("error", "Error fetching region detail:", { error: error?.message || error });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 // GET /cve-summary?days=30 - CVE narrative categories in the caller's workspaces: per category how many were
 // suggested, confirmed and dismissed, how many records await a category, and the provinces with the most
 // unreviewed or confirmed risk records. Counts only; nothing about authors.

@@ -528,3 +528,8 @@ html.narriv-revealing main { animation: narrivLaunchPage 1s cubic-bezier(0.22, 1
 html.dark .nv-paper { background-color: #0B0F22; background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1.2px); }
 html.dark .nv-glow { opacity: 0.25; }
 html.dark .nv-glow > div { background-color: #465FFF; }
+
+/* Peta Sebaran: the busiest (or open) province pulses like a live signal. */
+@keyframes nv-map-pulse { 0% { transform: scale(1); opacity: 0.45; } 100% { transform: scale(2.4); opacity: 0; } }
+.nv-map-pulse { transform-box: fill-box; transform-origin: center; animation: nv-map-pulse 1.8s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .nv-map-pulse { animation: none; } }

@@ -246,6 +246,21 @@ export async function clearDemoWorkspace(db = defaultDb, ws = DEMO_WORKSPACE_ID)
 export const BRAND_SCENARIO = {
     key: "brand",
     version: 4,
+    recon: (t0) => ({
+        id: null, subject: "@finfluencer.id", days: 365, at: new Date(t0 - 26 * 3600000).toISOString(), sources: 64, platforms: ["tiktok", "youtube", "news"], score: 38, level: "medium",
+        lenses: [
+            { key: "controversy", label: { id: "Kontroversi & skandal", en: "Controversy & scandal" }, hits: 3, byPlatform: { tiktok: 2, news: 1 }, level: "medium", examples: [{ title: "Video investasi tanpa penjelasan risiko dikritik warganet", url: "", source: "TikTok" }] },
+            { key: "promo", label: { id: "Promosi bermasalah", en: "Problematic promotion" }, hits: 1, byPlatform: { tiktok: 0, news: 1 }, level: "low", examples: [{ title: "Endorse aplikasi investasi ditegur karena belum terdaftar OJK", url: "", source: "Kabar Finansial (fiktif)" }] },
+            { key: "legal", label: { id: "Hukum & kriminal", en: "Legal & criminal" }, hits: 0, byPlatform: { tiktok: 0, news: 0 }, level: "none", examples: [] },
+            { key: "gambling", label: { id: "Judi online & pinjol", en: "Online gambling & illegal lending" }, hits: 0, byPlatform: { tiktok: 0, news: 0 }, level: "none", examples: [] },
+        ],
+        summary: "Kreator edukasi keuangan dengan audiens muda yang besar. Rekam jejaknya bersih dari kasus hukum, ujaran kebencian, dan judi online. Catatan utama: tiga kali menuai kritik karena membahas produk investasi tanpa menyebut risikonya, satu di antaranya berujung klarifikasi.\n\nRisikonya **sedang**: cocok untuk kampanye literasi keuangan, dengan naskah yang ditinjau tim legal sebelum tayang.",
+        recommendation: "Layak diajak kerja sama untuk konten literasi keuangan. Wajibkan peninjauan naskah oleh tim legal dan cantumkan penjelasan risiko produk di setiap konten.",
+        recent: [
+            { title: "Klarifikasi @finfluencer.id soal video investasi yang dinilai menyesatkan", url: "", source: "Kabar Finansial (fiktif)", publishedAt: new Date(t0 - 40 * 86400000).toISOString(), platform: "news" },
+            { title: "5 cara mulai menabung untuk Gen Z", url: "", source: "TikTok", publishedAt: new Date(t0 - 6 * 86400000).toISOString(), platform: "tiktok" },
+        ],
+    }),
     network: demoNetworkDocs,
     // Narrative defence on the sample data: coordination signs and checked claims per issue (risk score reads them).
     issueIntel: {
@@ -534,6 +549,12 @@ export async function seedScenarioWorkspace(def, { now = new Date(), db = defaul
 
     // Conversation network (Jaringan): fictional YouTube comments, camps and coordination signs.
     if (def.network) await chunkedInsert(db, "raw_documents", def.network(t0).map((d) => ({ workspace_id: ws, source_id: sourceOf.youtube ?? null, url: null, author: null, content: null, published_at: at(2 * H), created_at: at(2 * H), ...d })));
+
+    // Cek Influencer: one past check of a fictional creator, so the page shows what a result looks like.
+    if (def.recon) {
+        const recon = def.recon(t0);
+        await chunkedInsert(db, "raw_documents", [{ workspace_id: ws, external_id: `recon:demo-${def.key}`, title: recon.subject, url: null, author: null, content: null, published_at: recon.at, created_at: recon.at, metadata: { demo: true, recon } }]);
+    }
 
     // In-app notifications and an activity trail
     await chunkedInsert(db, "app_notifications", def.notifications.map(({ ago, ...n }) => ({ workspace_id: ws, user_id: owner, data: { demo: true }, ...n, created_at: at(ago) })));

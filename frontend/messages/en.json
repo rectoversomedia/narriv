@@ -3087,7 +3087,8 @@
       "alertsTab": "Alerts",
       "settingsTab": "General",
       "analysis": "Analysis",
-      "forecast": "Issue Forecast"
+      "forecast": "Issue Forecast",
+      "signalMap": "Signal Map"
     },
     "sidebar": {
       "scoreTitle": "Narriv Intelligence Score",

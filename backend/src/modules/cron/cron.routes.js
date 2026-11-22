@@ -365,6 +365,11 @@ const runIngest = async (req, res) => {
         summary.alertDigests = await sendDigests();
         summary.reportSchedules = await runDueSchedules();
         summary.followUps = await runFollowUps({ deadline: started + 285000 });
+        // The demo never looks stale: reseeded here too (cheap check) when its newest record is 20 hours old.
+        try {
+            const { refreshDemoWorkspaceIfStale } = await import("../demo/demo-seed.js");
+            summary.demo = await refreshDemoWorkspaceIfStale();
+        } catch (e) { summary.demo = { error: e.message }; }
         res.status(summary.status === "failed" ? 500 : 200).json(summary);
     } catch (error) {
         logStructured("error", "cron_ingest_failed", { error: error.message });
