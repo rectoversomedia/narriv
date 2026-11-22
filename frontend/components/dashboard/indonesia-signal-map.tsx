@@ -165,7 +165,7 @@ export function IndonesiaSignalMap({ className, hideTitle = false }: { className
 
       <div className={cn("grid items-start gap-4", sel && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
         <div className="grid gap-3">
-        <div className="relative overflow-hidden rounded-[16px] border border-[#E4E8F2] bg-[radial-gradient(circle_at_20%_10%,#EEF1FF_0%,transparent_45%),radial-gradient(circle_at_85%_90%,#FCE7F3_0%,transparent_45%),#FAFBFE]">
+        <div className="nv-map-bg relative overflow-hidden rounded-[16px] border border-[#E4E8F2] bg-[radial-gradient(circle_at_20%_10%,#EEF1FF_0%,transparent_45%),radial-gradient(circle_at_85%_90%,#FCE7F3_0%,transparent_45%),#FAFBFE]">
           {geo ? (
             <ComposableMap projection="geoMercator" projectionConfig={{ scale: view.scale, center: createCoordinates(view.center[0], view.center[1]) }} width={900} height={360} style={{ width: "100%", height: "auto" }}>
               <defs>
@@ -177,7 +177,7 @@ export function IndonesiaSignalMap({ className, hideTitle = false }: { className
                 {({ geographies }) => geographies.map((g, i) => {
                   const id = String(g.id);
                   const indo = id === "360";
-                  return <Geography key={`${id}-${i}`} geography={g} style={{ default: { fill: indo ? "#DCE2F5" : "#EEF1F7", stroke: indo ? "#B8C2E6" : "#E2E6F0", strokeWidth: 0.6, outline: "none" }, hover: { fill: indo ? "#D2DAF2" : "#EEF1F7", outline: "none" }, pressed: { outline: "none" } }} />;
+                  return <Geography key={`${id}-${i}`} geography={g} style={{ default: { fill: indo ? "var(--map-land)" : "var(--map-other)", stroke: indo ? "var(--map-edge)" : "var(--map-other-edge)", strokeWidth: 0.6, outline: "none" }, hover: { fill: indo ? "var(--map-land-hover)" : "var(--map-other)", outline: "none" }, pressed: { outline: "none" } }} />;
                 })}
               </Geographies>
               {groups.map((g) => {
@@ -225,7 +225,7 @@ export function IndonesiaSignalMap({ className, hideTitle = false }: { className
           {zoomed ? (
             <button type="button" onClick={() => setView(BASE)} className="absolute right-3 top-3 inline-flex h-9 items-center gap-1.5 rounded-[10px] border-[1.5px] border-[#101334] bg-white px-3 text-[12px] font-bold text-[#101334] shadow-[0_2px_0_#101334] hover:bg-[#F7F8FC]">{L("Whole Indonesia", "Seluruh Indonesia")}</button>
           ) : groups.some((g) => g.items.length > 1) ? (
-            <p className="pointer-events-none absolute bottom-12 right-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold text-[#5F6B94]">{L("Dashed points group nearby provinces: click to zoom", "Titik bergaris putus = beberapa provinsi berdekatan, klik untuk perbesar")}</p>
+            <p className="pointer-events-none absolute bottom-12 right-3 hidden rounded-full sm:block bg-white/90 px-2.5 py-1 text-[11px] font-bold text-[#5F6B94]">{L("Dashed points group nearby provinces: click to zoom", "Titik bergaris putus = beberapa provinsi berdekatan, klik untuk perbesar")}</p>
           ) : null}
           {hovered ? (
             <div className="pointer-events-none absolute left-3 top-3 rounded-[12px] border border-[#E4E8F2] bg-white px-3 py-2 shadow-[0_10px_30px_rgba(16,19,52,0.12)]">

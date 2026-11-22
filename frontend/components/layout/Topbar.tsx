@@ -376,7 +376,9 @@ export function Topbar() {
         {mobileSearch ? <X size={18} aria-hidden="true" /> : <Search size={18} aria-hidden="true" />}
       </button>
       <Link href="/" className="flex shrink-0 flex-col items-center justify-self-center lg:hidden" aria-label="Narriv dashboard">
-        <Image src="/brand/logo-h-nv.webp" alt="Narriv" width={96} height={36} priority unoptimized className="h-11 w-auto max-w-none object-contain" />
+        <Image src="/brand/logo-h-nv.webp" alt="Narriv" width={96} height={36} priority unoptimized className="h-11 w-auto max-w-none object-contain dark:hidden" />
+        {/* Dark mode: the white wordmark, as in the sidebar. */}
+        <Image src="/brand/logo-p-nv.webp" alt="Narriv" width={96} height={36} priority unoptimized className="hidden h-11 w-auto max-w-none object-contain dark:block" />
         {/* Right under the wordmark (the image has ~10% empty space below the letters). */}
         <span className="-mt-[1px] text-[7.5px] font-bold uppercase leading-none tracking-[0.1em] text-[#5F6B94]">Narrative Intelligence</span>
       </Link>

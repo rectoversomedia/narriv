@@ -533,3 +533,8 @@ html.dark .nv-glow > div { background-color: #465FFF; }
 @keyframes nv-map-pulse { 0% { transform: scale(1); opacity: 0.45; } 100% { transform: scale(2.4); opacity: 0; } }
 .nv-map-pulse { transform-box: fill-box; transform-origin: center; animation: nv-map-pulse 1.8s ease-out infinite; }
 @media (prefers-reduced-motion: reduce) { .nv-map-pulse { animation: none; } }
+
+/* Peta Sebaran land colors, light and dark. */
+:root { --map-land: #DCE2F5; --map-land-hover: #D2DAF2; --map-edge: #B8C2E6; --map-other: #EEF1F7; --map-other-edge: #E2E6F0; }
+html.dark { --map-land: #262C55; --map-land-hover: #2E3563; --map-edge: #3A4278; --map-other: #161A33; --map-other-edge: #1E2340; }
+html.dark .nv-map-bg { background: #0E1226; }
