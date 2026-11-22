@@ -444,3 +444,17 @@ export interface RegionDetail {
 export function getRegionDetail(code: string, days: 1 | 7 | 30 | 90 = 30) {
   return apiClient<RegionDetail>(`/signals/regions/${encodeURIComponent(code)}?days=${days}`);
 }
+
+/** Who a PCVE record is escalated to (signals.routes.js ESCALATION_TARGETS). */
+export type EscalationTarget = "internal" | "bnpt" | "komdigi" | "polri";
+export type Escalation = { target: EscalationTarget; note: string | null; by: string; at: string };
+export type EscalationRow = Escalation & { signalId: string; title: string; platform: string | null; region: string | null; category: CveCategory | null };
+
+/** Records the escalation and returns the report to send through the official channel (nothing is sent by Narriv). */
+export function escalateSignal(signalId: string, target: EscalationTarget, note?: string) {
+  return apiClient<{ escalation: Escalation; escalations: Escalation[]; report: string; channel: string | null }>(`/signals/${encodeURIComponent(signalId)}/escalate`, { method: "POST", body: JSON.stringify({ target, ...(note ? { note } : {}) }) });
+}
+
+export function getEscalations() {
+  return apiClient<{ data: EscalationRow[] }>("/signals/escalations");
+}

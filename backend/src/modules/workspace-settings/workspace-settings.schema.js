@@ -31,7 +31,8 @@ export const workspaceProfileBodySchema = z.object({
     workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
     useCase: z.enum(["brand", "gov", "cve"], { error: () => "useCase must be brand, gov or cve." }).optional(),
     privacyMode: z.boolean().optional(),
-}).strict().refine((d) => d.useCase !== undefined || d.privacyMode !== undefined, { message: "useCase or privacyMode is required." });
+    telegramChannels: z.array(z.string().trim().max(100)).max(30).optional(),
+}).strict().refine((d) => d.useCase !== undefined || d.privacyMode !== undefined || d.telegramChannels !== undefined, { message: "useCase, privacyMode or telegramChannels is required." });
 
 export const workspaceMembersQuerySchema = z.object({
     workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),

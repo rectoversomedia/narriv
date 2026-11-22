@@ -7,7 +7,7 @@
  */
 
 import { logStructured } from "../../lib/logger.js";
-import { mentionsKeyword } from "../../lib/keyword-match.js";
+import { keywordAlternatives, mentionsKeyword } from "../../lib/keyword-match.js";
 
 const TIMEOUT_MS = 10_000;
 const LOOKBACK_DAYS = 7;
@@ -56,7 +56,9 @@ export async function fetchTelegramPosts(keyword, { channels = telegramChannels(
     const records = [];
     for (const channel of channels) {
         try {
-            const res = await fetchImpl(`https://t.me/s/${channel}?q=${encodeURIComponent(keyword)}`, {
+            // A group of terms ("a OR b") reads the channel's latest page and filters it; one term uses the channel search.
+            const q = keywordAlternatives(keyword).length > 1 ? "" : `?q=${encodeURIComponent(keyword)}`;
+            const res = await fetchImpl(`https://t.me/s/${channel}${q}`, {
                 headers: { "user-agent": "Mozilla/5.0 (compatible; NarrivMonitor/1.0)" },
                 signal: AbortSignal.timeout(TIMEOUT_MS),
             });

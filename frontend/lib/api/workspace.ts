@@ -222,6 +222,8 @@ export interface WorkspaceSettingsResponse {
   useCase: WorkspaceUseCase;
   /** Account names, handles and post links are hidden wherever records are shown. */
   privacyMode: boolean;
+  /** Public Telegram channels the workspace watches (t.me/<name>). */
+  telegramChannels?: string[];
 }
 
 export type WorkspaceUseCase = "brand" | "gov" | "cve";
@@ -294,6 +296,7 @@ export async function getWorkspaceSettings(): Promise<WorkspaceSettingsResponse 
       whatsappSenderReady: raw.whatsapp_sender_ready === true,
       useCase: raw.use_case === "cve" || raw.use_case === "gov" ? raw.use_case : "brand",
       privacyMode: raw.privacy_mode === true,
+      telegramChannels: Array.isArray(raw.telegram_channels) ? (raw.telegram_channels as string[]) : [],
     };
   } catch {
     return null;
@@ -309,8 +312,8 @@ export async function setMonitoringPaused(paused: boolean): Promise<boolean> {
 }
 
 /** Sets what the workspace monitors for and privacy mode; choosing "cve" turns privacy mode on unless set here. */
-export function setWorkspaceProfile(input: { useCase?: WorkspaceUseCase; privacyMode?: boolean }) {
-  return apiClient<{ use_case: WorkspaceUseCase; privacy_mode: boolean }>("/api/workspace/profile", { method: "POST", body: JSON.stringify(input) });
+export function setWorkspaceProfile(input: { workspaceId?: string; useCase?: WorkspaceUseCase; privacyMode?: boolean; telegramChannels?: string[] }) {
+  return apiClient<{ use_case: WorkspaceUseCase; privacy_mode: boolean; telegram_channels: string[] }>("/api/workspace/profile", { method: "POST", body: JSON.stringify(input) });
 }
 
 /** Deletes the current workspace. Rejects with code WORKSPACE_DELETE_RESTRICTED (409) while it still holds data. */

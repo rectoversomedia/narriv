@@ -10,7 +10,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { ArrowRight, BarChart3, Bell, Check, ChevronDown, Headphones, Lightbulb, Mail, Shield, Users, X, type LucideIcon } from "lucide-react";
+import { ArrowRight, BarChart3, Bell, Check, ChevronDown, Headphones, Landmark, Lightbulb, Mail, Megaphone, Shield, ShieldAlert, Users, X, type LucideIcon } from "lucide-react";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { useToast } from "@/components/ui/toast";
 import { launchDashboard, signalDashboardReady } from "@/lib/launch";
@@ -25,6 +25,8 @@ import {
   completeOnboarding,
   getCurrentUser,
   getWorkspaceSettings,
+  setWorkspaceProfile,
+  type WorkspaceUseCase,
 } from "@/lib/api-service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -32,6 +34,8 @@ import {
 type Step = 1 | 2 | 3 | 4 | 5;
 
 type ProfileData = {
+  /** What the workspace is for (backend workspace-profile.js): brand reputation, government, or information resilience (PCVE). */
+  useCase: WorkspaceUseCase;
   name: string;
   role: string;
   company: string;
@@ -130,6 +134,22 @@ const DEFAULT_GOALS: Array<{
   { id: "complaints", labelKey: "goalService", descKey: "goalServiceDesc", icon: Headphones, color: "#EF4444" },
 ];
 
+// What the workspace is for. Each changes what Narriv does with a record (backend lib/workspace-profile.js).
+const USE_CASES: Array<{ id: WorkspaceUseCase; icon: LucideIcon; title: [string, string]; desc: [string, string]; org: [string, string]; orgPh: [string, string] }> = [
+  { id: "brand", icon: Megaphone, title: ["Brand reputation", "Reputasi Brand"], desc: ["Customer talk, issues and competitors around your brand.", "Percakapan konsumen, isu, dan kompetitor seputar brand Anda."], org: ["Company / brand", "Perusahaan / brand"], orgPh: ["e.g. Bank Arunika", "mis. Bank Arunika"] },
+  { id: "gov", icon: Landmark, title: ["Government & public services", "Pemerintahan & Layanan Publik"], desc: ["Citizen sentiment and public-service issues for an institution.", "Sentimen warga dan isu layanan publik untuk sebuah instansi."], org: ["Institution", "Instansi"], orgPh: ["e.g. Pemkot Lestari", "mis. Pemkot Lestari"] },
+  { id: "cve", icon: ShieldAlert, title: ["Information resilience", "Ketahanan Informasi"], desc: ["Hoaxes, propaganda and violent extremism (PCVE). Accounts are hidden by default.", "Hoaks, propaganda, dan ekstremisme kekerasan (PCVE). Nama akun disembunyikan otomatis."], org: ["Institution / program", "Lembaga / program"], orgPh: ["e.g. Kesbangpol Jawa Tengah", "mis. Kesbangpol Jawa Tengah"] },
+];
+
+// Starter watch lists for an information-resilience workspace. A keyword can be a group of terms ("a OR b"), so
+// the three keywords checked each run cover a longer list, including the coded words extremist content uses.
+const CVE_KEYWORD_PACKS: Array<{ label: [string, string]; keyword: string }> = [
+  { label: ["Extremism & terror", "Ekstremisme & teror"], keyword: "radikalisme OR terorisme OR ekstremisme OR intoleransi" },
+  { label: ["Coded language", "Istilah sandi"], keyword: "thaghut OR amaliyah OR khilafah OR baiat OR istisyhad" },
+  { label: ["Incidents & hoaxes", "Insiden & hoaks"], keyword: "hoaks bom OR bom bunuh diri OR penyerangan rumah ibadah OR teror" },
+  { label: ["Hate & identity", "Kebencian & SARA"], keyword: "ujaran kebencian OR kafir OR SARA OR penistaan agama" },
+];
+
 // ─── Root Page ────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
@@ -142,6 +162,7 @@ export default function OnboardingPage() {
 
   const [data, setData] = useState<OnboardingData>({
     profile: {
+      useCase: "brand",
       name: "",
       role: "",
       company: "",
@@ -280,6 +301,7 @@ export default function OnboardingPage() {
         timezone: "Asia/Jakarta",
       });
       if (!workspace?.id) throw new Error(pickL("Failed to configure workspace.", "Workspace gagal disiapkan."));
+      if (data.profile.useCase !== "brand") await setWorkspaceProfile({ workspaceId: workspace.id, useCase: data.profile.useCase }).catch(() => null);
 
       const result = await completeOnboarding({ workspaceId: workspace.id, triggerIngestion: false });
       if (result?.success) {
@@ -315,6 +337,8 @@ export default function OnboardingPage() {
         timezone: "Asia/Jakarta",
       });
       if (!workspace?.id) throw new Error(pickL("Failed to create workspace.", "Workspace gagal dibuat."));
+      // What the workspace is for, before the first collection: a PCVE workspace classifies records and hides accounts.
+      if (data.profile.useCase !== "brand") await setWorkspaceProfile({ workspaceId: workspace.id, useCase: data.profile.useCase });
 
       await createOnboardingKeywords({ workspaceId: workspace.id, keywords: data.keywords });
       await createOnboardingSources({ workspaceId: workspace.id, sources: data.sources });
@@ -403,7 +427,7 @@ export default function OnboardingPage() {
                     <ProfileStep data={data.profile} onChange={updateProfile} />
                   )}
                   {step === 2 && (
-                    <KeywordsStep keywords={data.keywords} onChange={updateKeywords} brand={data.profile.company} />
+                    <KeywordsStep keywords={data.keywords} onChange={updateKeywords} brand={data.profile.company} useCase={data.profile.useCase} />
                   )}
                   {step === 3 && (
                     <SourcesStep sources={data.sources} onChange={updateSources} />
@@ -482,6 +506,7 @@ function ProfileStep({
   };
 
   const mainGoalMax = 200;
+  const useCase = USE_CASES.find((u) => u.id === data.useCase) ?? USE_CASES[0];
 
   return (
     <div className="space-y-8">
@@ -489,6 +514,27 @@ function ProfileStep({
         <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
         <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{t("desc")}</p>
       </div>
+
+      {/* What Narriv is for */}
+      <div className="space-y-3">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("What will you use Narriv for?", "Narriv mau dipakai untuk apa?")}</h2>
+        <div className="grid gap-3 sm:grid-cols-3" role="radiogroup">
+          {USE_CASES.map((u) => {
+            const on = data.useCase === u.id;
+            const Icon = u.icon;
+            return (
+              <button key={u.id} type="button" role="radio" aria-checked={on} onClick={() => onChange({ useCase: u.id })} className={`relative rounded-2xl border-2 p-4 text-left transition-all ${on ? "border-[#465FFF] bg-[#F3F5FF] shadow-[0_3px_0_#465FFF]" : "border-[#E4E8F2] bg-white hover:border-[#C9D0E3]"}`}>
+                {on ? <span className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full bg-[#465FFF] text-white"><Check size={12} strokeWidth={3} /></span> : null}
+                <span className={`flex size-10 items-center justify-center rounded-xl ${on ? "bg-[#465FFF] text-white" : "bg-[#F1F4FA] text-[#3E4975]"}`}><Icon size={20} /></span>
+                <p className="mt-3 text-[15px] font-bold text-[#111536]">{pickL(u.title[0], u.title[1])}</p>
+                <p className="mt-1 text-xs font-medium leading-relaxed text-[#5F6B94]">{pickL(u.desc[0], u.desc[1])}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="border-t border-[#F0F2FA]" />
 
       {/* Personal Info */}
       <div className="space-y-5">
@@ -525,14 +571,14 @@ function ProfileStep({
 
       {/* Company Info */}
       <div className="space-y-5">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("Company / Brand", "Perusahaan / Brand")}</h2>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL(useCase.org[0], useCase.org[1])}</h2>
         <div className="grid gap-5 lg:grid-cols-2">
-          <FormField label={t("company")} required htmlFor="onb-company">
+          <FormField label={pickL(useCase.org[0], useCase.org[1])} required htmlFor="onb-company">
             <input id="onb-company"
               type="text"
               value={data.company}
               onChange={(e) => onChange({ company: e.target.value })}
-              placeholder={pickL("e.g. FIFGROUP", "mis. Bank Arunika")}
+              placeholder={pickL(useCase.orgPh[0], useCase.orgPh[1])}
               className="form-input"
               autoComplete="organization"
             />
@@ -569,6 +615,7 @@ function ProfileStep({
         </FormField>
       </div>
 
+      {data.useCase === "brand" ? <>
       <div className="border-t border-[#F0F2FA]" />
 
       {/* Goals */}
@@ -619,6 +666,7 @@ function ProfileStep({
           {pickL("Select 1–3 goals. You can change this anytime in Settings.", "Pilih 1–3 tujuan. Bisa diubah kapan saja di Pengaturan.")}
         </p>
       </div>
+      </> : null}
     </div>
   );
 }
@@ -629,17 +677,21 @@ function KeywordsStep({
   keywords,
   onChange,
   brand = "",
+  useCase = "brand",
 }: {
   keywords: string[];
   onChange: (kw: string[]) => void;
   brand?: string;
+  useCase?: WorkspaceUseCase;
 }) {
   const t = useTranslations("OnboardingDesign.keywords");
   const [input, setInput] = useState("");
 
   // Suggestions built from the brand itself: generic terms ("Market News") pull in unrelated articles and cost.
   const base = brand.trim();
-  const suggestions = base ? [base, `${base} keluhan`, `${base} layanan`, `${base} aplikasi`, `${base} promo`] : [];
+  const suggestions = useCase === "cve" ? []
+    : useCase === "gov" ? (base ? [base, `${base} layanan`, `${base} keluhan warga`, `${base} kebijakan`] : [])
+    : base ? [base, `${base} keluhan`, `${base} layanan`, `${base} aplikasi`, `${base} promo`] : [];
 
   const add = (kw: string) => {
     const trimmed = kw.trim();
@@ -686,7 +738,24 @@ function KeywordsStep({
           </div>
         </FormField>
 
-        <div className="flex flex-wrap items-center gap-2">
+        {useCase === "cve" ? (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-[#647099]">{pickL("Ready-made watch lists. Each is one keyword holding several terms, coded words included; write your own as \"term OR term\".", "Paket pantauan siap pakai. Tiap paket satu kata kunci berisi beberapa istilah, termasuk istilah sandi; tulis sendiri dengan format \"istilah OR istilah\".")}</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {CVE_KEYWORD_PACKS.map((p) => {
+                const on = keywords.some((k) => k.toLowerCase() === p.keyword.toLowerCase());
+                return (
+                  <button key={p.keyword} type="button" onClick={() => (on ? remove(p.keyword) : add(p.keyword))} disabled={!on && full} className={`rounded-xl border-2 p-3 text-left transition-colors disabled:opacity-40 ${on ? "border-[#465FFF] bg-[#F3F5FF]" : "border-[#E8EAF6] bg-white hover:border-[#C9D0E3]"}`}>
+                    <p className="flex items-center gap-1.5 text-[13px] font-bold text-[#111536]">{on ? <Check size={13} className="text-[#465FFF]" /> : null}{pickL(p.label[0], p.label[1])}</p>
+                    <p className="mt-1 text-[11.5px] font-medium leading-relaxed text-[#5F6B94]">{p.keyword.split(" OR ").join(" · ")}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        <div className={`flex flex-wrap items-center gap-2 ${suggestions.length ? "" : "hidden"}`}>
           <span className="text-xs font-semibold text-[#647099]">{t("examples")}</span>
           {suggestions.map((s) => (
             <button

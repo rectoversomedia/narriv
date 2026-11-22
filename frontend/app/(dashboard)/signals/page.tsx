@@ -25,6 +25,7 @@ import { MediaBreakdownPanel } from "@/components/dashboard/media-breakdown";
 import { RegionPanel } from "@/components/dashboard/region-panel";
 import { IndonesiaSignalMap } from "@/components/dashboard/indonesia-signal-map";
 import { CvePanel } from "@/components/dashboard/cve-panel";
+import { EscalateButton } from "@/components/dashboard/cve-escalate";
 import { CVE_CATEGORIES, cveCategory } from "@/lib/cve";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
@@ -62,6 +63,7 @@ type SignalRow = {
   voice: "public" | "internal" | "partner";
   /** The CVE category suggested for review, in CVE workspaces. */
   cve: CveTag | null;
+  escalations: number;
 };
 
 /** Stored region values that mean "Indonesia in general" rather than a place in it. */
@@ -157,6 +159,7 @@ function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): S
       placeBasis: signal.regionBasis === "text" || signal.regionBasis === "location" ? signal.regionBasis : null,
       accountPlace: signal.accountLocation?.province && signal.accountLocation.province !== signal.region ? signal.accountLocation.province : null,
       cve: signal.cve && signal.cve.category !== "none" ? signal.cve : null,
+      escalations: signal.escalations ?? 0,
       voice: signal.voice === "internal" || signal.voice === "partner" ? signal.voice : "public",
     };
   });
@@ -208,7 +211,7 @@ function PlaceChip({ place, basis, account }: { place: string | null; basis?: Si
  * The suggested CVE category of a record, with the reviewer's verdict: "Correct" confirms it, "Not this" dismisses
  * it. A confirmed or dismissed tag says so instead of offering the buttons again.
  */
-function CveChip({ id, cve }: { id: string; cve: CveTag | null }) {
+function CveChip({ id, cve, escalations = 0 }: { id: string; cve: CveTag | null; escalations?: number }) {
   const queryClient = useQueryClient();
   const isDemo = isDemoUser(useAuthStore((s) => s.user));
   const [tag, setTag] = useState(cve);
@@ -234,6 +237,7 @@ function CveChip({ id, cve }: { id: string; cve: CveTag | null }) {
           <button type="button" disabled={review.isPending} onClick={() => review.mutate("dismissed")} className="rounded-full bg-white px-1.5 py-0.5 text-[11px] font-bold text-[#5A6478] shadow-[inset_0_0_0_1px_#DDE3EF] hover:bg-slate-50">{pickL("Not this", "Bukan")}</button>
         </>
       ) : null}
+      {cat.risk && status !== "dismissed" && (!isDemo || escalations > 0) ? <EscalateButton id={id} count={escalations} /> : null}
     </span>
   );
 }
@@ -648,7 +652,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     <SentimentCorrector id={row.id} sentiment={row.sentiment} />
                     <RelevanceBadge relevance={row.relevance} />
                     <PlaceChip place={row.place} basis={row.placeBasis} account={row.accountPlace} />
-                    <CveChip id={row.id} cve={row.cve} />
+                    <CveChip id={row.id} cve={row.cve} escalations={row.escalations} />
                     <VoiceChip id={row.id} voice={row.voice} />
                   </div>
                   <p className="mt-1 text-[12px] text-[#5A6478]">
@@ -729,7 +733,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     ) : (
                       <span title={row.title} className="line-clamp-2 break-words text-[14px] font-bold leading-snug text-navy">{row.title}</span>
                     )}
-                    {true ? <div className="mt-1 flex flex-wrap items-center gap-1.5"><PlaceChip place={row.place} basis={row.placeBasis} account={row.accountPlace} /><CveChip id={row.id} cve={row.cve} /><VoiceChip id={row.id} voice={row.voice} /></div> : null}
+                    {true ? <div className="mt-1 flex flex-wrap items-center gap-1.5"><PlaceChip place={row.place} basis={row.placeBasis} account={row.accountPlace} /><CveChip id={row.id} cve={row.cve} escalations={row.escalations} /><VoiceChip id={row.id} voice={row.voice} /></div> : null}
                   </td>
                   <td className="px-2.5 py-3 align-middle"><span className="line-clamp-2 break-words text-[12px] font-bold leading-snug text-[#31406B]" title={row.publisher}>{row.publisher}</span></td>
                   <td className="px-2.5 py-3 align-middle"><SentimentCorrector id={row.id} sentiment={row.sentiment} /></td>

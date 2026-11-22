@@ -16,7 +16,7 @@ import { classifyRecord, loadRelevanceContext } from "../../lib/brand-relevance.
 import { detectRegions, provinceByCode, provinceFromLabel, regionValuesFor } from "../../lib/indonesia-regions.js";
 import { getProfilesFor, getWorkspaceProfile } from "../../lib/workspace-profile.js";
 import { maskSignal } from "../../lib/privacy.js";
-import { CVE_CATEGORY_IDS, CVE_RISK_IDS } from "../../lib/cve-categories.js";
+import { CVE_CATEGORY_IDS, CVE_RISK_IDS, cveLabel } from "../../lib/cve-categories.js";
 import { checkBudgetAllowance } from "../../lib/cost-management.js";
 
 const router = express.Router();
@@ -61,6 +61,7 @@ export function toSignalListItem(row, workspaceIds = []) {
         analysisConfidence: Number.isFinite(rawConf) && rawConf >= 0 && rawConf <= 1 ? rawConf : null,
         // The CVE narrative category and its review, in CVE workspaces (cve-categories.js).
         cve: signal.metadata?.cve ?? null,
+        escalations: Array.isArray(signal.metadata?.escalations) ? signal.metadata.escalations.length : 0,
         // How the region was found: "text" (the record is about the place), "location" (only the platform's
         // location label), or null. accountLocation is where the account says it is, kept apart.
         regionBasis: signal.metadata?.geo?.source ?? null,
@@ -758,6 +759,101 @@ router.post("/:id/cve-review", async (req, res) => {
         res.json({ cve });
     } catch (error) {
         logStructured("error", "Error reviewing CVE category:", { error: error?.message || error });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+/**
+ * Escalation of a PCVE record to whoever must act: the team lead, BNPT, Komdigi (takedown) or the police.
+ * Narriv writes the report (category, what was said, where, when, the link) for a person to send through the
+ * official channel; nothing is sent automatically. The link is in the report even in privacy mode, because the
+ * authority needs it, so every report is recorded in the audit log (who escalated what, to whom, when).
+ */
+export const ESCALATION_TARGETS = {
+    internal: { id: "Pimpinan tim / internal", en: "Team lead / internal" },
+    bnpt: { id: "BNPT (Badan Nasional Penanggulangan Terorisme)", en: "BNPT (national counter-terrorism agency)" },
+    komdigi: { id: "Komdigi · aduan konten (aduankonten.id)", en: "Komdigi · content complaint (aduankonten.id)" },
+    polri: { id: "Polri · Densus 88 / Siber", en: "Police · Densus 88 / cyber unit" },
+};
+
+export function escalationReport({ signal, target, note, at, lang = "id" }) {
+    const id = lang !== "en";
+    const cat = signal.metadata?.cve?.category ? cveLabel(signal.metadata.cve.category, lang) : (id ? "Belum dikategorikan" : "Not classified");
+    const when = (v) => (v ? new Date(v).toLocaleString(id ? "id-ID" : "en-GB", { timeZone: "Asia/Jakarta", dateStyle: "medium", timeStyle: "short" }) + " WIB" : "-");
+    const lines = id ? [
+        `LAPORAN ESKALASI KONTEN · ${ESCALATION_TARGETS[target].id}`,
+        `Dibuat: ${when(at)} (Narriv)`,
+        "",
+        `Kategori narasi: ${cat}${signal.metadata?.cve?.review?.status === "confirmed" ? " (sudah diverifikasi tim)" : ""}`,
+        `Platform: ${signal.platform || "-"}`,
+        `Wilayah: ${signal.region || "-"}`,
+        `Waktu unggah: ${when(signal.published_at || signal.captured_at)}`,
+        `Tautan: ${signal.url || "-"}`,
+        `Akun: ${signal.author || "-"}`,
+        "",
+        "Isi / kutipan:",
+        String(signal.title || "").trim(),
+        String(signal.content || "").replace(/\s+/g, " ").trim().slice(0, 700),
+        ...(note ? ["", `Catatan tim: ${note}`] : []),
+        "",
+        "Mohon ditindaklanjuti sesuai kewenangan. Tangkapan layar terlampir oleh pelapor.",
+    ] : [
+        `CONTENT ESCALATION REPORT · ${ESCALATION_TARGETS[target].en}`,
+        `Created: ${when(at)} (Narriv)`,
+        "",
+        `Narrative category: ${cat}${signal.metadata?.cve?.review?.status === "confirmed" ? " (verified by the team)" : ""}`,
+        `Platform: ${signal.platform || "-"}`,
+        `Region: ${signal.region || "-"}`,
+        `Posted: ${when(signal.published_at || signal.captured_at)}`,
+        `Link: ${signal.url || "-"}`,
+        `Account: ${signal.author || "-"}`,
+        "",
+        "Content / quote:",
+        String(signal.title || "").trim(),
+        String(signal.content || "").replace(/\s+/g, " ").trim().slice(0, 700),
+        ...(note ? ["", `Team note: ${note}`] : []),
+        "",
+        "Please act within your mandate. Screenshots attached by the reporter.",
+    ];
+    return lines.join("\n");
+}
+
+// POST /:id/escalate { target, note } — records the escalation and returns the report to send.
+router.post("/:id/escalate", async (req, res) => {
+    try {
+        const target = req.body?.target;
+        const note = String(req.body?.note || "").trim().slice(0, 500);
+        if (!ESCALATION_TARGETS[target]) return res.status(400).json({ error: `target must be one of: ${Object.keys(ESCALATION_TARGETS).join(", ")}.` });
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+        const { data: signal } = await supabase.from('signals').select('id, workspace_id, title, content, url, author, platform, region, published_at, captured_at, metadata').eq('id', req.params.id).maybeSingle();
+        if (!signal || !workspaceIds.includes(signal.workspace_id)) return res.status(404).json({ error: "Signal not found" });
+        const role = await getWorkspaceRole(req.user.id, signal.workspace_id);
+        if (!["owner", "admin", "analyst"].includes(role)) return res.status(403).json({ error: "Only workspace members who analyse records can escalate them." });
+        const at = new Date().toISOString();
+        const entry = { target, note: note || null, by: req.user.id, at };
+        const escalations = [...(Array.isArray(signal.metadata?.escalations) ? signal.metadata.escalations : []), entry].slice(-20);
+        const { error } = await supabase.from('signals').update({ metadata: { ...(signal.metadata || {}), escalations } }).eq('id', signal.id);
+        if (error) throw error;
+        await recordAuditLog({ userId: req.user.id, workspaceId: signal.workspace_id, event: "signal_escalated", metadata: { signal_id: signal.id, target, category: signal.metadata?.cve?.category ?? null, url_disclosed: Boolean(signal.url) } }).catch(() => {});
+        res.json({ escalation: entry, escalations, report: escalationReport({ signal, target, note, at, lang: req.body?.lang === "en" ? "en" : "id" }), channel: target === "komdigi" ? "https://aduankonten.id" : null });
+    } catch (error) {
+        logStructured("error", "Error escalating signal:", { error: error?.message || error });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /escalations?days=30 — escalated records in the caller's workspace, newest first, with who sent them where.
+router.get("/escalations", async (req, res) => {
+    try {
+        const ws = await resolveWorkspaceIdForUser(req.user.id, req.query.workspaceId);
+        if (!ws) return res.status(403).json({ error: "Workspace access denied" });
+        const { data, error } = await supabase.from('signals').select('id, title, platform, region, captured_at, metadata').eq('workspace_id', ws).not('metadata->escalations', 'is', null).order('captured_at', { ascending: false }).limit(200);
+        if (error) throw error;
+        const rows = (data || []).flatMap((s) => (s.metadata?.escalations || []).map((e) => ({ signalId: s.id, title: s.title, platform: s.platform, region: s.region, category: s.metadata?.cve?.category ?? null, ...e })));
+        rows.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+        res.json({ data: rows.slice(0, 100) });
+    } catch (error) {
+        logStructured("error", "Error listing escalations:", { error: error?.message || error });
         res.status(500).json({ error: "Internal server error" });
     }
 });

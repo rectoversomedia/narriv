@@ -221,7 +221,7 @@ const CVE_NARRATIVES = [
 
 export const CVE_SCENARIO = {
     key: "cve",
-    version: 5,
+    version: 6,
     logo: "/brand/demo-logos/simpul.png",
     ws: DEMO_WORKSPACES.cve,
     workspace: { name: "Simpul Damai (demo)", settings: { useCase: "cve", privacyMode: true } },
@@ -248,11 +248,14 @@ export const CVE_SCENARIO = {
     region: (platform, r, n) => pick(n.regions, r),
     criticalKey: "incite",
     // Each record carries its suggested category; some are already confirmed or dismissed by the team.
-    signalMetadata: (n, r) => {
+    signalMetadata: (n, r, i = 0) => {
         if (n.cve === "none") return { cve: { category: "none", confidence: 0.8, reason: null, model: "demo" } };
         const x = r();
         const review = x < 0.35 ? { status: "confirmed", by: "demo", at: new Date().toISOString() } : x < 0.45 && n.cve !== "counter_narrative" ? { status: "dismissed", by: "demo", at: new Date().toISOString() } : undefined;
-        return { cve: { category: n.cve, confidence: Math.round((0.7 + r() * 0.25) * 100) / 100, reason: n.reason, model: "demo", ...(review ? { review } : {}) } };
+        // Some confirmed risk records were already escalated to whoever must act (signals.routes.js /:id/escalate).
+        const target = { incitement: "polri", recruitment: "bnpt", propaganda: "bnpt", misinformation: "komdigi" }[n.cve] || "internal";
+        const escalations = review?.status === "confirmed" && n.cve !== "counter_narrative" && i % 3 === 0 ? [{ target, note: null, by: "demo", at: new Date(Date.now() - (2 + i) * 3600000).toISOString() }] : undefined;
+        return { cve: { category: n.cve, confidence: Math.round((0.7 + r() * 0.25) * 100) / 100, reason: n.reason, model: "demo", ...(review ? { review } : {}) }, ...(escalations ? { escalations } : {}) };
     },
     alerts: (people, owner) => [
         { key: "incite", title: "Seruan 'amaliyah' terhadap pos polisi di Jawa Tengah", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 26 * H, ago: 3 * H, level: "critical",

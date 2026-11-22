@@ -15,6 +15,8 @@ const norm = (s) => String(s || "")
  * written together also count, so "ArunikaPay", "Arunika Pay" and "#ArunikaPay" all match either spelling.
  */
 export function mentionsKeyword(text, keyword) {
+    const alts = keywordAlternatives(keyword);
+    if (alts.length > 1) return alts.some((a) => mentionsKeyword(text, a));
     const k = norm(keyword);
     if (!k) return true;
     const tokens = norm(text).split(" ").filter(Boolean);
@@ -29,6 +31,16 @@ export function mentionsKeyword(text, keyword) {
 
 /** The keyword as an exact-phrase search query: multi-word keywords are quoted so engines do not match any one word. */
 export function phraseQuery(keyword) {
+    const alts = keywordAlternatives(keyword);
+    if (alts.length > 1) return `(${alts.map(phraseQuery).join(" OR ")})`;
     const k = String(keyword || "").replace(/"/g, "").trim().replace(/\s+/g, " ");
     return /\s/.test(k) ? `"${k}"` : k;
+}
+
+/**
+ * A keyword can be a group of terms watched together: "radikalisme OR terorisme" (or "radikalisme | terorisme").
+ * Used by topic workspaces (PCVE) whose watch list is longer than the number of keywords checked each run.
+ */
+export function keywordAlternatives(keyword) {
+    return String(keyword || "").split(/\s+OR\s+|\s*\|\s*/).map((t) => t.trim()).filter(Boolean);
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EyeOff, Landmark, Loader2, Megaphone, ShieldAlert, type LucideIcon } from "lucide-react";
 import { setWorkspaceProfile, type WorkspaceSettingsResponse, type WorkspaceUseCase } from "@/lib/api-service";
@@ -53,7 +54,7 @@ export function MonitoringProfileCard({ settings }: { settings?: WorkspaceSettin
     {
       id: "cve",
       icon: ShieldAlert,
-      title: L("Preventing violent extremism (CVE)", "Pencegahan ekstremisme (CVE)"),
+      title: L("Information resilience (PCVE)", "Ketahanan Informasi (PCVE)"),
       body: L("Narratives of incitement, glorified violence, recruitment and incident hoaxes, plus counter-narratives, by region.", "Narasi ajakan kekerasan, glorifikasi, perekrutan, dan hoaks insiden, serta kontra-narasi, per wilayah."),
     },
   ];
@@ -119,7 +120,33 @@ export function MonitoringProfileCard({ settings }: { settings?: WorkspaceSettin
           <li className="py-1"><b className="font-black text-[#101334]">{L("Public sources only.", "Hanya sumber publik.")}</b> {L("News and public posts. Never private groups or chats.", "Berita dan postingan publik. Tidak pernah grup atau percakapan tertutup.")}</li>
         </ul>
       ) : null}
+      {useCase === "cve" ? <TelegramChannels initial={settings?.telegramChannels ?? []} /> : null}
       {save.isPending ? <p className="mt-3 flex items-center gap-2 text-[12px] font-semibold text-[#5A6478]"><Loader2 size={13} className="animate-spin" aria-hidden="true" />{L("Saving…", "Menyimpan…")}</p> : null}
     </section>
+  );
+}
+
+/** Public Telegram channels to watch (a PCVE workspace's own list, on top of Narriv's defaults). */
+function TelegramChannels({ initial }: { initial: string[] }) {
+  const L = useL();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const [text, setText] = useState(initial.map((c) => `@${c}`).join("\n"));
+  const save = useMutation({
+    mutationFn: () => setWorkspaceProfile({ telegramChannels: text.split(/[\s,]+/).filter(Boolean) }),
+    onSuccess: (r) => {
+      setText(r.telegram_channels.map((c) => `@${c}`).join("\n"));
+      void queryClient.invalidateQueries({ queryKey: ["workspace-settings"] });
+      toast.success(L(`${r.telegram_channels.length} channels watched.`, `${r.telegram_channels.length} kanal dipantau.`));
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : L("Not saved.", "Gagal disimpan.")),
+  });
+  return (
+    <div className="mt-4 rounded-[14px] bg-[#F7F8FC] p-4">
+      <p className="text-[13.5px] font-black text-[#101334]">{L("Telegram channels to watch", "Kanal Telegram yang dipantau")}</p>
+      <p className="mt-1 text-[12.5px] leading-relaxed text-[#5A6478]">{L("Public channels only (t.me/name). One per line. Narriv checks them every run against your keywords; private groups are never reachable.", "Hanya kanal publik (t.me/nama). Satu per baris. Narriv memeriksanya setiap putaran dengan kata kunci Anda; grup tertutup tidak pernah dijangkau.")}</p>
+      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} placeholder={"@namakanal\nhttps://t.me/kanallain"} className="mt-2 w-full resize-y rounded-[10px] border-[1.5px] border-[#D8DDEB] bg-white p-2.5 text-[13px] text-[#101334] outline-none focus:border-[#465FFF]" />
+      <button type="button" disabled={save.isPending} onClick={() => save.mutate()} className="mt-2 inline-flex h-9 items-center gap-2 rounded-[10px] bg-[#101334] px-4 text-[12.5px] font-black text-white disabled:opacity-60">{save.isPending ? <Loader2 size={13} className="animate-spin" /> : null}{L("Save channels", "Simpan kanal")}</button>
+    </div>
   );
 }

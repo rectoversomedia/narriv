@@ -9,6 +9,7 @@
  */
 import supabaseAdmin from "./supabase.js";
 import { mentionsKeyword, phraseQuery } from "./keyword-match.js";
+import { getWorkspaceProfile } from "./workspace-profile.js";
 
 const compact = (s) => String(s || "").normalize("NFKD").toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -68,6 +69,8 @@ export function isOnBrand(text, keyword, aliases) {
 
 /** The workspace's brand aliases (brand name from settings + its active keywords). */
 export async function workspaceBrandAliases(workspaceId, db = supabaseAdmin) {
+    // A PCVE workspace watches topics, not a brand: its keywords are read on their own.
+    if ((await getWorkspaceProfile(workspaceId, db).catch(() => null))?.useCase === "cve") return [];
     // Only the brand name the workspace set: a workspace's own name can be anything ("Tim PR"), and no brand means
     // no scoping (each keyword is read on its own, as before).
     const [{ data: settings }, { data: kws }] = await Promise.all([

@@ -214,6 +214,8 @@ export interface Signal {
   metadata?: { geo?: { provinces?: string[]; cities?: string[] } | null } & Record<string, unknown>;
   /** The CVE narrative category suggested for review, in CVE workspaces. */
   cve?: CveTag | null;
+  /** How many times a PCVE record was escalated (signals.routes.js /:id/escalate). */
+  escalations?: number;
   /** True when privacy mode hid the account, link and handles of this record. */
   privacyMasked?: boolean;
 }

@@ -67,6 +67,7 @@ export async function getWorkspaceSettings(req, res) {
             // What the workspace monitors for, and whether account identities are hidden (workspace-profile.js).
             use_case: profileFromSettings(workspaceData?.settings).useCase,
             privacy_mode: profileFromSettings(workspaceData?.settings).privacyMode,
+            telegram_channels: Array.isArray(workspaceData?.settings?.telegramChannels) ? workspaceData.settings.telegramChannels : [],
             // Plan and trial for the in-app trial banner; set by the Narriv team in the admin panel.
             plan_status: planStatus(workspaceData?.settings || {}),
             // WhatsApp alerts need Narriv's sender (FONNTE_TOKEN); until then the app says it is coming soon.
@@ -90,7 +91,7 @@ export async function getWorkspaceSettings(req, res) {
  */
 export async function setWorkspaceProfile(req, res) {
     try {
-        const { workspaceId, useCase, privacyMode } = req.body;
+        const { workspaceId, useCase, privacyMode, telegramChannels } = req.body;
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
         if (!scopedWorkspaceId) return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         const { data: workspace, error: readError } = await supabase.from("workspaces").select("settings").eq("id", scopedWorkspaceId).maybeSingle();
@@ -101,6 +102,8 @@ export async function setWorkspaceProfile(req, res) {
         if (useCase !== undefined) next.useCase = useCase;
         if (privacyMode !== undefined) next.privacyMode = privacyMode;
         else if (useCase === "cve" && current.useCase !== "cve") next.privacyMode = true;
+        // Public Telegram channels to watch (t.me/<name>); private groups are never reachable.
+        if (telegramChannels !== undefined) next.telegramChannels = [...new Set(telegramChannels.map((c) => c.replace(/^@|^https?:\/\/t\.me\/(s\/)?/i, "").replace(/\/.*$/, "").trim().toLowerCase()).filter((c) => /^[a-z0-9_]{4,64}$/.test(c)))];
 
         const { error } = await supabase.from("workspaces").update({ settings: next }).eq("id", scopedWorkspaceId);
         if (error) {
@@ -110,7 +113,7 @@ export async function setWorkspaceProfile(req, res) {
         forgetWorkspaceProfile(scopedWorkspaceId);
         const profile = profileFromSettings(next);
         await recordAuditLog({ userId: req.user.id, workspaceId: scopedWorkspaceId, event: "workspace_profile_updated", metadata: { use_case: profile.useCase, privacy_mode: profile.privacyMode } });
-        return res.json({ use_case: profile.useCase, privacy_mode: profile.privacyMode });
+        return res.json({ use_case: profile.useCase, privacy_mode: profile.privacyMode, telegram_channels: next.telegramChannels || [] });
     } catch (error) {
         logStructured("error", "Error updating workspace profile:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
