@@ -1,7 +1,7 @@
 // The /pitch slides, one component per slide, each in both languages (`en`). Product facts follow what Narriv does
 // today and the pricing page; sample screens use the fictional demo brand (Bank Arunika) and are labelled as such.
 import type { ReactNode } from "react";
-import { BellRing, Briefcase, Building2, CalendarClock, CalendarRange, Clock, FileText, Landmark, Languages, Layers, ListChecks, Megaphone, Shuffle, TrendingUp, UserX, Workflow } from "lucide-react";
+import { ShieldAlert, BellRing, Briefcase, Building2, CalendarClock, CalendarRange, Clock, FileText, Landmark, Languages, Layers, ListChecks, Megaphone, Shuffle, TrendingUp, UserX, Workflow } from "lucide-react";
 import { AMBER, Arrow, Icon, BLUE, Brush, Card, Check, Cross, Dark, Dot, GRADIENT, INK, INKED, Light, MONO, MUTED, NEG, NEU, Num, Platform, POS, Point, Ribbon, SampleTag, Stamp, Head } from "./kit";
 
 type P = { en: boolean };
@@ -373,14 +373,14 @@ export function Compare({ en }: P) {
 export function Audience({ en }: P) {
   const t = tr(en);
   const items = [
-    { icon: Megaphone, title: t("Corporate communication & PR", "Corporate communications & PR"), text: t("Peringatan dini, briefing harian, dan laporan untuk direksi.", "Early warning, a daily brief and reports for the board.") },
-    { icon: Building2, title: t("Bank, telko & BUMN", "Banks, telcos & SOEs"), text: t("Isu layanan dan keluhan nasabah terpantau sebelum menjadi berita.", "Service issues and customer complaints caught before they make the news.") },
-    { icon: Landmark, title: t("Kementerian & instansi", "Ministries & public agencies"), text: t("Memantau narasi kebijakan publik dan merespons dengan data.", "Track narratives around public policy and respond with evidence.") },
+    { icon: Megaphone, title: t("Brand, bank & BUMN", "Brands, banks & SOEs"), text: t("Peringatan dini, briefing harian, dan laporan reputasi untuk direksi.", "Early warning, a daily brief and reputation reports for the board.") },
+    { icon: Landmark, title: t("Kementerian & pemda", "Ministries & local government"), text: t("Suara warga dan isu layanan publik, dengan saran untuk kanal resmi.", "Citizen voices and public-service issues, with advice for official channels.") },
+    { icon: ShieldAlert, title: t("Ketahanan informasi", "Information resilience"), text: t("Hoaks, propaganda, dan ekstremisme: ditinjau manusia, dieskalasi ke pihak berwenang.", "Hoaxes, propaganda and extremism: reviewed by people, escalated to the authorities.") },
     { icon: Briefcase, title: t("Agensi PR & digital", "PR & digital agencies"), text: t("Beberapa klien dalam satu akun, laporan siap kirim ke klien.", "Several clients in one account, reports ready to send.") },
   ];
   return (
     <Dark tag={t("Untuk siapa", "Who it is for")}>
-      <Head dark center kicker={t("Dipakai oleh tim yang bertanggung jawab atas reputasi", "Built for teams accountable for reputation")} title={t(<>Untuk tim yang <Brush>tidak boleh kecolongan.</Brush></>, <>For teams that <Brush>can't be caught out.</Brush></>)} />
+      <Head dark center kicker={t("Satu platform, tiga kebutuhan", "One platform, three needs")} title={t(<>Untuk tim yang <Brush>tidak boleh kecolongan.</Brush></>, <>For teams that <Brush>can't be caught out.</Brush></>)} />
       <div style={{ position: "absolute", left: 96, right: 96, top: 500, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 30 }}>
         {items.map((it, k) => (
           <Card key={it.title} dark style={{ minHeight: 400, padding: 40, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>

@@ -3,7 +3,7 @@
 import type { Metadata } from "next";
 import Deck from "./deck";
 import { deck } from "./slides";
-import { ArunikaReport, Coordination, DefaultFlow, Escalation, FourLayers, Influencers, NarrativeFeed, Network, RadarDigest, RiskAndClaims } from "./arunika/slides";
+import { ArunikaReport, Coordination, DefaultFlow, Escalation, Forecast, FourLayers, Influencers, NarrativeFeed, Network, RadarDigest, RiskAndClaims, SignalMap, Trust as Measured, Voices } from "./arunika/slides";
 import { Reports } from "./slides";
 
 export const metadata: Metadata = {
@@ -25,11 +25,15 @@ function fullDeck(en: boolean) {
     ...slides.slice(sol, at),
     <NarrativeFeed key="feed" en={en} />,
     <RiskAndClaims key="riskclaims" en={en} />,
+    <Forecast key="forecast" en={en} />,
+    <SignalMap key="map" en={en} />,
     <DefaultFlow key="flow" en={en} />,
     <RadarDigest key="radar" en={en} />,
     <Network key="network" en={en} />,
     <Influencers key="influencers" en={en} />,
     <Coordination key="coord" en={en} />,
+    <Voices key="voices" en={en} />,
+    <Measured key="measured" en={en} />,
     // The report sample uses the same Bank Arunika numbers as the slides around it.
     ...slides.slice(at).map((s) => (s.key === "reports" ? <Reports key="reports" en={en} preview={<ArunikaReport en={en} />} /> : s)),
   ];
