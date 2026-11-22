@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getMockAlerts, getMockDashboardSummary, isDemoMode } from "../demo-mock-data";
-import { Alert, CveCategory, CveTag, DashboardSummary, DateRangeOptions, PaginatedResponse, Signal, SignalAnalysis } from "./core";
+import { Alert, CveCategory, CveIdeology, CveTag, DashboardSummary, DateRangeOptions, PaginatedResponse, Signal, SignalAnalysis } from "./core";
 
 // ---------------------------------------------------------------------------
 // Dashboard
@@ -150,6 +150,7 @@ export interface CveSummary {
   flagged: number;
   categories: Array<{ id: CveCategory; suggested: number; confirmed: number; dismissed: number }>;
   provinces: Array<{ code: string; name: string; total: number }>;
+  ideologies?: Array<{ id: CveIdeology; total: number }>;
 }
 
 export function getCveSummary(days: 1 | 7 | 30 | 90 = 30) {
@@ -157,8 +158,8 @@ export function getCveSummary(days: 1 | 7 | 30 | 90 = 30) {
 }
 
 /** A person's verdict on a suggested CVE category; `category` corrects it. */
-export function reviewCve(signalId: string, status: "confirmed" | "dismissed", category?: CveCategory) {
-  return apiClient<{ cve: CveTag }>(`/signals/${encodeURIComponent(signalId)}/cve-review`, { method: "POST", body: JSON.stringify({ status, ...(category ? { category } : {}) }) });
+export function reviewCve(signalId: string, status: "confirmed" | "dismissed", category?: CveCategory, ideology?: CveIdeology) {
+  return apiClient<{ cve: CveTag }>(`/signals/${encodeURIComponent(signalId)}/cve-review`, { method: "POST", body: JSON.stringify({ status, ...(category ? { category } : {}), ...(ideology ? { ideology } : {}) }) });
 }
 
 /** Suggests categories for up to 25 records that have none; call again while `remaining` is above zero. */

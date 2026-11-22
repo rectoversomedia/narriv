@@ -1,4 +1,4 @@
-import type { CveCategory } from "@/lib/api-service";
+import type { CveCategory, CveIdeology } from "@/lib/api-service";
 
 /**
  * The CVE narrative categories as shown in the app (the API's cve-categories.js holds what the AI is told).
@@ -15,3 +15,15 @@ export const CVE_CATEGORIES: Array<{ id: CveCategory; label: [string, string]; h
 ];
 
 export const cveCategory = (id: string | null | undefined) => CVE_CATEGORIES.find((c) => c.id === id) ?? null;
+
+/** Ideological strands (API cve-categories.js), read from what the content says, never from who wrote it. */
+export const CVE_IDEOLOGIES: Array<{ id: CveIdeology; label: [string, string] }> = [
+  { id: "jihadist", label: ["Violent Islamist / jihadist", "Islamis kekerasan / jihadis"] },
+  { id: "far_right", label: ["Far-right / accelerationist", "Ekstrem kanan / akselerasionis"] },
+  { id: "ethno_nationalist", label: ["Ethno-nationalist / communal", "Etno-nasionalis / komunal"] },
+  { id: "separatist", label: ["Separatist", "Separatis"] },
+  { id: "anti_government", label: ["Anti-government / conspiracy", "Anti-pemerintah / konspirasi"] },
+  { id: "other", label: ["Other / mixed", "Lainnya / campuran"] },
+  { id: "unclear", label: ["Unclear", "Belum jelas"] },
+];
+export const cveIdeology = (id: string | null | undefined) => CVE_IDEOLOGIES.find((c) => c.id === id) ?? null;

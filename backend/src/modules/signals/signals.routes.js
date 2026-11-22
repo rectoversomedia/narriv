@@ -16,7 +16,7 @@ import { classifyRecord, loadRelevanceContext } from "../../lib/brand-relevance.
 import { detectRegions, provinceByCode, provinceFromLabel, regionValuesFor } from "../../lib/indonesia-regions.js";
 import { getProfilesFor, getWorkspaceProfile } from "../../lib/workspace-profile.js";
 import { maskSignal } from "../../lib/privacy.js";
-import { CVE_CATEGORY_IDS, CVE_RISK_IDS, cveLabel } from "../../lib/cve-categories.js";
+import { CVE_CATEGORY_IDS, CVE_IDEOLOGY_IDS, CVE_RISK_IDS, cveLabel, ideologyLabel } from "../../lib/cve-categories.js";
 import { checkBudgetAllowance } from "../../lib/cost-management.js";
 
 const router = express.Router();
@@ -96,7 +96,7 @@ router.get("/", async (req, res) => {
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
 
-        const { keyword, platform, startDate, endDate, sentiment, narrativeId, relevance, analysis, region, cve, voice } = req.query;
+        const { keyword, platform, startDate, endDate, sentiment, narrativeId, relevance, analysis, region, cve, voice, ideology } = req.query;
 
         const safePage = Math.max(1, page);
         const safeLimit = Math.min(100, Math.max(1, limit));
@@ -132,6 +132,7 @@ router.get("/", async (req, res) => {
         // A province matches its own name and the city names older records stored as their region.
         if (region) query = query.in('region', regionValuesFor(region));
         if (cve) query = applyCveFilter(query, cve);
+        if (ideology && CVE_IDEOLOGY_IDS.includes(ideology)) query = query.eq('metadata->cve->>ideology', ideology);
         // Whose voice (lib/tone-learning.js): the brand's own people, or everyone else.
         if (voice === "internal" || voice === "partner") query = query.eq('metadata->>voice', voice);
         if (voice === "public") query = query.or('metadata->>voice.is.null,metadata->>voice.eq.public');
@@ -656,7 +657,7 @@ router.get("/cve-summary", async (req, res) => {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const days = [1, 7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
         const profile = await getProfilesFor(workspaceIds);
-        const empty = { days, enabled: profile.useCase === "cve", total: 0, classified: 0, unclassified: 0, flagged: 0, categories: [], provinces: [] };
+        const empty = { days, enabled: profile.useCase === "cve", total: 0, classified: 0, unclassified: 0, flagged: 0, categories: [], provinces: [], ideologies: [] };
         if (workspaceIds.length === 0) return res.json(empty);
         const since = new Date(Date.now() - days * 86400000).toISOString();
         const { data, error } = await supabase.from('signals').select('region, metadata').in('workspace_id', workspaceIds).gte('captured_at', since).limit(10000);
@@ -664,6 +665,7 @@ router.get("/cve-summary", async (req, res) => {
 
         const cats = new Map(CVE_CATEGORY_IDS.map((id) => [id, { id, suggested: 0, confirmed: 0, dismissed: 0 }]));
         const provinces = new Map();
+        const ideologies = new Map();
         let classified = 0;
         let flagged = 0;
         for (const row of data || []) {
@@ -678,6 +680,8 @@ router.get("/cve-summary", async (req, res) => {
             else entry.suggested++;
             if (CVE_RISK_IDS.includes(cve.category) && status !== "dismissed") {
                 flagged++;
+                const ideo = cve.ideology || "unclear";
+                ideologies.set(ideo, (ideologies.get(ideo) || 0) + 1);
                 const p = provinceFromLabel(row.region);
                 if (p) provinces.set(p.code, { code: p.code, name: p.name, total: (provinces.get(p.code)?.total || 0) + 1 });
             }
@@ -691,6 +695,8 @@ router.get("/cve-summary", async (req, res) => {
             flagged,
             categories: [...cats.values()],
             provinces: [...provinces.values()].sort((a, b) => b.total - a.total).slice(0, 8),
+            // Ideological strands of the open risk narratives (cve-categories.js CVE_IDEOLOGIES).
+            ideologies: [...ideologies.entries()].map(([id, n]) => ({ id, total: n })).sort((a, b) => b.total - a.total),
         });
     } catch (error) {
         logStructured("error", "Error fetching CVE summary:", { error: error?.message || error });
@@ -743,6 +749,8 @@ router.post("/:id/cve-review", async (req, res) => {
         const category = req.body?.category;
         if (!["confirmed", "dismissed"].includes(status)) return res.status(400).json({ error: "status must be confirmed or dismissed." });
         if (category !== undefined && !CVE_CATEGORY_IDS.includes(category)) return res.status(400).json({ error: "Unknown CVE category." });
+        const ideology = req.body?.ideology;
+        if (ideology !== undefined && !CVE_IDEOLOGY_IDS.includes(ideology)) return res.status(400).json({ error: "Unknown ideology." });
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const { data: signal } = await supabase.from('signals').select('id, workspace_id, metadata').eq('id', req.params.id).maybeSingle();
         if (!signal || !workspaceIds.includes(signal.workspace_id)) return res.status(404).json({ error: "Signal not found" });
@@ -752,7 +760,8 @@ router.post("/:id/cve-review", async (req, res) => {
         const previous = signal.metadata?.cve || {};
         const cve = {
             ...previous,
-            ...(category ? { category, corrected_from: previous.category ?? null } : {}),
+            ...(category && category !== previous.category ? { category, corrected_from: previous.category ?? null } : {}),
+            ...(ideology ? { ideology, ...(ideology !== previous.ideology ? { ideology_from: previous.ideology ?? null } : {}) } : {}),
             review: { status, by: req.user.id, at: new Date().toISOString() },
         };
         const { error } = await supabase.from('signals').update({ metadata: { ...(signal.metadata || {}), cve } }).eq('id', signal.id);
@@ -787,6 +796,7 @@ export function escalationReport({ signal, target, note, at, lang = "id" }) {
         `Dibuat: ${when(at)} (Narriv)`,
         "",
         `Kategori narasi: ${cat}${signal.metadata?.cve?.review?.status === "confirmed" ? " (sudah diverifikasi tim)" : ""}`,
+        ...(signal.metadata?.cve?.ideology ? [`Indikasi ideologi: ${ideologyLabel(signal.metadata.cve.ideology, "id")}`] : []),
         `Platform: ${signal.platform || "-"}`,
         `Wilayah: ${signal.region || "-"}`,
         `Waktu unggah: ${when(signal.published_at || signal.captured_at)}`,
@@ -804,6 +814,7 @@ export function escalationReport({ signal, target, note, at, lang = "id" }) {
         `Created: ${when(at)} (Narriv)`,
         "",
         `Narrative category: ${cat}${signal.metadata?.cve?.review?.status === "confirmed" ? " (verified by the team)" : ""}`,
+        ...(signal.metadata?.cve?.ideology ? [`Ideological strand: ${ideologyLabel(signal.metadata.cve.ideology, "en")}`] : []),
         `Platform: ${signal.platform || "-"}`,
         `Region: ${signal.region || "-"}`,
         `Posted: ${when(signal.published_at || signal.captured_at)}`,

@@ -26,7 +26,7 @@ import { RegionPanel } from "@/components/dashboard/region-panel";
 import { IndonesiaSignalMap } from "@/components/dashboard/indonesia-signal-map";
 import { CvePanel } from "@/components/dashboard/cve-panel";
 import { EscalateButton } from "@/components/dashboard/cve-escalate";
-import { CVE_CATEGORIES, cveCategory } from "@/lib/cve";
+import { CVE_CATEGORIES, CVE_IDEOLOGIES, cveCategory, cveIdeology } from "@/lib/cve";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED" | "UNANALYZED";
@@ -222,6 +222,11 @@ function CveChip({ id, cve, escalations = 0 }: { id: string; cve: CveTag | null;
       void queryClient.invalidateQueries({ queryKey: ["cve-summary"] });
     },
   });
+  // Correcting the ideology also confirms the category as it stands.
+  const ideo = useMutation({
+    mutationFn: (ideology: NonNullable<CveTag["ideology"]>) => reviewCve(id, "confirmed", undefined, ideology),
+    onSuccess: (r) => { setTag(r.cve); void queryClient.invalidateQueries({ queryKey: ["cve-summary"] }); },
+  });
   const cat = cveCategory(tag?.category);
   if (!tag || !cat) return null;
   const status = tag.review?.status;
@@ -236,6 +241,15 @@ function CveChip({ id, cve, escalations = 0 }: { id: string; cve: CveTag | null;
           <button type="button" disabled={review.isPending} onClick={() => review.mutate("confirmed")} className="rounded-full bg-white px-1.5 py-0.5 text-[11px] font-bold text-[#047857] shadow-[inset_0_0_0_1px_#A7E3C9] hover:bg-[#E8F7F0]">{pickL("Correct", "Benar")}</button>
           <button type="button" disabled={review.isPending} onClick={() => review.mutate("dismissed")} className="rounded-full bg-white px-1.5 py-0.5 text-[11px] font-bold text-[#5A6478] shadow-[inset_0_0_0_1px_#DDE3EF] hover:bg-slate-50">{pickL("Not this", "Bukan")}</button>
         </>
+      ) : null}
+      {cat.risk && status !== "dismissed" && tag.ideology ? (
+        isDemo ? (
+          <span className="rounded-full bg-[#F1F4FA] px-2 py-0.5 text-[11px] font-bold text-[#4A5578]" title={pickL("Ideological strand", "Indikasi ideologi")}>{pickL(cveIdeology(tag.ideology)?.label[0] ?? "", cveIdeology(tag.ideology)?.label[1] ?? "")}</span>
+        ) : (
+          <select aria-label={pickL("Ideological strand", "Indikasi ideologi")} value={tag.ideology} disabled={ideo.isPending} onChange={(e) => ideo.mutate(e.target.value as NonNullable<CveTag["ideology"]>)} className="max-w-[190px] rounded-full border-0 bg-[#F1F4FA] py-0.5 pl-2 pr-6 text-[11px] font-bold text-[#4A5578]">
+            {CVE_IDEOLOGIES.map((x) => <option key={x.id} value={x.id}>{pickL(x.label[0], x.label[1])}</option>)}
+          </select>
+        )
       ) : null}
       {cat.risk && status !== "dismissed" && (!isDemo || escalations > 0) ? <EscalateButton id={id} count={escalations} /> : null}
     </span>

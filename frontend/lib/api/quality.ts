@@ -8,3 +8,7 @@ export type QualitySample = { id: string; title: string; excerpt: string; platfo
 export const getToneAccuracy = () => apiClient<ToneAccuracy>("/api/quality");
 export const getQualitySample = (n = 20) => apiClient<{ data: QualitySample[] }>(`/api/quality/sample?n=${n}`);
 export const reviewTone = (signalId: string, tone: ToneKey) => apiClient<{ correct: boolean }>("/api/quality/review", { method: "POST", body: JSON.stringify({ signalId, tone }) });
+
+export type CveAccuracy = { n: number; accuracy: number | null; interval: { low: number; high: number } | null; enough: boolean; byCategory: Array<{ id: string; n: number; accuracy: number | null; dismissed: number; corrected: number }> };
+/** PCVE category accuracy from the team's confirm / dismiss / correct reviews. */
+export const getCveAccuracy = () => apiClient<CveAccuracy>("/api/quality/cve");

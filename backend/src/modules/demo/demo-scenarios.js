@@ -221,7 +221,7 @@ const CVE_NARRATIVES = [
 
 export const CVE_SCENARIO = {
     key: "cve",
-    version: 6,
+    version: 7,
     logo: "/brand/demo-logos/simpul.png",
     ws: DEMO_WORKSPACES.cve,
     workspace: { name: "Simpul Damai (demo)", settings: { useCase: "cve", privacyMode: true } },
@@ -255,7 +255,11 @@ export const CVE_SCENARIO = {
         // Some confirmed risk records were already escalated to whoever must act (signals.routes.js /:id/escalate).
         const target = { incitement: "polri", recruitment: "bnpt", propaganda: "bnpt", misinformation: "komdigi" }[n.cve] || "internal";
         const escalations = review?.status === "confirmed" && n.cve !== "counter_narrative" && i % 3 === 0 ? [{ target, note: null, by: "demo", at: new Date(Date.now() - (2 + i) * 3600000).toISOString() }] : undefined;
-        return { cve: { category: n.cve, confidence: Math.round((0.7 + r() * 0.25) * 100) / 100, reason: n.reason, model: "demo", ...(review ? { review } : {}) }, ...(escalations ? { escalations } : {}) };
+        // The ideological strand the content shows (cve-categories.js CVE_IDEOLOGIES); counter-narratives carry none.
+        const ideology = { thogut: "jihadist", syuhada: "jihadist", incite: "jihadist", recruit: "jihadist", dehuman: "ethno_nationalist", hoax_attack: "unclear" }[n.key];
+        // A few confirmed records were corrected by the reviewer (the AI had suggested a neighbouring category).
+        const corrected = review?.status === "confirmed" && i % 6 === 3 ? { corrected_from: { incitement: "propaganda", propaganda: "incitement", recruitment: "propaganda", delegitimization: "propaganda", dehumanization: "incitement", misinformation: "delegitimization", counter_narrative: "none" }[n.cve] } : {};
+        return { cve: { category: n.cve, confidence: Math.round((0.7 + r() * 0.25) * 100) / 100, reason: n.reason, model: "demo", ...(ideology ? { ideology } : {}), ...corrected, ...(review ? { review } : {}) }, ...(escalations ? { escalations } : {}) };
     },
     alerts: (people, owner) => [
         { key: "incite", title: "Seruan 'amaliyah' terhadap pos polisi di Jawa Tengah", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 26 * H, ago: 3 * H, level: "critical",

@@ -221,11 +221,14 @@ export interface Signal {
 }
 
 export type CveCategory = "incitement" | "propaganda" | "dehumanization" | "delegitimization" | "recruitment" | "misinformation" | "counter_narrative";
+export type CveIdeology = "jihadist" | "far_right" | "ethno_nationalist" | "separatist" | "anti_government" | "other" | "unclear";
 export interface CveTag {
   category: CveCategory | "none";
   confidence: number;
   reason: string | null;
   corrected_from?: string | null;
+  /** Ideological strand the content shows, on risk narratives (cve-categories.js CVE_IDEOLOGIES). */
+  ideology?: CveIdeology | null;
   review?: { status: "confirmed" | "dismissed"; by: string; at: string };
 }
 

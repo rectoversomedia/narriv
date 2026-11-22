@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, ExternalLink } from "lucide-react";
-import { getQualitySample, getToneAccuracy, reviewTone, type ToneKey } from "@/lib/api-service";
+import { getCveAccuracy, getQualitySample, getToneAccuracy, reviewTone, type ToneKey } from "@/lib/api-service";
+import { useWorkspaceUseCase } from "@/lib/use-case";
+import { cveCategory } from "@/lib/cve";
 import { useL } from "@/lib/use-l";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
@@ -24,6 +26,8 @@ export default function QualityPage() {
   const toast = useToast();
   const qc = useQueryClient();
   const acc = useQuery({ queryKey: ["tone-accuracy"], queryFn: getToneAccuracy });
+  const { useCase } = useWorkspaceUseCase();
+  const cveAcc = useQuery({ queryKey: ["cve-accuracy"], queryFn: getCveAccuracy, enabled: useCase === "cve" });
   const sample = useQuery({ queryKey: ["quality-sample"], queryFn: () => getQualitySample(20) });
   const [done, setDone] = useState<string[]>([]);
   const review = useMutation({
@@ -46,6 +50,38 @@ export default function QualityPage() {
         <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-[#101334] sm:text-[28px]">{L("Accuracy Check", "Uji Akurasi")}</h1>
         <p className="mt-1 max-w-2xl text-[14px] text-[#5F6B94]">{L("Check the AI's tone on real records. The accuracy is computed only from these checks, so the number you show a client is measured, not claimed.", "Periksa nada AI pada catatan asli. Akurasi dihitung hanya dari pemeriksaan ini, jadi angka yang ditunjukkan ke klien benar-benar terukur, bukan klaim.")}</p>
       </header>
+
+      {useCase === "cve" && cveAcc.data ? (
+        <section className={cn(BOX, "grid gap-5 md:grid-cols-[260px_1fr]")}>
+          <div className="grid place-items-center rounded-[16px] bg-[#070A1F] p-5 text-center text-white">
+            <div>
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#A5B4FF]">{L("PCVE category accuracy", "Akurasi kategori PCVE")}</p>
+              <p className="mt-2 text-[56px] font-black leading-none">{cveAcc.data.accuracy != null ? `${cveAcc.data.accuracy}%` : "—"}</p>
+              <p className="mt-2 text-[12.5px] text-white/70">{cveAcc.data.n ? L(`from ${cveAcc.data.n} reviewed records`, `dari ${cveAcc.data.n} catatan yang ditinjau`) : L("No records reviewed yet", "Belum ada catatan yang ditinjau")}</p>
+              {cveAcc.data.interval ? <p className="mt-1 text-[11.5px] text-white/55">{L(`95% range ${cveAcc.data.interval.low}–${cveAcc.data.interval.high}%`, `Rentang 95%: ${cveAcc.data.interval.low}–${cveAcc.data.interval.high}%`)}</p> : null}
+              <span className={cn("mt-3 inline-block rounded-full px-3 py-1 text-[11.5px] font-black", cveAcc.data.enough ? "bg-[#12A66A]" : "bg-white/15")}>{cveAcc.data.enough ? L("Valid sample", "Sampel sah") : L(`${Math.max(0, 50 - cveAcc.data.n)} more to a valid sample`, `${Math.max(0, 50 - cveAcc.data.n)} lagi untuk sampel sah`)}</span>
+            </div>
+          </div>
+          <div className="grid content-start gap-3">
+            <p className="text-[13px] font-bold text-[#5F6B94]">{L("Per category the AI suggested · correct = confirmed as suggested", "Per kategori yang disarankan AI · benar = dikonfirmasi tanpa diubah")}</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {cveAcc.data.byCategory.filter((c) => c.n > 0).map((c) => {
+                const cat = cveCategory(c.id);
+                return (
+                  <div key={c.id} className="rounded-[12px] bg-[#F7F8FC] px-4 py-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={cn("rounded-full px-2.5 py-0.5 text-[12px] font-black", cat?.tone)}>{cat ? L(cat.label[0], cat.label[1]) : c.id}</span>
+                      <span className="text-[14px] font-black tabular-nums text-[#101334]">{c.accuracy != null ? `${c.accuracy}%` : "—"} <span className="text-[12px] font-semibold text-[#5A6478]">· n={c.n}</span></span>
+                    </div>
+                    {c.dismissed || c.corrected ? <p className="mt-1 text-[11.5px] font-semibold text-[#5A6478]">{L(`${c.dismissed} dismissed · ${c.corrected} corrected`, `${c.dismissed} ditolak · ${c.corrected} dikoreksi`)}</p> : null}
+                  </div>
+                );
+              })}
+            </div>
+            <p className="rounded-[12px] bg-[#EEF1FF] px-4 py-3 text-[13px] font-semibold text-[#31406B]">{L("Measured from the team's own reviews in Monitoring: confirm, dismiss, or correct the category. Every review improves this number's reliability.", "Diukur dari tinjauan tim sendiri di Percakapan: konfirmasi, tolak, atau koreksi kategorinya. Setiap tinjauan membuat angka ini makin bisa dipercaya.")}</p>
+          </div>
+        </section>
+      ) : null}
 
       <section className={cn(BOX, "grid gap-5 md:grid-cols-[260px_1fr]")}>
         <div className="grid place-items-center rounded-[16px] bg-[#070A1F] p-5 text-center text-white">

@@ -3,7 +3,8 @@ import supabase from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
-import { toneAccuracy, normalTone } from "../../lib/tone-accuracy.js";
+import { toneAccuracy, normalTone, wilson } from "../../lib/tone-accuracy.js";
+import { cveAccuracy } from "../../lib/cve-categories.js";
 
 /**
  * Measured accuracy: people check the AI's tone on a sample of records (Benar / Salah + the right tone). Each verdict
@@ -28,6 +29,20 @@ router.get("/", async (req, res) => {
         res.json(toneAccuracy((data || []).map((r) => r.metadata.tone_review)));
     } catch (error) {
         logStructured("error", "quality_fetch_failed", { error: error?.message });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /api/quality/cve — PCVE category accuracy from the team's confirm / dismiss / correct reviews.
+router.get("/cve", async (req, res) => {
+    try {
+        const ws = await resolveWorkspaceIdForUser(req.user.id, req.query.workspaceId);
+        if (!ws) return res.status(403).json({ error: "Workspace access denied" });
+        const { data, error } = await supabase.from("signals").select("metadata").eq("workspace_id", ws).not("metadata->cve->review", "is", null).limit(5000);
+        if (error) throw error;
+        res.json(cveAccuracy((data || []).map((r) => r.metadata?.cve), wilson));
+    } catch (error) {
+        logStructured("error", "quality_cve_failed", { error: error?.message });
         res.status(500).json({ error: "Internal server error" });
     }
 });
