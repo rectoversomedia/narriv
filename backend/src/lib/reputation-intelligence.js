@@ -26,6 +26,8 @@ export async function computeReputationIntelligence({ workspaceId, windowHours =
             .from("signals")
             .select("id, sentiment, captured_at, source_id, platform")
             .eq("workspace_id", workspaceId)
+            // The brand's own people (voice "internal") are not public reputation.
+            .or("metadata->>voice.is.null,metadata->>voice.neq.internal")
             .gte("captured_at", sinceIso)
             .then((r) => r.data || []),
         baseSupabaseAdmin

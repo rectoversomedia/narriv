@@ -41,7 +41,8 @@ export function riskLevel(score) {
  * @param signals  member records: sentiment / analyses, platform, captured_at
  */
 export function narrativeRisk(cluster, signals, now = Date.now()) {
-    const list = signals || [];
+    // The brand's own people (voice "internal", lib/tone-learning.js) are not public risk.
+    const list = (signals || []).filter((s) => s?.metadata?.voice !== "internal");
     const total = list.length;
     if (!total) return null;
     const factors = [];

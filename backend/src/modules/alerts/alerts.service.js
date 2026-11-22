@@ -298,6 +298,10 @@ async function detectAlertsNow(workspaceId) {
         logStructured("error", "Error fetching signals for alert detection:", { error: signalsError?.message || signalsError });
         return alerts;
     }
+    // The brand's own people (voice "internal", lib/tone-learning.js) never raise a risk alert.
+    if (Array.isArray(recentSignals)) {
+        for (let i = recentSignals.length - 1; i >= 0; i--) if (recentSignals[i]?.metadata?.voice === "internal") recentSignals.splice(i, 1);
+    }
 
     if (!recentSignals || recentSignals.length === 0) {
         return alerts;

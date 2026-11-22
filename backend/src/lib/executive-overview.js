@@ -125,9 +125,9 @@ export async function computeExecutiveOverview({ workspaceId, windowHours = 168 
 
     const [current, prior, clustersRes, alertsRes, ctx, plansRes, casesRes] = await Promise.all([
         db.from("signals").select("id, title, content, url, platform, author, sentiment, severity, published_at, captured_at")
-            .eq("workspace_id", workspaceId).gte("captured_at", since).order("captured_at", { ascending: false }).limit(1000),
+            .eq("workspace_id", workspaceId).or("metadata->>voice.is.null,metadata->>voice.neq.internal").gte("captured_at", since).order("captured_at", { ascending: false }).limit(1000),
         db.from("signals").select("id, title, content, sentiment, platform")
-            .eq("workspace_id", workspaceId).gte("captured_at", priorSince).lt("captured_at", since).limit(1000),
+            .eq("workspace_id", workspaceId).or("metadata->>voice.is.null,metadata->>voice.neq.internal").gte("captured_at", priorSince).lt("captured_at", since).limit(1000),
         db.from("narrative_clusters").select("id, title, sentiment, created_at, updated_at, narrative_cluster_signals(signal_id)")
             .eq("workspace_id", workspaceId).order("updated_at", { ascending: false, nullsFirst: false }).limit(100),
         db.from("alerts").select("id, title, severity, status, created_at")

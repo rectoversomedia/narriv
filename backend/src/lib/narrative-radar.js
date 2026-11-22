@@ -21,7 +21,7 @@ export async function buildRadar(workspaceId, { db = supabase, now = Date.now(),
     const since = new Date(now - 14 * 86400000).toISOString();
     const { data: clusters } = await db
         .from("narrative_clusters")
-        .select("id, title, description, keywords, sentiment, metadata, narrative_cluster_signals(signal:signals(id, title, platform, sentiment, captured_at, analyses:signal_analyses(analysis)))")
+        .select("id, title, description, keywords, sentiment, metadata, narrative_cluster_signals(signal:signals(id, title, platform, sentiment, captured_at, metadata, analyses:signal_analyses(analysis)))")
         .eq("workspace_id", workspaceId)
         .gte("updated_at", since)
         .limit(60);
