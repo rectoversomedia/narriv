@@ -44,7 +44,7 @@ const CASES: Case[] = [
   {
     key: "cve",
     icon: ShieldAlert,
-    sector: ["Countering Violent Extremism", "Pencegahan Ekstremisme"],
+    sector: ["Information Resilience", "Ketahanan Informasi"],
     trigger: ["After a security incident, videos praising the attacker and hoaxes about the victims spread on social media in one province.", "Setelah insiden keamanan, video yang memuji pelaku dan hoaks soal korban menyebar di media sosial di satu provinsi."],
     detect: ["Narriv flags incitement, glorification and incident hoaxes by region for your team to review, without showing who posted them.", "Narriv menandai narasi ajakan kekerasan, glorifikasi, dan hoaks per wilayah untuk ditinjau tim, tanpa menampilkan identitas akun."],
     action: ["The team sends counter-narratives and official clarifications to the most affected region, and watches whether messages of peace reach people.", "Tim menyiapkan kontra-narasi dan klarifikasi resmi untuk wilayah paling terdampak, lalu memantau apakah pesan damai menjangkau publik."],
