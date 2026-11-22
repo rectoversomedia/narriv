@@ -106,6 +106,15 @@
   to { opacity: 1; transform: rotate(0deg) scale(1); }
 }
 
+/* Dark mode (Settings → Tampilan): the app's variables here; every color utility in app/dark.css. */
+html.dark {
+  --background: #0E1226; --foreground: #E9E9F2; --app-bg: #0B0F22; --text: #E9E9F2; --text-soft: #C3C8DE; --text-muted: #9AA3C4;
+  --surface: #15192E; --surface-soft: #1A1F38; --card: #15192E; --card-foreground: #E9E9F2; --popover: #15192E; --popover-foreground: #E9E9F2;
+  --muted: #1C2140; --muted-foreground: #9AA3C4; --border: #2A3052; --input: #1C2140; --line: #2A3052; --line-soft: #232846;
+  --text-body: #B6BCD6; --text-subtle: #9AA3C4; --badge-slate-bg: #1C2140; --ink: #3A4170;
+}
+html.dark body { background: var(--app-bg); color: var(--text); }
+
 body {
   min-height: 100%;
   background: var(--app-bg);
@@ -514,3 +523,8 @@ html.narriv-revealing main { animation: narrivLaunchPage 1s cubic-bezier(0.22, 1
   .nv-auth-card .mt-5 { margin-top: 12px; }
   .nv-auth-card .mb-5 { margin-bottom: 12px; }
 }
+
+/* Dark mode: the paper turns to night with a faint light dot matrix; the light glows at the top are a soft blue. */
+html.dark .nv-paper { background-color: #0B0F22; background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1.2px); }
+html.dark .nv-glow { opacity: 0.25; }
+html.dark .nv-glow > div { background-color: #465FFF; }

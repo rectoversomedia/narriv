@@ -1,5 +1,6 @@
 "use client";
 
+import { AppearanceCard } from "@/components/settings/appearance-card";
 import { BrandMark } from "@/components/dashboard/brand-hero";
 import Link from "next/link";
 import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
@@ -505,6 +506,9 @@ export default function SettingsPage() {
           </button>
         </div>
       ) : null}
+
+      {/* Light / dark / follow device. */}
+      <AppearanceCard />
 
       {/* What the workspace watches comes first: it decides everything else on Narriv. */}
       <MonitoringKeywordsPanel />

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import "./dark.css";
 import { ReactQueryProvider } from "@/components/providers/react-query-provider";
 import { IntlProvider } from "@/components/providers/intl-provider";
 import { ToastProvider } from "@/components/ui/toast";

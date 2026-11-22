@@ -1,5 +1,6 @@
 "use client";
 
+import { useApplyTheme } from "@/lib/theme";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -15,6 +16,7 @@ import { useUiStore } from "@/store/useUiStore";
 import { signalDashboardReady } from "@/lib/launch";
 
 export function DashboardShell({ children }: { children: ReactNode }) {
+  useApplyTheme();
   const router = useRouter();
   const pathname = usePathname();
   const token = useAuthStore((state) => state.token);
@@ -82,7 +84,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         <Topbar />
         {/* A soft colour wash behind every page: white cards read as cards, and pages are not flat grey. */}
         <main className="nv-paper relative flex-1 px-4 pb-32 pt-6 sm:px-6 lg:px-6 lg:pb-10 2xl:px-8">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[420px] overflow-hidden">
+          <div aria-hidden="true" className="nv-glow pointer-events-none absolute inset-x-0 top-0 h-[420px] overflow-hidden">
             <div className="absolute -left-24 -top-32 h-[360px] w-[520px] rounded-full bg-[#C7D2FE] opacity-40 blur-[110px]" />
             <div className="absolute -right-24 -top-24 h-[320px] w-[460px] rounded-full bg-[#FBCFE8] opacity-35 blur-[110px]" />
           </div>
