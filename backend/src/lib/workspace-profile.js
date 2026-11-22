@@ -42,6 +42,19 @@ export async function getProfilesFor(workspaceIds = [], db = supabase) {
     };
 }
 
+/**
+ * What every AI prompt must know about a non-brand workspace, so its advice fits the work: a government office
+ * serves citizens, and an information-resilience programme (preventing violent extremism, hoaxes and propaganda)
+ * reviews, escalates and counters narratives. Empty for brand workspaces (the prompts' default).
+ */
+export async function useCasePrompt(workspaceId, db = supabase) {
+    if (!workspaceId) return "";
+    const { useCase } = await getWorkspaceProfile(workspaceId, db).catch(() => ({ useCase: "brand" }));
+    if (useCase === "cve") return "CONTEXT: This workspace is an information-resilience programme (preventing violent extremism, hoaxes and propaganda) run by a public institution or civil-society organisation. Its name is the organisation doing the monitoring, never a brand under attack, and the content it monitors is about society, not about it. Write advice for the monitoring team: review flagged narratives, escalate real threats to the right authority (BNPT, Komdigi, the police), strengthen counter-narratives with credible messengers (religious and community leaders, former extremists, educators), and coordinate with local government. Never suggest press statements defending the organisation, brand reputation, marketing, promotions, customers or sales. Never profile or name private individuals. Measure success by fewer risk narratives and wider reach of counter-narratives, not by reputation.\n\n";
+    if (useCase === "gov") return "CONTEXT: This workspace is a government institution in Indonesia. Its audience is citizens, not customers. Write advice for the public-communication team: clarify public services and policies on official channels, coordinate with the unit in charge, answer citizens' complaints and counter hoaxes about programmes. Never suggest marketing, promotions or sales.\n\n";
+    return "";
+}
+
 export function forgetWorkspaceProfile(workspaceId) {
     cache.delete(workspaceId);
 }

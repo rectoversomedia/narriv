@@ -453,7 +453,7 @@ export type EscalationRow = Escalation & { signalId: string; title: string; plat
 
 /** Records the escalation and returns the report to send through the official channel (nothing is sent by Narriv). */
 export function escalateSignal(signalId: string, target: EscalationTarget, note?: string) {
-  return apiClient<{ escalation: Escalation; escalations: Escalation[]; report: string; channel: string | null }>(`/signals/${encodeURIComponent(signalId)}/escalate`, { method: "POST", body: JSON.stringify({ target, ...(note ? { note } : {}) }) });
+  return apiClient<{ escalation: Escalation; escalations: Escalation[]; report: string; channel: string | null; preview?: boolean }>(`/signals/${encodeURIComponent(signalId)}/escalate`, { method: "POST", body: JSON.stringify({ target, ...(note ? { note } : {}) }) });
 }
 
 export function getEscalations() {

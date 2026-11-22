@@ -1,5 +1,10 @@
 "use client";
 
+import { useWorkspaceUseCase } from "@/lib/use-case";
+import { getCveSummary } from "@/lib/api-service";
+import { CVE_CATEGORIES } from "@/lib/cve";
+const CVE_RISK = CVE_CATEGORIES.filter((c) => c.risk).map((c) => c.id) as string[];
+
 import { tidyText } from "@/lib/tidy-text";
 import { STATUS_COLOR, STATUS_WORD, statusFromRisk } from "@/lib/status";
 import { useState } from "react";
@@ -107,6 +112,10 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
   const [investigate, setInvestigate] = useState<string | null>(null);
   // Same numbers as Early Warnings: active = not resolved, across all time.
   const alertsSummary = useQuery({ queryKey: ["brief-alerts-summary"], queryFn: () => getAlertsSummary(), staleTime: 30 * 1000 }).data;
+  // An information-resilience workspace has no brand reputation: its fourth figure is the open risk narratives.
+  const { useCase } = useWorkspaceUseCase();
+  const cveSum = useQuery({ queryKey: ["cve-summary", 30], queryFn: () => getCveSummary(30), enabled: useCase === "cve", staleTime: 60_000 }).data;
+  const cveToReview = (cveSum?.categories ?? []).filter((c) => CVE_RISK.includes(c.id)).reduce((n, c) => n + c.suggested, 0);
   const activeAlerts = alertsSummary ? Math.max(0, (alertsSummary.total ?? 0) - (alertsSummary.by_status?.resolved ?? 0)) : null;
   const levelTone = (p: string) => (p === "critical" || p === "high" ? "bg-[#B42318] text-white" : p === "medium" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#E5F6EE] text-[#047857]");
 
@@ -133,7 +142,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
             {drivers[0] || repLook ? (
               <span className="mt-2 block text-[18px] font-bold leading-snug tracking-[-0.01em] text-[#31406B] sm:text-[22px]">
                 {drivers[0] ? L(`Mostly from ${L(...(DRIVER_LABELS[drivers[0].key] ?? [drivers[0].key, drivers[0].key]))}.`, `Paling banyak karena ${L(...(DRIVER_LABELS[drivers[0].key] ?? [drivers[0].key, drivers[0].key]))}.`) : null}
-                {repLook ? <>{" "}{L("Reputation is ", "Reputasi ")}<span style={{ color: repLook.color }}>{L(...repLook.word).toLowerCase()}</span>.</> : null}
+                {repLook && useCase !== "cve" ? <>{" "}{L("Reputation is ", "Reputasi ")}<span style={{ color: repLook.color }}>{L(...repLook.word).toLowerCase()}</span>.</> : null}
               </span>
             ) : null}
           </h2>
@@ -143,7 +152,9 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
               { label: L("New Mentions", "Percakapan Baru"), value: newSignals === null ? "—" : String(newSignals), sub: L("in this period", "di periode ini"), color: "var(--narriv-ink, #101334)" },
               { label: L("Active Alerts", "Peringatan Aktif"), value: activeAlerts === null ? String(newAlerts) : String(activeAlerts), sub: L(`${newAlerts} new in this window`, `${newAlerts} baru di periode ini`), color: (activeAlerts ?? newAlerts) ? "#B45309" : "#101334" },
               { label: L("Risk Index", "Indeks Risiko"), value: risk ? `${riskScore}` : "—", sub: risk ? `/100 · ${L(...risk.word)}` : L("not enough data", "data belum cukup"), color: risk?.color ?? "#5A6478", bar: risk ? riskScore : undefined, barColor: risk?.bar },
-              { label: L("Reputation", "Reputasi"), value: repLook ? `${repScore}` : "—", sub: repLook ? `/100 · ${L(...repLook.word)}` : L("not enough data", "data belum cukup"), color: repLook?.color ?? "#5A6478", bar: repLook ? repScore : undefined, barColor: repLook?.bar },
+              useCase === "cve"
+                ? { label: L("Open Risk Narratives", "Narasi Berisiko Terbuka"), value: cveSum ? String(cveSum.flagged) : "—", sub: cveSum ? L(`${cveToReview} waiting for review`, `${cveToReview} menunggu ditinjau`) : L("not enough data", "data belum cukup"), color: cveSum?.flagged ? "#B42318" : "#5A6478" }
+                : { label: L("Reputation", "Reputasi"), value: repLook ? `${repScore}` : "—", sub: repLook ? `/100 · ${L(...repLook.word)}` : L("not enough data", "data belum cukup"), color: repLook?.color ?? "#5A6478", bar: repLook ? repScore : undefined, barColor: repLook?.bar },
             ].map((m) => (
               <div key={m.label} className="rounded-[14px] bg-[#F6F7FC] px-4 py-3.5">
                 <dt className="text-[11.5px] font-bold text-[#5F6B94]">{m.label}</dt>

@@ -840,9 +840,15 @@ router.post("/:id/escalate", async (req, res) => {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const { data: signal } = await supabase.from('signals').select('id, workspace_id, title, content, url, author, platform, region, published_at, captured_at, metadata').eq('id', req.params.id).maybeSingle();
         if (!signal || !workspaceIds.includes(signal.workspace_id)) return res.status(404).json({ error: "Signal not found" });
-        const role = await getWorkspaceRole(req.user.id, signal.workspace_id);
-        if (!["owner", "admin", "analyst"].includes(role)) return res.status(403).json({ error: "Only workspace members who analyse records can escalate them." });
+        // A demo visitor sees the report Narriv would write, but nothing is stored or logged.
+        const demo = req.user?.isDemo === true || String(req.user?.id || "").startsWith("demo");
+        const role = demo ? null : await getWorkspaceRole(req.user.id, signal.workspace_id);
+        if (!demo && !["owner", "admin", "analyst"].includes(role)) return res.status(403).json({ error: "Only workspace members who analyse records can escalate them." });
         const at = new Date().toISOString();
+        if (demo) {
+            const existing = Array.isArray(signal.metadata?.escalations) ? signal.metadata.escalations : [];
+            return res.json({ preview: true, escalation: { target, note: note || null, by: req.user.id, at }, escalations: existing, report: escalationReport({ signal, target, note, at, lang: req.body?.lang === "en" ? "en" : "id" }), channel: target === "komdigi" ? "https://aduankonten.id" : null });
+        }
         const entry = { target, note: note || null, by: req.user.id, at };
         const escalations = [...(Array.isArray(signal.metadata?.escalations) ? signal.metadata.escalations : []), entry].slice(-20);
         const { error } = await supabase.from('signals').update({ metadata: { ...(signal.metadata || {}), escalations } }).eq('id', signal.id);

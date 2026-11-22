@@ -126,7 +126,7 @@ export const verifyTokenSSE = (req, res, next) => {
 // Demo sessions (the public "see the demo" login) share one sample workspace, so they may look but not change
 // anything or start paid work (AI analysis, Ask AI, Apify runs, monitoring runs). Reads pass, and so do the few
 // POSTs that only read or end the session.
-const DEMO_ALLOWED_WRITES = [/^\/auth\//, /^\/subscriptions\/check-(feature|limit)$/, /^\/notifications(\/|$)/];
+const DEMO_ALLOWED_WRITES = [/^\/auth\//, /^\/subscriptions\/check-(feature|limit)$/, /^\/notifications(\/|$)/, /\/signals\/[^/]+\/escalate$/]; // escalate: a demo visitor gets the report as a preview, nothing is stored
 
 export const demoReadOnly = (req, res, next) => {
     if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();

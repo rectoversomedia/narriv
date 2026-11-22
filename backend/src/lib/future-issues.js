@@ -5,6 +5,7 @@
  * into 3–6 forecasts, each tied to the evidence it came from and to the issues it grows out of, with the early
  * signs to watch and what to prepare now. Results are stored (raw_documents "future:<ts>") and reused for 12 hours.
  */
+import { getWorkspaceProfile } from "./workspace-profile.js";
 import supabase from "./supabase.js";
 import { aiJson } from "./ai-json.js";
 import { buildRadar } from "./narrative-radar.js";
@@ -89,12 +90,17 @@ export async function generateFutureIssues(workspaceId, { db = supabase, chat, n
     if (!ctx.records30d && !ctx.issues.length) return { forecasts: [], basis: { records: 0, issues: 0, alerts: 0 }, at: new Date(now).toISOString(), empty: true };
     const lang = await workspaceLanguage(workspaceId).catch(() => "id");
     const id = lang !== "en";
+    const { useCase } = await getWorkspaceProfile(workspaceId, db).catch(() => ({ useCase: "brand" }));
     const raw = await aiJson({
         workspaceId, chat, operation: "future_issues", maxTokens: 14000,
         system: [
-            `You are a senior narrative-risk analyst forecasting the next issues for ${ctx.brand}${ctx.industry ? ` (${ctx.industry})` : ""} in Indonesia.`,
+            useCase === "cve"
+                ? `You are a senior analyst forecasting which harmful narratives (violent extremism, propaganda, hoaxes) are likely to grow next in the areas monitored by ${ctx.brand}, an information-resilience programme in Indonesia.`
+                : `You are a senior narrative-risk analyst forecasting the next issues for ${ctx.brand}${ctx.industry ? ` (${ctx.industry})` : ""} in Indonesia.`,
             "Forecast only from the data given: every forecast must grow out of the listed issues, alerts, week-over-week figures or headlines, and cite them with their numbers.",
-            "Think about how current stories escalate (to regulators, media, customers, employees), how they combine, and dated moments ahead (paydays, holidays, end of year, results seasons) that could trigger them.",
+            useCase === "cve"
+                ? "Think about how narratives spread (across platforms and provinces, from closed to open channels), how they react to arrests, attacks, trials and anniversaries, and which counter-narratives are working. Preparation means reviewing, escalating to the right authority and strengthening counter-narratives with credible messengers."
+                : "Think about how current stories escalate (to regulators, media, customers, employees), how they combine, and dated moments ahead (paydays, holidays, end of year, results seasons) that could trigger them.",
             "Learn from what the team already handled (handled.plans, handled.cases with their resolution, handled.alertsClosed): reuse what worked, name it, and say what to do differently.", "Prefer specific, plausible, decision-useful forecasts over generic ones. Likelihood is a calibrated percentage.",
             `Write in ${id ? "Indonesian (professional, concise, no slang)" : "English"} for a board director: plain business language, never field names or data jargon (no "momentum72h", "level high", "acknowledged", "signals"), dates written as "18 November", platforms by their names (Instagram, YouTube, berita online). No emoji, no decorative symbols, no exclamation marks.`,
         ].join(" "),

@@ -13,6 +13,7 @@
  * handling. Returns a result object; never throws for provider failures.
  */
 
+import { useCasePrompt } from "./workspace-profile.js";
 import { routeForTask, routeCompletion, openaiFallbackRoute } from "./ai-routing.js";
 import { getOpenAIClient } from "./ai-client.js";
 import { createClaudeCompletion, isAnthropicConfigured } from "./anthropic-client.js";
@@ -107,6 +108,9 @@ export async function runAiTier({ tier, workspaceId, user, system = null, maxTok
 }
 
 async function runRoute({ task, route, fallbackReason, workspaceId, user, system, json, validate }, deps = {}) {
+    // Non-brand workspaces (government, information resilience) tell the model what the work is (workspace-profile.js).
+    const purpose = deps.useCasePrompt ? await deps.useCasePrompt(workspaceId) : await useCasePrompt(workspaceId).catch(() => "");
+    if (purpose) system = `${purpose}${system || ""}`;
     const openai = deps.openai || null;
     const claude = deps.claude || null;
     const base = { task, provider: route.provider, model: route.model, tier: route.meta.complexity, fallbackReason };

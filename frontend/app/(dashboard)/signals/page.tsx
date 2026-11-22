@@ -251,7 +251,7 @@ function CveChip({ id, cve, escalations = 0 }: { id: string; cve: CveTag | null;
           </select>
         )
       ) : null}
-      {cat.risk && status !== "dismissed" && (!isDemo || escalations > 0) ? <EscalateButton id={id} count={escalations} /> : null}
+      {cat.risk && status !== "dismissed" ? <EscalateButton id={id} count={escalations} /> : null}
     </span>
   );
 }

@@ -1,6 +1,7 @@
 import { anyAiConfigured, getChatClient } from "../../lib/chat-client.js";
 import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
+import { useCasePrompt } from "../../lib/workspace-profile.js";
 import { buildTemplateContext } from "./action-templates.js";
 import { checkBudgetAllowance } from "../../lib/cost-management.js";
 import { recordTokenUsage } from "../../lib/token-tracking.js";
@@ -788,7 +789,8 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
     const lang = deps.lang || await workspaceLanguage(workspaceId);
     const langNote = (lang === "id"
         ? "\n\nWrite every text value in the JSON in Bahasa Indonesia (natural, professional). Keep the JSON keys in English."
-        : "") + "\nProfessional tone for a board-level reader: no emoji, no decorative symbols, no exclamation marks.";
+        : "") + "\nProfessional tone for a board-level reader: no emoji, no decorative symbols, no exclamation marks."
+        + (deps.useCasePrompt ? "" : `\n\n${(await useCasePrompt(workspaceId).catch(() => "")).trim()}`);
 
     // 5. Generate 3 strategic options in parallel
     const results = await Promise.all([
@@ -1047,7 +1049,7 @@ Return ONLY a raw JSON object with these fields:
 }`;
 
     const messages = [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: `${await useCasePrompt(workspaceId).catch(() => "")}${systemPrompt}` },
         { role: "user", content: `Based on the following intelligence context, generate a ${maxSteps}-step sequential action plan:\n\n${fullContext}` },
     ];
 

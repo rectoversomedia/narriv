@@ -1,3 +1,4 @@
+import { useCasePrompt } from "../../lib/workspace-profile.js";
 import crypto from "crypto";
 import { anyAiConfigured, getChatClient } from "../../lib/chat-client.js";
 import { validateAIOutput } from "./ai.schema.js";
@@ -156,6 +157,11 @@ ${signalsContext}`;
  */
 async function callOpenAI(messages, usageCtx = null) {
     const startedAt = Date.now();
+    // Non-brand workspaces tell the model what the work is (workspace-profile.js useCasePrompt).
+    if (usageCtx?.workspaceId) {
+        const purpose = await useCasePrompt(usageCtx.workspaceId).catch(() => "");
+        if (purpose) messages = [{ role: "system", content: purpose.trim() }, ...messages];
+    }
     logStructured("info", "ai_provider_call_started", {
         provider: "openai",
         model: "gpt-4o-mini",

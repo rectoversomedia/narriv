@@ -634,10 +634,26 @@ export async function demoScenarios() {
 }
 
 /** Seed every scenario (the nightly refresh). */
-export async function seedAllDemoWorkspaces({ now = new Date(), db = defaultDb } = {}) {
+export async function seedAllDemoWorkspaces({ now = new Date(), db = defaultDb, forecast = false } = {}) {
     const out = [];
-    for (const def of await demoScenarios()) out.push(await seedScenarioWorkspace(def, { now, db }));
+    for (const def of await demoScenarios()) {
+        out.push(await seedScenarioWorkspace(def, { now, db }));
+        if (forecast) await prepareDemoForecast(def.ws);
+    }
     return out;
+}
+
+/**
+ * Prediksi Isu for a freshly seeded demo workspace, so a visitor sees it at once instead of waiting a minute for the
+ * AI (reseeding clears the stored forecast). One AI call per demo workspace per reseed; a failure only logs.
+ */
+export async function prepareDemoForecast(workspaceId) {
+    try {
+        const { futureIssues } = await import("../../lib/future-issues.js");
+        await futureIssues(workspaceId, { refresh: true });
+    } catch (error) {
+        logStructured("warn", "demo_forecast_failed", { workspaceId, error: error?.message });
+    }
 }
 
 /** Reseed each scenario whose newest record is older than `maxAgeHours` (keeps "last 24 hours" populated). */
@@ -647,6 +663,7 @@ export async function refreshDemoWorkspaceIfStale({ now = new Date(), maxAgeHour
         const { data } = await db.from("signals").select("captured_at").eq("workspace_id", def.ws).order("captured_at", { ascending: false }).limit(1);
         const newest = data?.[0]?.captured_at ? new Date(data[0].captured_at).getTime() : 0;
         results[def.key] = now.getTime() - newest < maxAgeHours * H ? { reseeded: false } : { reseeded: true, ...(await seedScenarioWorkspace(def, { now, db })) };
+        if (results[def.key].reseeded && db === defaultDb && process.env.NODE_ENV !== "test") void prepareDemoForecast(def.ws); // in the background: the ingest run does not wait a minute per workspace
     }
     return results;
 }

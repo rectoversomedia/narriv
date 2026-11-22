@@ -3,6 +3,7 @@ import { anyAiConfigured, getChatClient } from "./chat-client.js";
 import { checkBudgetAllowance } from "./cost-management.js";
 import { recordTokenUsage } from "./token-tracking.js";
 import { logStructured } from "./logger.js";
+import { useCasePrompt } from "./workspace-profile.js";
 
 export async function aiJson({ workspaceId, operation, system, user, maxTokens = 900, chat }) {
     if (!chat && !anyAiConfigured()) return null;
@@ -11,7 +12,7 @@ export async function aiJson({ workspaceId, operation, system, user, maxTokens =
     try {
         const client = chat || getChatClient();
         const res = await client.chat.completions.create({
-            messages: [{ role: "system", content: `${system} Return JSON only.` }, { role: "user", content: user }],
+            messages: [{ role: "system", content: `${await useCasePrompt(workspaceId).catch(() => "")}${system} Return JSON only.` }, { role: "user", content: user }],
             response_format: { type: "json_object" },
             max_tokens: maxTokens,
             temperature: 0.2,
