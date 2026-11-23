@@ -89,7 +89,8 @@ router.post("/recon", rateLimiters.aiGeneration(), async (req, res) => {
     const subject = String(req.body?.subject || "").trim().slice(0, 80);
     if (subject.length < 3) return res.status(400).json({ error: "Isi nama atau akun minimal 3 huruf." });
     try {
-        res.json(await runRecon({ workspaceId: id, subject, days: Math.min(730, Number(req.body?.days) || 365) }));
+        const demo = req.user?.isDemo === true || String(req.user?.id || "").startsWith("demo");
+        res.json(await runRecon({ workspaceId: id, subject, days: Math.min(730, Number(req.body?.days) || 365), store: !demo }));
     } catch (error) {
         logStructured("error", "recon_failed", { error: error?.message });
         res.status(500).json({ error: "Pengecekan gagal. Coba lagi." });
@@ -117,7 +118,9 @@ router.post("/claim-check", rateLimiters.aiGeneration(), async (req, res) => {
         const result = await checkClaimInput({ workspaceId: id, input });
         const at = new Date().toISOString();
         // Kept so the page can show the team's past checks.
-        await supabase.from("raw_documents").insert({ workspace_id: id, external_id: `claim:${Date.now()}`, title: input.slice(0, 200), metadata: { claim_check: { ...result, at } } }).then(() => null, () => null);
+        // A demo visitor's checks are not kept: the demo stays the same for every visitor.
+        const demo = req.user?.isDemo === true || String(req.user?.id || "").startsWith("demo");
+        if (!demo) await supabase.from("raw_documents").insert({ workspace_id: id, external_id: `claim:${Date.now()}`, title: input.slice(0, 200), metadata: { claim_check: { ...result, at } } }).then(() => null, () => null);
         res.json({ ...result, at });
     } catch (error) {
         logStructured("error", "claim_box_failed", { error: error?.message });

@@ -36,7 +36,7 @@ export function reconMatrix(items) {
     return { score, level: levelOf(score), lenses: lenses.sort((a, b) => b.hits - a.hits) };
 }
 
-export async function runRecon({ workspaceId, subject, days = 365, db = supabase, chat, fetchImpl = fetch }) {
+export async function runRecon({ workspaceId, subject, days = 365, db = supabase, chat, fetchImpl = fetch, store = true }) {
     const since = Date.now() - days * 86400000;
     const { fetchGoogleNewsRss } = await import("../modules/ingestion/rss-ingestion.service.js");
     const { fetchPublisherArticles } = await import("../modules/ingestion/publisher-rss.service.js");
@@ -69,6 +69,7 @@ export async function runRecon({ workspaceId, subject, days = 365, db = supabase
         recommendation: ai?.recommendation || null,
         recent: relevant.slice(0, 8).map((r) => ({ title: r.title, url: r.url, source: r.source, publishedAt: r.publishedAt, platform: r.platform })),
     };
+    if (!store) return { id: null, ...result };
     const { data, error } = await db.from("raw_documents").insert({ workspace_id: workspaceId, external_id: `recon:${Date.now()}`, title: subject, metadata: { recon: result } }).select("id").maybeSingle();
     if (error) logStructured("warn", "recon_store_failed", { error: error.message });
     return { id: data?.id || null, ...result };

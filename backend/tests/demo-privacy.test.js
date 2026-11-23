@@ -48,7 +48,7 @@ describe('demo sessions are read-only', () => {
   test.each([
     ['post', '/api/ingestion/run-keywords'],
     ['post', '/api/ingestion/collect'],
-    ['post', '/api/ai/ask'],
+    ['post', '/api/ai/analyze'],
     ['post', '/api/signals/batch-analyze'],
     ['post', '/api/workspace/cases'],
     ['patch', '/api/alerts/a1'],
