@@ -50,7 +50,9 @@ const TREND: Record<string, { en: string; id: string; tone: string; Icon: typeof
 };
 
 /** One colour per driver, biggest first, shared by the score bar and the driver cards. */
-const DRIVER_COLORS = ["#B42318", "#F97316", "#F59E0B", "#465FFF", "#8B5CF6"];
+// One calm blue ramp for the score factors, darkest = biggest (no rainbow of stripes).
+const SCORE_RAMP = ["var(--score-1, #101334)", "#3247D9", "#6A7CF5", "#A5B1FB", "#D3D9FE"];
+const DRIVER_COLORS = SCORE_RAMP;
 
 /** Where each score driver's evidence can be seen. */
 function driverHref(c: RiskComponent, hours: number): { href: string; label: [string, string] } | null {
@@ -235,36 +237,36 @@ export default function InsightsPage() {
           ) : drivers.length === 0 ? (
             <p className="text-[14px] font-semibold text-[#5F6B94]">{t("noComponent")}</p>
           ) : (
-            <ol className="grid gap-3 md:grid-cols-2">
-              {drivers.map((c, i) => {
-                const link = driverHref(c, hours);
-                const color = DRIVER_COLORS[i % DRIVER_COLORS.length];
-                const share = hasRisk && n.riskScore > 0 ? Math.round((c.contribution / n.riskScore) * 100) : null;
-                return (
-                  <li key={c.key} className="flex flex-col rounded-[16px] bg-[#F6F7FC] p-4" style={{ boxShadow: `inset 4px 0 0 ${color}` }}>
-                    <div className="flex items-start justify-between gap-3 pl-1">
+            <div>
+              {/* The score as one bar: each factor's share, darkest = biggest. */}
+              <div className="flex h-3 w-full gap-[3px] overflow-hidden rounded-full" aria-hidden="true">
+                {drivers.map((c, i) => <span key={c.key} className="h-full first:rounded-l-full last:rounded-r-full" style={{ flexGrow: c.contribution, backgroundColor: SCORE_RAMP[Math.min(i, SCORE_RAMP.length - 1)] }} />)}
+              </div>
+              <ol className="mt-2 divide-y divide-[#EEF0F6]">
+                {drivers.map((c, i) => {
+                  const link = driverHref(c, hours);
+                  const share = hasRisk && n.riskScore > 0 ? Math.round((c.contribution / n.riskScore) * 100) : null;
+                  return (
+                    <li key={c.key} className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-start gap-x-4 py-4">
+                      <span className="mt-0.5 flex size-7 items-center justify-center rounded-[8px] text-[12.5px] font-black text-white" style={{ backgroundColor: SCORE_RAMP[Math.min(i, SCORE_RAMP.length - 1)], color: i === 0 ? "var(--score-1-text, #fff)" : i >= 3 ? "#101334" : "#fff" }}>{i + 1}</span>
                       <div className="min-w-0">
-                        <p className="text-[11.5px] font-bold text-[#5F6B94]">{L(`Factor ${i + 1}`, `Faktor ${i + 1}`)}</p>
-                        <p className="mt-1 text-[16px] font-black leading-snug text-[#101334]">{driverName(c)}</p>
+                        <p className="text-[16px] font-black leading-snug text-[#101334]">{driverName(c)}</p>
+                        <p className="mt-1 text-[14px] leading-relaxed text-[#5A6478]">{tidyText(c.reason)}</p>
+                        {link ? (
+                          <Link href={link.href} className="mt-2 inline-flex items-center gap-1 text-[13px] font-bold text-[#3B52F5] hover:underline">
+                            {L(link.label[0], link.label[1])} <ArrowRight size={13} />
+                          </Link>
+                        ) : null}
                       </div>
-                      <div className="shrink-0 text-right">
-                        <p className="text-[24px] font-black leading-none tracking-[-0.02em]" style={{ color }}>+{c.contribution}</p>
-                        {share != null ? <p className="mt-1 text-[11.5px] font-bold text-[#5F6B94]">{L(`${share}% of score`, `${share}% dari skor`)}</p> : null}
+                      <div className="text-right">
+                        <p className="text-[24px] font-black leading-none tracking-[-0.03em] tabular-nums text-[#101334]">+{c.contribution}</p>
+                        {share != null ? <p className="mt-1 text-[12px] font-semibold tabular-nums text-[#8B93B0]">{share}%</p> : null}
                       </div>
-                    </div>
-                    <div className="ml-1 mt-3 h-1.5 overflow-hidden rounded-full bg-white">
-                      <div className="h-full rounded-full" style={{ width: `${(c.contribution / maxContribution) * 100}%`, backgroundColor: color }} />
-                    </div>
-                    <p className="mt-2.5 flex-1 pl-1 text-[14px] font-medium leading-relaxed text-[#31406B]">{tidyText(c.reason)}</p>
-                    {link ? (
-                      <Link href={link.href} className="ml-1 mt-3 inline-flex w-fit items-center gap-1.5 rounded-[10px] border-[1.5px] border-[#101334] bg-white px-3 py-2 text-[13px] font-black text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#EEF1FF]">
-                        {L(link.label[0], link.label[1])} <ArrowRight size={14} />
-                      </Link>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ol>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
           )}
           {n?.riskModel?.uncertainty.reasons.length ? (
             <p className="mt-3 rounded-[12px] bg-[#FFF7E8] px-4 py-3 text-[13px] font-semibold text-[#92400E]">

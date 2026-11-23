@@ -539,3 +539,4 @@ html.dark .nv-glow > div { background-color: #465FFF; }
 html.dark { --map-land: #262C55; --map-land-hover: #2E3563; --map-edge: #3A4278; --map-other: #161A33; --map-other-edge: #1E2340; }
 html.dark .nv-map-bg { background: #0E1226; }
 html.dark { --narriv-ink: #E9E9F2; }
+html.dark { --score-1: #E9E9F2; --score-1-text: #101334; }
