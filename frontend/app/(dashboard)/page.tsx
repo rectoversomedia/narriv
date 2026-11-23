@@ -1,6 +1,7 @@
 "use client";
 
 import { tidyTitle } from "@/lib/tidy-text";
+import { useMyWorkspaces } from "@/components/layout/workspace-switcher";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -227,6 +228,7 @@ export default function DashboardPage() {
   // A workspace that has not finished onboarding goes there first.
   // Also gives the brand name shown in the focus strip (demo sessions read the demo workspace's settings).
   const workspaceQuery = useQuery({ queryKey: ["workspace-settings"], queryFn: () => getWorkspaceSettings(), staleTime: 60 * 1000 , refetchInterval: (q) => (q.state.data?.logoPending ? 5000 : false) });
+  const { current: currentWorkspace } = useMyWorkspaces();
   useEffect(() => {
     if (isDemoSession || workspaceQuery.isLoading) return;
     if (workspaceQuery.data && workspaceQuery.data.onboarding_completed !== true) router.push("/onboarding");
@@ -358,7 +360,7 @@ export default function DashboardPage() {
       {/* The brand, a verdict with the numbers behind it, and every active keyword, each opening its records. */}
       {showHero ? (
         <OverviewHero
-          brandName={workspaceQuery.data?.brandName || L("Your brand", "Brand Anda")}
+          brandName={workspaceQuery.data?.brandName || currentWorkspace?.name || L("Your brand", "Brand Anda")}
           logoUrl={workspaceQuery.data?.logoUrl}
           keywords={summary?.keyword_breakdown ?? []}
           total={total}

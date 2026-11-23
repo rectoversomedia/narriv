@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useMyWorkspaces } from "@/components/layout/workspace-switcher";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Clock3, Loader2, Newspaper, Pause, Pencil, Play, RefreshCw, Tags, Trash2, X } from "lucide-react";
@@ -41,6 +42,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
 
   const keywordsQuery = useQuery({ queryKey: QUERY_KEY, queryFn: getMonitoringKeywords, staleTime: 30 * 1000 });
   const workspaceQuery = useQuery({ queryKey: ["workspace-settings"], queryFn: () => getWorkspaceSettings(), staleTime: 60 * 1000 });
+  const { current: currentWorkspace } = useMyWorkspaces();
   const isDemo = isDemoSession(useAuthStore((s) => s.user));
   const canEdit = Boolean(keywordsQuery.data?.canEdit);
 
@@ -99,7 +101,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
       <BrandHero
         className="rounded-none shadow-none"
         eyebrow={t("title")}
-        brandName={workspaceQuery.data?.brandName || pickL("Your brand", "Brand Anda")}
+        brandName={workspaceQuery.data?.brandName || currentWorkspace?.name || pickL("Your brand", "Brand Anda")}
         logoUrl={workspaceQuery.data?.logoUrl}
         pills={[
           { icon: Tags, value: maxActive ? `${activeCount} / ${maxActive}` : activeCount, label: pickL("active keywords", "kata kunci aktif") },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useMyWorkspaces } from "@/components/layout/workspace-switcher";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AI_ENGINES } from "@/components/ui/ai-engines";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
@@ -40,9 +41,10 @@ export default function VisibilityPage() {
   const summaryQuery = useQuery({ queryKey: ["visibility-summary"], queryFn: () => getVisibilitySummary(), staleTime: 60 * 1000 });
   const trendsQuery = useQuery({ queryKey: ["visibility-trends", 30], queryFn: () => getVisibilityTrends(undefined, undefined, 30), staleTime: 5 * 60 * 1000 });
   const settingsQuery = useQuery({ queryKey: ["workspace-settings"], queryFn: () => getWorkspaceSettings(), staleTime: 5 * 60 * 1000 });
+  const { current: currentWorkspace } = useMyWorkspaces();
 
   const data = summaryQuery.data;
-  const brand = data?.brand_name || settingsQuery.data?.brandName || L("Your brand", "Brand Anda");
+  const brand = data?.brand_name || settingsQuery.data?.brandName || currentWorkspace?.name || L("Your brand", "Brand Anda");
   const score = Math.round(data?.kpis.avg_visibility_score ?? 0);
   const look = scoreLook(score);
   const totals = data?.answer_totals ?? { answers: 0, brand_answers: 0 };
