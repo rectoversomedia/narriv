@@ -245,7 +245,7 @@ export async function clearDemoWorkspace(db = defaultDb, ws = DEMO_WORKSPACE_ID)
  */
 export const BRAND_SCENARIO = {
     key: "brand",
-    version: 5,
+    version: 6,
     recon: (t0) => ({
         id: null, subject: "@finfluencer.id", days: 365, at: new Date(t0 - 26 * 3600000).toISOString(), sources: 64, platforms: ["tiktok", "youtube", "news"], score: 38, level: "medium",
         lenses: [
@@ -438,7 +438,9 @@ export const BRAND_SCENARIO = {
 export async function seedScenarioWorkspace(def, { now = new Date(), db = defaultDb } = {}) {
     const ws = def.ws;
     const t0 = now.getTime();
-    const r = rng(Math.floor(t0 / D));
+    // A fixed seed per scenario: the demo shows the same numbers every day, so pitch decks, scripts and the live
+    // dashboard agree. Only the dates move with today.
+    const r = rng(20261120 + [...String(def.key)].reduce((n, c) => n + c.charCodeAt(0), 0));
     const at = (msAgo) => new Date(t0 - msAgo).toISOString();
     if (def.workspace) {
         const { data: existing } = await db.from("workspaces").select("id, settings").eq("id", ws).maybeSingle();
