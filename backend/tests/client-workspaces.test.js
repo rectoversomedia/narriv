@@ -270,6 +270,17 @@ describe('platform collection routes', () => {
     expect((await request(app).post('/ingestion/collect').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({ preset: 'nope' })).status).toBe(400);
   });
 
+  it('a trial workspace cannot start paid social collection unless the team switched it on', async () => {
+    const ws = db.table('workspaces').find((w) => w.id === WS_A);
+    const before = ws.settings;
+    ws.settings = { ...(before || {}), plan: 'trial', trialEndsAt: new Date(Date.now() + 86400000).toISOString() };
+    const res = await request(app).post('/ingestion/collect').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({ preset: 'tiktok-hashtag' });
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('SOCIAL_ADDON_REQUIRED');
+    expect(starts).toHaveLength(0);
+    ws.settings = before;
+  });
+
   it('history and status stay inside the selected workspace', async () => {
     const started = await request(app).post('/ingestion/collect').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({ preset: 'instagram-posts' });
     const id = started.body.data.id;

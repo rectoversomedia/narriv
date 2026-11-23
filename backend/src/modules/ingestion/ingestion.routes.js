@@ -177,6 +177,12 @@ router.get("/social-auto", memberWorkspace, async (req, res) => {
 router.post("/collect", requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
     try {
         const { preset, sourceId, keyword } = req.body || {};
+        // Trial workspaces use the free sources only (news, YouTube, Telegram): paid social collection (Apify) starts
+        // only once the Narriv team switches it on (settings.socialAuto).
+        const { data: wsRow } = await baseSupabaseAdmin.from("workspaces").select("settings").eq("id", req.scopedWorkspaceId).maybeSingle();
+        if (wsRow?.settings?.plan === "trial" && wsRow?.settings?.socialAuto !== true) {
+            return res.status(403).json({ error: "Social media collection is a paid add-on and is not part of the trial.", errorId: "Pengambilan media sosial (X, TikTok, Instagram, Facebook) adalah add-on berbayar dan belum termasuk masa uji coba. Berita, YouTube, dan Telegram tetap berjalan.", code: "SOCIAL_ADDON_REQUIRED" });
+        }
         const data = await startCollection({
             workspaceId: req.scopedWorkspaceId,
             presetKey: String(preset || ""),
