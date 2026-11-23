@@ -64,7 +64,9 @@ const runChargeCapUsd = () => Math.min(Number(process.env.APIFY_COLLECTION_MAX_C
 const runTimeoutSecs = () => Math.min(Math.max(Number(process.env.APIFY_COLLECTION_TIMEOUT_SECS || 180), 60), 600);
 
 const apifyToken = () => process.env.APIFY_TOKEN || process.env.APIFY_API_TOKEN || null;
-export const isCollectionConfigured = () => Boolean(apifyToken());
+// PAID_SOURCES_DISABLED=1 turns every paid social collection (Apify) off server-wide: free sources keep running.
+export const paidSourcesDisabled = () => process.env.PAID_SOURCES_DISABLED === "1";
+export const isCollectionConfigured = () => !paidSourcesDisabled() && Boolean(apifyToken());
 
 let clientFactory = () => new ApifyClient({ token: apifyToken() });
 /** Tests replace the Apify client; production always uses the real one. */
@@ -209,7 +211,14 @@ export function publicCollection(row) {
 }
 
 export async function startCollection({ workspaceId, presetKey, sourceId = null, keyword: requestedKeyword, userId, scheduled = false }) {
+    if (paidSourcesDisabled()) throw new CollectionError("FREE_SOURCES_ONLY", "Paid social collection is switched off on this server. News, YouTube, GDELT, Reddit and Telegram keep running.", 403);
     if (!isCollectionConfigured()) throw new CollectionError("APIFY_NOT_CONFIGURED", "Apify is not configured on the server.", 503);
+    // A workspace set to free sources only (settings.freeSourcesOnly, set by the Narriv team) never starts a paid run,
+    // whether a person or the scheduler asks.
+    const { data: wsRow } = await baseSupabaseAdmin.from("workspaces").select("settings").eq("id", workspaceId).maybeSingle();
+    if (wsRow?.settings?.freeSourcesOnly === true) {
+        throw new CollectionError("FREE_SOURCES_ONLY", "This workspace uses free sources only (news, YouTube, GDELT, Reddit, Telegram).", 403);
+    }
     let source = null;
     if (sourceId) {
         const { data, error } = await baseSupabaseAdmin

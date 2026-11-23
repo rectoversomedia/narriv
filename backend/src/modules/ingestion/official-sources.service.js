@@ -21,12 +21,15 @@ function env(name) {
 }
 
 export const isYouTubeConfigured = () => Boolean(env("YOUTUBE_API_KEY"));
+export const isGdeltEnabled = () => process.env.GDELT_DISABLED !== "1" && process.env.NODE_ENV !== "test";
 export const isRedditConfigured = () => Boolean(env("REDDIT_CLIENT_ID") && env("REDDIT_CLIENT_SECRET"));
 
 export function officialSourceStatus() {
     return [
         { key: "youtube", name: "YouTube", configured: isYouTubeConfigured() },
         { key: "reddit", name: "Reddit", configured: isRedditConfigured() },
+        { key: "youtube_comments", name: "YouTube comments", configured: isYouTubeConfigured() },
+        { key: "gdelt", name: "GDELT (global news index, free)", configured: isGdeltEnabled() },
         { key: "telegram", name: "Telegram (public channels)", configured: true },
         { key: "publisher_rss", name: "Publisher RSS (CNN, CNBC, ANTARA, Tempo, Republika, Okezone)", configured: true },
     ];
@@ -73,6 +76,93 @@ export async function fetchYouTubeVideos(keyword, { limit = 8, fetchImpl = fetch
         });
 }
 
+/**
+ * Top-level comments under the given videos (commentThreads, 1 quota unit per video): the closest free stand-in for
+ * what viewers say, since TikTok/X/Instagram have no free search API. Comments sit under a video that already named
+ * the keyword, so they are kept even when the comment itself does not repeat it.
+ */
+export async function fetchYouTubeComments(videos, { perVideo = 10, fetchImpl = fetch } = {}) {
+    const out = [];
+    for (const video of videos) {
+        const videoId = String(video.externalId || "").replace(/^youtube:/, "");
+        if (!videoId) continue;
+        const params = new URLSearchParams({ part: "snippet", videoId, order: "relevance", maxResults: String(Math.min(Math.max(perVideo, 1), 50)), textFormat: "plainText", key: env("YOUTUBE_API_KEY") });
+        let json;
+        try {
+            json = await getJson(`https://www.googleapis.com/youtube/v3/commentThreads?${params}`, {}, fetchImpl);
+        } catch (error) {
+            // Comments switched off on one video must not stop the others.
+            logStructured("warn", "youtube_comments_failed", { videoId, error: error.message });
+            continue;
+        }
+        for (const item of json.items || []) {
+            const c = item.snippet?.topLevelComment?.snippet;
+            if (!item.id || !c?.textDisplay) continue;
+            out.push({
+                externalId: `youtube-comment:${item.id}`,
+                title: `Komentar di "${video.title || "video YouTube"}"`,
+                content: decodeEntities(c.textDisplay).slice(0, 2000),
+                url: `https://www.youtube.com/watch?v=${videoId}&lc=${item.id}`,
+                author: c.authorDisplayName || null,
+                publishedAt: c.publishedAt || null,
+                metadata: { publisher: "YouTube (komentar)", video_id: videoId, engagement: { likes: c.likeCount || 0, replies: item.snippet?.totalReplyCount || 0 } },
+            });
+        }
+    }
+    return out;
+}
+
+/** Videos plus the comments under the most recent few: one search (100 units) + one call per video (1 unit). */
+export async function fetchYouTubeVideosAndComments(keyword, { limit = 8, fetchImpl = fetch, query, commentVideos = 3, perVideo = 10 } = {}) {
+    const videos = await fetchYouTubeVideos(keyword, { limit, fetchImpl, query });
+    const comments = commentVideos > 0 ? await fetchYouTubeComments(videos.slice(0, commentVideos), { perVideo, fetchImpl }) : [];
+    return [...videos, ...comments];
+}
+
+const gdeltDate = (s) => {
+    const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(String(s || ""));
+    return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z` : null;
+};
+
+/**
+ * GDELT DOC 2.0: an open, keyless index of online news worldwide, updated every 15 minutes. Indonesian-language
+ * articles that name the keyword in their headline, newest first.
+ */
+// GDELT answers HTTP 429 to anyone asking more than once every 5 seconds, so calls from this process queue up.
+const GDELT_GAP_MS = 6_000;
+let gdeltNextAt = 0;
+async function gdeltTurn(sleep) {
+    const wait = gdeltNextAt - Date.now();
+    gdeltNextAt = Math.max(Date.now(), gdeltNextAt) + GDELT_GAP_MS;
+    if (wait > 0) await sleep(wait);
+}
+
+export async function fetchGdeltArticles(keyword, { limit = 8, fetchImpl = fetch, timespan = "14d", sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+    await gdeltTurn(sleep);
+    const params = new URLSearchParams({
+        query: `${phraseQuery(keyword)} sourcelang:indonesian`,
+        mode: "ArtList",
+        format: "json",
+        maxrecords: String(Math.min(Math.max(limit, 1), 75)),
+        timespan,
+        sort: "DateDesc",
+    });
+    const json = await getJson(`https://api.gdeltproject.org/api/v2/doc/doc?${params}`, {}, fetchImpl);
+    const seen = new Set();
+    return (json.articles || [])
+        .filter((a) => a?.url && a.title && mentionsKeyword(a.title, keyword))
+        .filter((a) => (seen.has(a.url) ? false : seen.add(a.url)))
+        .map((a) => ({
+            externalId: `gdelt:${a.url}`,
+            title: a.title,
+            content: a.title,
+            url: a.url,
+            author: null,
+            publishedAt: gdeltDate(a.seendate),
+            metadata: { publisher: a.domain || "GDELT", via: "gdelt" },
+        }));
+}
+
 let redditToken = null; // { value, expiresAt }
 
 async function redditAccessToken(fetchImpl) {
@@ -115,11 +205,12 @@ export async function fetchRedditPosts(keyword, { limit = 8, fetchImpl = fetch }
 }
 
 const COLLECTORS = [
-    { platform: "youtube", configured: isYouTubeConfigured, fetch: fetchYouTubeVideos },
+    { platform: "youtube", configured: isYouTubeConfigured, fetch: fetchYouTubeVideosAndComments },
     { platform: "reddit", configured: isRedditConfigured, fetch: fetchRedditPosts },
     // Free and keyless: public channels' web previews.
     // Large outlets' own RSS: articles with their summary, not only the headline.
     { platform: "news", configured: () => process.env.PUBLISHER_RSS_DISABLED !== "1" && process.env.NODE_ENV !== "test", fetch: fetchPublisherArticles },
+    { platform: "news", configured: isGdeltEnabled, fetch: fetchGdeltArticles },
     { platform: "telegram", configured: () => process.env.TELEGRAM_DISABLED !== "1" && process.env.NODE_ENV !== "test", fetch: fetchTelegramPosts },
 ];
 

@@ -94,6 +94,19 @@ describe('starting a collection', () => {
     await expect(start()).rejects.toMatchObject({ code: 'APIFY_NOT_CONFIGURED', httpStatus: 503 });
   });
 
+  it('never starts a paid run for a free-sources-only workspace or when paid sources are off server-wide', async () => {
+    const { calls } = fakeApify();
+    db.table('workspaces').push({ id: WS_A, settings: { freeSourcesOnly: true } });
+    await expect(start()).rejects.toMatchObject({ code: 'FREE_SOURCES_ONLY', httpStatus: 403 });
+    expect(calls.start).toHaveLength(0);
+    process.env.PAID_SOURCES_DISABLED = '1';
+    try {
+      expect(svc.isCollectionConfigured()).toBe(false);
+      await expect(svc.startCollection({ workspaceId: WS_B, presetKey: 'tiktok-hashtag', userId: USER })).rejects.toMatchObject({ code: 'FREE_SOURCES_ONLY' });
+    } finally { delete process.env.PAID_SOURCES_DISABLED; }
+    expect(calls.start).toHaveLength(0);
+  });
+
   it('allows one active collection per workspace and a daily cap', async () => {
     fakeApify();
     await start();

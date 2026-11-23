@@ -6,7 +6,7 @@ const db = createMemoryDb();
 jest.unstable_mockModule('../src/lib/supabase.js', () => supabaseModuleFor(db));
 
 await import('./setup.js');
-const { fetchYouTubeVideos, fetchRedditPosts, ingestOfficialSources } = await import('../src/modules/ingestion/official-sources.service.js');
+const { fetchYouTubeVideos, fetchYouTubeComments, fetchGdeltArticles, fetchRedditPosts, ingestOfficialSources } = await import('../src/modules/ingestion/official-sources.service.js');
 const { ingestKeywordAllSources } = await import('../src/modules/ingestion/scheduled-ingestion.js');
 
 const jsonResponse = (body, ok = true, status = 200) => ({ ok, status, json: async () => body });
@@ -44,6 +44,34 @@ describe('Official sources', () => {
     expect(fetchImpl.mock.calls[1][1].headers.authorization).toBe('Bearer tok');
     expect(records).toHaveLength(1);
     expect(records[0]).toMatchObject({ externalId: 'reddit:p1', author: 'u/alice', metadata: { publisher: 'r/indonesia', engagement: { score: 12, comments: 4 } } });
+  });
+
+  it('keeps YouTube comments under each video and skips a video whose comments are off', async () => {
+    process.env.YOUTUBE_API_KEY = 'yt-key';
+    const fetchImpl = jest.fn(async (url) => String(url).includes('videoId=v2')
+      ? jsonResponse({ error: { message: 'commentsDisabled' } }, false, 403)
+      : jsonResponse({ items: [
+          { id: 'c1', snippet: { totalReplyCount: 2, topLevelComment: { snippet: { textDisplay: 'Mahal banget &amp; buat apa', authorDisplayName: 'Budi', publishedAt: '2026-11-10T01:00:00Z', likeCount: 40 } } } },
+          { id: 'c2', snippet: { topLevelComment: { snippet: {} } } },
+        ] }));
+    const records = await fetchYouTubeComments([{ externalId: 'youtube:v1', title: 'Berita A' }, { externalId: 'youtube:v2', title: 'Berita B' }], { fetchImpl });
+    expect(new URL(fetchImpl.mock.calls[0][0]).pathname).toBe('/youtube/v3/commentThreads');
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ externalId: 'youtube-comment:c1', content: 'Mahal banget & buat apa', url: 'https://www.youtube.com/watch?v=v1&lc=c1', author: 'Budi', metadata: { video_id: 'v1', engagement: { likes: 40, replies: 2 } } });
+  });
+
+  it('maps GDELT articles in Indonesian, keeps only headlines that name the keyword, and drops repeats', async () => {
+    const fetchImpl = jest.fn(async () => jsonResponse({ articles: [
+      { url: 'https://a.id/1', title: 'ICW soroti kontrak RANS', seendate: '20261110T083000Z', domain: 'a.id' },
+      { url: 'https://a.id/1', title: 'ICW soroti kontrak RANS', seendate: '20261110T083000Z', domain: 'a.id' },
+      { url: 'https://b.id/2', title: 'Harga cabai naik', seendate: '20261110T090000Z', domain: 'b.id' },
+    ] }));
+    const records = await fetchGdeltArticles('RANS', { fetchImpl });
+    const url = new URL(fetchImpl.mock.calls[0][0]);
+    expect(url.hostname).toBe('api.gdeltproject.org');
+    expect(url.searchParams.get('query')).toContain('sourcelang:indonesian');
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ externalId: 'gdelt:https://a.id/1', publishedAt: '2026-11-10T08:30:00Z', metadata: { publisher: 'a.id' } });
   });
 
   it('skips unconfigured sources and keeps going when one fails', async () => {
