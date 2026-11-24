@@ -3085,6 +3085,8 @@
       "claimCheck": "Claim Check",
       "quality": "Accuracy Check",
       "glossary": "Glossary",
+      "whiteLabel": "White-label",
+      "clients": "All clients",
       "alertsTab": "Alerts",
       "settingsTab": "General",
       "analysis": "Analysis",

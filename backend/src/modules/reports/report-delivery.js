@@ -76,9 +76,9 @@ export function reportEmailHtml(data, lang, appUrl) {
         : null;
     const note = [
         w("The full report is attached as a PDF.", "Laporan lengkap terlampir dalam PDF."),
-        asOf ? w(`Data as of ${asOf} WIB, counted by publication date. Posts that arrive late appear on the report page in Narriv.`, `Data per ${asOf} WIB, dihitung berdasarkan tanggal terbit. Postingan yang terlambat masuk tetap muncul di halaman laporan Narriv.`) : null,
+        asOf ? w(`Data as of ${asOf} WIB, counted by publication date. Posts that arrive late appear on the report page.`, `Data per ${asOf} WIB, dihitung berdasarkan tanggal terbit. Postingan yang terlambat masuk tetap muncul di halaman laporan.`) : null,
     ].filter(Boolean).join("<br>");
-    body += emailButton(`${appUrl}/reports`, w("View report in Narriv", "Lihat laporan di Narriv"), note);
+    body += emailButton(`${appUrl}/reports`, (data.whiteLabel ? w("View report", "Lihat laporan") : w("View report in Narriv", "Lihat laporan di Narriv")), note);
     return emailLayout({
         lang: id ? "id" : "en",
         title: `${brand}: ${data.title || w("Report", "Laporan")}`,
@@ -96,7 +96,7 @@ export async function emailReport(report, to, { subjectPrefix = "" } = {}) {
     const data = await collectReportData(report);
     const pdf = await buildReportPdf(data, lang);
     const appUrl = (process.env.FRONTEND_URL || process.env.APP_URL || "https://www.narriv.digital").replace(/\/$/, "");
-    const subject = `${subjectPrefix}${data.brand || "Narriv"}: ${data.title || (lang === "en" ? "Report" : "Laporan")}`;
+    const subject = `${subjectPrefix}${data.whiteLabel?.agencyName ? `${data.whiteLabel.agencyName} · ` : ""}${data.brand || "Narriv"}: ${data.title || (lang === "en" ? "Report" : "Laporan")}`;
     const html = reportEmailHtml(data, lang, appUrl);
     let sent = 0;
     for (const email of to) {

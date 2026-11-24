@@ -1035,7 +1035,9 @@ router.get("/:id/view", async (req, res) => {
             return res.status(404).json({ error: "Report not found" });
         }
         const data = await collectReportData(report);
-        res.json({ ...data, createdAt: report.created_at || null });
+        // The downloaded logo bytes are for the PDF only.
+        const whiteLabel = data.whiteLabel ? { agencyName: data.whiteLabel.agencyName, color: data.whiteLabel.color, logoUrl: data.whiteLabel.logoUrl } : null;
+        res.json({ ...data, whiteLabel, createdAt: report.created_at || null });
     } catch (err) {
         console.error("Report view error:", err);
         res.status(500).json({ error: "Failed to load report" });

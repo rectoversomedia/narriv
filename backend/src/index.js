@@ -63,6 +63,7 @@ import { flushAllAuditLogs } from "./lib/audit-enhanced.js";
 import { serverTiming } from "./lib/server-timing.js";
 import { workspaceContextMiddleware } from "./lib/request-context.js";
 import workspacesRoutes from "./modules/workspaces/workspaces.routes.js";
+import agencyRoutes from "./modules/workspaces/agency.routes.js";
 
 dotenv.config();
 
@@ -210,7 +211,7 @@ app.use("/tools", rateLimit({ ...RATE_LIMITS.api_default, prefix: "tools" }), to
 // apply the export limit themselves (see reports.routes.js).
 app.use("/reports", rateLimit({ ...RATE_LIMITS.api_default, prefix: "reports-read" }), apiSecurityHeaders, reportsRoutes);
 app.use("/action-plans", actionPlansRoutes);
-app.use("/workspaces", rateLimit({ ...RATE_LIMITS.api_default, prefix: "workspaces" }), workspacesRoutes);
+app.use("/workspaces", rateLimit({ ...RATE_LIMITS.api_default, prefix: "workspaces" }), agencyRoutes, workspacesRoutes);
 app.use("/workspace", sensitiveDataHeaders, workspaceSettingsRoutes);
 app.use("/workspace/activity", activityRoutes);
 app.use("/workspace/keywords", rateLimit(RATE_LIMITS.api_default), keywordsRoutes);

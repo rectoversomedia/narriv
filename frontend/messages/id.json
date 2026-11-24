@@ -3085,6 +3085,8 @@
       "claimCheck": "Cek Klaim",
       "quality": "Uji Akurasi",
       "glossary": "Glosarium",
+      "whiteLabel": "Label Agensi",
+      "clients": "Semua Klien",
       "alertsTab": "Peringatan",
       "settingsTab": "Umum",
       "analysis": "Analisis",

@@ -54,7 +54,12 @@ export function WorkspaceOptions({ onDone }: { onDone?: () => void }) {
 
   return (
     <>
-      <p className="px-2.5 pb-1.5 pt-1 text-[12px] font-extrabold text-[#5A6478]">{L("Workspaces", "Workspace")}</p>
+      <div className="flex items-center justify-between px-2.5 pb-1.5 pt-1">
+        <p className="text-[12px] font-extrabold text-[#5A6478]">{L("Workspaces", "Workspace")}</p>
+        {workspaces.length > 1 ? (
+          <button type="button" onClick={() => { onDone?.(); router.push("/clients"); }} className="text-[12px] font-bold text-[#3B52F5] hover:underline">{L("All clients →", "Semua klien →")}</button>
+        ) : null}
+      </div>
       {query.isLoading ? (
         <p className="px-2.5 py-2 text-[12px] text-[#5A6478]">{L("Loading…", "Memuat…")}</p>
       ) : query.isError ? (

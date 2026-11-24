@@ -556,3 +556,31 @@ export function getCompetitors(): Promise<CompetitorsResponse> {
 export function saveCompetitors(competitors: string[]): Promise<{ competitors: string[] }> {
   return apiClient<{ competitors: string[] }>("/api/workspace/competitors", { method: "PUT", body: JSON.stringify({ competitors }) });
 }
+
+export type PortfolioClient = {
+  id: string;
+  name: string;
+  brand: string | null;
+  logoUrl: string | null;
+  role: string | null;
+  status: "critical" | "attention" | "calm";
+  openAlerts: { critical: number; high: number; latest: string | null };
+  issues24h: number;
+  mentions24h: number;
+  topIssue: { title: string; impact: string; signals: number } | null;
+};
+/** Every workspace the user belongs to, with what needs attention in each (the agency overview). */
+export async function getPortfolio(): Promise<{ data: PortfolioClient[] }> {
+  return apiClient("/api/workspaces/portfolio");
+}
+
+export type WhiteLabel = { enabled: boolean; agencyName: string; logoUrl: string | null; color: string | null };
+export async function getWhiteLabel(): Promise<{ data: WhiteLabel; canEdit: boolean }> {
+  return apiClient("/api/workspaces/white-label");
+}
+export async function saveWhiteLabel(input: WhiteLabel & { applyToAll?: boolean }): Promise<{ data: WhiteLabel; updated: number }> {
+  return apiClient("/api/workspaces/white-label", { method: "PUT", body: JSON.stringify(input) });
+}
+export async function uploadAgencyLogo(file: string): Promise<{ url: string }> {
+  return apiClient("/api/workspaces/white-label/logo", { method: "POST", body: JSON.stringify({ file }) });
+}

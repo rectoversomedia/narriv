@@ -40,6 +40,24 @@ async function periodTotals(workspaceId, start, end) {
     };
 }
 
+/**
+ * The agency branding for a white-labelled workspace (workspaces.settings.whiteLabel), with the logo already
+ * downloaded for the PDF. Null when white-label is off.
+ */
+export async function loadWhiteLabel(workspaceId) {
+    const { data } = await supabase.from("workspaces").select("settings").eq("id", workspaceId).maybeSingle();
+    const wl = data?.settings?.whiteLabel;
+    if (!wl?.enabled || !String(wl.agencyName || "").trim()) return null;
+    let logo = null;
+    if (wl.logoUrl) {
+        try {
+            const r = await fetch(wl.logoUrl, { signal: AbortSignal.timeout(8000) });
+            if (r.ok) logo = Buffer.from(await r.arrayBuffer());
+        } catch { /* no logo: the agency name is printed instead */ }
+    }
+    return { agencyName: String(wl.agencyName).trim(), color: /^#[0-9a-fA-F]{6}$/.test(wl.color || "") ? wl.color : null, logoUrl: wl.logoUrl || null, logo };
+}
+
 /** Everything a report file shows, from the stored report plus the live sections for its period. */
 export async function collectReportData(report) {
     const periodStart = report.content?.period_start || report.period_start;
@@ -49,11 +67,12 @@ export async function collectReportData(report) {
     const metrics = sections.dashboard_metrics || {};
     const stored = report.content?.sections && !Array.isArray(report.content.sections) ? report.content.sections : {};
 
-    const [{ data: settings }, { data: clusters }, freshness] = await Promise.all([
+    const [{ data: settings }, { data: clusters }, freshness, whiteLabel] = await Promise.all([
         supabase.from("workspace_settings").select("brand_name, language").eq("workspace_id", report.workspace_id).maybeSingle(),
         supabase.from("narrative_clusters").select("title, signal_count, sentiment, impact, lifecycle").eq("workspace_id", report.workspace_id).order("signal_count", { ascending: false }).limit(6),
         // A failure here only drops the freshness note; the report itself still renders.
         reportFreshness(report.workspace_id, { start: periodStart, end: periodEnd, since: report.created_at }).catch(() => null),
+        loadWhiteLabel(report.workspace_id).catch(() => null),
     ]);
 
     const alerts = ((sections.alerts?.items?.length ? sections.alerts.items : stored.alerts?.items) || [])
@@ -76,6 +95,7 @@ export async function collectReportData(report) {
         type: report.type || null,
         status: report.status || null,
         brand: settings?.brand_name || null,
+        whiteLabel,
         language: report.content?.language || (settings?.language === "id" ? "id" : "en"),
         periodStart,
         periodEnd,
@@ -116,7 +136,8 @@ export async function collectReportData(report) {
 // Words
 // ---------------------------------------------------------------------------
 
-function words(lang) {
+function words(lang, agency = null) {
+    const P = agency || "Narriv";
     const id = lang !== "en";
     const w = (en, idText) => (id ? idText : en);
     return {
@@ -152,13 +173,13 @@ function words(lang) {
         signalsTitle: w("Notable mentions", "Percakapan yang menonjol"),
         whatToDo: w("Next step", "Langkah"),
         none: w("None in this period.", "Tidak ada pada periode ini."),
-        footer: w("Narriv · confidential · generated from workspace records", "Narriv · rahasia · disusun dari data workspace"),
+        footer: agency ? w(`${agency} · confidential`, `${agency} · rahasia`) : w("Narriv · confidential · generated from workspace records", "Narriv · rahasia · disusun dari data workspace"),
         dataAsOf: w("Data as of", "Data per"),
         dataNoteTitle: w("About This Data", "Tentang Data Ini"),
         dataBasis: w("Each mention is counted in the period it was published in. Collection time is used only when the source gave no publication date.", "Setiap percakapan dihitung pada periode saat diterbitkan. Waktu pengumpulan hanya dipakai bila sumber tidak mencantumkan tanggal terbit."),
-        dataDelay: w("Typical delay before Narriv receives a post", "Jeda umum sebelum Narriv menerima postingan"),
+        dataDelay: w(`Typical delay before ${P} receives a post`, `Jeda umum sebelum ${P} menerima postingan`),
         hours: (h) => (h < 1 ? w("under 1 hour", "kurang dari 1 jam") : w(`about ${Math.round(h)} hour${Math.round(h) === 1 ? "" : "s"}`, `sekitar ${Math.round(h)} jam`)),
-        dataLate: w("Posts published near the end of the period may arrive after this report. The report page in Narriv always shows the latest count.", "Postingan yang terbit menjelang akhir periode bisa masuk setelah laporan ini dibuat. Halaman laporan di Narriv selalu menampilkan angka terbaru."),
+        dataLate: w(`Posts published near the end of the period may arrive after this report. The report page in ${P} always shows the latest count.`, `Postingan yang terbit menjelang akhir periode bisa masuk setelah laporan ini dibuat. Halaman laporan di ${P} selalu menampilkan angka terbaru.`),
         page: w("Page", "Halaman"),
         severity: { critical: w("Critical", "Kritis"), high: w("High", "Tinggi"), medium: w("Medium", "Sedang"), low: w("Low", "Rendah") },
         status: { open: w("Open", "Terbuka"), acknowledged: w("In progress", "Ditangani"), resolved: w("Resolved", "Selesai") },
@@ -254,8 +275,9 @@ export function buildReportPdf(data, lang = data.language) {
 }
 
 function renderReportPdf(data, lang, mentionLimit) {
-    const W = words(lang);
-    const doc = new PDFDocument({ size: "A4", margins: { top: 48, bottom: 56, left: 48, right: 48 }, bufferPages: true, info: { Title: data.title, Author: "Narriv" } });
+    const wl = data.whiteLabel || null;
+    const W = words(lang, wl?.agencyName);
+    const doc = new PDFDocument({ size: "A4", margins: { top: 48, bottom: 56, left: 48, right: 48 }, bufferPages: true, info: { Title: data.title, Author: wl?.agencyName || "Narriv" } });
     const chunks = [];
     doc.on("data", (c) => chunks.push(c));
     const done = new Promise((resolve) => doc.on("end", () => resolve(Buffer.concat(chunks))));
@@ -279,9 +301,21 @@ function renderReportPdf(data, lang, mentionLimit) {
     glow.stop(0, "#6D7CFF", 0.45).stop(1, "#101334", 0);
     doc.rect(0, 0, doc.page.width, HEAD_H).fill(glow);
     const markFile = asset(WORDMARK);
-    if (existsSync(markFile)) doc.image(markFile, left, 30, { height: 24 });
-    else doc.fillColor("#FFFFFF").font(F.black).fontSize(18).text("narriv.", left, 32);
-    doc.fillColor("#A9B2D6").font(F.mono).fontSize(6.5).text("NARRATIVE INTELLIGENCE", left + 1, 57, { characterSpacing: 1.6, lineBreak: false });
+    let drewLogo = false;
+    if (wl?.logo) {
+        // The agency logo on a white chip, so a dark or transparent logo stays visible on the navy band.
+        try {
+            const img = doc.openImage(wl.logo);
+            const h = 22, w = Math.min(140, (img.width / img.height) * h);
+            doc.roundedRect(left - 6, 26, w + 12, h + 8, 6).fill("#FFFFFF");
+            doc.image(img, left, 30, { height: h, width: w });
+            drewLogo = true;
+        } catch { /* unreadable image: fall back to the name */ }
+    }
+    if (wl && !drewLogo) doc.fillColor("#FFFFFF").font(F.black).fontSize(18).text(wl.agencyName, left, 32, { width: width - 200, lineBreak: false });
+    else if (!wl && existsSync(markFile)) doc.image(markFile, left, 30, { height: 24 });
+    else if (!wl) doc.fillColor("#FFFFFF").font(F.black).fontSize(18).text("narriv.", left, 32);
+    doc.fillColor("#A9B2D6").font(F.mono).fontSize(6.5).text(wl ? wl.agencyName.toUpperCase() : "NARRATIVE INTELLIGENCE", left + 1, 60, { characterSpacing: 1.6, lineBreak: false, width: width - 200 });
     const stamp = (W.reportStamp || "").toUpperCase();
     doc.font(F.mono).fontSize(7.5);
     const stW = doc.widthOfString(stamp, { characterSpacing: 1 }) + 18;
@@ -305,7 +339,8 @@ function renderReportPdf(data, lang, mentionLimit) {
         cx += w + 8;
     }
     const brush = doc.linearGradient(0, 0, doc.page.width, 0);
-    brush.stop(0, "#465FFF").stop(0.55, "#8B5CF6").stop(1, "#EC4899");
+    if (wl?.color) brush.stop(0, wl.color).stop(1, wl.color);
+    else brush.stop(0, "#465FFF").stop(0.55, "#8B5CF6").stop(1, "#EC4899");
     doc.rect(0, HEAD_H - 5, doc.page.width, 5).fill(brush);
     doc.y = HEAD_H + 26;
 

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BadgeCheck, BookOpen, BarChart3, Telescope, MapPinned, Rss, ScanSearch, ShieldCheck, UserSearch, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, Share2, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
+import { Palette, BadgeCheck, BookOpen, BarChart3, Telescope, MapPinned, Rss, ScanSearch, ShieldCheck, UserSearch, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, Share2, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
 
 // Five menus (Isu also holds Prediksi Isu: which issues come next and how to handle them), in the order a team works (see → understand → investigate → act → report), each answering one question:
 //   Hari Ini — what is happening and what do I decide today? (incl. opportunities worth using today)
@@ -66,6 +66,7 @@ export const SECTION_TABS = {
     { key: "settingsTab", href: "/workspace/settings", icon: SlidersHorizontal },
     { key: "dataSources", href: "/workspace/sources", icon: Database },
     { key: "integrations", href: "/workspace/integrations", icon: Send },
+    { key: "whiteLabel", href: "/workspace/white-label", icon: Palette },
     { key: "activity", href: "/workspace/activity", icon: History },
   ],
 } as const satisfies Record<string, ReadonlyArray<{ key: string; href: string; icon: LucideIcon }>>;
