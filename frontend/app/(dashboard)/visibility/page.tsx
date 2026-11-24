@@ -58,7 +58,7 @@ export default function VisibilityPage() {
   const byEngine = new Map((data?.engine_breakdown ?? []).map((e) => [e.engineKey || e.engineName, e]));
   const configured = new Map((data?.engines ?? []).map((e) => [e.key, e.configured]));
   // Name only the assistants that are connected: the page promised "5" while some had no API key.
-  const connectedCount = (data?.engines ?? []).filter((e) => e.configured).length || 5;
+  const connectedCount = (data?.engines ?? []).filter((e) => e.configured).length || 2;
   const lastChecked = (data?.engine_breakdown ?? []).map((e) => e.lastChecked).sort().pop();
   const trend = (trendsQuery.data?.trends ?? []).filter((t) => t.data_points > 0);
   const missed = matrix
@@ -127,7 +127,7 @@ export default function VisibilityPage() {
       ) : (data?.engine_breakdown ?? []).length === 0 ? (
         <Panel className="py-12 text-center">
           <p className="text-[16px] font-black text-[#101334]">{L("No AI test yet", "Belum ada uji AI")}</p>
-          <p className="mx-auto mt-2 max-w-md text-[13px] font-semibold text-[#5A6478]">{L("Run the test to ask the five assistants your industry questions and see whether they name your brand.", "Jalankan uji untuk menanyakan pertanyaan industri ke lima asisten AI dan lihat apakah brand Anda disebut.")}</p>
+          <p className="mx-auto mt-2 max-w-md text-[13px] font-semibold text-[#5A6478]">{L("Run the test to ask ChatGPT and Claude your industry questions and see whether they name your brand.", "Jalankan uji untuk menanyakan pertanyaan industri ke ChatGPT dan Claude, lalu lihat apakah brand Anda disebut.")}</p>
         </Panel>
       ) : (
         <>
@@ -178,7 +178,7 @@ export default function VisibilityPage() {
           </section>
 
           {/* One card per assistant */}
-          <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <section className="grid grid-cols-2 gap-3">
             {ENGINES.map(({ key, name, Logo }) => {
               const e = byEngine.get(key);
               const isOn = configured.get(key) !== false;
@@ -228,7 +228,7 @@ export default function VisibilityPage() {
                         <p className="text-[14px] font-bold leading-snug text-[#101334]">{row.prompt}</p>
                         <span className={cn("shrink-0 text-[15px] font-black", weak ? "text-[#C81E1E]" : "text-[#047857]")}>{named}/{asked}</span>
                       </div>
-                      <div className="mt-2.5 grid grid-cols-5 gap-1.5">
+                      <div className="mt-2.5 grid grid-cols-2 gap-1.5">
                         {cells.map((c, i) => {
                           const { key, name, Logo } = ENGINES[i];
                           return (

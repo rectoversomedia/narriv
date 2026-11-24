@@ -1,5 +1,5 @@
 /**
- * The five AI assistants Narriv checks for GEO (how AI answers mention a brand). Each one is asked the test
+ * The AI assistants Narriv checks (ChatGPT and Claude) for GEO (how AI answers mention a brand). Each one is asked the test
  * prompt the way a person would ask it, through its own API, and the plain answer is scored by the same
  * analysis for every engine. An engine without an API key is reported as not connected, never simulated.
  *
@@ -12,10 +12,7 @@ import { logStructured } from "../../lib/logger.js";
 
 export const GEO_ENGINES = [
     { key: "chatgpt", name: "ChatGPT", kind: "openai", envKey: "OPENAI_API_KEY", baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" },
-    { key: "gemini", name: "Gemini", kind: "gemini", envKey: "GEMINI_API_KEY", model: "gemini-2.5-flash" },
     { key: "claude", name: "Claude", kind: "anthropic", envKey: "ANTHROPIC_API_KEY", model: "claude-haiku-5-5" },
-    { key: "perplexity", name: "Perplexity", kind: "openai", envKey: "PERPLEXITY_API_KEY", baseUrl: "https://api.perplexity.ai", model: "sonar" },
-    { key: "deepseek", name: "DeepSeek", kind: "openai", envKey: "DEEPSEEK_API_KEY", baseUrl: "https://api.deepseek.com", model: "deepseek-chat" },
 ];
 
 /** Stored engine names from before per-engine testing, mapped to the engine they ran on. */
