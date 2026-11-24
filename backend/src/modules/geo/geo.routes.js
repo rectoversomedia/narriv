@@ -349,7 +349,10 @@ router.post("/analyze-all", requireWorkspaceRole(MANAGER_ROLES), async (req, res
 
         const { data: settings } = await supabase.from("workspace_settings").select("brand_name").eq("workspace_id", scopedWorkspaceId).maybeSingle();
         const { data: keywords } = await supabase.from("monitoring_keywords").select("keyword").eq("workspace_id", scopedWorkspaceId).eq("is_active", true).limit(3);
-        const brandName = String(req.body?.brandName || settings?.brand_name || keywords?.[0]?.keyword || "").trim();
+        // A topic workspace has no brand: test the workspace's own name before falling back to a keyword, so a
+        // topic ("kebocoran data") is not scored as if it were a brand.
+        const { data: wsRow } = settings?.brand_name || req.body?.brandName ? { data: null } : await supabase.from("workspaces").select("name").eq("id", scopedWorkspaceId).maybeSingle();
+        const brandName = String(req.body?.brandName || settings?.brand_name || wsRow?.name || keywords?.[0]?.keyword || "").trim();
         if (!brandName) return res.status(400).json({ error: tr("Set a brand name or an active keyword first.", "Isi nama brand atau kata kunci aktif dulu."), code: "NO_BRAND" });
         const competitors = Array.isArray(req.body?.competitors) ? req.body.competitors.slice(0, 3) : [];
         // Three prompts per engine keeps a full run around a minute and its cost small.
