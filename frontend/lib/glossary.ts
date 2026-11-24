@@ -7,7 +7,7 @@
  */
 type Bi = { en: string; id: string };
 
-export type GlossaryGroup = "basics" | "issues" | "followup" | "tools" | "setup";
+export type GlossaryGroup = "basics" | "signals" | "issues" | "followup" | "tools" | "setup" | "concepts";
 
 export interface GlossaryTerm {
   id: string;
@@ -23,10 +23,12 @@ export interface GlossaryTerm {
 
 export const GLOSSARY_GROUPS: Array<{ key: GlossaryGroup; label: Bi }> = [
   { key: "basics", label: { en: "The basics", id: "Dasar" } },
+  { key: "signals", label: { en: "Warning signs", id: "Tanda bahaya" } },
   { key: "issues", label: { en: "Issues and how they spread", id: "Isu dan penyebarannya" } },
   { key: "followup", label: { en: "Follow-up", id: "Tindak lanjut" } },
   { key: "tools", label: { en: "Analyst tools", id: "Alat analis" } },
   { key: "setup", label: { en: "Settings and modes", id: "Pengaturan dan mode" } },
+  { key: "concepts", label: { en: "Communication terms", id: "Istilah komunikasi umum" } },
 ];
 
 export const GLOSSARY: GlossaryTerm[] = [
@@ -242,6 +244,379 @@ export const GLOSSARY: GlossaryTerm[] = [
     id: "brand-name", group: "setup", href: "/workspace/settings",
     term: { en: "Brand name", id: "Nama brand" },
     short: { en: "The brand the workspace watches. Leave it empty to watch topics instead of a brand.", id: "Brand yang dipantau workspace. Kosongkan untuk memantau topik, bukan brand." },
+  },
+  {
+    id: 'workspace', group: 'basics',
+    term: { en: "Workspace", id: "Workspace" },
+    short: { en: "One monitored subject (a brand, an institution or a topic) with its own keywords, data, team and settings.", id: "Satu subjek yang dipantau (brand, lembaga, atau topik) dengan kata kunci, data, tim, dan pengaturannya sendiri." },
+    detail: { en: "Switch workspaces from the top left. Data never mixes between workspaces.", id: "Ganti workspace dari kiri atas. Data antarworkspace tidak pernah tercampur." },
+  },
+  {
+    id: 'period', group: 'basics',
+    term: { en: "Period (24 hours, 7 days, 30 days)", id: "Periode (24 jam, 7 hari, 30 hari)" },
+    short: { en: "The time window every number on a page is counted over.", id: "Rentang waktu yang dipakai untuk menghitung semua angka di halaman." },
+    detail: { en: "Changing the period recounts the page. Comparisons (“up from 40%”) are against the same length of time just before.", id: "Mengganti periode menghitung ulang halaman. Perbandingan (“naik dari 40%”) dibandingkan dengan rentang yang sama tepat sebelumnya." },
+  },
+  {
+    id: 'negative-share', group: 'basics',
+    term: { en: "Negative share", id: "Porsi negatif" },
+    short: { en: "Negative records as a share of all analysed records in the period.", id: "Persentase catatan negatif dari semua catatan yang sudah dianalisis dalam periode itu." },
+    detail: { en: "Above about 30% is shown in red. Watch the direction more than the number: a jump matters more than a steady level.", id: "Di atas sekitar 30% ditampilkan merah. Perhatikan arahnya lebih dari angkanya: lonjakan lebih penting daripada angka yang stabil." },
+  },
+  {
+    id: 'positive', group: 'basics',
+    term: { en: "Positive", id: "Positif" },
+    short: { en: "The record speaks well of the subject: praise, good news, recommendation.", id: "Catatan membicarakan subjek secara baik: pujian, kabar baik, rekomendasi." },
+  },
+  {
+    id: 'neutral', group: 'basics',
+    term: { en: "Neutral", id: "Netral" },
+    short: { en: "The record reports or mentions without taking a side.", id: "Catatan memberitakan atau menyebut tanpa berpihak." },
+  },
+  {
+    id: 'mixed', group: 'basics',
+    term: { en: "Mixed", id: "Campuran" },
+    short: { en: "The record holds both praise and criticism.", id: "Catatan berisi pujian sekaligus kritik." },
+  },
+  {
+    id: 'negative', group: 'basics',
+    term: { en: "Negative", id: "Negatif" },
+    short: { en: "The record criticises, complains about or attacks the subject.", id: "Catatan mengkritik, mengeluhkan, atau menyerang subjek." },
+  },
+  {
+    id: 'monitoring-status', group: 'basics',
+    term: { en: "Monitoring status", id: "Status pemantauan" },
+    short: { en: "Bottom left of the menu: whether collection is running, how many keywords, and when they were last checked.", id: "Kiri bawah menu: apakah pengumpulan berjalan, berapa kata kunci, dan kapan terakhir dicek." },
+  },
+  {
+    id: 'analysed', group: 'basics',
+    term: { en: "Analysed", id: "Teranalisis" },
+    short: { en: "A record AI has already read for tone, topic and risk.", id: "Catatan yang sudah dibaca AI untuk nada, topik, dan risikonya." },
+    detail: { en: "New records are analysed within minutes. Numbers on tone only count analysed records.", id: "Catatan baru dianalisis dalam hitungan menit. Angka nada hanya menghitung catatan yang sudah teranalisis." },
+  },
+  {
+    id: 'platform', group: 'basics',
+    term: { en: "Platform", id: "Platform" },
+    short: { en: "Where a record was published: news, YouTube, Telegram, TikTok, X, Instagram, Facebook.", id: "Tempat catatan diterbitkan: berita, YouTube, Telegram, TikTok, X, Instagram, Facebook." },
+  },
+  {
+    id: 'publisher', group: 'basics',
+    term: { en: "Publisher / author", id: "Penerbit / penulis" },
+    short: { en: "The outlet or account that posted the record.", id: "Media atau akun yang mengunggah catatan." },
+  },
+  {
+    id: 'engagement', group: 'basics',
+    term: { en: "Interactions", id: "Interaksi" },
+    short: { en: "Likes, comments, shares, reposts and views a record received, where the platform shows them.", id: "Suka, komentar, bagikan, repost, dan tayangan yang diterima catatan, sejauh platform menampilkannya." },
+  },
+  {
+    id: 'anomaly', group: 'signals',
+    term: { en: "Anomaly spike", id: "Lonjakan anomali" },
+    short: { en: "Far more records than usual for that hour or day.", id: "Jumlah catatan jauh di atas biasanya untuk jam atau hari itu." },
+    detail: { en: "Compared with the subject's own normal level, so a big brand and a small one are judged fairly.", id: "Dibandingkan dengan tingkat normal subjek itu sendiri, jadi brand besar dan kecil dinilai adil." },
+  },
+  {
+    id: 'bot', group: 'signals',
+    term: { en: "Bot-like accounts", id: "Akun mirip bot" },
+    short: { en: "Accounts posting at a pace few people do, or many accounts with the same text.", id: "Akun yang mengunggah dengan kecepatan tak wajar, atau banyak akun dengan teks sama." },
+    detail: { en: "A sign to check, not proof. Report suspicious accounts to the platform instead of replying.", id: "Tanda untuk dicek, bukan bukti. Laporkan akun mencurigakan ke platform, jangan dibalas." },
+  },
+  {
+    id: 'toxicity', group: 'signals',
+    term: { en: "Abusive language", id: "Ujaran kasar" },
+    short: { en: "Insults, slurs and abusive words in an issue's records.", id: "Hinaan, makian, dan kata kasar di catatan suatu isu." },
+  },
+  {
+    id: 'polarization', group: 'signals',
+    term: { en: "Polarisation", id: "Polarisasi" },
+    short: { en: "A split audience: strong praise and strong criticism at the same time.", id: "Audiens terbelah: pujian keras dan kritik keras sekaligus." },
+    detail: { en: "Polarised issues spread fast and are easy to make worse. Reply carefully and with facts.", id: "Isu yang terpolarisasi cepat menyebar dan mudah memburuk. Tanggapi hati-hati dan dengan fakta." },
+  },
+  {
+    id: 'hoax', group: 'signals',
+    term: { en: "Hoax", id: "Hoaks" },
+    short: { en: "A claim that fact-checkers have already shown to be false.", id: "Klaim yang sudah dinyatakan salah oleh pemeriksa fakta." },
+  },
+  {
+    id: 'sensitive-topic', group: 'signals',
+    term: { en: "Sensitive topic", id: "Topik sensitif" },
+    short: { en: "Subjects that raise the stakes: data security, regulators, law, fraud, ethnicity and religion, boycotts.", id: "Topik yang menaikkan taruhan: keamanan data, regulator, hukum, penipuan, SARA, boikot." },
+  },
+  {
+    id: 'speed', group: 'signals',
+    term: { en: "Speed", id: "Kecepatan" },
+    short: { en: "How much of an issue arrived in the last 48 hours.", id: "Seberapa banyak catatan isu yang masuk dalam 48 jam terakhir." },
+  },
+  {
+    id: 'reach', group: 'signals',
+    term: { en: "Reach", id: "Jangkauan" },
+    short: { en: "How many platforms and records carry an issue.", id: "Berapa banyak platform dan catatan yang membawa suatu isu." },
+  },
+  {
+    id: 'severity', group: 'signals',
+    term: { en: "Severity", id: "Tingkat keparahan" },
+    short: { en: "Critical, high, medium or low: how urgently an alert or issue needs handling.", id: "Kritis, tinggi, sedang, atau rendah: seberapa mendesak peringatan atau isu harus ditangani." },
+    detail: { en: "Critical: handle today. High: within the day. Medium: watch. Low: note.", id: "Kritis: tangani hari ini. Tinggi: dalam hari itu. Sedang: pantau. Rendah: catat." },
+  },
+  {
+    id: 'origin', group: 'issues',
+    term: { en: "Origin", id: "Asal isu" },
+    short: { en: "The earliest record of an issue that Narriv holds.", id: "Catatan paling awal dari suatu isu yang dimiliki Narriv." },
+    detail: { en: "It is the earliest Narriv collected, not proof of who posted first anywhere.", id: "Ini yang paling awal dikumpulkan Narriv, bukan bukti siapa yang pertama mengunggah di mana pun." },
+  },
+  {
+    id: 'amplifier', group: 'issues',
+    term: { en: "Amplifier", id: "Penyebar" },
+    short: { en: "An account or outlet whose posts on an issue got the most interactions.", id: "Akun atau media yang unggahannya soal isu itu paling banyak mendapat interaksi." },
+  },
+  {
+    id: 'camp', group: 'issues',
+    term: { en: "Camp", id: "Kubu" },
+    short: { en: "A group of accounts that gather around the same videos and reply to each other.", id: "Kelompok akun yang berkumpul di video yang sama dan saling membalas." },
+  },
+  {
+    id: 'influential-account', group: 'issues',
+    term: { en: "Influential account", id: "Akun berpengaruh" },
+    short: { en: "An account others reply to and like most in the conversation.", id: "Akun yang paling banyak dibalas dan disukai dalam percakapan." },
+  },
+  {
+    id: 'near-duplicate', group: 'issues',
+    term: { en: "Near-identical posts", id: "Unggahan seragam" },
+    short: { en: "Several accounts posting almost the same words within a short window.", id: "Beberapa akun mengunggah kalimat hampir sama dalam waktu berdekatan." },
+    detail: { en: "Several outlets running the same text is usually a shared press release, not coordination.", id: "Beberapa media memuat teks yang sama biasanya rilis pers bersama, bukan koordinasi." },
+  },
+  {
+    id: 'wave', group: 'issues',
+    term: { en: "Wave", id: "Gelombang" },
+    short: { en: "A conversation growing right now that is not mostly negative.", id: "Percakapan yang sedang tumbuh dan tidak didominasi nada negatif." },
+  },
+  {
+    id: 'peak-window', group: 'issues',
+    term: { en: "Time to peak", id: "Waktu ke puncak" },
+    short: { en: "How many hours after starting this workspace's past issues usually peaked.", id: "Berapa jam setelah mulai isu-isu sebelumnya di workspace ini biasanya mencapai puncak." },
+    detail: { en: "Join a positive wave or answer a negative one before that point.", id: "Ikuti gelombang positif atau tanggapi isu negatif sebelum titik itu." },
+  },
+  {
+    id: 'audience', group: 'issues',
+    term: { en: "Audience", id: "Audiens" },
+    short: { en: "Who is talking in an issue: customers, the general public, media, officials and so on.", id: "Siapa yang berbicara dalam isu: nasabah, masyarakat umum, media, pejabat, dan lainnya." },
+  },
+  {
+    id: 'related-issues', group: 'issues',
+    term: { en: "Related issues", id: "Isu terkait" },
+    short: { en: "Issues that share keywords, accounts or records and may merge into one story.", id: "Isu yang berbagi kata kunci, akun, atau catatan dan bisa menyatu jadi satu cerita." },
+  },
+  {
+    id: 'score-drivers', group: 'issues',
+    term: { en: "Score drivers", id: "Pendorong skor" },
+    short: { en: "The factors pushing the risk score up most, ranked, on the Analysis page.", id: "Faktor yang paling menaikkan skor risiko, diurutkan, di halaman Analisis." },
+  },
+  {
+    id: 'sentiment-trend', group: 'issues',
+    term: { en: "Tone trend", id: "Tren nada" },
+    short: { en: "How the share of each tone moved day by day.", id: "Pergerakan porsi tiap nada dari hari ke hari." },
+  },
+  {
+    id: 'youtube-comments', group: 'issues',
+    term: { en: "YouTube comments", id: "Komentar YouTube" },
+    short: { en: "Comments under videos that mention a keyword: the closest free view of what viewers say.", id: "Komentar di bawah video yang menyebut kata kunci: cara gratis terdekat untuk melihat pendapat penonton." },
+    detail: { en: "Kept even when the comment does not repeat the keyword, because the video already named it.", id: "Tetap disimpan walau komentarnya tidak mengulang kata kunci, karena videonya sudah menyebutnya." },
+  },
+  {
+    id: 'telegram-channel', group: 'issues',
+    term: { en: "Telegram channel", id: "Kanal Telegram" },
+    short: { en: "A public Telegram channel Narriv reads for keyword mentions.", id: "Kanal Telegram publik yang dibaca Narriv untuk mencari sebutan kata kunci." },
+    detail: { en: "Add the channels you care about in Settings. Private groups are never read.", id: "Tambahkan kanal yang penting di Pengaturan. Grup privat tidak pernah dibaca." },
+  },
+  {
+    id: 'alert-status', group: 'followup',
+    term: { en: "Alert status", id: "Status peringatan" },
+    short: { en: "Open (not yet touched), acknowledged (someone is on it) or resolved (handled).", id: "Terbuka (belum disentuh), ditinjau (sedang ditangani), atau selesai (sudah ditangani)." },
+  },
+  {
+    id: 'pic', group: 'followup',
+    term: { en: "Person in charge (PIC)", id: "Penanggung jawab (PIC)" },
+    short: { en: "The person an alert, plan or case is assigned to; they get the notifications.", id: "Orang yang ditugaskan untuk peringatan, rencana, atau kasus; dia yang menerima notifikasi." },
+  },
+  {
+    id: 'escalation-matrix', group: 'followup', href: '/alerts',
+    term: { en: "Escalation matrix", id: "Matriks eskalasi" },
+    short: { en: "Who is told at each level of severity, from team lead up to the board.", id: "Siapa yang diberi tahu di tiap tingkat keparahan, dari ketua tim sampai direksi." },
+  },
+  {
+    id: 'notification-rule', group: 'followup', href: '/alerts',
+    term: { en: "Notification rule", id: "Aturan notifikasi" },
+    short: { en: "When an alert is sent and to which channel.", id: "Kapan peringatan dikirim dan ke saluran mana." },
+  },
+  {
+    id: 'notification-channel', group: 'followup', href: '/workspace/integrations',
+    term: { en: "Notification channel", id: "Saluran notifikasi" },
+    short: { en: "Where alerts are delivered: email, Telegram or WhatsApp.", id: "Tempat peringatan dikirim: email, Telegram, atau WhatsApp." },
+  },
+  {
+    id: 'investigation-report', group: 'followup',
+    term: { en: "Investigation report", id: "Laporan investigasi" },
+    short: { en: "A one-page AI brief on one issue: timeline, actors, coordination, claims, risk and recommended steps.", id: "Ringkasan satu halaman dari AI tentang satu isu: kronologi, aktor, koordinasi, klaim, risiko, dan langkah yang disarankan." },
+    detail: { en: "Written from the issue's stored records only. Check before sending.", id: "Ditulis hanya dari catatan isu itu. Periksa sebelum dikirim." },
+  },
+  {
+    id: 'simulation', group: 'followup',
+    term: { en: "24-hour response simulation", id: "Simulasi respons 24 jam" },
+    short: { en: "Test a response you are considering: how each audience would likely react in the next 24 hours.", id: "Uji respons yang sedang dipertimbangkan: kemungkinan reaksi tiap audiens dalam 24 jam ke depan." },
+    detail: { en: "A projection for planning, not a forecast. It may suggest a better option.", id: "Proyeksi untuk perencanaan, bukan ramalan pasti. Bisa menyarankan opsi yang lebih baik." },
+  },
+  {
+    id: 'report-template', group: 'followup', href: '/reports',
+    term: { en: "Report template", id: "Templat laporan" },
+    short: { en: "The shape of a report: executive summary, risk review, AI visibility report or weekly digest.", id: "Bentuk laporan: ringkasan eksekutif, tinjauan risiko, laporan visibilitas AI, atau rangkuman mingguan." },
+  },
+  {
+    id: 'report-schedule', group: 'followup', href: '/reports',
+    term: { en: "Report schedule", id: "Jadwal laporan" },
+    short: { en: "Sends a report by email automatically, for example every Monday morning.", id: "Mengirim laporan lewat email secara otomatis, misalnya setiap Senin pagi." },
+  },
+  {
+    id: 'export', group: 'followup',
+    term: { en: "Export (CSV, Excel, PDF)", id: "Ekspor (CSV, Excel, PDF)" },
+    short: { en: "Download records or reports to use outside Narriv.", id: "Unduh catatan atau laporan untuk dipakai di luar Narriv." },
+  },
+  {
+    id: 'audit-log', group: 'followup', href: '/workspace/activity',
+    term: { en: "Activity history (audit log)", id: "Riwayat aktivitas (log audit)" },
+    short: { en: "Who did what and when in the workspace: changes, escalations, exports.", id: "Siapa melakukan apa dan kapan di workspace: perubahan, eskalasi, ekspor." },
+  },
+  {
+    id: 'citation', group: 'tools',
+    term: { en: "Source citation", id: "Sumber rujukan" },
+    short: { en: "The records or links an answer is based on, so every claim can be checked.", id: "Catatan atau tautan yang menjadi dasar jawaban, supaya setiap klaim bisa dicek." },
+  },
+  {
+    id: 'test-prompt', group: 'tools', href: '/visibility',
+    term: { en: "Test question", id: "Pertanyaan uji" },
+    short: { en: "A question asked to AI assistants, such as “best digital bank in Indonesia”, to see if your brand is named.", id: "Pertanyaan yang diajukan ke asisten AI, misalnya “bank digital terbaik di Indonesia”, untuk melihat apakah brand Anda disebut." },
+  },
+  {
+    id: 'competitor', group: 'tools', href: '/workspace/settings',
+    term: { en: "Competitor", id: "Kompetitor" },
+    short: { en: "A brand you want to compare with in AI answers and conversation volume.", id: "Brand pembanding di jawaban AI dan volume percakapan." },
+  },
+  {
+    id: 'fact-check', group: 'tools',
+    term: { en: "Fact-check", id: "Cek fakta" },
+    short: { en: "A published verdict by a fact-checking organisation on whether a claim is true.", id: "Penilaian yang diterbitkan lembaga pemeriksa fakta tentang benar tidaknya suatu klaim." },
+  },
+  {
+    id: 'margin-of-error', group: 'tools',
+    term: { en: "Margin of error", id: "Rentang kesalahan" },
+    short: { en: "The range the real accuracy most likely falls in, given how many records were checked.", id: "Rentang tempat akurasi sebenarnya kemungkinan besar berada, berdasarkan jumlah catatan yang diperiksa." },
+    detail: { en: "Fewer checks give a wider range. Check at least 30 records before quoting a figure.", id: "Makin sedikit pemeriksaan, makin lebar rentangnya. Periksa minimal 30 catatan sebelum mengutip angka." },
+  },
+  {
+    id: 'tone-correction', group: 'tools',
+    term: { en: "Tone correction", id: "Koreksi nada" },
+    short: { en: "Changing the tone AI gave a record. Narriv uses corrections to judge similar records better.", id: "Mengubah nada yang diberikan AI pada catatan. Narriv memakai koreksi untuk menilai catatan serupa dengan lebih tepat." },
+  },
+  {
+    id: 'member-roles', group: 'setup', href: '/workspace/settings',
+    term: { en: "Member roles", id: "Peran anggota" },
+    short: { en: "Owner and Admin manage keywords, sources, team and costs; Analyst works on the data.", id: "Pemilik dan Admin mengatur kata kunci, sumber, tim, dan biaya; Analis mengolah data." },
+  },
+  {
+    id: 'language', group: 'setup',
+    term: { en: "Workspace language", id: "Bahasa workspace" },
+    short: { en: "The language AI writes summaries, reports and advice in: Indonesian or English.", id: "Bahasa yang dipakai AI untuk ringkasan, laporan, dan saran: Indonesia atau Inggris." },
+  },
+  {
+    id: 'timezone', group: 'setup',
+    term: { en: "Time zone", id: "Zona waktu" },
+    short: { en: "The clock used for every time and daily boundary, Asia/Jakarta by default.", id: "Jam yang dipakai untuk setiap waktu dan batas harian, bawaan Asia/Jakarta." },
+  },
+  {
+    id: 'trial', group: 'setup',
+    term: { en: "Trial", id: "Trial" },
+    short: { en: "A free period with every feature on and free sources only; social media collection is a paid add-on.", id: "Masa gratis dengan semua fitur aktif dan hanya sumber gratis; pengumpulan media sosial adalah tambahan berbayar." },
+  },
+  {
+    id: 'social-addon', group: 'setup',
+    term: { en: "Social media add-on", id: "Tambahan media sosial" },
+    short: { en: "Paid collection from TikTok, X, Instagram and Facebook on a schedule.", id: "Pengumpulan berbayar dari TikTok, X, Instagram, dan Facebook secara terjadwal." },
+  },
+  {
+    id: 'demo-data', group: 'setup',
+    term: { en: "Sample data (demo)", id: "Data contoh (demo)" },
+    short: { en: "The demo workspaces (such as Bank Arunika) hold made-up records to show how Narriv works.", id: "Workspace demo (seperti Bank Arunika) berisi catatan karangan untuk menunjukkan cara kerja Narriv." },
+  },
+  {
+    id: 'narrative', group: 'concepts',
+    term: { en: "Narrative", id: "Narasi" },
+    short: { en: "The story people tell about something, built from many posts and articles over time.", id: "Cerita yang dibangun orang tentang sesuatu, dari banyak unggahan dan artikel seiring waktu." },
+  },
+  {
+    id: 'misinformation', group: 'concepts',
+    term: { en: "Misinformation", id: "Misinformasi" },
+    short: { en: "False information shared without intent to deceive.", id: "Informasi salah yang disebarkan tanpa niat menipu." },
+  },
+  {
+    id: 'disinformation', group: 'concepts',
+    term: { en: "Disinformation", id: "Disinformasi" },
+    short: { en: "False information spread on purpose to mislead.", id: "Informasi salah yang sengaja disebarkan untuk menyesatkan." },
+  },
+  {
+    id: 'malinformation', group: 'concepts',
+    term: { en: "Malinformation", id: "Malinformasi" },
+    short: { en: "True information used to harm, such as leaked personal data.", id: "Informasi benar yang dipakai untuk merugikan, misalnya data pribadi yang dibocorkan." },
+  },
+  {
+    id: 'buzzer', group: 'concepts',
+    term: { en: "Buzzer", id: "Buzzer" },
+    short: { en: "Accounts paid or organised to push a message, often in volume.", id: "Akun yang dibayar atau diorganisasi untuk mendorong suatu pesan, sering dalam jumlah besar." },
+  },
+  {
+    id: 'astroturfing', group: 'concepts',
+    term: { en: "Astroturfing", id: "Astroturfing" },
+    short: { en: "An organised campaign made to look like spontaneous public opinion.", id: "Kampanye terorganisasi yang dibuat seolah-olah opini publik yang spontan." },
+  },
+  {
+    id: 'counter-narrative', group: 'concepts',
+    term: { en: "Counter-narrative", id: "Narasi tandingan" },
+    short: { en: "Content that answers a harmful narrative with facts or a better story.", id: "Konten yang menjawab narasi berbahaya dengan fakta atau cerita yang lebih baik." },
+  },
+  {
+    id: 'share-of-voice', group: 'concepts',
+    term: { en: "Share of voice", id: "Share of voice" },
+    short: { en: "Your share of all conversation in a category, compared with competitors.", id: "Porsi percakapan tentang Anda dari seluruh percakapan di kategori itu, dibanding kompetitor." },
+  },
+  {
+    id: 'kol', group: 'concepts',
+    term: { en: "KOL / influencer", id: "KOL / influencer" },
+    short: { en: "A person whose posts shape what their followers think or buy.", id: "Orang yang unggahannya memengaruhi pendapat atau pembelian pengikutnya." },
+  },
+  {
+    id: 'holding-statement', group: 'concepts',
+    term: { en: "Holding statement", id: "Holding statement" },
+    short: { en: "A short first statement: we know, we are checking, update at a set time.", id: "Pernyataan awal singkat: kami tahu, kami sedang memeriksa, kabar berikutnya pada jam tertentu." },
+    detail: { en: "Best issued within the first hours of a crisis, before the full facts are in.", id: "Sebaiknya keluar di jam-jam pertama krisis, sebelum fakta lengkap terkumpul." },
+  },
+  {
+    id: 'crisis', group: 'concepts',
+    term: { en: "Reputation crisis", id: "Krisis reputasi" },
+    short: { en: "An issue that threatens trust in the organisation and needs a coordinated response.", id: "Isu yang mengancam kepercayaan pada organisasi dan perlu respons terkoordinasi." },
+  },
+  {
+    id: 'geo', group: 'concepts',
+    term: { en: "GEO (generative engine optimisation)", id: "GEO (optimasi mesin generatif)" },
+    short: { en: "Making content that AI assistants pick up and cite when answering people.", id: "Membuat konten yang diambil dan dirujuk asisten AI saat menjawab orang." },
+  },
+  {
+    id: 'viral', group: 'concepts',
+    term: { en: "Viral", id: "Viral" },
+    short: { en: "Spreading fast from person to person, far beyond the first audience.", id: "Menyebar cepat dari orang ke orang, jauh melampaui audiens awal." },
+  },
+  {
+    id: 'dark-social', group: 'concepts',
+    term: { en: "Dark social", id: "Dark social" },
+    short: { en: "Sharing in private chats (WhatsApp groups, DMs) that monitoring tools cannot see.", id: "Berbagi lewat obrolan privat (grup WhatsApp, DM) yang tidak bisa dilihat alat pemantauan." },
+    detail: { en: "Chain messages often surface later on public channels; Claim Check helps once they do.", id: "Pesan berantai sering muncul belakangan di kanal publik; Cek Klaim membantu begitu itu terjadi." },
   },
 ];
 
