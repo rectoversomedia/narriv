@@ -633,25 +633,37 @@ export async function mergeSimilarIssues(workspaceId, { days = 14, apply = true 
     if (!issues || issues.length < 2) return { merged: 0, groups: [] };
 
     const list = issues.map((c, i) => `${i}. ${c.title} — ${String(c.description || "").slice(0, 160)}`).join("\n");
-    const out = await runAiTask({
+    const ask = () => runAiTask({
         task: "classification",
         workspaceId,
         json: true,
-        system: "You deduplicate a list of news/social issues for a monitoring dashboard. Group issues ONLY when they are clearly the same story: the same event, campaign, incident or complaint, described differently. Do not group issues that merely share a company name, a product or a general topic. When unsure, do not group.",
+        system: "You deduplicate a list of news/social issues for a monitoring dashboard. Group issues ONLY when they are clearly the same story: the same event, campaign, incident or complaint, described differently. Do not group issues that merely share a company name, a product, a threat actor type or a general topic. When unsure, do not group.",
         user: `${list}\n\nReturn JSON {"groups": number[][]} listing only groups of 2 or more indices that are the same story. Return {"groups": []} if none.`,
         validate: (d) => Array.isArray(d?.groups),
     });
-    if (!out?.ok) return { merged: 0, groups: [], skipped: out?.error || "ai_unavailable" };
-
-    const used = new Set();
-    const groups = [];
-    for (const g of out.data.groups) {
-        const idx = [...new Set((Array.isArray(g) ? g : []).map(Number))].filter((i) => Number.isInteger(i) && issues[i] && !used.has(i));
-        if (idx.length < 2) continue;
-        idx.forEach((i) => used.add(i));
-        const members = idx.map((i) => issues[i]).sort((a, b) => (b.signal_count || 0) - (a.signal_count || 0));
-        groups.push({ keep: members[0], merge: members.slice(1) });
-    }
+    // Two independent reads; only pairs both reads put together are merged (one read alone varied between runs).
+    const [a, b] = await Promise.all([ask(), ask()]);
+    if (!a?.ok || !b?.ok) return { merged: 0, groups: [], skipped: a?.error || b?.error || "ai_unavailable" };
+    const pairsOf = (groupsIn) => {
+        const set = new Set();
+        for (const g of groupsIn) {
+            const idx = [...new Set((Array.isArray(g) ? g : []).map(Number))].filter((i) => Number.isInteger(i) && issues[i]);
+            for (let x = 0; x < idx.length; x++) for (let y = x + 1; y < idx.length; y++) set.add([Math.min(idx[x], idx[y]), Math.max(idx[x], idx[y])].join("-"));
+        }
+        return set;
+    };
+    const pb = pairsOf(b.data.groups);
+    const agreed = [...pairsOf(a.data.groups)].filter((p) => pb.has(p)).map((p) => p.split("-").map(Number));
+    // Agreed pairs joined into groups.
+    const parent = issues.map((_, i) => i);
+    const find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+    for (const [x, y] of agreed) parent[find(x)] = find(y);
+    const byRoot = new Map();
+    for (const [x, y] of agreed) for (const i of [x, y]) (byRoot.get(find(i)) || byRoot.set(find(i), new Set()).get(find(i))).add(i);
+    const groups = [...byRoot.values()].map((set) => {
+        const members = [...set].map((i) => issues[i]).sort((p, q) => (q.signal_count || 0) - (p.signal_count || 0));
+        return { keep: members[0], merge: members.slice(1) };
+    });
     if (apply) for (const g of groups) await mergeIssuesInto(g.keep.id, g.merge.map((m) => m.id));
     const merged = groups.reduce((n, g) => n + g.merge.length, 0);
     if (merged) logStructured("info", "issues_merged_similar", { workspaceId, merged, groups: groups.map((g) => [g.keep.title, ...g.merge.map((m) => m.title)]) });
