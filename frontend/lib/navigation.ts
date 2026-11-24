@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Palette, BadgeCheck, BookOpen, BarChart3, Telescope, MapPinned, Rss, ScanSearch, ShieldCheck, UserSearch, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, Share2, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
+import { Palette, Swords, BadgeCheck, BookOpen, BarChart3, Telescope, MapPinned, Rss, ScanSearch, ShieldCheck, UserSearch, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Send, Share2, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
 
 // Five menus (Isu also holds Prediksi Isu: which issues come next and how to handle them), in the order a team works (see → understand → investigate → act → report), each answering one question:
 //   Hari Ini — what is happening and what do I decide today? (incl. opportunities worth using today)
@@ -19,7 +19,7 @@ export const navGroups: Array<{ key: string; items: Array<{ key: string; href: s
     items: [
       { key: "today", href: "/", icon: Home, match: ["/brief", "/insights", "/action-center", "/opportunities"] },
       { key: "issues", href: "/feed", icon: MessagesSquare, match: ["/signals", "/intelligence", "/network", "/timeline", "/forecast", "/map"] },
-      { key: "tools", href: "/cek-klaim", icon: ScanSearch, match: ["/recon", "/visibility"] },
+      { key: "tools", href: "/cek-klaim", icon: ScanSearch, match: ["/recon", "/visibility", "/competitors"] },
       { key: "tasks", href: "/alerts", icon: Bell, match: ["/alert-center", "/action-plans", "/actions", "/workspace/cases"] },
       { key: "reports", href: "/reports", icon: FileText, match: ["/quality", "/glossary"] },
     ],
@@ -51,6 +51,7 @@ export const SECTION_TABS = {
     { key: "claimCheck", href: "/cek-klaim", icon: ShieldCheck },
     { key: "recon", href: "/recon", icon: UserSearch },
     { key: "visibility", href: "/visibility", icon: Sparkles },
+    { key: "competitors", href: "/competitors", icon: Swords },
   ],
   tasks: [
     { key: "alertsTab", href: "/alerts", icon: BellRing },

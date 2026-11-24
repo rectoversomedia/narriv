@@ -9,8 +9,8 @@ import { getWorkspaceSettings, type WorkspaceUseCase } from "@/lib/api-service";
  */
 const HIDDEN_PAGES: Record<WorkspaceUseCase, string[]> = {
   brand: [],
-  gov: [],
-  cve: ["/visibility"],
+  gov: ["/competitors"],
+  cve: ["/visibility", "/competitors"],
 };
 
 export function useWorkspaceUseCase() {

@@ -354,7 +354,11 @@ router.post("/analyze-all", requireWorkspaceRole(MANAGER_ROLES), async (req, res
         const { data: wsRow } = settings?.brand_name || req.body?.brandName ? { data: null } : await supabase.from("workspaces").select("name").eq("id", scopedWorkspaceId).maybeSingle();
         const brandName = String(req.body?.brandName || settings?.brand_name || wsRow?.name || keywords?.[0]?.keyword || "").trim();
         if (!brandName) return res.status(400).json({ error: tr("Set a brand name or an active keyword first.", "Isi nama brand atau kata kunci aktif dulu."), code: "NO_BRAND" });
-        const competitors = Array.isArray(req.body?.competitors) ? req.body.competitors.slice(0, 3) : [];
+        // Competitors from the request, else the workspace's competitor list (Cek Kompetitor), so the AI test
+        // records which of them each answer named.
+        const { data: wsComp } = await supabase.from("workspaces").select("settings").eq("id", scopedWorkspaceId).maybeSingle();
+        const savedCompetitors = Array.isArray(wsComp?.settings?.competitors) ? wsComp.settings.competitors : [];
+        const competitors = (Array.isArray(req.body?.competitors) && req.body.competitors.length ? req.body.competitors : savedCompetitors).slice(0, 3);
         // Three prompts per engine keeps a full run around a minute and its cost small.
         // The workspace's own test questions (settings.geoPrompts) win; otherwise questions for its industry.
         const { data: wsSettings } = await supabase.from("workspaces").select("settings").eq("id", scopedWorkspaceId).maybeSingle();

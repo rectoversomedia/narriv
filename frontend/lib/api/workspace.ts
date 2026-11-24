@@ -584,3 +584,17 @@ export async function saveWhiteLabel(input: WhiteLabel & { applyToAll?: boolean 
 export async function uploadAgencyLogo(file: string): Promise<{ url: string }> {
   return apiClient("/api/workspaces/white-label/logo", { method: "POST", body: JSON.stringify({ file }) });
 }
+
+export interface CompetitorHeadline { title: string; url: string; publisher: string | null; at: string | null; negative: boolean }
+export interface CompetitorInsightRow { name: string; isBrand: boolean; articles: number; share: number; negative: number; negativeShare: number; aiNamed: number; headlines: CompetitorHeadline[] }
+export interface CompetitorInsight {
+  days: number;
+  cap: number;
+  at: string;
+  aiAnswers: number;
+  rows: CompetitorInsightRow[];
+  read: { summary: string; opportunities: string[]; watch: string[] } | null;
+}
+export function getCompetitorInsight(refresh = false): Promise<{ brand: string | null; competitors: string[]; maxCompetitors: number; insight: CompetitorInsight | null }> {
+  return apiClient(`/api/workspace/competitors/insight${refresh ? "?refresh=1" : ""}`);
+}

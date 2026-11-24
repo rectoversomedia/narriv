@@ -60,6 +60,7 @@ const navLinks = [
   { href: "/reports", title: { en: "Reports", id: "Laporan" }, subtitle: { en: "Reports", id: "Laporan" } },
   { href: "/clients", title: { en: "All clients", id: "Semua klien" }, subtitle: { en: "Agency overview", id: "Ringkasan agensi" } },
   { href: "/workspace/white-label", title: { en: "White-label", id: "Label agensi" }, subtitle: { en: "Settings", id: "Pengaturan" } },
+  { href: "/competitors", title: { en: "Competitors", id: "Cek kompetitor" }, subtitle: { en: "Analyst tools", id: "Alat Analis" } },
   { href: "/glossary", title: { en: "Glossary", id: "Glosarium" }, subtitle: { en: "Reports", id: "Laporan" } },
   { href: "/visibility", title: { en: "AI answers", id: "Jawaban AI" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/network", title: { en: "Conversation network", id: "Jaringan percakapan" }, subtitle: { en: "Issues", id: "Isu" } },
