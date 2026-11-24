@@ -135,6 +135,19 @@ export async function futureIssues(workspaceId, { db = supabase, refresh = false
         const { data } = await db.from("raw_documents").select("metadata, created_at").eq("workspace_id", workspaceId).like("external_id", "future:%").order("created_at", { ascending: false }).limit(1);
         const last = data?.[0]?.metadata?.future;
         if (last && now - Date.parse(last.at) < FUTURE_TTL_MS) return { ...last, cached: true };
+        // Stale: show the last forecast at once and make the new one in the background. Making one takes longer
+        // than a page request may wait (30 s), so doing it inline left the page on a timeout error.
+        if (last) {
+            refreshInBackground(workspaceId, { db, now });
+            return { ...last, cached: true, stale: true };
+        }
     }
     return generateFutureIssues(workspaceId, { db, now });
+}
+
+const inFlight = new Map();
+function refreshInBackground(workspaceId, opts) {
+    if (inFlight.has(workspaceId)) return;
+    const run = generateFutureIssues(workspaceId, opts).catch(() => null).finally(() => inFlight.delete(workspaceId));
+    inFlight.set(workspaceId, run);
 }

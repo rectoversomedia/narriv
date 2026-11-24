@@ -159,6 +159,8 @@ app.use((req, res, next) => {
     if (req.path === "/ai/retroanalyze" || req.path === "/ai/cluster") return aiBackfillTimeout(req, res, next);
     // Interactive "Fetch latest signals" runs sequential AI analysis per article.
     if (req.path === "/ingestion/fetch" || req.path === "/ingestion/run-keywords" || req.path.startsWith("/ingestion/rss/")) return aiBackfillTimeout(req, res, next);
+    // Analyst tools make several AI calls in a row (forecast, influencer check, claim check, issue brief).
+    if (/^(\/api)?\/tools\/(future-issues|recon|claim-check|issues\/[^/]+\/(brief|simulate))$/.test(req.path)) return aiBackfillTimeout(req, res, next);
     return defaultTimeout(req, res, next);
 });
 
