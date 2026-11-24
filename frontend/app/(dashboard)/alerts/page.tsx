@@ -830,7 +830,7 @@ export default function AlertsPage() {
   const summaryQuery = useQuery({
     queryKey: ["alerts-summary"],
     queryFn: async () => {
-      const res = await getAlertsSummary();
+      const res = await getAlertsSummary({ type: "risk" });
       return res ?? null;
     },
     staleTime: 60 * 1000,

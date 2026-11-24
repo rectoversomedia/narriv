@@ -200,14 +200,18 @@ function CollectionBanner({ problems, active, total }: { problems: number; activ
   const ws = query.data?.scheduler.lastRunForWorkspace;
   const totals = (ws?.results || []).reduce<{ fetched: number; inserted: number; duplicates: number }>((acc, r) => ({ fetched: acc.fetched + (r.fetched || 0), inserted: acc.inserted + (r.inserted || 0), duplicates: acc.duplicates + (r.deduplicated || 0) }), { fetched: 0, inserted: 0, duplicates: 0 });
   const pending = query.data?.analysis.unanalyzedRealSignals ?? 0;
-  const ok = problems === 0 && total > 0;
-  const headline = total === 0
+  // With no sources of its own, a workspace is still collected by its keywords (news, YouTube): say that, not "none".
+  const keywordOnly = total === 0 && Boolean(ws);
+  const ok = problems === 0 && (total > 0 || keywordOnly);
+  const headline = keywordOnly
+    ? pickL("Collecting by your keywords", "Pengambilan otomatis lewat kata kunci berjalan")
+    : total === 0
     ? pickL("No source connected yet", "Belum ada sumber yang terhubung")
     : ok
       ? pickL(`All ${active} sources are running`, `Semua ${active} sumber berjalan normal`)
       : pickL(`${problems} ${problems === 1 ? "source needs" : "sources need"} attention`, `${problems} sumber perlu perhatian`);
   return (
-    <section className="flex flex-wrap items-center justify-between gap-4 rounded-[16px] p-5 text-white shadow-[0_12px_32px_rgba(16,19,52,0.16)]" style={{ background: total === 0 ? "linear-gradient(135deg,#334155,#64748B)" : ok ? "linear-gradient(135deg,#065F46,#12A66A)" : "linear-gradient(135deg,#7F1D1D,#C81E1E)" }}>
+    <section className="flex flex-wrap items-center justify-between gap-4 rounded-[16px] p-5 text-white shadow-[0_12px_32px_rgba(16,19,52,0.16)]" style={{ background: total === 0 && !keywordOnly ? "linear-gradient(135deg,#334155,#64748B)" : ok ? "linear-gradient(135deg,#065F46,#12A66A)" : "linear-gradient(135deg,#7F1D1D,#C81E1E)" }}>
       <div className="min-w-0">
         <p className="text-[12px] font-black text-white/70">{pickL("Data collection", "Pengambilan data")}</p>
         <p className="mt-1 text-[24px] font-black leading-tight">{headline}</p>

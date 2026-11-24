@@ -216,10 +216,13 @@ router.get("/summary", async (req, res) => {
         }
 
         // Fetch all alerts for the workspace
-        const { data: all, error: allError } = await supabase
+        // ?type=risk counts the same alerts the alert list shows (opportunities have their own page).
+        let summaryQuery = supabase
             .from('alerts')
             .select('severity, status, type, created_at, acknowledged_at, resolved_at, escalation_level, deadline')
             .in('workspace_id', scopedWorkspaceIds);
+        if (["risk", "opportunity", "positioning"].includes(String(req.query.type || ""))) summaryQuery = summaryQuery.eq('type', String(req.query.type));
+        const { data: all, error: allError } = await summaryQuery;
 
         if (allError) {
             logStructured("error", "Error fetching alerts summary:", { error: allError?.message || allError, stack: allError?.stack });

@@ -289,11 +289,13 @@ export async function runBatchSourceIngestion(sourceIds: string[]): Promise<Batc
 
 export interface GetAlertsSummaryOptions {
   workspaceId?: string;
+  type?: "risk" | "opportunity" | "positioning";
 }
 
 export async function getAlertsSummary(options: GetAlertsSummaryOptions = {}): Promise<AlertsSummaryResponse | null> {
   const params = new URLSearchParams();
   if (options.workspaceId) params.set("workspaceId", options.workspaceId);
+  if (options.type) params.set("type", options.type);
   const qs = params.toString();
 
   try {

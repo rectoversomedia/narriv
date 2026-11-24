@@ -112,7 +112,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
   const [plan, setPlan] = useState<ActionStrategyType | null>(null);
   const [investigate, setInvestigate] = useState<string | null>(null);
   // Same numbers as Early Warnings: active = not resolved, across all time.
-  const alertsSummary = useQuery({ queryKey: ["brief-alerts-summary"], queryFn: () => getAlertsSummary(), staleTime: 30 * 1000 }).data;
+  const alertsSummary = useQuery({ queryKey: ["brief-alerts-summary"], queryFn: () => getAlertsSummary({ type: "risk" }), staleTime: 30 * 1000 }).data;
   // An information-resilience workspace has no brand reputation: its fourth figure is the open risk narratives.
   const { useCase } = useWorkspaceUseCase();
   const cveSum = useQuery({ queryKey: ["cve-summary", 30], queryFn: () => getCveSummary(30), enabled: useCase === "cve", staleTime: 60_000 }).data;
