@@ -56,6 +56,8 @@ export default function VisibilityPage() {
   const matrix = data?.prompt_matrix ?? [];
   const byEngine = new Map((data?.engine_breakdown ?? []).map((e) => [e.engineKey || e.engineName, e]));
   const configured = new Map((data?.engines ?? []).map((e) => [e.key, e.configured]));
+  // Name only the assistants that are connected: the page promised "5" while some had no API key.
+  const connectedCount = (data?.engines ?? []).filter((e) => e.configured).length || 5;
   const lastChecked = (data?.engine_breakdown ?? []).map((e) => e.lastChecked).sort().pop();
   const trend = (trendsQuery.data?.trends ?? []).filter((t) => t.data_points > 0);
   const missed = matrix
@@ -105,14 +107,14 @@ export default function VisibilityPage() {
         <div>
           <h1 className="text-[28px] font-black tracking-[-0.03em] text-[#101334]">{L("AI Answers", "Jawaban AI")}</h1>
           <p className="mt-1 text-[13px] font-semibold text-[#5A6478]">
-            {L(`How often 5 AI assistants name ${brand} when people ask about your industry.`, `Seberapa sering 5 asisten AI menyebut ${brand} saat orang bertanya soal industri Anda.`)}
+            {L(`How often ${connectedCount} AI assistants name ${brand} when people ask about your industry.`, `Seberapa sering ${connectedCount} asisten AI menyebut ${brand} saat orang bertanya soal industri Anda.`)}
             {lastChecked ? <span className="ml-2 font-bold text-[#31406B]">{L("Last test", "Uji terakhir")} {fmtDate(lastChecked)}</span> : null}
           </p>
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={exportCsv} disabled={matrix.length === 0} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[13px] font-black text-[#31406B] transition hover:bg-[#F8FAFF] disabled:opacity-50">{L("Export CSV", "Ekspor CSV")}</button>
           <button type="button" onClick={() => void runNow()} disabled={running || isDemo} title={isDemo ? L("Not available in the demo", "Tidak tersedia di demo") : undefined} className="h-10 rounded-[10px] bg-[#465FFF] px-4 text-[13px] font-black text-white transition hover:bg-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50">
-            {running ? L("Asking 5 AIs…", "Menanyai 5 AI…") : L("Run Test Now", "Uji Sekarang")}
+            {running ? L(`Asking ${connectedCount} AIs…`, `Menanyai ${connectedCount} AI…`) : L("Run Test Now", "Uji Sekarang")}
           </button>
         </div>
       </header>

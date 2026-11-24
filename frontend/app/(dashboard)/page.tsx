@@ -2,6 +2,7 @@
 
 import { tidyTitle } from "@/lib/tidy-text";
 import { useMyWorkspaces } from "@/components/layout/workspace-switcher";
+import { TrialGuide } from "@/components/dashboard/trial-guide";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -355,6 +356,10 @@ export default function DashboardPage() {
           </div>
           <Link href="/workspace/settings" className="rounded-[10px] bg-[#101334] px-4 py-2.5 text-[13px] font-bold text-white transition hover:bg-[#252a5c]">{L("Resume in Settings", "Lanjutkan di Pengaturan")}</Link>
         </div>
+      ) : null}
+
+      {workspaceQuery.data?.planStatus?.plan === "trial" && !workspaceQuery.data.planStatus.trialExpired && workspaceQuery.data.workspaceId ? (
+        <TrialGuide workspaceId={workspaceQuery.data.workspaceId} daysLeft={workspaceQuery.data.planStatus.trialDaysLeft} />
       ) : null}
 
       {/* The brand, a verdict with the numbers behind it, and every active keyword, each opening its records. */}
