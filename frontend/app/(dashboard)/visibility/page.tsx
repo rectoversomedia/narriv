@@ -58,7 +58,7 @@ export default function VisibilityPage() {
   const byEngine = new Map((data?.engine_breakdown ?? []).map((e) => [e.engineKey || e.engineName, e]));
   const configured = new Map((data?.engines ?? []).map((e) => [e.key, e.configured]));
   // Name only the assistants that are connected: the page promised "5" while some had no API key.
-  const connectedCount = (data?.engines ?? []).filter((e) => e.configured).length || 2;
+  const connectedCount = ENGINES.length;
   const lastChecked = (data?.engine_breakdown ?? []).map((e) => e.lastChecked).sort().pop();
   const trend = (trendsQuery.data?.trends ?? []).filter((t) => t.data_points > 0);
   const missed = matrix
@@ -245,7 +245,7 @@ export default function VisibilityPage() {
               </ul>
               <div className="mt-4 hidden overflow-hidden rounded-[12px] sm:block">
                 <table className="w-full table-fixed text-left">
-                  <colgroup><col /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /></colgroup>
+                  <colgroup><col />{ENGINES.map((e) => <col key={e.key} className="w-[72px]" />)}<col className="w-[72px]" /></colgroup>
                   <thead>
                     <tr className="bg-[#F4F6FC] text-[12px] font-black text-[#5A6478]">
                       <th className="px-3 py-2.5">{L("Question", "Pertanyaan")}</th>

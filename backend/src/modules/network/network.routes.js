@@ -67,10 +67,11 @@ router.get("/", async (req, res) => {
         if (offTopic.size) {
             built.camps = [...built.camps.filter((c) => !offTopic.has(c.id)), ...built.camps.filter((c) => offTopic.has(c.id))];
             built.coordination = built.coordination.filter((c) => !(c.camp && offTopic.has(c.camp)));
-            built.topAccounts = [...built.topAccounts.filter((a) => !offTopic.has(a.camp)), ...built.topAccounts.filter((a) => offTopic.has(a.camp))];
+            built.topAccounts = built.topAccounts.filter((a) => !offTopic.has(a.camp));
             built.suspectAccounts = (built.suspectAccounts || []).filter((a) => !offTopic.has(a.camp));
             built.offTopicCamps = offTopic.size;
         }
+        built.topAccounts = built.topAccounts.slice(0, 10);
         let net = { days, ...built, sources, monitoringPaused: ws?.settings?.monitoringPaused === true };
         const profile = await getWorkspaceProfile(workspaceId);
         if (profile?.privacyMode) net = { ...maskNetwork(net, requestLang()), privacyMode: true };

@@ -188,7 +188,8 @@ export function buildNetwork(comments, videos = [], { maxNodes = 140, accountInf
         if (young.length >= 3) coordination.push({ kind: "new_accounts", camp: camp.id, accounts: young.slice(0, 12).map((a) => a.name), accountCount: young.length, posts: young.reduce((n, a) => n + a.comments, 0) });
     }
 
-    const topAccounts = ranked.slice(0, 10).map((a) => ({
+    // Every account ranked (capped): the route drops off-topic camps, which can fill the whole top, then keeps 10.
+    const topAccounts = ranked.slice(0, 600).map((a) => ({
         ...flagsOf(a),
         id: a.id, name: a.name, comments: a.comments, likes: a.likes, repliesReceived: a.repliesReceived, videos: a.videos.size, camp: campOf.get(a.id) ?? null,
         // YouTube channel ids start with "UC"; other ids (demo, handles) have no public page to link.
