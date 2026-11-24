@@ -23,6 +23,12 @@ jest.unstable_mockModule('../src/modules/ingestion/rss-ingestion.service.js', ()
     return { totalFetched: 4, newSignalsCreated: 3, skippedDuplicates: 1, analyzed: 3, analysisFailed: 0, insertFailed: 0, clustering: { clustersCreated: 1 }, alerts: [] };
   }),
 }));
+// YouTube/Reddit stay offline here: with a real key in .env they answered and hid the news failures under test.
+const officialActual = await import('../src/modules/ingestion/official-sources.service.js');
+jest.unstable_mockModule('../src/modules/ingestion/official-sources.service.js', () => ({
+  ...officialActual,
+  ingestOfficialSources: jest.fn(async () => ({ sources: [] })),
+}));
 await import('./setup.js');
 const app = (await import('../src/index.js')).default;
 const { MAX_OWNED_WORKSPACES } = await import('../src/modules/workspaces/workspaces.routes.js');
