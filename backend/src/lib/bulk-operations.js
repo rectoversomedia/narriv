@@ -16,12 +16,19 @@ export async function bulkDeleteSignals(workspaceId, signalIds) {
         throw new Error("No signal IDs provided");
     }
 
-    const { data, error } = await supabase
-        .from("signals")
-        .update({ deleted_at: new Date().toISOString() })
-        .in("id", signalIds)
-        .eq("workspace_id", workspaceId)
-        .select("id");
+    // signals has no deleted_at column: remove the rows and what points at them. Only ids in this workspace.
+    const { data: owned, error: ownErr } = await supabase.from("signals").select("id").in("id", signalIds).eq("workspace_id", workspaceId);
+    if (ownErr) throw ownErr;
+    const ids = (owned || []).map((s) => s.id);
+    if (ids.length) {
+        for (const table of ["signal_analyses", "narrative_cluster_signals"]) {
+            const { error: depErr } = await supabase.from(table).delete().in("signal_id", ids);
+            if (depErr) throw depErr;
+        }
+    }
+    const { data, error } = ids.length
+        ? await supabase.from("signals").delete().in("id", ids).eq("workspace_id", workspaceId).select("id")
+        : { data: [], error: null };
 
     if (error) {
         logStructured("error", "bulk_delete_signals_failed", { error: error.message });

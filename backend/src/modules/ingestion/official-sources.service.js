@@ -5,6 +5,7 @@
  * the platforms without an affordable official API (TikTok, X, Instagram).
  */
 
+import { looksIndonesian } from "../../lib/indonesian-text.js";
 import { logStructured } from "../../lib/logger.js";
 import { persistCollectedRecords } from "./signal-persistence.js";
 import { mentionsKeyword, phraseQuery } from "../../lib/keyword-match.js";
@@ -62,6 +63,9 @@ export async function fetchYouTubeVideos(keyword, { limit = 8, fetchImpl = fetch
         .filter((item) => item.id?.videoId && item.snippet)
         // YouTube search is loose even with quotes: keep only videos whose own text names the keyword.
         .filter(({ snippet }) => mentionsKeyword(`${decodeEntities(snippet.title)} ${decodeEntities(snippet.description)} ${snippet.channelTitle || ""}`, keyword))
+        // relevanceLanguage=id is only a ranking hint: an international word ("ransomware") still brings English or
+        // Portuguese videos. Keep the ones written in Indonesian.
+        .filter(({ snippet }) => looksIndonesian(`${decodeEntities(snippet.title)} ${decodeEntities(snippet.description)}`))
         .map(({ id, snippet }) => {
             const title = decodeEntities(snippet.title);
             return {
