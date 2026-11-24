@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { RichText } from "@/components/ui/rich-text";
 import { tidyText, tidyTitle } from "@/lib/tidy-text";
 import Link from "next/link";
@@ -155,7 +156,7 @@ export default function OpportunitiesPage() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Opportunities", "Peluang")}</h1>
+        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Opportunities", "Peluang")}<TermHint id="opportunity" className="ml-2" /></h1>
         <p className="mt-1 text-[14px] text-[#5F6B94]">{L("Good news worth using, and trends worth joining.", "Kabar baik yang bisa dimanfaatkan, dan tren yang layak diikuti.")}</p>
       </div>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { RichText } from "@/components/ui/rich-text";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -100,7 +101,7 @@ export default function ReconPage() {
     <div className="mx-auto grid max-w-[1100px] gap-5">
       <style>{`@media print { body * { visibility: hidden } #recon-report, #recon-report * { visibility: visible } #recon-report { position: absolute; inset: 0; box-shadow: none; border: 0 } .no-print { display: none !important } }`}</style>
       <header className="no-print">
-        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-[#101334] sm:text-[28px]">{L("Profile Check", "Cek Influencer & Akun")}</h1>
+        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-[#101334] sm:text-[28px]">{L("Profile Check", "Cek Influencer & Akun")}<TermHint id="recon" className="ml-2" /></h1>
         <p className="mt-1 max-w-2xl text-[14px] text-[#5F6B94]">{L("Before you sign a KOL, ambassador or spokesperson: their public record read for legal trouble, gambling and illegal lending promos, hate speech, hoaxes and controversy.", "Sebelum menggandeng KOL, brand ambassador, atau juru bicara: rekam jejak publiknya dibaca untuk masalah hukum, promosi judi online dan pinjol, ujaran kebencian, hoaks, dan kontroversi.")}</p>
       </header>
       <form onSubmit={(e) => { e.preventDefault(); if (subject.trim().length >= 3) run.mutate(); }} className={cn(BOX, "no-print grid gap-3 sm:grid-cols-[1fr_auto_auto]")}>

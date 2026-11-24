@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -67,8 +68,9 @@ export default function FeedPage() {
   return (
     <div className="mx-auto grid max-w-[1100px] gap-5">
       <header>
-        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-[#101334] sm:text-[28px]">{L("Narrative Feed", "Feed Narasi")}</h1>
+        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-[#101334] sm:text-[28px]">{L("Narrative Feed", "Feed Narasi")}<TermHint id="feed" className="ml-2" /></h1>
         <p className="mt-1 max-w-2xl text-[14px] text-[#5F6B94]">{L("Every issue, most dangerous first, with the signs behind it: bots, toxicity, anomalies, hoaxes and polarization.", "Semua isu, paling berbahaya di atas, lengkap dengan tandanya: bot, ujaran kasar, lonjakan anomali, hoaks, dan polarisasi.")}</p>
+        <p className="mt-1.5 flex items-center gap-1 text-[12.5px] font-semibold text-[#5F6B94]">{L("The number on each issue is its risk score (0–100).", "Angka di tiap isu adalah skor risikonya (0–100).")}<TermHint id="risk-score" /></p>
       </header>
       <div className="flex flex-wrap items-center gap-2">
         {RANGES.map((d) => <button key={d} type="button" onClick={() => setDays(d)} className={cn("h-9 rounded-full px-4 text-[13px] font-black", days === d ? "bg-[#101334] text-white" : "bg-white text-[#101334] ring-1 ring-[#D8DDEB]")}>{L(`${d} days`, `${d} hari`)}</button>)}

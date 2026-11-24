@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { tidyText } from "@/lib/tidy-text";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -642,7 +643,7 @@ export default function CasesPage() {
         <div>
           <h1 className="mt-3 text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
             {t("header.title")}
-          </h1>
+          <TermHint id="case" className="ml-2" /></h1>
         </div>
         <div className="flex items-center gap-3">
           <button

@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import Link from "next/link";
 import { useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
@@ -1346,7 +1347,7 @@ export default function SignalsPage() {
         <DemoBanner />
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div><h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1></div>
+        <div><h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}<TermHint id="conversation" className="ml-2" /></h1></div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"

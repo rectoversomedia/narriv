@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, ExternalLink } from "lucide-react";
@@ -47,7 +48,7 @@ export default function QualityPage() {
   return (
     <div className="mx-auto grid max-w-[1100px] gap-6">
       <header>
-        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-[#101334] sm:text-[28px]">{L("Accuracy Check", "Uji Akurasi")}</h1>
+        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-[#101334] sm:text-[28px]">{L("Accuracy Check", "Uji Akurasi")}<TermHint id="accuracy" className="ml-2" /></h1>
         <p className="mt-1 max-w-2xl text-[14px] text-[#5F6B94]">{useCase === "cve"
           ? L("How often the AI's narrative category and tone are right, measured only from your team's reviews, so the numbers you report are measured, not claimed.", "Seberapa sering kategori narasi dan nada dari AI tepat, diukur hanya dari tinjauan tim Anda, jadi angka yang dilaporkan benar-benar terukur, bukan klaim.")
           : L("Check the AI's tone on real records. The accuracy is computed only from these checks, so the number you show a client is measured, not claimed.", "Periksa nada AI pada catatan asli. Akurasi dihitung hanya dari pemeriksaan ini, jadi angka yang ditunjukkan ke klien benar-benar terukur, bukan klaim.")}</p>

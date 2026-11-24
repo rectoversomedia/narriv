@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { useState, type ReactNode } from "react";
 import { useMyWorkspaces } from "@/components/layout/workspace-switcher";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -105,7 +106,7 @@ export default function VisibilityPage() {
       <DemoBanner />
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-black tracking-[-0.03em] text-[#101334]">{L("AI Answers", "Jawaban AI")}</h1>
+          <h1 className="text-[28px] font-black tracking-[-0.03em] text-[#101334]">{L("AI Answers", "Jawaban AI")}<TermHint id="ai-visibility" className="ml-2" /></h1>
           <p className="mt-1 text-[13px] font-semibold text-[#5A6478]">
             {L(`How often ${connectedCount} AI assistants name ${brand} when people ask about your industry.`, `Seberapa sering ${connectedCount} asisten AI menyebut ${brand} saat orang bertanya soal industri Anda.`)}
             {lastChecked ? <span className="ml-2 font-bold text-[#31406B]">{L("Last test", "Uji terakhir")} {fmtDate(lastChecked)}</span> : null}
@@ -140,7 +141,7 @@ export default function VisibilityPage() {
                 </div>
               </div>
               <div>
-                <p className="text-[12px] font-black text-white/60">{L("AI visibility score", "Skor visibilitas AI")}</p>
+                <p className="flex items-center gap-1 text-[12px] font-black text-white/60">{L("AI visibility score", "Skor visibilitas AI")}<TermHint id="ai-visibility" tone="dark" /></p>
                 <p className="mt-1 inline-block rounded-[10px] px-3 py-1 text-[22px] font-black" style={{ background: look.bg, color: look.color }}>{L(...look.word)}</p>
                 <p className="mt-2 text-[13px] font-bold text-white/80">{L(`Named in ${totals.brand_answers} of ${totals.answers} AI answers`, `Disebut di ${totals.brand_answers} dari ${totals.answers} jawaban AI`)}</p>
               </div>

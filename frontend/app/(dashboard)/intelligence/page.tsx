@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import Link from "next/link";
 
 import { useState, useEffect, useRef, type ReactNode } from "react";
@@ -686,7 +687,7 @@ export default function IntelligencePage() {
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{ti("pageTitle")}</h1>
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{ti("pageTitle")}<TermHint id="issue-map" className="ml-2" /></h1>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           <button

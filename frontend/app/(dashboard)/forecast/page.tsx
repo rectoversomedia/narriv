@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -194,7 +195,7 @@ export default function ForecastPage() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-2xl">
-          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Issue Forecast", "Prediksi Isu")}</h1>
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Issue Forecast", "Prediksi Isu")}<TermHint id="forecast" className="ml-2" /></h1>
           <p className="mt-1 text-[14px] leading-relaxed text-[#5F6B94]">{L("The issues most likely to come next and how to handle them, read from the last 30 days and from what your team handled before.", "Isu yang berpeluang muncul berikutnya dan cara mengatasinya, dibaca dari data 30 hari terakhir dan dari isu yang pernah ditangani tim.")}</p>
         </div>
         <button type="button" onClick={refresh} disabled={refreshing || q.isLoading} className="inline-flex h-10 items-center gap-2 rounded-[12px] border-[1.5px] border-[#101334] bg-white px-3.5 text-[12.5px] font-bold text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#F7F8FC] disabled:opacity-60">

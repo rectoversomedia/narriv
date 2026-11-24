@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { tidyText, tidyTitle } from "@/lib/tidy-text";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -1150,7 +1151,7 @@ export default function AlertsPage() {
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{ta("v2.header.title")}</h1>
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{ta("v2.header.title")}<TermHint id="alert" className="ml-2" /></h1>
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={openNotificationRulesModal} className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF]">{ta("v2.header.notificationRules")}</button>

@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -139,7 +140,7 @@ export default function ActionCenterPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}<TermHint id="recommendation" className="ml-2" /></h1>
           <p className="mt-1 text-[14px] text-[#5F6B94]">{L("What Narriv suggests from the evidence, and where each one stands.", "Saran Narriv dari bukti, dan sejauh mana tiap saran sudah ditindaklanjuti.")}</p>
         </div>
         <div role="group" aria-label={to("period")} className="inline-flex rounded-[12px] border-[1.5px] border-[#101334] bg-white p-1 shadow-[0_2px_0_#101334]">

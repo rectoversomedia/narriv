@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { RichText } from "@/components/ui/rich-text";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -109,7 +110,7 @@ export default function NetworkPage() {
     <div className="mx-auto grid max-w-[1240px] gap-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Conversation Network", "Jaringan Percakapan")}</h1>
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Conversation Network", "Jaringan Percakapan")}<TermHint id="network" className="ml-2" /></h1>
           <p className="mt-1 max-w-2xl text-[14px] font-medium text-[#5F6B94]">{L("Who talks about the brand, where they gather, who drives the conversation, and whether part of it looks coordinated.", "Siapa yang membicarakan brand, berkumpul di mana, siapa penggeraknya, dan apakah ada yang tampak terkoordinasi.")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

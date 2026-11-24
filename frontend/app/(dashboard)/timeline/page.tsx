@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { tidyText, tidyTitle } from "@/lib/tidy-text";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -156,7 +157,7 @@ export default function TimelinePage() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Timeline", "Kronologi")}</h1>
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Timeline", "Kronologi")}<TermHint id="timeline" className="ml-2" /></h1>
           <p className="mt-1 text-[14px] text-[#5F6B94]">{L("When each issue appeared and what was done.", "Kapan isu muncul dan apa yang sudah dilakukan.")}</p>
         </div>
         <div className="flex self-start rounded-[12px] border-[1.5px] border-[#101334] bg-white p-1 shadow-[0_2px_0_#101334] sm:self-auto" role="group" aria-label={L("Period", "Periode")}>

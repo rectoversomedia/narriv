@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { tidyTitle } from "@/lib/tidy-text";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -406,7 +407,7 @@ export default function ActionPlansPage() {
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}<TermHint id="action-plan" className="ml-2" /></h1>
           <p className="mt-1 text-[14px] text-[#5F6B94]">{pickL("Pick a plan to see its steps and approve it below.", "Pilih rencana untuk melihat langkahnya dan menyetujuinya di bawah.")}</p>
         </div>
         <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[8px] bg-[#465FFF] px-4 text-[13px] font-black text-white shadow-sm transition hover:brightness-105">

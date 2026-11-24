@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Loader2, ShieldCheck } from "lucide-react";
@@ -37,7 +38,7 @@ export default function ClaimCheckPage() {
   return (
     <div className="mx-auto grid max-w-[900px] gap-5">
       <header>
-        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-[#101334] sm:text-[28px]">{L("Claim Check", "Cek Klaim")}</h1>
+        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-[#101334] sm:text-[28px]">{L("Claim Check", "Cek Klaim")}<TermHint id="claim-check" className="ml-2" /></h1>
         <p className="mt-1 max-w-2xl text-[14px] text-[#5F6B94]">{L("Paste a claim or a link that is going around. Narriv looks for Indonesian fact-checks and news coverage and tells you what it found.", "Tempel klaim atau tautan yang sedang beredar. Narriv mencari cek fakta dan pemberitaan di Indonesia, lalu menyampaikan temuannya.")}</p>
       </header>
       <form onSubmit={(e) => { e.preventDefault(); go(); }} className={cn(BOX, "grid gap-3")}>

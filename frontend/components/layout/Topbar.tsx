@@ -6,7 +6,7 @@ import { isPageHidden, useWorkspaceUseCase } from "@/lib/use-case";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
-import { Bell, ChevronDown, CircleHelp, Inbox, LogOut, Search, Settings, ShieldCheck, WifiOff, X } from "lucide-react";
+import { Bell, BookOpen, ChevronDown, CircleHelp, Inbox, LogOut, Search, Settings, ShieldCheck, WifiOff, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +58,7 @@ const navLinks = [
   { href: "/action-plans", title: { en: "Action plans", id: "Rencana aksi" }, subtitle: { en: "Follow-up", id: "Tindak Lanjut" } },
   { href: "/workspace/cases", title: { en: "Cases", id: "Kasus" }, subtitle: { en: "Follow-up", id: "Tindak Lanjut" } },
   { href: "/reports", title: { en: "Reports", id: "Laporan" }, subtitle: { en: "Reports", id: "Laporan" } },
+  { href: "/glossary", title: { en: "Glossary", id: "Glosarium" }, subtitle: { en: "Reports", id: "Laporan" } },
   { href: "/visibility", title: { en: "AI answers", id: "Jawaban AI" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/network", title: { en: "Conversation network", id: "Jaringan percakapan" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/workspace/settings", title: { en: "Settings", id: "Pengaturan" }, subtitle: { en: "Keywords, team, notifications", id: "Kata kunci, tim, notifikasi" } },
@@ -164,6 +165,7 @@ function AccountMenu({ name, email, onLogout }: { name: string; email: string; o
         </div>
         <div className="border-t border-slate-100 py-1">
           <Link href="/workspace/settings" onClick={() => setOpen(false)} className={item}><Settings size={16} aria-hidden="true" />{L("Settings", "Pengaturan")}</Link>
+          <Link href="/glossary" onClick={() => setOpen(false)} className={item}><BookOpen size={16} aria-hidden="true" />{L("Glossary", "Glosarium")}</Link>
           <Link href="/help" onClick={() => setOpen(false)} className={item}><CircleHelp size={16} aria-hidden="true" />{L("Help", "Bantuan")}</Link>
           {isAdmin ? <Link href="/admin" onClick={() => setOpen(false)} className={`${item} text-[#3B52F5]`}><ShieldCheck size={16} aria-hidden="true" />{L("Admin panel", "Admin panel")}</Link> : null}
         </div>

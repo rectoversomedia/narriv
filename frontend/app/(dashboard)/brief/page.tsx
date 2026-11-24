@@ -1,5 +1,6 @@
 "use client";
 
+import { TermHint } from "@/components/ui/term-hint";
 import { useWorkspaceUseCase } from "@/lib/use-case";
 import { getCveSummary } from "@/lib/api-service";
 import { CVE_CATEGORIES } from "@/lib/cve";
@@ -285,7 +286,7 @@ export default function DailyIntelligenceBriefPage() {
     <div className="flex flex-col gap-6 pb-10">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-[28px] font-black leading-tight tracking-[-0.03em] text-[#101334]">{t("title")}</h1>
+          <h1 className="text-[28px] font-black leading-tight tracking-[-0.03em] text-[#101334]">{t("title")}<TermHint id="brief" className="ml-2" /></h1>
           <p className="mt-1 text-[14px] text-[#5F6B94]">{L("The verdict, what to do and why, on one page.", "Kesimpulan, yang perlu dikerjakan, dan alasannya, dalam satu halaman.")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
