@@ -3,6 +3,7 @@ import supabase from "../../lib/supabase.js";
 import { analyzeCluster } from "../ai/ai.service.js";
 import { workspaceLanguage } from "../../lib/workspace-language.js";
 import { logStructured } from "../../lib/logger.js";
+import { runAiTask } from "../../lib/ai-gateway.js";
 
 // Helper to extract basic keywords (lowercase, basic stop words removed, bilingual EN + ID)
 export function extractKeywords(text) {
@@ -328,6 +329,12 @@ export const runClustering = async (workspaceId) => {
         createdCount++;
     }
 
+    // 6b. Issues with different titles can still be one story ("Sponsor IMOS" and "Promo booth di IMOS").
+    let mergedSimilar = 0;
+    if (createdCount > 0) {
+        try { mergedSimilar = (await mergeSimilarIssues(workspaceId)).merged; } catch (e) { logStructured("warn", "merge_similar_failed", { error: e?.message || e }); }
+    }
+
     // 7. Update lifecycles of all clusters in workspace
     try {
         await updateClusterLifecycles(workspaceId);
@@ -335,7 +342,7 @@ export const runClustering = async (workspaceId) => {
         logStructured("warn", "clustering_lifecycle_update_failed", { error: lcErr.message });
     }
 
-    logStructured("info", "clustering_completed", { createdCount, attachedCount });
+    logStructured("info", "clustering_completed", { createdCount, attachedCount, mergedSimilar });
     return {
         message: "Clustering complete",
         signalsProcessed: unclusteredSignals.length,
@@ -591,4 +598,62 @@ function shortTitle(text, max) {
     const cut = t.slice(0, max + 1);
     const space = cut.lastIndexOf(" ");
     return `${(space > max * 0.5 ? cut.slice(0, space) : t.slice(0, max)).replace(/[\s,.:;-]+$/, "")}…`;
+}
+
+
+/** Move every record (and any action plan) of `fromIds` onto `keepId`, then delete the emptied issues. */
+export async function mergeIssuesInto(keepId, fromIds) {
+    for (const fromId of fromIds) {
+        const { data: links } = await supabase.from("narrative_cluster_signals").select("signal_id").eq("cluster_id", fromId);
+        if (links?.length) {
+            await supabase.from("narrative_cluster_signals").upsert(links.map((l) => ({ cluster_id: keepId, signal_id: l.signal_id })), { onConflict: "cluster_id,signal_id" });
+        }
+        await supabase.from("narrative_cluster_signals").delete().eq("cluster_id", fromId);
+        await supabase.from("actions").update({ cluster_id: keepId }).eq("cluster_id", fromId);
+        await supabase.from("narrative_clusters").delete().eq("id", fromId);
+    }
+    const { count } = await supabase.from("narrative_cluster_signals").select("*", { count: "exact", head: true }).eq("cluster_id", keepId);
+    await supabase.from("narrative_clusters").update({ signal_count: count || 0, updated_at: new Date().toISOString() }).eq("id", keepId);
+}
+
+/**
+ * One AI call groups the workspace's recent issues that tell the same story, and each group becomes one issue
+ * (the one with the most records keeps its title). Conservative: only the same event or the same complaint is
+ * merged, never two stories that merely share a brand or a topic. Skipped when AI is unavailable.
+ */
+export async function mergeSimilarIssues(workspaceId, { days = 14, apply = true } = {}) {
+    const since = new Date(Date.now() - days * 86400000).toISOString();
+    const { data: issues } = await supabase
+        .from("narrative_clusters")
+        .select("id, title, description, signal_count, sentiment")
+        .eq("workspace_id", workspaceId)
+        .gte("updated_at", since)
+        .order("signal_count", { ascending: false })
+        .limit(40);
+    if (!issues || issues.length < 2) return { merged: 0, groups: [] };
+
+    const list = issues.map((c, i) => `${i}. ${c.title} — ${String(c.description || "").slice(0, 160)}`).join("\n");
+    const out = await runAiTask({
+        task: "classification",
+        workspaceId,
+        json: true,
+        system: "You deduplicate a list of news/social issues for a monitoring dashboard. Group issues ONLY when they are clearly the same story: the same event, campaign, incident or complaint, described differently. Do not group issues that merely share a company name, a product or a general topic. When unsure, do not group.",
+        user: `${list}\n\nReturn JSON {"groups": number[][]} listing only groups of 2 or more indices that are the same story. Return {"groups": []} if none.`,
+        validate: (d) => Array.isArray(d?.groups),
+    });
+    if (!out?.ok) return { merged: 0, groups: [], skipped: out?.error || "ai_unavailable" };
+
+    const used = new Set();
+    const groups = [];
+    for (const g of out.data.groups) {
+        const idx = [...new Set((Array.isArray(g) ? g : []).map(Number))].filter((i) => Number.isInteger(i) && issues[i] && !used.has(i));
+        if (idx.length < 2) continue;
+        idx.forEach((i) => used.add(i));
+        const members = idx.map((i) => issues[i]).sort((a, b) => (b.signal_count || 0) - (a.signal_count || 0));
+        groups.push({ keep: members[0], merge: members.slice(1) });
+    }
+    if (apply) for (const g of groups) await mergeIssuesInto(g.keep.id, g.merge.map((m) => m.id));
+    const merged = groups.reduce((n, g) => n + g.merge.length, 0);
+    if (merged) logStructured("info", "issues_merged_similar", { workspaceId, merged, groups: groups.map((g) => [g.keep.title, ...g.merge.map((m) => m.title)]) });
+    return { merged, groups: groups.map((g) => ({ keep: g.keep.title, merge: g.merge.map((m) => m.title) })) };
 }
