@@ -151,6 +151,7 @@ export default function NetworkPage() {
                   <div>
                     <h2 className="text-[18px] font-black text-[#101334]">{L("Network Map", "Peta Jaringan")}</h2>
                     <p className="text-[13px] text-[#5F6B94]">{L("Each circle is a camp gathered around its video. Hover an account to follow who it talks to.", "Setiap lingkaran adalah satu kubu yang berkumpul di videonya. Arahkan kursor ke akun untuk melihat dengan siapa ia berinteraksi.")}</p>
+                    {net.offTopicCamps ? <p className="mt-1 text-[12.5px] font-semibold text-[#A04606]">{L(`${net.offTopicCamps} off-topic camp(s) are placed last and left out of coordination checks.`, `${net.offTopicCamps} kubu di luar topik ditaruh di akhir dan tidak dihitung dalam indikasi terkoordinasi.`)}</p> : null}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     <button type="button" onClick={() => setCamp(null)} className={cn("rounded-full px-3 py-1 text-[12px] font-bold", camp == null ? "bg-[#101334] text-white" : "bg-[#F1F4FA] text-[#31406B]")}>{L("All", "Semua")}</button>

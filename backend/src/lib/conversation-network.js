@@ -144,7 +144,19 @@ export function buildNetwork(comments, videos = [], { maxNodes = 140, accountInf
 
     const ranked = [...accounts.values()].sort((x, y) => influence(y) - influence(x));
     // The map shows the camps; accounts outside them stay counted in the stats and lists, not drawn as grey noise.
-    const shown = ranked.filter((a) => campOf.has(a.id)).slice(0, maxNodes);
+    // Every camp gets its share of the map: taking the top accounts overall let the two biggest camps fill every
+    // slot, and the other camps were drawn as empty circles.
+    const inCamps = ranked.filter((a) => campOf.has(a.id));
+    const quota = Math.max(4, Math.floor(maxNodes / Math.max(1, campList.length)));
+    const perCamp = new Map();
+    const firstPass = inCamps.filter((a) => {
+        const n = perCamp.get(campOf.get(a.id)) || 0;
+        if (n >= quota) return false;
+        perCamp.set(campOf.get(a.id), n + 1);
+        return true;
+    });
+    const picked = new Set(firstPass.map((a) => a.id));
+    const shown = [...firstPass, ...inCamps.filter((a) => !picked.has(a.id))].slice(0, maxNodes);
     const shownIds = new Set(shown.map((a) => a.id));
     const shownVideos = new Set(shown.flatMap((a) => [...a.videos]));
 

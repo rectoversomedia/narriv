@@ -61,6 +61,16 @@ router.get("/", async (req, res) => {
         // AI names and summaries of the camps, stored at collection time (no AI call on read).
         const summaries = await storedCampSummaries(workspaceId);
         built.camps = built.camps.map((c) => ({ ...c, ...(summaries.get(c.key) ? { label: summaries.get(c.key).label, summary: summaries.get(c.key).summary, stance: summaries.get(c.key).stance } : {}) }));
+        // Off-topic camps (a keyword such as "FIF" also matches a church choir or a rapper's court case) go to the end,
+        // and their accounts no longer count as coordination or as the most influential voices about the brand.
+        const offTopic = new Set(built.camps.filter((c) => c.stance === "unrelated").map((c) => c.id));
+        if (offTopic.size) {
+            built.camps = [...built.camps.filter((c) => !offTopic.has(c.id)), ...built.camps.filter((c) => offTopic.has(c.id))];
+            built.coordination = built.coordination.filter((c) => !(c.camp && offTopic.has(c.camp)));
+            built.topAccounts = [...built.topAccounts.filter((a) => !offTopic.has(a.camp)), ...built.topAccounts.filter((a) => offTopic.has(a.camp))];
+            built.suspectAccounts = (built.suspectAccounts || []).filter((a) => !offTopic.has(a.camp));
+            built.offTopicCamps = offTopic.size;
+        }
         let net = { days, ...built, sources, monitoringPaused: ws?.settings?.monitoringPaused === true };
         const profile = await getWorkspaceProfile(workspaceId);
         if (profile?.privacyMode) net = { ...maskNetwork(net, requestLang()), privacyMode: true };

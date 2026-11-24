@@ -21,6 +21,7 @@ export type ConversationNetwork = {
   camps: NetworkCamp[];
   topAccounts: NetworkAccount[];
   coordination: NetworkCoordination[];
+  offTopicCamps?: number;
   suspectAccounts?: Array<{ name: string; camp: number | null; comments: number; flags: AccountFlag[]; automation: number }>;
   sources: NetworkSource[];
   monitoringPaused?: boolean;
