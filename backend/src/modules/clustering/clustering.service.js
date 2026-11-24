@@ -653,7 +653,11 @@ export async function mergeSimilarIssues(workspaceId, { days = 14, apply = true 
         return set;
     };
     const pb = pairsOf(b.data.groups);
-    const agreed = [...pairsOf(a.data.groups)].filter((p) => pb.has(p)).map((p) => p.split("-").map(Number));
+    // Pairs a person said to keep apart (workspaces.settings.keepApartIssues: [[idA, idB], ...]) are never merged.
+    const { data: wsRow } = await supabase.from("workspaces").select("settings").eq("id", workspaceId).maybeSingle();
+    const apart = new Set((wsRow?.settings?.keepApartIssues || []).map((pair) => [...pair].sort().join("|")));
+    const agreed = [...pairsOf(a.data.groups)].filter((p) => pb.has(p)).map((p) => p.split("-").map(Number))
+        .filter(([x, y]) => !apart.has([issues[x].id, issues[y].id].sort().join("|")));
     // Agreed pairs joined into groups.
     const parent = issues.map((_, i) => i);
     const find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));
