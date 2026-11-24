@@ -358,7 +358,9 @@ export default function DashboardPage() {
         </div>
       ) : null}
 
-      {workspaceQuery.data?.planStatus?.plan === "trial" && !workspaceQuery.data.planStatus.trialExpired && workspaceQuery.data.workspaceId ? (
+      {isDemoUser(user) ? (
+        <TrialGuide workspaceId={workspaceQuery.data?.workspaceId || "demo"} daysLeft={null} />
+      ) : workspaceQuery.data?.planStatus?.plan === "trial" && !workspaceQuery.data.planStatus.trialExpired && workspaceQuery.data.workspaceId ? (
         <TrialGuide workspaceId={workspaceQuery.data.workspaceId} daysLeft={workspaceQuery.data.planStatus.trialDaysLeft} />
       ) : null}
 
