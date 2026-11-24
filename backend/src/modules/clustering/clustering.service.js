@@ -44,6 +44,9 @@ export function explainMembership(signal, keywordSet, method, threshold) {
     };
 }
 
+/** Title key for spotting twin issues: lower case, letters and digits only. */
+export const normalizeTitle = (t) => String(t || "").toLowerCase().normalize("NFKD").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
 export const runClustering = async (workspaceId) => {
     logStructured("info", "clustering_started", { workspaceId });
 
@@ -216,6 +219,7 @@ export const runClustering = async (workspaceId) => {
 
     // 6. Generate AI labels and save new narrative clusters to DB
     let createdCount = 0;
+    const titledThisRun = new Map();
     // Issue titles are stored and shared by every member, so they follow the workspace's content language.
     const lang = clusters.length ? await workspaceLanguage(workspaceId) : "id";
     for (const cluster of clusters) {
@@ -256,6 +260,21 @@ export const runClustering = async (workspaceId) => {
             .in("signal_id", cluster.map((s) => s.id));
         if ((takenLinks || []).length) {
             logStructured("info", "clustering_skip_taken", { taken: takenLinks.length, size: cluster.length });
+            continue;
+        }
+
+        // The AI often gives two keyword groups of one story the same title, which showed as twin issues.
+        // An issue with the same title (this run or an existing one) takes these records instead.
+        const titleKey = normalizeTitle(title);
+        const twin = titleKey ? (titledThisRun.get(titleKey) || activeClustersWithKeywords.find((c) => normalizeTitle(c.title) === titleKey)) : null;
+        if (twin) {
+            await supabase
+                .from("narrative_cluster_signals")
+                .upsert(cluster.map((s) => ({ cluster_id: twin.id, signal_id: s.id })), { onConflict: "cluster_id,signal_id" });
+            twin.signal_count = (twin.signal_count || 0) + cluster.length;
+            await supabase.from("narrative_clusters").update({ signal_count: twin.signal_count, updated_at: new Date().toISOString() }).eq("id", twin.id);
+            attachedCount += cluster.length;
+            logStructured("info", "clustering_joined_same_title", { clusterId: twin.id, size: cluster.length });
             continue;
         }
 
@@ -305,6 +324,7 @@ export const runClustering = async (workspaceId) => {
             logStructured("warn", "clustering_link_signals_error", { error: linkError.message });
         }
 
+        titledThisRun.set(titleKey, dbCluster);
         createdCount++;
     }
 
