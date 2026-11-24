@@ -640,3 +640,8 @@ export async function downloadReportExport(signedUrl: string): Promise<unknown |
     return null;
   }
 }
+
+/** Move some of an issue's records into a new issue; the two are then never merged automatically again. */
+export function splitNarrative(id: string, input: { signalIds: string[]; title: string }): Promise<{ id: string; title: string; moved: number }> {
+  return apiClient(`/api/narratives/${id}/split`, { method: "POST", body: JSON.stringify(input) });
+}

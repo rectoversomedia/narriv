@@ -453,6 +453,56 @@ router.post("/", async (req, res) => {
 });
 
 // PATCH /api/narratives/:id - Update a narrative cluster
+/**
+ * POST /api/narratives/:id/split — move some of an issue's records into a new issue, for when two stories were put
+ * together. Body { signalIds: string[], title: string }. The two issues are then kept apart: automatic merging
+ * (clustering.service mergeSimilarIssues) never joins them again. Viewers and the demo cannot split.
+ */
+router.post("/:id/split", async (req, res) => {
+    try {
+        if (String(req.user?.id || "").startsWith("demo")) return res.status(403).json({ error: tr("The demo is read-only.", "Demo hanya bisa dilihat.") });
+        const signalIds = [...new Set((Array.isArray(req.body?.signalIds) ? req.body.signalIds : []).map(String))].slice(0, 500);
+        const title = String(req.body?.title || "").trim().slice(0, 120);
+        if (!signalIds.length) return res.status(400).json({ error: tr("Pick at least one record.", "Pilih minimal satu catatan.") });
+        if (title.length < 3) return res.status(400).json({ error: tr("Give the new issue a title.", "Beri judul untuk isu baru.") });
+
+        const { data: source } = await supabase.from("narrative_clusters").select("id, workspace_id, sentiment, impact, priority").eq("id", req.params.id).maybeSingle();
+        if (!source) return res.status(404).json({ error: "Narrative cluster not found" });
+        const ws = await resolveWorkspaceIdForUser(req.user.id, source.workspace_id);
+        if (!ws || ws !== source.workspace_id) return res.status(403).json({ error: "Workspace access denied" });
+        const { data: member } = await supabase.from("workspace_members").select("role").eq("user_id", req.user.id).eq("workspace_id", ws).maybeSingle();
+        if (member?.role === "viewer") return res.status(403).json({ error: tr("Viewers cannot change issues.", "Pembaca tidak bisa mengubah isu.") });
+
+        const { data: links } = await supabase.from("narrative_cluster_signals").select("signal_id").eq("cluster_id", source.id);
+        const inIssue = new Set((links || []).map((l) => String(l.signal_id)));
+        const moving = signalIds.filter((id) => inIssue.has(id));
+        if (!moving.length) return res.status(400).json({ error: tr("Those records are not in this issue.", "Catatan itu tidak ada di isu ini.") });
+        if (moving.length >= inIssue.size) return res.status(400).json({ error: tr("Leave at least one record in this issue.", "Sisakan minimal satu catatan di isu ini.") });
+
+        const now = new Date().toISOString();
+        const { data: created, error: createError } = await supabase.from("narrative_clusters").insert({
+            workspace_id: ws, title, description: title, main_narrative: title,
+            sentiment: source.sentiment || "neutral", impact: source.impact || "MEDIUM", priority: source.priority || source.impact || "MEDIUM",
+            signal_count: moving.length, keywords: [], lifecycle: "emerging",
+            metadata: { labeledBy: "manual_split", splitFrom: source.id, splitBy: req.user.id, splitAt: now }, updated_at: now,
+        }).select("id, title").single();
+        if (createError) throw createError;
+        const { error: linkError } = await supabase.from("narrative_cluster_signals").insert(moving.map((signal_id) => ({ cluster_id: created.id, signal_id })));
+        if (linkError) throw linkError;
+        await supabase.from("narrative_cluster_signals").delete().eq("cluster_id", source.id).in("signal_id", moving);
+        await supabase.from("narrative_clusters").update({ signal_count: inIssue.size - moving.length, updated_at: now }).eq("id", source.id);
+
+        const { data: wsRow } = await supabase.from("workspaces").select("settings").eq("id", ws).maybeSingle();
+        const settings = wsRow?.settings || {};
+        await supabase.from("workspaces").update({ settings: { ...settings, keepApartIssues: [...(settings.keepApartIssues || []), [source.id, created.id]].slice(-500) } }).eq("id", ws);
+        await recordAuditLog({ userId: req.user.id, workspaceId: ws, event: "narrative_split", metadata: { from: source.id, to: created.id, records: moving.length } }).catch(() => null);
+        return res.status(201).json({ id: created.id, title: created.title, moved: moving.length });
+    } catch (error) {
+        logStructured("error", "narrative_split_failed", { error: error?.message || error });
+        return res.status(500).json({ error: tr("The issue could not be split.", "Isu gagal dipisahkan.") });
+    }
+});
+
 router.patch("/:id", async (req, res) => {
     try {
         const { id } = req.params;

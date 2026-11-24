@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ExternalLink, FileSearch, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
-import type { NarrativeDetailRecord } from "@/lib/api-service";
+import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Check, ChevronDown, ExternalLink, FileSearch, Loader2, Scissors, Sparkles, TrendingDown, TrendingUp, X } from "lucide-react";
+import { splitNarrative, type NarrativeDetailRecord } from "@/lib/api-service";
+import { isDemoSession, useAuthStore } from "@/store/useAuthStore";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { pickL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
@@ -138,32 +141,77 @@ function Evidence({ detail, n }: { detail: NarrativeDetailRecord; n: string }) {
   const signals = detail.relatedSignals || [];
   const [all, setAll] = useState(false);
   const shown = signals.slice(0, all ? 20 : FIRST_RECORDS);
+  const router = useRouter();
+  const qc = useQueryClient();
+  const demo = isDemoSession(useAuthStore((st) => st.user));
+  // Split mode: pick the records that belong to another story and move them into a new issue.
+  const [splitting, setSplitting] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [title, setTitle] = useState("");
+  const split = useMutation({
+    mutationFn: () => splitNarrative(String(detail.id), { signalIds: [...picked], title: title.trim() }),
+    onSuccess: (r) => { qc.invalidateQueries(); router.push(`/intelligence/${r.id}`); },
+  });
+  const canSplit = !demo && signals.length >= 2;
+  const toggle = (id: string) => setPicked((p) => { const next = new Set(p); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const startSplit = () => { setSplitting(true); setAll(true); setPicked(new Set()); setTitle(""); split.reset(); };
+  const ready = picked.size > 0 && picked.size < signals.length && title.trim().length >= 3;
   return (
     <section aria-label={pickL("Evidence", "Bukti")} className="grid gap-4">
-      <SectionHead n={n} icon={FileSearch} title={pickL("The Records Behind It", "Catatan di Baliknya")} note={signals.length > 20 ? pickL(`The 20 most recent of ${signals.length}.`, `20 terbaru dari ${signals.length}.`) : pickL(`${signals.length} record${signals.length === 1 ? "" : "s"}.`, `${signals.length} catatan.`)} />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <SectionHead n={n} icon={FileSearch} title={pickL("The Records Behind It", "Catatan di Baliknya")} note={signals.length > 20 ? pickL(`The 20 most recent of ${signals.length}.`, `20 terbaru dari ${signals.length}.`) : pickL(`${signals.length} record${signals.length === 1 ? "" : "s"}.`, `${signals.length} catatan.`)} />
+        {canSplit && !splitting ? (
+          <button type="button" onClick={startSplit} title={pickL("Two different stories here? Move some records into their own issue.", "Ada dua cerita berbeda? Pindahkan sebagian catatan ke isu sendiri.")} className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-[#D9DEF0] bg-white px-3 text-[12.5px] font-bold text-[#3A4270] transition hover:border-[#101334] hover:text-[#101334]">
+            <Scissors size={14} aria-hidden="true" /> {pickL("Split issue", "Pisahkan isu")}
+          </button>
+        ) : null}
+      </div>
+      {splitting ? (
+        <div className="grid gap-3 rounded-[14px] border-[1.5px] border-[#101334] bg-[#F7F8FC] p-4 shadow-[0_2px_0_#101334]">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-[13.5px] font-semibold leading-snug text-[#101334]">{pickL("Tick the records that belong to a different story, then name that story. They move into a new issue, and the two are never merged automatically again.", "Centang catatan yang sebenarnya cerita lain, lalu beri judul. Catatan itu pindah ke isu baru, dan kedua isu tidak akan digabung otomatis lagi.")}</p>
+            <button type="button" onClick={() => setSplitting(false)} className="rounded-full p-1 text-[#5A6478] hover:bg-black/5" aria-label={pickL("Cancel", "Batal")}><X size={16} /></button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder={pickL("Title of the new issue", "Judul isu baru")} className="h-10 min-w-0 flex-1 rounded-[10px] border-[1.5px] border-[#D9DEF0] bg-white px-3 text-[13.5px] font-semibold text-[#101334] outline-none focus:border-[#3247D9]" />
+            <button type="button" disabled={!ready || split.isPending} onClick={() => split.mutate()} className="inline-flex h-10 items-center gap-1.5 rounded-[10px] bg-[#101334] px-4 text-[13px] font-black text-white disabled:opacity-40">
+              {split.isPending ? <Loader2 size={14} className="animate-spin" /> : <Scissors size={14} />} {pickL(`Move ${picked.size}`, `Pindahkan ${picked.size}`)}
+            </button>
+          </div>
+          {picked.size >= signals.length ? <p className="text-[12.5px] font-semibold text-[#B42318]">{pickL("Leave at least one record in this issue.", "Sisakan minimal satu catatan di isu ini.")}</p> : null}
+          {split.isError ? <p className="text-[12.5px] font-semibold text-[#B42318]">{(split.error as Error)?.message || pickL("The issue could not be split.", "Isu gagal dipisahkan.")}</p> : null}
+        </div>
+      ) : null}
       {signals.length === 0 ? (
         <p className="rounded-[14px] border border-dashed border-[#C9D1E6] px-3.5 py-3 text-[12.5px] font-medium text-[#5A6478]">{detail.evidenceNote || pickL("No linked records yet.", "Belum ada catatan tertaut.")}</p>
       ) : (
         <ul className="grid gap-2">
           {shown.map((sig) => {
             const tone = SENTIMENT[sig.sentiment] ?? SENTIMENT.unanalyzed;
+            const on = picked.has(String(sig.id));
             const body = (
               <>
-                <span className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-[#F1F4FA]"><PlatformIcon platform={sig.platform || "news"} className="size-4" /></span>
+                {splitting ? (
+                  <span aria-hidden="true" className={cn("mt-1.5 grid size-5 shrink-0 place-items-center rounded-[6px] border-[1.5px]", on ? "border-[#101334] bg-[#101334] text-white" : "border-[#B8C0D9] bg-white")}>{on ? <Check size={13} /> : null}</span>
+                ) : (
+                  <span className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-[#F1F4FA]"><PlatformIcon platform={sig.platform || "news"} className="size-4" /></span>
+                )}
                 <span className="min-w-0 flex-1">
-                  <span className={cn("block text-[14px] font-bold leading-snug text-[#101334]", sig.url && "group-hover:text-[#3B52F5]")}>{sig.title}</span>
+                  <span className={cn("block text-[14px] font-bold leading-snug text-[#101334]", sig.url && !splitting && "group-hover:text-[#3B52F5]")}>{sig.title}</span>
                   <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px] font-medium text-[#5A6478]">
                     <span className={cn("rounded-[6px] px-1.5 py-0.5 font-sans text-[11.5px] font-black", tone.chip)}>{sentimentWord(sig.sentiment)}{typeof sig.analysisConfidence === "number" ? ` · ${Math.round(sig.analysisConfidence * 100)}%` : ""}</span>
                     {platformName(sig.platform)} · {when(sig.publishedAt || sig.capturedAt)}
                   </span>
                 </span>
-                {sig.url ? <ExternalLink size={14} className="mt-1 shrink-0 text-[#9AA3BC] group-hover:text-[#3B52F5]" aria-hidden="true" /> : null}
+                {sig.url && !splitting ? <ExternalLink size={14} className="mt-1 shrink-0 text-[#9AA3BC] group-hover:text-[#3B52F5]" aria-hidden="true" /> : null}
               </>
             );
             const cls = "flex items-start gap-3 rounded-[14px] border border-[#E1E6F2] bg-white px-3.5 py-3";
             return (
               <li key={sig.id}>
-                {sig.url ? <a href={sig.url} target="_blank" rel="noopener noreferrer" className={cn(cls, "group transition hover:border-[#101334] hover:shadow-[0_2px_0_#101334]")}>{body}</a> : <div className={cls}>{body}</div>}
+                {splitting ? (
+                  <button type="button" role="checkbox" aria-checked={on} onClick={() => toggle(String(sig.id))} className={cn(cls, "w-full text-left transition", on ? "border-[#101334] bg-[#F7F8FC]" : "hover:border-[#9AA3BC]")}>{body}</button>
+                ) : sig.url ? <a href={sig.url} target="_blank" rel="noopener noreferrer" className={cn(cls, "group transition hover:border-[#101334] hover:shadow-[0_2px_0_#101334]")}>{body}</a> : <div className={cls}>{body}</div>}
               </li>
             );
           })}
