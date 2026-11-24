@@ -19,6 +19,20 @@ export function generatePromptVariants(brandName, competitors = [], industry = "
     const cleanBrand = brandName?.trim() || "Bank Mandiri";
     const comp1 = competitors[0]?.trim() || "BCA";
     const comp2 = competitors[1]?.trim() || "Bank Danamon";
+    const ind = String(industry || "").trim();
+
+    // Outside banking the questions follow the workspace's industry (a leasing company asked about "the best
+    // bank for savings" made the score meaningless).
+    if (ind && !/bank|perbankan/i.test(ind)) {
+        return [
+            { id: "reputation", category: "Reputasi & Kredibilitas", prompt: `Bagaimana reputasi, keandalan, dan rekam jejak ${cleanBrand} di industri ${ind} di Indonesia?` },
+            { id: "comparison", category: "Rekomendasi & Komparasi", prompt: competitors.length > 0
+                ? `Untuk ${ind} di Indonesia, mana yang lebih direkomendasikan: ${cleanBrand}, ${comp1}, atau ${comp2}? Jelaskan alasannya.`
+                : `Apa perusahaan ${ind} terbaik dan paling terpercaya di Indonesia saat ini? Apakah ${cleanBrand} termasuk yang direkomendasikan?` },
+            { id: "customer_service", category: "Layanan Pelanggan", prompt: `Bagaimana pengalaman pelanggan dengan ${cleanBrand}: kepuasan, penanganan keluhan, dan hal yang sering dikeluhkan?` },
+            { id: "security", category: "Keamanan & Kepercayaan", prompt: `Apakah aman dan terpercaya menggunakan layanan ${cleanBrand}? Adakah risiko atau kasus yang perlu diketahui?` },
+        ];
+    }
 
     return [
         {

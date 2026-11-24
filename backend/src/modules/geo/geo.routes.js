@@ -347,7 +347,7 @@ router.post("/analyze-all", requireWorkspaceRole(MANAGER_ROLES), async (req, res
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.body?.workspaceId);
         if (!scopedWorkspaceId) return res.status(403).json({ error: "Workspace access denied" });
 
-        const { data: settings } = await supabase.from("workspace_settings").select("brand_name").eq("workspace_id", scopedWorkspaceId).maybeSingle();
+        const { data: settings } = await supabase.from("workspace_settings").select("brand_name, industry").eq("workspace_id", scopedWorkspaceId).maybeSingle();
         const { data: keywords } = await supabase.from("monitoring_keywords").select("keyword").eq("workspace_id", scopedWorkspaceId).eq("is_active", true).limit(3);
         // A topic workspace has no brand: test the workspace's own name before falling back to a keyword, so a
         // topic ("kebocoran data") is not scored as if it were a brand.
@@ -356,7 +356,10 @@ router.post("/analyze-all", requireWorkspaceRole(MANAGER_ROLES), async (req, res
         if (!brandName) return res.status(400).json({ error: tr("Set a brand name or an active keyword first.", "Isi nama brand atau kata kunci aktif dulu."), code: "NO_BRAND" });
         const competitors = Array.isArray(req.body?.competitors) ? req.body.competitors.slice(0, 3) : [];
         // Three prompts per engine keeps a full run around a minute and its cost small.
-        const queries = generatePromptVariants(brandName, competitors).slice(0, 3).map((p) => p.prompt);
+        // The workspace's own test questions (settings.geoPrompts) win; otherwise questions for its industry.
+        const { data: wsSettings } = await supabase.from("workspaces").select("settings").eq("id", scopedWorkspaceId).maybeSingle();
+        const own = (wsSettings?.settings?.geoPrompts || []).map((q) => String(q || "").trim()).filter(Boolean);
+        const queries = own.length ? own.slice(0, 3) : generatePromptVariants(brandName, competitors, settings?.industry || undefined).slice(0, 3).map((p) => p.prompt);
 
         const connected = GEO_ENGINES.filter(isEngineConfigured);
         if (connected.length === 0) return res.status(400).json({ error: tr("No AI assistant is connected yet.", "Belum ada asisten AI yang terhubung."), code: "NO_ENGINES" });
