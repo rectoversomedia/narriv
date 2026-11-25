@@ -16,6 +16,8 @@ export interface AdminWorkspace {
   trialDaysLeft: number | null;
   trialExpired: boolean;
   monitoringPaused: boolean;
+  /** The client can browse the full influencer database in action plans. */
+  creatorAccess: boolean;
   /** Keywords checked every hour: the plan's number, or the team's override. */
   hourlyKeywords: number;
   keywordLimitOverride: number | null;
@@ -55,6 +57,7 @@ export interface AdminWorkspacePatch {
   plan?: WorkspacePlanKey;
   trialEndsAt?: string | null;
   monitoringPaused?: boolean;
+  creatorAccess?: boolean;
   keywordLimit?: number | null;
   billing?: { status?: BillingStatus; nextInvoiceAt?: string | null; note?: string };
   social?: { enabled?: boolean; platforms?: string[]; monthlyCapUsd?: number; crisisMode?: boolean };

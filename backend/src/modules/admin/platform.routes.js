@@ -105,6 +105,7 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
                 owner: ownerUser ? { name: ownerUser.name, email: ownerUser.email } : null,
                 ...planStatus(settings, now),
                 monitoringPaused: settings.monitoringPaused === true,
+                creatorAccess: settings.creatorAccess === true,
                 keywordLimitOverride: Number.isInteger(settings.keywordLimit) ? settings.keywordLimit : null,
                 billing: { status: settings.billing?.status || "none", nextInvoiceAt: settings.billing?.nextInvoiceAt || null, note: settings.billing?.note || "" },
                 social: { enabled: cfg.enabled, platforms: cfg.platforms, monthlyCapUsd: cfg.monthlyCapUsd, crisisMode: cfg.crisisMode, spendUsd: Number((socialSpend.get(w.id) || 0).toFixed(2)) },
@@ -139,6 +140,8 @@ const patchBody = z.object({
     plan: z.enum(PLAN_KEYS).optional(),
     trialEndsAt: z.string().datetime({ offset: true }).nullable().optional(),
     monitoringPaused: z.boolean().optional(),
+    // Access to the full influencer database in action plans (the team opens it per client).
+    creatorAccess: z.boolean().optional(),
     // null returns to the plan's own limit.
     keywordLimit: z.number().int().min(1).max(50).nullable().optional(),
     billing: z.object({
@@ -176,6 +179,7 @@ router.patch("/workspaces/:id", requirePlatformAdmin, validateRequest({ params: 
             else { settings.trialEndsAt = new Date(body.trialEndsAt).toISOString(); settings.plan = "trial"; }
         }
         if (body.monitoringPaused !== undefined) settings.monitoringPaused = body.monitoringPaused;
+        if (body.creatorAccess !== undefined) settings.creatorAccess = body.creatorAccess;
         if (body.keywordLimit !== undefined) {
             if (body.keywordLimit === null) delete settings.keywordLimit;
             else settings.keywordLimit = body.keywordLimit;
@@ -208,7 +212,7 @@ router.patch("/workspaces/:id", requirePlatformAdmin, validateRequest({ params: 
             },
         });
         const cfg = socialConfig(settings);
-        res.json({ id, ...planStatus(settings), monitoringPaused: settings.monitoringPaused === true, social: { enabled: cfg.enabled, platforms: cfg.platforms, monthlyCapUsd: cfg.monthlyCapUsd, crisisMode: cfg.crisisMode } });
+        res.json({ id, ...planStatus(settings), monitoringPaused: settings.monitoringPaused === true, creatorAccess: settings.creatorAccess === true, social: { enabled: cfg.enabled, platforms: cfg.platforms, monthlyCapUsd: cfg.monthlyCapUsd, crisisMode: cfg.crisisMode } });
     } catch (error) {
         logStructured("error", "admin_workspace_update_failed", { error: error?.message || error });
         res.status(500).json({ error: "Could not save the change." });

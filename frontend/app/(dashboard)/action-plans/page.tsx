@@ -19,6 +19,7 @@ import { PlanOptions } from "./components/plan-options";
 import { PlanWorkflowControls } from "./components/plan-workflow-controls";
 import { RejectActionPlanModal } from "./components/reject-action-plan-modal";
 import { PressReleasePanel } from "./components/press-release";
+import { InfluencerCampaignPanel } from "./components/influencer-campaign";
 import { readableTone } from "@/lib/readable-tone";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { StatStrip } from "@/components/ui/stamp";
@@ -602,7 +603,13 @@ export default function ActionPlansPage() {
             </div>
 
             {/* Next stage of an approved plan: the press release (approval required) and the media to place it in. */}
-            {latestPlan?.id ? <PressReleasePanel key={latestPlan.id} planId={latestPlan.id} planApproved={["approved", "in_progress", "blocked", "done"].includes(String(latestPlan.workflowStatus ?? ""))} /> : null}
+            {latestPlan?.id ? (() => {
+              const approved = ["approved", "in_progress", "blocked", "done"].includes(String(latestPlan.workflowStatus ?? ""));
+              return (<>
+                <PressReleasePanel key={`pr-${latestPlan.id}`} planId={latestPlan.id} planApproved={approved} />
+                <InfluencerCampaignPanel key={`ic-${latestPlan.id}`} planId={latestPlan.id} planApproved={approved} />
+              </>);
+            })() : null}
             </>)}
           </CardContent>
         </Panel>

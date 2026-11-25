@@ -19,86 +19,21 @@ import { z } from "zod";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { baseSupabaseAdmin as db } from "../../lib/supabase.js";
-import { MANAGER_ROLES, getWorkspaceRole, resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
 import { runAiTask } from "../../lib/ai-gateway.js";
 import { requestLang } from "../../lib/request-context.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
-import { sendEmail, isEmailConfigured } from "../../lib/email.js";
-import { createWhatsAppProvider } from "../notifications/notification-providers.js";
 import { MEDIA_OUTLETS, MEDIA_BY_ID } from "./media-outlets.js";
+import { canApprove, canEdit, docView, fail, guard, loadPlan, mountApprovalRoutes, notifyTeam, requester, saveDoc } from "./approval-doc.js";
 
 const router = express.Router();
 router.use(verifyToken);
 
-const isDemo = (req) => String(req.user?.id || "").startsWith("demo");
 const MAX_OUTLETS = 60;
-const MAX_VERSIONS = 12;
-
-const parseStrategy = (raw) => {
-    if (!raw) return {};
-    if (typeof raw === "object") return raw;
-    try {
-        const v = JSON.parse(raw);
-        return v && typeof v === "object" && !Array.isArray(v) ? v : null;
-    } catch {
-        return null;
-    }
-};
-
-/** The plan, the caller's role in its workspace and the parsed strategy; null when the caller cannot see it. */
-async function loadPlan(req) {
-    const scoped = await resolveScopedWorkspaceIds(req.user.id, null);
-    const { data: plan } = await db.from("action_plans")
-        .select("id, workspace_id, title, description, type, strategy, cluster_id, alert_id, status")
-        .eq("id", req.params.planId).maybeSingle();
-    if (!plan || !scoped.includes(plan.workspace_id)) return null;
-    const role = isDemo(req) ? "viewer" : await getWorkspaceRole(req.user.id, plan.workspace_id);
-    return { plan, role, strategy: parseStrategy(plan.strategy) };
-}
-
-const canEdit = (role) => Boolean(role) && role !== "viewer";
-const canApprove = (role) => MANAGER_ROLES.includes(role);
-
-async function saveRelease(ctx, release) {
-    const strategy = { ...(ctx.strategy || {}), press_release: release };
-    const { error } = await db.from("action_plans").update({ strategy: JSON.stringify(strategy), updated_at: new Date().toISOString() }).eq("id", ctx.plan.id);
-    if (error) throw error;
-    ctx.strategy = strategy;
-    return release;
-}
-
-const userName = async (id) => {
-    const { data } = await db.from("users").select("name, email").eq("id", id).maybeSingle();
-    return data?.name || data?.email || null;
-};
-
-/** Add a version (the text as it stood) to the history, newest first, bounded. */
-function withVersion(release, { title, body, by, byName, source, note = null }) {
-    const version = (release?.version || 0) + 1;
-    const at = new Date().toISOString();
-    return {
-        ...(release || {}),
-        title,
-        body,
-        version,
-        status: "pending_approval",
-        updatedAt: at,
-        revisionNote: null,
-        approvedBy: null,
-        approvedByName: null,
-        approvedAt: null,
-        history: [{ version, at, by, byName, source, note }, ...((release?.history) || [])].slice(0, MAX_VERSIONS),
-        versions: [{ version, title, body }, ...((release?.versions) || [])].slice(0, MAX_VERSIONS),
-    };
-}
-
-/** What the reader sees: the release without the stored copies of earlier texts beyond the previous one. */
-function view(release) {
-    if (!release) return null;
-    const { versions = [], ...rest } = release;
-    return { ...rest, previous: versions[1] || null, picked: (release.media || []).map((id) => MEDIA_BY_ID.get(id)).filter(Boolean) };
-}
+const KEY = "press_release";
+const saveRelease = (ctx, release) => saveDoc(ctx, KEY, release);
+/** What the reader sees: the release plus the outlets picked for it. */
+const view = (release) => (release ? { ...docView(release), picked: (release.media || []).map((id) => MEDIA_BY_ID.get(id)).filter(Boolean) } : null);
 
 async function planContext(ctx) {
     const { plan, strategy } = ctx;
@@ -218,85 +153,7 @@ router.get("/:planId", async (req, res) => {
     }
 });
 
-const guard = async (req, res, need) => {
-    if (isDemo(req)) { res.status(403).json({ error: "The demo is read-only." }); return null; }
-    const ctx = await loadPlan(req);
-    if (!ctx) { res.status(404).json({ error: "Action plan not found" }); return null; }
-    if (!ctx.strategy) { res.status(409).json({ error: "This plan cannot hold a press release." }); return null; }
-    if (need === "edit" && !canEdit(ctx.role)) { res.status(403).json({ error: "Viewers cannot edit the press release." }); return null; }
-    if (need === "approve" && !canApprove(ctx.role)) { res.status(403).json({ error: "Only an owner or admin can approve or ask for a revision." }); return null; }
-    return ctx;
-};
-
-const fail = (res, error, event) => {
-    logStructured("error", event, { error: error?.message || error });
-    return res.status(error?.status || 500).json({ error: error?.status ? error.message : "Something went wrong. Try again." });
-};
-
-router.post("/:planId/draft", async (req, res) => {
-    try {
-        const ctx = await guard(req, res, "edit");
-        if (!ctx) return;
-        const current = ctx.strategy.press_release;
-        if (current?.status === "approved") return res.status(409).json({ error: "The release is approved. Edit it to start a new version." });
-        const text = await writeRelease(ctx, { current: current ? { title: current.title, body: current.body } : null });
-        const release = await saveRelease(ctx, withVersion(current, { ...text, by: req.user.id, byName: await userName(req.user.id), source: "ai" }));
-        await recordAuditLog({ userId: req.user.id, workspaceId: ctx.plan.workspace_id, event: "press_release_drafted", metadata: { planId: ctx.plan.id, version: release.version } }).catch(() => null);
-        return res.status(201).json({ data: view(release) });
-    } catch (error) {
-        return fail(res, error, "press_release_draft_failed");
-    }
-});
-
-const editBody = z.object({ title: z.string().trim().min(5).max(200), body: z.string().trim().min(50).max(8000) });
-
-router.put("/:planId", validateRequest({ body: editBody }), async (req, res) => {
-    try {
-        const ctx = await guard(req, res, "edit");
-        if (!ctx) return;
-        const current = ctx.strategy.press_release;
-        if (!current) return res.status(404).json({ error: "Write a draft first." });
-        if (current.title === req.body.title && current.body === req.body.body) return res.json({ data: view(current) });
-        // Any change, even to an approved release, needs a new approval; the picked outlets stay.
-        const release = await saveRelease(ctx, withVersion(current, { ...req.body, by: req.user.id, byName: await userName(req.user.id), source: "edit" }));
-        await recordAuditLog({ userId: req.user.id, workspaceId: ctx.plan.workspace_id, event: "press_release_edited", metadata: { planId: ctx.plan.id, version: release.version } }).catch(() => null);
-        return res.json({ data: view(release) });
-    } catch (error) {
-        return fail(res, error, "press_release_edit_failed");
-    }
-});
-
-const reviewBody = z.discriminatedUnion("decision", [
-    z.object({ decision: z.literal("approve") }),
-    z.object({ decision: z.literal("revise"), note: z.string().trim().min(5, "Say what should change.").max(1500) }),
-]);
-
-router.post("/:planId/review", validateRequest({ body: reviewBody }), async (req, res) => {
-    try {
-        const ctx = await guard(req, res, "approve");
-        if (!ctx) return;
-        const current = ctx.strategy.press_release;
-        if (!current) return res.status(404).json({ error: "Write a draft first." });
-        if (current.status !== "pending_approval") return res.status(409).json({ error: "Only a release awaiting approval can be reviewed." });
-        const name = await userName(req.user.id);
-        let release;
-        if (req.body.decision === "approve") {
-            const at = new Date().toISOString();
-            release = { ...current, status: "approved", approvedBy: req.user.id, approvedByName: name, approvedAt: at,
-                history: [{ version: current.version, at, by: req.user.id, byName: name, source: "approved" }, ...(current.history || [])].slice(0, MAX_VERSIONS * 2) };
-        } else {
-            // The reviewer's note goes straight to the writer: the new version is back for approval.
-            const text = await writeRelease(ctx, { note: req.body.note, current: { title: current.title, body: current.body } });
-            release = withVersion(current, { ...text, by: req.user.id, byName: name, source: "revision", note: req.body.note });
-            release.revisionNote = req.body.note;
-        }
-        await saveRelease(ctx, release);
-        await recordAuditLog({ userId: req.user.id, workspaceId: ctx.plan.workspace_id, event: req.body.decision === "approve" ? "press_release_approved" : "press_release_revision_requested", metadata: { planId: ctx.plan.id, version: release.version } }).catch(() => null);
-        return res.json({ data: view(release) });
-    } catch (error) {
-        return fail(res, error, "press_release_review_failed");
-    }
-});
+mountApprovalRoutes(router, { key: KEY, event: "press_release", write: (ctx, opts) => writeRelease(ctx, opts), view });
 
 const mediaBody = z.object({ outletIds: z.array(z.string().max(80)).max(MAX_OUTLETS) });
 
@@ -324,17 +181,13 @@ router.post("/:planId/quote", validateRequest({ body: quoteBody }), async (req, 
         if (current?.status !== "approved") return res.status(409).json({ error: "Approve the press release before asking for a quote." });
         const outlets = (current.media || []).map((id) => MEDIA_BY_ID.get(id)).filter(Boolean);
         if (!outlets.length) return res.status(400).json({ error: "Choose at least one outlet." });
-        const [{ data: ws }, name, { data: u }] = await Promise.all([
-            db.from("workspaces").select("name").eq("id", ctx.plan.workspace_id).maybeSingle(),
-            userName(req.user.id),
-            db.from("users").select("email").eq("id", req.user.id).maybeSingle(),
-        ]);
+        const who = await requester(ctx, req);
         const at = new Date().toISOString();
         const tiers = [1, 2, 3, 4].map((t) => outlets.filter((o) => o.tier === t).length);
         const text = [
             `Permintaan penawaran siaran pers (Narriv)`,
-            `Workspace: ${ws?.name || ctx.plan.workspace_id}`,
-            `Diminta oleh: ${name || "-"}${u?.email ? ` (${u.email})` : ""}`,
+            `Workspace: ${who.workspace}`,
+            `Diminta oleh: ${who.name}${who.email ? ` (${who.email})` : ""}`,
             `Rencana aksi: ${ctx.plan.title}`,
             `Judul rilis: ${current.title}`,
             `${outlets.length} media: Tier 1 ${tiers[0]} · Tier 2 ${tiers[1]} · Tier 3 ${tiers[2]} · Tier 4 ${tiers[3]}`,
@@ -342,22 +195,9 @@ router.post("/:planId/quote", validateRequest({ body: quoteBody }), async (req, 
             req.body.note ? `Catatan: ${req.body.note}` : "",
         ].filter(Boolean).join("\n");
 
-        const delivered = [];
-        const wa = process.env.PRESS_QUOTE_WHATSAPP;
-        if (wa) {
-            const r = await createWhatsAppProvider().send({ to: wa, subject: "Press release quote", text, metadata: { planId: ctx.plan.id } });
-            if (r.delivered) delivered.push("whatsapp");
-        }
-        const mail = process.env.PRESS_QUOTE_EMAIL;
-        if (mail && isEmailConfigured()) {
-            const ok = await sendEmail({ to: mail, subject: `Permintaan penawaran rilis: ${ws?.name || ""} · ${outlets.length} media`, text, html: `<pre style="font:14px/1.5 sans-serif;white-space:pre-wrap">${text.replace(/[<&>]/g, (ch) => ({ "<": "&lt;", "&": "&amp;", ">": "&gt;" }[ch]))}</pre>` }).catch(() => null);
-            if (ok) delivered.push("email");
-        }
-        if (!delivered.length) {
-            logStructured("error", "press_quote_undelivered", { planId: ctx.plan.id, whatsapp: Boolean(wa), email: Boolean(mail) });
-            return res.status(503).json({ error: "The request could not be sent. Try again in a moment." });
-        }
-        const release = await saveRelease(ctx, { ...current, quote: { requestedAt: at, by: req.user.id, byName: name, outlets: outlets.length, note: req.body.note || null } });
+        const sent = await notifyTeam({ subject: `Permintaan penawaran rilis: ${who.workspace} · ${outlets.length} media`, text, metadata: { planId: ctx.plan.id } });
+        if (!sent) return res.status(503).json({ error: "The request could not be sent. Try again in a moment." });
+        const release = await saveRelease(ctx, { ...current, quote: { requestedAt: at, by: req.user.id, byName: who.name, outlets: outlets.length, note: req.body.note || null } });
         await recordAuditLog({ userId: req.user.id, workspaceId: ctx.plan.workspace_id, event: "press_release_quote_requested", metadata: { planId: ctx.plan.id, outlets: outlets.length } }).catch(() => null);
         return res.json({ data: view(release) });
     } catch (error) {

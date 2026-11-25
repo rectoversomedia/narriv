@@ -34,3 +34,6 @@ supabase/.temp/
 # Playwright output (sandbox e2e)
 test-results/
 playwright-report/
+
+# Real creator database (private): never in this public repo. Deployed to the VPS by rsync.
+backend/data/creators.json

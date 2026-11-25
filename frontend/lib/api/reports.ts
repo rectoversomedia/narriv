@@ -648,18 +648,20 @@ export function splitNarrative(id: string, input: { signalIds: string[]; title: 
 
 // ---- Press release step of an action plan ----
 export type PressOutlet = { id: string; name: string; domain: string; niche: string; area: string | null; tier: 1 | 2 | 3 | 4; logo: string | null };
-export type PressReleaseStatus = "pending_approval" | "approved";
-export type PressRelease = {
+/** A document of an action plan that needs an owner/admin's approval (press release, influencer brief). */
+export type ApprovalDoc = {
   title: string;
   body: string;
   version: number;
-  status: PressReleaseStatus;
+  status: "pending_approval" | "approved";
   updatedAt: string;
   revisionNote: string | null;
   approvedByName: string | null;
   approvedAt: string | null;
   history: Array<{ version: number; at: string; byName: string | null; source: "ai" | "edit" | "revision" | "approved"; note?: string | null }>;
   previous: { version: number; title: string; body: string } | null;
+};
+export type PressRelease = ApprovalDoc & {
   media?: string[];
   picked: PressOutlet[];
   quote?: { requestedAt: string; byName: string | null; outlets: number; note: string | null } | null;
@@ -677,3 +679,44 @@ export const savePressMedia = (planId: string, outletIds: string[]): Promise<{ d
   apiClient(`/api/press/${planId}/media`, { method: "PUT", body: JSON.stringify({ outletIds }) });
 export const requestPressQuote = (planId: string, note: string): Promise<{ data: PressRelease }> =>
   apiClient(`/api/press/${planId}/quote`, { method: "POST", body: JSON.stringify({ note }) });
+
+// ---- Influencer stage of an action plan ----
+export type CreatorFit = { mentioned: number } | { category: true } | null;
+export type Creator = {
+  id: string; name: string; handle: string; platform: "Instagram" | "TikTok" | "YouTube"; link: string; category: string; city: string | null;
+  tier: "Nano" | "Micro" | "Macro" | "Mega" | "Unknown"; followers: number | null; er: number | null; campaigns: number; fit: CreatorFit;
+};
+export type CreatorFacet = { value: string; count: number };
+export type CreatorList = {
+  access: boolean; total: number; data: Creator[]; page: number; pages: number;
+  facets: { platforms: CreatorFacet[]; categories: CreatorFacet[]; cities: CreatorFacet[]; tiers: CreatorFacet[]; withCity: number };
+};
+export type CampaignWave = { id: string; name: string; start: string; end: string };
+export type CampaignFormat = "reels" | "feed" | "story" | "tiktok" | "youtube" | "live";
+export type CampaignItem = { id: string; wave: string; date: string; format: CampaignFormat; creator: Creator };
+export type InfluencerCampaign = ApprovalDoc & {
+  schedule: { start: string; end: string; waves: CampaignWave[] } | null;
+  creators: CampaignItem[];
+  quote?: { requestedAt: string; byName: string | null; creators: number; note: string | null } | null;
+};
+export type InfluencerCampaignResponse = { data: InfluencerCampaign | null; canEdit: boolean; canApprove: boolean; access: boolean; formats: CampaignFormat[] };
+export type CreatorFilters = { q?: string; platform?: string; category?: string; city?: string; tier?: string; minFollowers?: number; maxFollowers?: number; minEr?: number; rec?: boolean; page?: number };
+
+export const getCreators = (f: CreatorFilters = {}): Promise<CreatorList> => {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(f)) if (v !== undefined && v !== "" && v !== false && v !== null) p.set(k, v === true ? "1" : String(v));
+  return apiClient(`/api/influencer/creators?${p.toString()}`);
+};
+export const requestCreatorAccess = (): Promise<{ ok: true }> => apiClient(`/api/influencer/access-request`, { method: "POST", body: "{}" });
+export const getInfluencerCampaign = (planId: string): Promise<InfluencerCampaignResponse> => apiClient(`/api/influencer/${planId}`);
+export const draftInfluencerBrief = (planId: string): Promise<{ data: InfluencerCampaign }> => apiClient(`/api/influencer/${planId}/draft`, { method: "POST", body: "{}" });
+export const editInfluencerBrief = (planId: string, input: { title: string; body: string }): Promise<{ data: InfluencerCampaign }> =>
+  apiClient(`/api/influencer/${planId}`, { method: "PUT", body: JSON.stringify(input) });
+export const reviewInfluencerBrief = (planId: string, input: { decision: "approve" } | { decision: "revise"; note: string }): Promise<{ data: InfluencerCampaign }> =>
+  apiClient(`/api/influencer/${planId}/review`, { method: "POST", body: JSON.stringify(input) });
+export const saveCampaignSchedule = (planId: string, input: { start: string; end: string; waves: Array<Omit<CampaignWave, "id"> & { id?: string }> }): Promise<{ data: InfluencerCampaign }> =>
+  apiClient(`/api/influencer/${planId}/schedule`, { method: "PUT", body: JSON.stringify(input) });
+export const saveCampaignCreators = (planId: string, items: Array<{ id: string; wave: string; date: string; format: CampaignFormat }>): Promise<{ data: InfluencerCampaign }> =>
+  apiClient(`/api/influencer/${planId}/creators`, { method: "PUT", body: JSON.stringify({ items }) });
+export const requestInfluencerQuote = (planId: string, note: string): Promise<{ data: InfluencerCampaign }> =>
+  apiClient(`/api/influencer/${planId}/quote`, { method: "POST", body: JSON.stringify({ note }) });

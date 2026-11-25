@@ -103,6 +103,7 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
   const [plan, setPlan] = useState<WorkspacePlanKey | null>(w.plan);
   const [trialEnd, setTrialEnd] = useState(w.trialEndsAt ? w.trialEndsAt.slice(0, 10) : "");
   const [paused, setPaused] = useState(w.monitoringPaused);
+  const [creators, setCreators] = useState(w.creatorAccess);
   const [socialOn, setSocialOn] = useState(w.social.enabled);
   const [platforms, setPlatforms] = useState<string[]>(w.social.platforms.filter((p) => (SOCIAL as readonly string[]).includes(p)));
   const [cap, setCap] = useState(String(Math.round(w.social.monthlyCapUsd * RATE)));
@@ -127,6 +128,7 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
       if (iso && iso.slice(0, 10) !== (w.trialEndsAt ?? "").slice(0, 10)) p.trialEndsAt = iso;
     }
     if (paused !== w.monitoringPaused) p.monitoringPaused = paused;
+    if (creators !== w.creatorAccess) p.creatorAccess = creators;
     const capNum = Number((Number(cap) / RATE).toFixed(2));
     const social: NonNullable<AdminWorkspacePatch["social"]> = {};
     if (socialOn !== w.social.enabled) social.enabled = socialOn;
@@ -143,7 +145,7 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
     if (billNote.trim() !== (w.billing?.note ?? "")) billing.note = billNote.trim();
     if (Object.keys(billing).length) p.billing = billing;
     return p;
-  }, [plan, trialEnd, paused, socialOn, platforms, cap, crisis, kwOverride, billStatus, billDate, billNote, w]);
+  }, [plan, trialEnd, paused, creators, socialOn, platforms, cap, crisis, kwOverride, billStatus, billDate, billNote, w]);
   const dirty = Object.keys(patch).length > 0;
   const capInvalid = !Number.isFinite(Number(cap)) || Number(cap) < 0 || Number(cap) / RATE > socialCapUsd + 0.005;
   const kwInvalid = kwOverride.trim() !== "" && !(Number.isInteger(Number(kwOverride)) && Number(kwOverride) >= 1 && Number(kwOverride) <= 50);
@@ -228,6 +230,14 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
               <p className="mt-0.5 text-[12px] font-medium text-[#5F6B94]">{paused ? L("Paused: no news, YouTube or social collection.", "Dijeda: berita, YouTube, dan media sosial tidak diambil.") : L("Running every hour.", "Berjalan tiap jam.")}</p>
             </div>
             <Toggle on={!paused} onChange={(v) => setPaused(!v)} label={L("Monitoring on", "Pemantauan aktif")} />
+          </section>
+
+          <section className={cn(section, "flex items-center justify-between gap-4")}>
+            <div>
+              <h3 className="text-[13px] font-black text-[#101334]">{L("Influencer database", "Database influencer")}</h3>
+              <p className="mt-0.5 text-[12px] font-medium text-[#5F6B94]">{creators ? L("The client can browse every creator in action plans.", "Klien bisa melihat semua influencer di rencana aksi.") : L("Locked: the client sees a sample and can request access.", "Terkunci: klien melihat contoh dan bisa minta akses.")}</p>
+            </div>
+            <Toggle on={creators} onChange={setCreators} label={L("Influencer database open", "Database influencer terbuka")} />
           </section>
 
           <section className={section} aria-labelledby="kw-h">
