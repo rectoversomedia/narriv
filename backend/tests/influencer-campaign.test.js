@@ -72,6 +72,15 @@ describe('influencer campaign', () => {
     expect(pick.status).toBe(403);
   });
 
+  it('the Narriv team (platform admin) always sees the full database, without access being opened', async () => {
+    db.table('workspaces')[0].settings = {};
+    process.env.PLATFORM_ADMIN_EMAILS = 'team@narriv.test';
+    db.table('users').push({ id: OWNER, email: 'team@narriv.test' });
+    const res = await request(app).get('/influencer/creators').set(as(OWNER));
+    expect(res.body).toMatchObject({ access: true, total: 3 });
+    delete process.env.PLATFORM_ADMIN_EMAILS;
+  });
+
   it('schedule needs an approved brief; dates must sit inside their wave; the quote lists waves and creators', async () => {
     expect((await request(app).put(`/influencer/${PLAN}/schedule`).set(as(OWNER)).send(schedule)).status).toBe(409);
     await approveBrief();

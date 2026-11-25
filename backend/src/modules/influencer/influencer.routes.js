@@ -22,6 +22,7 @@ import { validateRequest } from "../../middlewares/validate-request.js";
 import { baseSupabaseAdmin as db } from "../../lib/supabase.js";
 import { resolveWorkspaceIdForUser, getWorkspaceRole, MANAGER_ROLES } from "../../lib/workspace-access.js";
 import { runAiTask } from "../../lib/ai-gateway.js";
+import { isPlatformAdmin } from "../../lib/platform-admin.js";
 import { requestLang } from "../../lib/request-context.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
@@ -37,7 +38,9 @@ const MAX_CREATORS = 150;
 const SAMPLE = 8;
 export const FORMATS = ["reels", "feed", "story", "tiktok", "youtube", "live"];
 
-async function workspaceAccess(workspaceId) {
+/** The full database: workspaces the team opened, and always the Narriv team itself (platform admins). */
+async function workspaceAccess(workspaceId, userId = null) {
+    if (userId && await isPlatformAdmin(userId)) return true;
     const { data } = await db.from("workspaces").select("settings").eq("id", workspaceId).maybeSingle();
     return data?.settings?.creatorAccess === true;
 }
@@ -87,7 +90,7 @@ router.get("/creators", validateRequest({ query: listQuery }), async (req, res) 
         const workspaceId = await resolveWorkspaceIdForUser(req.user.id);
         if (!workspaceId) return res.status(403).json({ error: "Workspace access denied" });
         const all = loadCreators();
-        const access = !isDemo(req) && await workspaceAccess(workspaceId);
+        const access = !isDemo(req) && await workspaceAccess(workspaceId, req.user.id);
         const fit = await fitFor(workspaceId);
         const q = req.query;
         const facet = (key) => Object.entries(all.reduce((m, c) => (c[key] ? { ...m, [c[key]]: (m[c[key]] || 0) + 1 } : m), {})).sort((a, b) => b[1] - a[1]).map(([value, count]) => ({ value, count }));
@@ -207,7 +210,7 @@ router.get("/:planId", async (req, res) => {
             data: view(doc),
             canEdit: canEdit(ctx.role),
             canApprove: canApprove(ctx.role),
-            access: !isDemo(req) && await workspaceAccess(ctx.plan.workspace_id),
+            access: !isDemo(req) && await workspaceAccess(ctx.plan.workspace_id, req.user.id),
             formats: FORMATS,
         });
     } catch (error) {
@@ -260,7 +263,7 @@ router.put("/:planId/creators", validateRequest({ body: creatorsBody }), async (
         const current = ctx.strategy[KEY];
         if (current?.status !== "approved" || !current.schedule) return res.status(409).json({ error: "Approve the brief and set the schedule first." });
         if (current.quote && current.quote.status !== "declined") return res.status(409).json({ error: "A quote was requested for this plan." });
-        if (!await workspaceAccess(ctx.plan.workspace_id)) return res.status(403).json({ error: "The influencer database is not open for this workspace.", code: "CREATOR_ACCESS" });
+        if (!await workspaceAccess(ctx.plan.workspace_id, req.user.id)) return res.status(403).json({ error: "The influencer database is not open for this workspace.", code: "CREATOR_ACCESS" });
         const waves = new Map(current.schedule.waves.map((w) => [w.id, w]));
         const seen = new Set();
         const items = [];

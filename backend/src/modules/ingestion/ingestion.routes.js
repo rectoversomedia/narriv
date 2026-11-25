@@ -17,6 +17,7 @@ import {
     triggerIngestionParamsSchema
 } from "./ingestion.schema.js";
 import { ingestRssSignals } from "./rss-ingestion.service.js";
+import { isPlatformAdmin } from "../../lib/platform-admin.js";
 import { CollectionError, COLLECTION_PLATFORMS, isCollectionConfigured, listCollections, startCollection, syncCollection } from "./apify-collection.service.js";
 
 const router = express.Router();
@@ -180,7 +181,8 @@ router.post("/collect", requireWorkspaceRole(MANAGER_ROLES), async (req, res) =>
         // Trial workspaces use the free sources only (news, YouTube, Telegram): paid social collection (Apify) starts
         // only once the Narriv team switches it on (settings.socialAuto).
         const { data: wsRow } = await baseSupabaseAdmin.from("workspaces").select("settings").eq("id", req.scopedWorkspaceId).maybeSingle();
-        if (wsRow?.settings?.plan === "trial" && wsRow?.settings?.socialAuto !== true) {
+        // The Narriv team is never held back by a client plan.
+        if (wsRow?.settings?.plan === "trial" && wsRow?.settings?.socialAuto !== true && !(await isPlatformAdmin(req.user.id))) {
             return res.status(403).json({ error: "Social media collection is a paid add-on and is not part of the trial.", errorId: "Pengambilan media sosial (X, TikTok, Instagram, Facebook) adalah add-on berbayar dan belum termasuk masa uji coba. Berita, YouTube, dan Telegram tetap berjalan.", code: "SOCIAL_ADDON_REQUIRED" });
         }
         const data = await startCollection({
