@@ -645,3 +645,35 @@ export async function downloadReportExport(signedUrl: string): Promise<unknown |
 export function splitNarrative(id: string, input: { signalIds: string[]; title: string }): Promise<{ id: string; title: string; moved: number }> {
   return apiClient(`/api/narratives/${id}/split`, { method: "POST", body: JSON.stringify(input) });
 }
+
+// ---- Press release step of an action plan ----
+export type PressOutlet = { id: string; name: string; domain: string; niche: string; area: string | null; tier: 1 | 2 | 3 | 4; logo: string | null };
+export type PressReleaseStatus = "pending_approval" | "approved";
+export type PressRelease = {
+  title: string;
+  body: string;
+  version: number;
+  status: PressReleaseStatus;
+  updatedAt: string;
+  revisionNote: string | null;
+  approvedByName: string | null;
+  approvedAt: string | null;
+  history: Array<{ version: number; at: string; byName: string | null; source: "ai" | "edit" | "revision" | "approved"; note?: string | null }>;
+  previous: { version: number; title: string; body: string } | null;
+  media?: string[];
+  picked: PressOutlet[];
+  quote?: { requestedAt: string; byName: string | null; outlets: number; note: string | null } | null;
+};
+export type PressReleaseResponse = { data: PressRelease | null; canEdit: boolean; canApprove: boolean; recommended: Record<string, { issue: number; brand: number }> };
+
+export const getMediaOutlets = (): Promise<{ data: PressOutlet[] }> => apiClient(`/api/press/media`);
+export const getPressRelease = (planId: string): Promise<PressReleaseResponse> => apiClient(`/api/press/${planId}`);
+export const draftPressRelease = (planId: string): Promise<{ data: PressRelease }> => apiClient(`/api/press/${planId}/draft`, { method: "POST", body: "{}" });
+export const editPressRelease = (planId: string, input: { title: string; body: string }): Promise<{ data: PressRelease }> =>
+  apiClient(`/api/press/${planId}`, { method: "PUT", body: JSON.stringify(input) });
+export const reviewPressRelease = (planId: string, input: { decision: "approve" } | { decision: "revise"; note: string }): Promise<{ data: PressRelease }> =>
+  apiClient(`/api/press/${planId}/review`, { method: "POST", body: JSON.stringify(input) });
+export const savePressMedia = (planId: string, outletIds: string[]): Promise<{ data: PressRelease }> =>
+  apiClient(`/api/press/${planId}/media`, { method: "PUT", body: JSON.stringify({ outletIds }) });
+export const requestPressQuote = (planId: string, note: string): Promise<{ data: PressRelease }> =>
+  apiClient(`/api/press/${planId}/quote`, { method: "POST", body: JSON.stringify({ note }) });
