@@ -1,3 +1,4 @@
+import { runWithAiWorkspace } from "../../lib/ai-quota.js";
 /**
  * Scheduled real-data ingestion (invoked by Vercel Cron via /cron/ingest).
  *
@@ -236,7 +237,8 @@ export async function runScheduledIngestion({
             if (pauseMs > 0 && i > 0) await new Promise((r) => setTimeout(r, pauseMs));
             const itemStart = Date.now();
             try {
-                const r = await ingest({ workspaceId: ws, keyword, limit: perKeywordLimit, withOfficial });
+                // AI analysis of what this keyword brings counts against this workspace's plan (lib/ai-quota.js).
+                const r = await runWithAiWorkspace(ws, () => ingest({ workspaceId: ws, keyword, limit: perKeywordLimit, withOfficial }));
                 slots[i] = {
                     workspaceId: ws,
                     keyword,

@@ -95,8 +95,8 @@ export function providerOrder(env = process.env, configured = { openai: openaiCo
 }
 
 /**
- * A hard monthly ceiling on AI calls for the whole platform (NARRIV_AI_MONTHLY_CALL_CAP, default 3000, about $1-2 a
- * month on Haiku). The Claude credit is shared with other projects, so Narriv must never run it down: past the cap AI
+ * A hard monthly ceiling on AI calls for the whole platform (NARRIV_AI_MONTHLY_CALL_CAP, default 200000; each workspace
+ * also has its plan's own quota, lib/ai-quota.js). The Claude credit is shared with other projects, so Narriv must never run it down: past the cap AI
  * calls stop until the next month, and records are stored without a sentiment (the daily backfill finishes them later).
  * Counted from token_usage, cached for ten minutes so the check itself costs one query per instance now and then.
  */
@@ -113,7 +113,7 @@ export async function monthlyCallsUsed(db = null, now = new Date()) {
 }
 
 export async function assertWithinMonthlyCap(deps = {}) {
-    const cap = Number(process.env.NARRIV_AI_MONTHLY_CALL_CAP || 3000);
+    const cap = Number(process.env.NARRIV_AI_MONTHLY_CALL_CAP || 200000);
     if (!(cap > 0)) return;
     const used = await (deps.monthlyCallsUsed || monthlyCallsUsed)();
     if (used >= cap) {
@@ -129,6 +129,8 @@ export function createChatClient(deps = {}) {
             completions: {
                 async create(params, options) {
                     await assertWithinMonthlyCap(deps);
+                    // Per workspace, by plan (lib/ai-quota.js), when the call runs for a workspace.
+                    if (!deps.skipWorkspaceQuota) await (await import("./ai-quota.js")).assertWorkspaceQuota();
                     const order = deps.order || providerOrder();
                     if (!order.length) throw Object.assign(new Error("No AI provider is configured."), { code: "AI_NOT_CONFIGURED" });
                     let lastErr;

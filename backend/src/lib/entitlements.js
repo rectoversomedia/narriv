@@ -57,6 +57,8 @@ export function hasFeature(settings, feature) {
     const need = FEATURES[feature];
     if (!need) return true;
     if (feature === "social_media" && settings?.socialAuto === true) return true;
+    // A trial runs on the free sources; social media needs a paid plan or the add-on.
+    if (feature === "social_media" && settings?.plan === "trial") return false;
     if (feature === "influencer" && settings?.creatorAccess === true) return true;
     return PLAN_ORDER.indexOf(effectivePlan(settings)) >= PLAN_ORDER.indexOf(need);
 }

@@ -155,6 +155,11 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
   const kwInvalid = kwOverride.trim() !== "" && !(Number.isInteger(Number(kwOverride)) && Number(kwOverride) >= 1 && Number(kwOverride) <= 50);
   const planKeywords = plan ? PLAN_KEYWORDS[plan] : 3;
 
+  const addRuns = useMutation({
+    mutationFn: () => updateAdminWorkspace(w.id, { social: { addRuns: 100 } }),
+    onSuccess: () => { toast.success(L("100 runs added for this month.", "100 pengambilan ditambahkan untuk bulan ini.")); queryClient.invalidateQueries({ queryKey: ["admin", "workspaces"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : L("Could not save.", "Gagal menyimpan.")),
+  });
   const save = useMutation({
     mutationFn: () => updateAdminWorkspace(w.id, patch),
     onSuccess: () => {
@@ -291,6 +296,12 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
               <div>
                 <h3 id="social-h" className="text-[13px] font-black text-[#101334]">{L("Social media", "Media sosial")}</h3>
                 <p className="mt-0.5 text-[12px] font-medium text-[#5F6B94]">{L(`This month ${usd(w.social.spendUsd)} of ${usd(w.social.monthlyCapUsd)}`, `Bulan ini ${usd(w.social.spendUsd)} dari ${usd(w.social.monthlyCapUsd)}`)}</p>
+                {w.social.monthlyRuns ? (
+                  <p className="mt-0.5 text-[12px] font-bold text-[#101334]">
+                    {L(`Quota: ${w.social.runsUsed ?? 0} / ${w.social.monthlyRuns} runs`, `Kuota: ${w.social.runsUsed ?? 0} / ${w.social.monthlyRuns} pengambilan`)}
+                    {w.social.tier ? <span className="ml-1 font-semibold text-[#5F6B94]">· {w.social.tier === "lite" ? "Lite (add-on)" : w.social.tier}</span> : null}
+                  </p>
+                ) : null}
               </div>
               <Toggle on={socialOn} onChange={setSocialOn} label={L("Social media on", "Media sosial aktif")} />
             </div>
@@ -319,8 +330,12 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
                 <input id="cap" inputMode="decimal" value={cap} disabled={!socialOn} onChange={(e) => setCap(e.target.value)} className={cn("h-10 w-32 rounded-[10px] bg-white px-3 text-[14px] font-bold text-[#101334] shadow-sm outline-none focus:ring-2", capInvalid ? "ring-2 ring-[#E5484D]/40" : "focus:ring-[#465FFF]/30")} />
                 <span className="text-[12px] font-medium text-[#5F6B94]">{L(`max ${usd(socialCapUsd)} across all clients`, `maks ${usd(socialCapUsd)} untuk semua klien`)}</span>
               </div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-[12px] font-medium text-[#5F6B94]">{L("Extra quota (the add-on), for this month only.", "Tambah kuota (add-on), berlaku bulan ini saja.")}</p>
+                <button type="button" disabled={addRuns.isPending} onClick={() => addRuns.mutate()} className="h-9 rounded-[10px] bg-white px-3 text-[13px] font-bold text-[#3247D9] shadow-sm hover:shadow-[0_0_0_2px_#465FFF] disabled:opacity-50">{L("+100 runs", "+100 pengambilan")}</button>
+              </div>
               <div className="flex items-center justify-between gap-4">
-                <p className="text-[12px] font-medium leading-relaxed text-[#5F6B94]">{L("Crisis mode: 3 rounds a day while a critical alert is open.", "Mode krisis: 3 kali sehari selama ada peringatan kritis.")}</p>
+                <p className="text-[12px] font-medium leading-relaxed text-[#5F6B94]">{L("Crisis mode: every hour while a high or critical alert is open, using runs beyond the daily rounds.", "Mode krisis: tiap jam selama ada peringatan tinggi atau kritis, memakai kuota di luar jatah harian.")}</p>
                 <Toggle on={crisis} onChange={setCrisis} disabled={!socialOn} label={L("Crisis mode", "Mode krisis")} />
               </div>
             </div>

@@ -22,7 +22,7 @@ export interface AdminWorkspace {
   hourlyKeywords: number;
   keywordLimitOverride: number | null;
   billing: { status: BillingStatus; nextInvoiceAt: string | null; note: string };
-  social: { enabled: boolean; platforms: string[]; monthlyCapUsd: number; crisisMode: boolean; spendUsd: number };
+  social: { enabled: boolean; tier?: string | null; platforms: string[]; monthlyCapUsd: number; crisisMode: boolean; spendUsd: number; monthlyRuns?: number; runsUsed?: number };
   members: number;
   keywords: number;
   signals30d: number;
@@ -60,7 +60,7 @@ export interface AdminWorkspacePatch {
   creatorAccess?: boolean;
   keywordLimit?: number | null;
   billing?: { status?: BillingStatus; nextInvoiceAt?: string | null; note?: string };
-  social?: { enabled?: boolean; platforms?: string[]; monthlyCapUsd?: number; crisisMode?: boolean };
+  social?: { enabled?: boolean; platforms?: string[]; monthlyCapUsd?: number; crisisMode?: boolean; addRuns?: number };
 }
 
 export async function getAdminMe(): Promise<boolean> {

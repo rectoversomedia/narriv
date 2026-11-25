@@ -23,7 +23,7 @@ import { DEMO_WORKSPACE_ID, DEMO_WORKSPACES, isDemoWorkspace } from "../../lib/w
 import { isPlatformAdmin, requirePlatformAdmin } from "../../lib/platform-admin.js";
 import { PLAN_KEYS, planStatus } from "../../lib/workspace-plan.js";
 import { calculateCost } from "../../lib/model-pricing.js";
-import { PLATFORM_PRESET, runSpend, socialConfig, totalCapUsd } from "../ingestion/social-schedule.service.js";
+import { PLATFORM_PRESET, countsAsRun, runSpend, socialConfig, totalCapUsd } from "../ingestion/social-schedule.service.js";
 import { COLLECTION_JOB_NAME } from "../ingestion/apify-collection.service.js";
 import { resolveRecordRegion } from "../../lib/indonesia-regions.js";
 import { KINDS, listQuotes, setInvoicePaid, setOffer } from "../press/fulfilment.js";
@@ -121,9 +121,11 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
         // worked out from the tokens with the same price table that records it.
         for (const t of tokens.data || []) aiCost.set(t.workspace_id, (aiCost.get(t.workspace_id) || 0) + calculateCost(t.model || "gpt-4o-mini", Number(t.input_tokens || 0), Number(t.output_tokens || 0)));
         const socialSpend = new Map();
+        const socialRuns = new Map();
         for (const r of social.data || []) {
             const ws = r.metadata?.workspaceId;
             if (ws) socialSpend.set(ws, (socialSpend.get(ws) || 0) + runSpend(r));
+            if (ws && countsAsRun(r)) socialRuns.set(ws, (socialRuns.get(ws) || 0) + 1);
         }
 
         const data = (workspaces || []).map((w) => {
@@ -144,7 +146,7 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
                 creatorAccess: settings.creatorAccess === true,
                 keywordLimitOverride: Number.isInteger(settings.keywordLimit) ? settings.keywordLimit : null,
                 billing: { status: settings.billing?.status || "none", nextInvoiceAt: settings.billing?.nextInvoiceAt || null, note: settings.billing?.note || "" },
-                social: { enabled: cfg.enabled, platforms: cfg.platforms, monthlyCapUsd: cfg.monthlyCapUsd, crisisMode: cfg.crisisMode, spendUsd: Number((socialSpend.get(w.id) || 0).toFixed(2)) },
+                social: { enabled: cfg.enabled, tier: cfg.tier, platforms: cfg.platforms, monthlyCapUsd: cfg.monthlyCapUsd, crisisMode: cfg.crisisMode, spendUsd: Number((socialSpend.get(w.id) || 0).toFixed(2)), monthlyRuns: cfg.monthlyRuns, runsUsed: socialRuns.get(w.id) || 0 },
                 members: memberCount.get(w.id) || 0,
                 keywords: keywordCount.get(w.id) || 0,
                 signals30d: signalCount.get(w.id) || 0,
@@ -190,6 +192,8 @@ const patchBody = z.object({
         platforms: z.array(z.enum(SOCIAL_PLATFORMS)).min(1).optional(),
         monthlyCapUsd: z.number().min(0).max(500).optional(),
         crisisMode: z.boolean().optional(),
+        // Extra runs for this month (the "add quota" add-on); added to what was already bought this month.
+        addRuns: z.number().int().min(1).max(2000).optional(),
     }).optional(),
 }).refine((b) => Object.keys(b).length > 0, { message: "Nothing to change." });
 
@@ -280,7 +284,13 @@ router.patch("/workspaces/:id", requirePlatformAdmin, validateRequest({ params: 
             settings.billing = b;
         }
         if (body.social) {
-            if (body.social.enabled !== undefined) settings.socialAuto = body.social.enabled;
+            // On: the add-on for plans below Intelligence. Off: also pauses a plan that includes social media.
+            if (body.social.enabled !== undefined) { settings.socialAuto = body.social.enabled; settings.socialPaused = !body.social.enabled; }
+            if (body.social.addRuns) {
+                const month = new Date().toISOString().slice(0, 7);
+                const prev = settings.socialExtra?.month === month ? Number(settings.socialExtra.runs) || 0 : 0;
+                settings.socialExtra = { month, runs: prev + body.social.addRuns };
+            }
             const cfg = { ...(settings.socialConfig || {}) };
             if (body.social.platforms) cfg.platforms = body.social.platforms.filter((p) => PLATFORM_PRESET[p]);
             if (body.social.monthlyCapUsd !== undefined) cfg.monthlyCapUsd = body.social.monthlyCapUsd;

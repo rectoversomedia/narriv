@@ -1,3 +1,4 @@
+import { runWithAiWorkspace } from "./ai-quota.js";
 /**
  * AI gateway: one entry point for routed intelligence tasks.
  *
@@ -96,7 +97,7 @@ export function resolveTierRoute(tier) {
 export async function runAiTask({ task, workspaceId, user, system = null, json = false, validate = null }, deps = {}) {
     if (!workspaceId) return { ok: false, error: "workspaceId is required", task };
     const { route, fallbackReason } = resolveTaskRoute(task);
-    return runRoute({ task, route, fallbackReason, workspaceId, user, system, json, validate }, deps);
+    return runWithAiWorkspace(workspaceId, () => runRoute({ task, route, fallbackReason, workspaceId, user, system, json, validate }, deps));
 }
 
 /** Run one completion on a tier (budgets, metering and fallbacks as runAiTask). */
@@ -104,7 +105,7 @@ export async function runAiTier({ tier, workspaceId, user, system = null, maxTok
     if (!workspaceId) return { ok: false, error: "workspaceId is required", task: operation };
     const { route, fallbackReason } = resolveTierRoute(tier);
     const capped = maxTokens ? { ...route, maxTokens: Math.min(Number(maxTokens) || route.maxTokens, route.maxTokens) } : route;
-    return runRoute({ task: operation, route: capped, fallbackReason, workspaceId, user, system, json: false, validate: null }, deps);
+    return runWithAiWorkspace(workspaceId, () => runRoute({ task: operation, route: capped, fallbackReason, workspaceId, user, system, json: false, validate: null }, deps));
 }
 
 async function runRoute({ task, route, fallbackReason, workspaceId, user, system, json, validate }, deps = {}) {

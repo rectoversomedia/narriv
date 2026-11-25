@@ -20,6 +20,8 @@ import { MANAGER_ROLES, resolveWorkspaceIdForUser } from "../../lib/workspace-ac
 import { ensureBucket, detectImageType } from "../workspace-settings/workspace-logo.controller.js";
 import { logStructured } from "../../lib/logger.js";
 import { entitlementsFor, FEATURES } from "../../lib/entitlements.js";
+import { aiUsage } from "../../lib/ai-quota.js";
+import { socialStatus } from "../ingestion/social-schedule.service.js";
 import { isPlatformAdmin } from "../../lib/platform-admin.js";
 import { notifyTeam, requester } from "../press/approval-doc.js";
 
@@ -36,7 +38,12 @@ router.get("/entitlements", async (req, res) => {
         const id = await resolveWorkspaceIdForUser(req.user.id);
         if (!id) return res.status(404).json({ error: "No workspace" });
         const { data } = await db.from("workspaces").select("settings").eq("id", id).maybeSingle();
-        return res.json({ data: entitlementsFor(data?.settings || {}, { admin }) });
+        const [ai, social] = await Promise.all([aiUsage(id).catch(() => null), socialStatus(id).catch(() => null)]);
+        const usage = {
+            ai,
+            social: social ? { enabled: social.enabled, tier: social.tier, platforms: social.platforms, runsUsed: social.runsUsed, monthlyRuns: social.monthlyRuns, crisis: social.crisis } : null,
+        };
+        return res.json({ data: { ...entitlementsFor(data?.settings || {}, { admin }), usage } });
     } catch (error) {
         logStructured("error", "entitlements_failed", { error: error?.message || error });
         return res.status(500).json({ error: "Plan details could not be loaded." });

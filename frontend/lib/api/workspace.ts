@@ -614,6 +614,10 @@ export type Entitlements = {
   limits: { users: number | null; retentionDays: number | null };
   addons: { social: boolean; influencer: boolean };
   unrestricted: boolean;
+  usage?: {
+    ai: { used: number; limit: number } | null;
+    social: { enabled: boolean; tier: string | null; platforms: string[]; runsUsed: number; monthlyRuns: number; crisis: boolean } | null;
+  };
 };
 export const getEntitlements = (): Promise<{ data: Entitlements }> => apiClient("/api/workspaces/entitlements");
 export const requestUpgrade = (input: { feature?: FeatureKey; plan?: PaidPlan; note?: string }): Promise<{ ok: true }> =>

@@ -18,6 +18,7 @@ import {
 } from "./ingestion.schema.js";
 import { ingestRssSignals } from "./rss-ingestion.service.js";
 import { isPlatformAdmin } from "../../lib/platform-admin.js";
+import { socialStatus } from "./social-schedule.service.js";
 import { CollectionError, COLLECTION_PLATFORMS, isCollectionConfigured, listCollections, startCollection, syncCollection } from "./apify-collection.service.js";
 
 const router = express.Router();
@@ -184,6 +185,13 @@ router.post("/collect", requireWorkspaceRole(MANAGER_ROLES), async (req, res) =>
         // The Narriv team is never held back by a client plan.
         if (wsRow?.settings?.plan === "trial" && wsRow?.settings?.socialAuto !== true && !(await isPlatformAdmin(req.user.id))) {
             return res.status(403).json({ error: "Social media collection is a paid add-on and is not part of the trial.", errorId: "Pengambilan media sosial (X, TikTok, Instagram, Facebook) adalah add-on berbayar dan belum termasuk masa uji coba. Berita, YouTube, dan Telegram tetap berjalan.", code: "SOCIAL_ADDON_REQUIRED" });
+        }
+        // Manual collections count against the month's quota too (social-schedule.service.js).
+        if (!(await isPlatformAdmin(req.user.id))) {
+            const status = await socialStatus(req.scopedWorkspaceId).catch(() => null);
+            if (status && status.monthlyRuns > 0 && status.runsUsed >= status.monthlyRuns) {
+                return res.status(403).json({ error: "This month's social media quota is used up.", errorId: "Kuota media sosial bulan ini sudah habis. Tambah kuota lewat tim Narriv.", code: "SOCIAL_QUOTA_REACHED" });
+            }
         }
         const data = await startCollection({
             workspaceId: req.scopedWorkspaceId,

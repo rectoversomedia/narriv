@@ -6,7 +6,7 @@ const failingOpenAI = (status, message) => ({ chat: { completions: { create: asy
 describe('chat client', () => {
   it('stops at the monthly call cap without calling any provider', async () => {
     let called = false;
-    const client = createChatClient({ monthlyCallsUsed: async () => 3000, order: ['anthropic'], claude: async () => { called = true; return okClaude(); } });
+    const client = createChatClient({ monthlyCallsUsed: async () => 200000, order: ['anthropic'], claude: async () => { called = true; return okClaude(); } });
     await expect(client.chat.completions.create({ messages: [{ role: 'user', content: 'u' }] })).rejects.toThrow('Monthly AI limit');
     expect(called).toBe(false);
   });

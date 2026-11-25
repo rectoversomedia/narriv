@@ -60,6 +60,25 @@ export default function PlanPage() {
         </dl>
       </section>
 
+      {ent.usage ? (
+        <section className="grid gap-4 rounded-[22px] border-[1.5px] border-[#101334] bg-white p-6 shadow-[0_5px_0_#101334] sm:grid-cols-2">
+          {[
+            ent.usage.ai ? { label: L("AI analysis this month", "Analisis AI bulan ini"), used: ent.usage.ai.used, limit: ent.usage.ai.limit, unit: L("calls", "analisis"), note: L("Past the quota, new mentions are still collected; their analysis waits for next month.", "Lewat kuota, percakapan baru tetap dikumpulkan, analisisnya menunggu bulan depan.") } : null,
+            ent.usage.social?.enabled ? { label: L("Social media this month", "Media sosial bulan ini"), used: ent.usage.social.runsUsed, limit: ent.usage.social.monthlyRuns, unit: L("collections", "pengambilan"), note: `${ent.usage.social.platforms.join(", ")} · ${ent.usage.social.crisis ? L("crisis mode: hourly", "mode krisis: tiap jam") : L("daily, more when issues rise", "harian, bertambah saat isu naik")}` } : { label: L("Social media", "Media sosial"), used: 0, limit: 0, unit: "", note: L("Not active. Included from Intelligence, or as the Social Media Lite add-on.", "Belum aktif. Termasuk mulai Intelligence, atau lewat add-on Media Sosial Lite.") },
+          ].filter((x): x is NonNullable<typeof x> => Boolean(x)).map((u) => {
+            const pct = u.limit ? Math.min(100, Math.round((u.used / u.limit) * 100)) : 0;
+            return (
+              <div key={u.label}>
+                <p className="text-[13px] font-bold text-[#5F6B94]">{u.label}</p>
+                {u.limit ? <p className="mt-1 text-[22px] font-black text-[#101334]">{u.used.toLocaleString("id-ID")} <span className="text-[14px] font-semibold text-[#8A93B8]">/ {u.limit.toLocaleString("id-ID")} {u.unit}</span></p> : null}
+                {u.limit ? <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#EEF0F6]"><div className="h-full rounded-full" style={{ width: `${pct}%`, background: pct >= 90 ? "#E5484D" : pct >= 70 ? "#F59E0B" : m.color }} /></div> : null}
+                <p className="mt-2 text-[12.5px] text-[#5F6B94]">{u.note}</p>
+              </div>
+            );
+          })}
+        </section>
+      ) : null}
+
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="rounded-[22px] border-[1.5px] border-[#101334] bg-white p-6 shadow-[0_5px_0_#101334]">
           <h2 className="text-[17px] font-black text-[#101334]">{L("Included", "Termasuk")}</h2>
