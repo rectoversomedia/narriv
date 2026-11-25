@@ -1,6 +1,7 @@
 "use client";
 
 import { pickL } from "@/lib/use-l";
+import { PlanBadge, useEntitlements } from "@/lib/plans";
 import Image from "next/image";
 import { isPageHidden, useWorkspaceUseCase } from "@/lib/use-case";
 import Link from "next/link";
@@ -59,6 +60,7 @@ const navLinks = [
   { href: "/workspace/cases", title: { en: "Cases", id: "Kasus" }, subtitle: { en: "Follow-up", id: "Tindak Lanjut" } },
   { href: "/reports", title: { en: "Reports", id: "Laporan" }, subtitle: { en: "Reports", id: "Laporan" } },
   { href: "/clients", title: { en: "All clients", id: "Semua klien" }, subtitle: { en: "Agency overview", id: "Ringkasan agensi" } },
+  { href: "/workspace/plan", title: { en: "Plan and usage", id: "Paket dan pemakaian" }, subtitle: { en: "Settings", id: "Pengaturan" } },
   { href: "/workspace/white-label", title: { en: "White-label", id: "Label agensi" }, subtitle: { en: "Settings", id: "Pengaturan" } },
   { href: "/competitors", title: { en: "Competitors", id: "Cek kompetitor" }, subtitle: { en: "Analyst tools", id: "Alat Analis" } },
   { href: "/glossary", title: { en: "Glossary", id: "Glosarium" }, subtitle: { en: "Reports", id: "Laporan" } },
@@ -136,6 +138,7 @@ function AccountMenu({ name, email, onLogout }: { name: string; email: string; o
   const toggleLanguage = useUiStore((state) => state.toggleLanguage);
   // The admin panel link shows only for the Narriv team (the backend decides).
   const isAdmin = useQuery({ queryKey: ["admin", "me"], queryFn: getAdminMe, enabled: !isDemo, staleTime: 5 * 60 * 1000 }).data === true;
+  const { ent } = useEntitlements();
   const role = isDemo ? L("Demo visitor", "Pengunjung demo") : current?.role && ROLE_LABEL[current.role] ? L(...ROLE_LABEL[current.role]) : L("Member", "Anggota");
   const item = "flex h-10 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-[13px] font-semibold text-[#31406B] transition hover:bg-slate-50 hover:text-[#101334]";
   return (
@@ -152,7 +155,10 @@ function AccountMenu({ name, email, onLogout }: { name: string; email: string; o
         <div className="px-2.5 pb-2.5 pt-1.5">
           <p className="truncate text-[14px] font-black text-[#101334]">{name}</p>
           {email ? <p className="truncate text-[12px] text-[#5A6478]">{email}</p> : null}
-          <span className="mt-1.5 inline-block rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[12px] font-bold text-[#3B52F5]">{role}</span>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="inline-block rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[12px] font-bold text-[#3B52F5]">{role}</span>
+            {ent && !isDemo ? <Link href="/workspace/plan" onClick={() => setOpen(false)} aria-label={L("Plan and usage", "Paket dan pemakaian")}><PlanBadge plan={ent.effectivePlan} trial={ent.plan === "trial"} /></Link> : null}
+          </div>
         </div>
         {!isDemo ? <div className="border-t border-slate-100 pt-1 lg:hidden"><WorkspaceOptions onDone={() => setOpen(false)} /></div> : null}
         {/* The language toggle is hidden in the bar on phones; it lives here instead. */}

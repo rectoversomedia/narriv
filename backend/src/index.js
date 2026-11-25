@@ -40,6 +40,7 @@ import ownershipRoutes from "./modules/admin/ownership.routes.js";
 import platformAdminRoutes from "./modules/admin/platform.routes.js";
 import competitorsRoutes from "./modules/competitors/competitors.routes.js";
 import pressRoutes from "./modules/press/press.routes.js";
+import { requireFeature } from "./lib/entitlements.js";
 import influencerRoutes from "./modules/influencer/influencer.routes.js";
 import { createServiceStageRouter } from "./modules/press/service-stages.js";
 import migrateRoutes from "./modules/migrate/migrate.routes.js";
@@ -190,6 +191,17 @@ app.get("/metrics", verifyToken, (req, res) => {
 // Use Routes (with rate limiting on sensitive endpoints)
 // NOTE: /api prefix is stripped by middleware above, so register without /api
 app.use("/auth", rateLimit(RATE_LIMITS.auth), authRoutes);
+// What each plan includes (lib/entitlements.js). Guards sit in front of the routers; reads that only list stored
+// results stay open where noted, so a downgraded client still sees their history.
+app.use("/ai/ask", requireFeature("ask"));
+app.use("/tools/claim-check", requireFeature("claim_check"));
+app.use("/tools/future-issues", requireFeature("forecast"));
+app.use("/tools/recon", requireFeature("account_check", { methods: ["POST"] }));
+app.use("/actions", requireFeature("action_plans", { methods: ["POST"] }));
+app.use("/reports/schedules", requireFeature("scheduled_reports", { methods: ["POST", "PATCH", "PUT"] }));
+app.use("/alerts/escalation-matrix", requireFeature("escalation", { methods: ["POST", "PATCH", "PUT"] }));
+app.use("/workspace/integrations", requireFeature("integrations", { methods: ["POST", "PATCH", "PUT"] }));
+app.use("/workspaces/white-label", requireFeature("white_label", { methods: ["POST", "PUT"] }));
 // Reads under /ai are deterministic DB computations; model-calling routes
 // (/ai/analyze, /ai/complete, /ai/ask) apply the per-user generation limit themselves.
 app.use("/ai", rateLimit({ ...RATE_LIMITS.api_default, prefix: "ai-read" }), apiSecurityHeaders, aiRoutes);
@@ -206,8 +218,8 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/alerts", escalationMatrixRoutes);
 app.use("/alerts", alertsRoutes);
 app.use("/narratives", narrativesRoutes);
-app.use("/visibility", geoRoutes);
-app.use("/network", rateLimit({ ...RATE_LIMITS.api_default, prefix: "network" }), networkRoutes);
+app.use("/visibility", requireFeature("ai_visibility"), geoRoutes);
+app.use("/network", rateLimit({ ...RATE_LIMITS.api_default, prefix: "network" }), requireFeature("network"), networkRoutes);
 app.use("/quality", rateLimit({ ...RATE_LIMITS.api_default, prefix: "quality" }), qualityRoutes);
 app.use("/tools", rateLimit({ ...RATE_LIMITS.api_default, prefix: "tools" }), toolsRoutes);
 // Report reads use the default API limit; export, download and email routes
@@ -218,11 +230,11 @@ app.use("/workspaces", rateLimit({ ...RATE_LIMITS.api_default, prefix: "workspac
 app.use("/workspace", sensitiveDataHeaders, workspaceSettingsRoutes);
 app.use("/workspace/activity", activityRoutes);
 app.use("/workspace/keywords", rateLimit(RATE_LIMITS.api_default), keywordsRoutes);
-app.use("/workspace/competitors", rateLimit(RATE_LIMITS.api_default), competitorsRoutes);
-app.use("/press", rateLimit(RATE_LIMITS.api_default), pressRoutes);
+app.use("/workspace/competitors", rateLimit(RATE_LIMITS.api_default), requireFeature("competitors"), competitorsRoutes);
+app.use("/press", rateLimit(RATE_LIMITS.api_default), requireFeature("press_release"), pressRoutes);
 app.use("/influencer", rateLimit(RATE_LIMITS.api_default), influencerRoutes);
 // Further action-plan stages: short videos, paid ads, social media management (approval, details, quote, delivery).
-for (const kind of ["video", "ads", "social"]) app.use(`/stage/${kind}`, rateLimit(RATE_LIMITS.api_default), createServiceStageRouter(kind));
+for (const kind of ["video", "ads", "social"]) app.use(`/stage/${kind}`, rateLimit(RATE_LIMITS.api_default), requireFeature("service_stages"), createServiceStageRouter(kind));
 app.use("/onboarding", onboardingRoutes);
 app.use("/workspace/cases", casesRoutes);
 app.use("/workspace/integrations", integrationsRoutes);

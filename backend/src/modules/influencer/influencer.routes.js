@@ -23,6 +23,7 @@ import { baseSupabaseAdmin as db } from "../../lib/supabase.js";
 import { resolveWorkspaceIdForUser, getWorkspaceRole, MANAGER_ROLES } from "../../lib/workspace-access.js";
 import { runAiTask } from "../../lib/ai-gateway.js";
 import { isPlatformAdmin } from "../../lib/platform-admin.js";
+import { hasFeature } from "../../lib/entitlements.js";
 import { requestLang } from "../../lib/request-context.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
@@ -42,7 +43,8 @@ export const FORMATS = ["reels", "feed", "story", "tiktok", "youtube", "live"];
 async function workspaceAccess(workspaceId, userId = null) {
     if (userId && await isPlatformAdmin(userId)) return true;
     const { data } = await db.from("workspaces").select("settings").eq("id", workspaceId).maybeSingle();
-    return data?.settings?.creatorAccess === true;
+    // Included from Decision; the influencer add-on (creatorAccess) opens it on the plans below.
+    return hasFeature(data?.settings || {}, "influencer");
 }
 
 const norm = (v) => String(v || "").toLowerCase().replace(/^@/, "").replace(/[^a-z0-9._]/g, "");

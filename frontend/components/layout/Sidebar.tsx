@@ -11,6 +11,8 @@ import { BrandMark } from "@/components/dashboard/brand-hero";
 import { ROLE_LABEL, WorkspaceSwitcher, useMyWorkspaces } from "@/components/layout/workspace-switcher";
 import { getAlerts, getMonitoringKeywords, getWorkspaceSettings } from "@/lib/api-service";
 import { SECTION_TABS, navGroups, type SectionKey } from "@/lib/navigation";
+import { PAGE_FEATURE, useEntitlements } from "@/lib/plans";
+import { Lock } from "lucide-react";
 import { isPageHidden, useWorkspaceUseCase } from "@/lib/use-case";
 import { prefetchRoute } from "@/lib/prefetch-route";
 import { timeAgo } from "@/lib/intelligence-api";
@@ -32,6 +34,7 @@ const fade = (hidden: boolean) => cn("whitespace-nowrap transition-opacity durat
  * are in the account menu at the top right. Phones get the bottom bar instead.
  */
 export function Sidebar() {
+  const { can } = useEntitlements();
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const t = useTranslations("DemoApp");
@@ -146,6 +149,7 @@ export function Sidebar() {
                             >
                               {current ? <span aria-hidden="true" className="absolute -left-[13px] top-1.5 h-5 w-[2px] rounded-full bg-[#8EA0FF]" /> : null}
                               {t(`nav.${page.key}`)}
+                              {PAGE_FEATURE[page.href] && !can(PAGE_FEATURE[page.href]) ? <Lock size={11} aria-label="locked" className="ml-1.5 shrink-0 text-white/40" /> : null}
                             </Link>
                           );
                         })}

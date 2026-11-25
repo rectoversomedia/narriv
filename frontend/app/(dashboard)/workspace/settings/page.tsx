@@ -1,6 +1,7 @@
 "use client";
 
 import { AppearanceCard } from "@/components/settings/appearance-card";
+import { useEntitlements } from "@/lib/plans";
 import { VoiceAccountsCard } from "@/components/settings/voice-accounts-card";
 import { BrandMark } from "@/components/dashboard/brand-hero";
 import Link from "next/link";
@@ -297,6 +298,7 @@ export default function SettingsPage() {
   const whatsappReady = workspaceSettingsQuery.data?.whatsappSenderReady === true;
   const [notifWhatsapp, setNotifWhatsapp] = useState<boolean | null>(null);
   const whatsappOn = notifWhatsapp ?? notificationQuery.data?.whatsappEnabled ?? false;
+  const { can } = useEntitlements();
   const toggleWhatsapp = (next: boolean) => { setNotifWhatsapp(next); notificationMutation.mutate({ whatsappEnabled: next }); };
   const [waNumbers, setWaNumbers] = useState<string | null>(null);
   const waNumbersValue = waNumbers ?? workspaceSettingsQuery.data?.whatsappPIC ?? "";
@@ -761,11 +763,11 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <span className="block text-[12px] font-black text-[#101334]">{L("WhatsApp for critical alerts", "WhatsApp untuk peringatan kritis")}</span>
-                  <span className="block text-[9.5px] text-[#5A6478] font-semibold">{whatsappReady ? L("Critical and high alerts, sent from Narriv's number", "Peringatan kritis dan tinggi, dikirim dari nomor Narriv") : L("Coming soon", "Segera hadir")}</span>
+                  <span className="block text-[9.5px] text-[#5A6478] font-semibold">{!can("whatsapp_alerts") ? L("Included from the Pilot plan", "Tersedia mulai paket Pilot") : whatsappReady ? L("Critical and high alerts, sent from Narriv's number", "Peringatan kritis dan tinggi, dikirim dari nomor Narriv") : L("Coming soon", "Segera hadir")}</span>
                 </div>
-                <Switch label={L("WhatsApp alerts", "Peringatan WhatsApp")} checked={whatsappReady && whatsappOn} onChange={toggleWhatsapp} disabled={!whatsappReady || notificationMutation.isPending} />
+                <Switch label={L("WhatsApp alerts", "Peringatan WhatsApp")} checked={whatsappReady && whatsappOn && can("whatsapp_alerts")} onChange={toggleWhatsapp} disabled={!whatsappReady || !can("whatsapp_alerts") || notificationMutation.isPending} />
               </div>
-              {whatsappReady && whatsappOn ? (
+              {whatsappReady && whatsappOn && can("whatsapp_alerts") ? (
                 <div className="flex gap-2">
                   <input
                     aria-label={L("WhatsApp numbers", "Nomor WhatsApp")}

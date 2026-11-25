@@ -17,6 +17,8 @@ import { intlLocale } from "@/store/useUiStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
 import { TelegramLink } from "@/components/settings/telegram-link";
+import { useEntitlements } from "@/lib/plans";
+import { LockedFeature } from "@/components/plan/locked-feature";
 const emptyIntegrations: IntegrationRecord[] = [];
 
 function platformLabel(platform: string, options: { value: string; label: string }[]) {
@@ -49,6 +51,7 @@ function formatDateTime(value: string | null, neverSyncedLabel: string) {
 
 
 export default function IntegrationsPage() {
+  const { can } = useEntitlements();
   const queryClient = useQueryClient();
   const toast = useToast();
   const platformFilter = "";
@@ -200,6 +203,7 @@ export default function IntegrationsPage() {
       </section>
 
       <TelegramLink />
+      {!can("integrations") ? <LockedFeature feature="integrations" compact /> : null}
 
       {/* One card per channel: how many are connected, and the button that starts connecting one. */}
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">

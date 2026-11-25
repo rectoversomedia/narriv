@@ -19,11 +19,52 @@ import { baseSupabaseAdmin as db } from "../../lib/supabase.js";
 import { MANAGER_ROLES, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { ensureBucket, detectImageType } from "../workspace-settings/workspace-logo.controller.js";
 import { logStructured } from "../../lib/logger.js";
+import { entitlementsFor, FEATURES } from "../../lib/entitlements.js";
+import { isPlatformAdmin } from "../../lib/platform-admin.js";
+import { notifyTeam, requester } from "../press/approval-doc.js";
 
 const router = express.Router();
 router.use(verifyToken);
 const isDemo = (req) => String(req.user?.id || "").startsWith("demo");
 const DAY = 24 * 60 * 60 * 1000;
+
+// GET /workspaces/entitlements: the selected workspace's plan, what it includes, and its limits.
+router.get("/entitlements", async (req, res) => {
+    try {
+        const admin = await isPlatformAdmin(req.user.id);
+        if (isDemo(req)) return res.json({ data: entitlementsFor({}, { admin: false }) });
+        const id = await resolveWorkspaceIdForUser(req.user.id);
+        if (!id) return res.status(404).json({ error: "No workspace" });
+        const { data } = await db.from("workspaces").select("settings").eq("id", id).maybeSingle();
+        return res.json({ data: entitlementsFor(data?.settings || {}, { admin }) });
+    } catch (error) {
+        logStructured("error", "entitlements_failed", { error: error?.message || error });
+        return res.status(500).json({ error: "Plan details could not be loaded." });
+    }
+});
+
+// POST /workspaces/upgrade-request { feature?, plan? }: tell the Narriv team a client wants more.
+router.post("/upgrade-request", validateRequest({ body: z.object({ feature: z.enum(Object.keys(FEATURES)).optional(), plan: z.enum(["starter", "pilot", "intelligence", "decision", "command"]).optional(), note: z.string().trim().max(500).optional() }) }), async (req, res) => {
+    try {
+        if (isDemo(req)) return res.status(403).json({ error: "The demo is read-only." });
+        const ws = await currentWorkspace(req);
+        if (!ws) return res.status(404).json({ error: "No workspace" });
+        const who = await requester({ workspaceId: ws.id }, req);
+        const { data } = await db.from("workspaces").select("settings").eq("id", ws.id).maybeSingle();
+        const current = entitlementsFor(data?.settings || {});
+        const want = req.body.plan || (req.body.feature ? FEATURES[req.body.feature] : null);
+        const sent = await notifyTeam({
+            subject: `Permintaan upgrade: ${who.workspace}`,
+            text: [`Permintaan upgrade paket (Narriv)`, `Workspace: ${who.workspace}`, `Oleh: ${who.name}${who.email ? ` (${who.email})` : ""}`, `Paket sekarang: ${data?.settings?.plan || "-"}`, want ? `Ingin: ${want}` : "", req.body.feature ? `Fitur yang dibuka: ${req.body.feature}` : "", req.body.note ? `Catatan: ${req.body.note}` : "", `Ubah paket di panel admin Narriv.`].filter(Boolean).join("\n"),
+            metadata: { workspaceId: ws.id, from: current.effectivePlan, want },
+        });
+        if (!sent) return res.status(503).json({ error: "The request could not be sent. Try again in a moment." });
+        return res.json({ ok: true });
+    } catch (error) {
+        logStructured("error", "upgrade_request_failed", { error: error?.message || error });
+        return res.status(500).json({ error: "The request could not be sent." });
+    }
+});
 
 router.get("/portfolio", async (req, res) => {
     try {

@@ -1,3 +1,4 @@
+import { hasFeature, workspaceSettings as planSettingsOf } from "../../lib/entitlements.js";
 import supabase from "../../lib/supabase.js";
 import { createNotificationProviders } from "./notification-providers.js";
 import { logStructured } from "../../lib/logger.js";
@@ -47,7 +48,8 @@ async function getWorkspaceNotificationContext(workspaceId) {
         telegramChats: await supabase.from("workspaces").select("settings").eq("id", workspaceId).maybeSingle().then(({ data }) => (data?.settings?.telegram?.chats || []).map((c) => c.id)).catch(() => []),
         settings: {
             emailEnabled: notificationSettings?.email_enabled ?? true,
-            whatsappEnabled: notificationSettings?.whatsapp_enabled ?? false,
+            // WhatsApp alerts are part of the plan from Pilot (lib/entitlements.js).
+            whatsappEnabled: (notificationSettings?.whatsapp_enabled ?? false) && hasFeature(await planSettingsOf(workspaceId), "whatsapp_alerts"),
             escalationNotifications: notificationSettings?.escalation_notifications ?? true,
             reminderNotifications: notificationSettings?.reminder_notifications ?? true,
         }

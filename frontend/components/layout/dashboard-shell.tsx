@@ -14,6 +14,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { useUiStore } from "@/store/useUiStore";
 import { signalDashboardReady } from "@/lib/launch";
+import { PAGE_FEATURE, useEntitlements } from "@/lib/plans";
+import { LockedFeature } from "@/components/plan/locked-feature";
+import { PlanWelcome } from "@/components/plan/plan-welcome";
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   useApplyTheme();
@@ -26,6 +29,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   const queryClient = useQueryClient();
   const setSelectedWorkspaceId = useWorkspaceStore((s) => s.setSelectedWorkspaceId);
+  // A page outside the workspace's plan shows what it does and how to get it, instead of the page.
+  const { can } = useEntitlements();
+  const pageFeature = PAGE_FEATURE[pathname];
+  const locked = pageFeature && !can(pageFeature) ? pageFeature : null;
 
   // Mark as mounted after client-side hydration. A link with ?ws=<workspace id> (used by pitch decks to open a
   // client's dashboard directly) selects that workspace first, then drops the parameter from the address bar.
@@ -91,7 +98,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           <div className="relative z-10 w-full max-w-[1600px] mx-auto">
             <TrialBanner />
             <SectionTabs />
-            {children}
+            {locked ? <LockedFeature feature={locked} /> : children}
+            <PlanWelcome />
           </div>
         </main>
 

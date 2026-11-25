@@ -9,6 +9,8 @@ import { DEFAULT_TIMEZONE, normalizeTimezone } from "../../lib/timezone.js";
 import { forgetWorkspaceLanguage } from "../../lib/workspace-language.js";
 import { planStatus } from "../../lib/workspace-plan.js";
 import { isWhatsAppConfigured } from "../notifications/notification-providers.js";
+import { entitlementsFor, workspaceSettings as planSettingsOf } from "../../lib/entitlements.js";
+import { isPlatformAdmin, platformAdminEmails } from "../../lib/platform-admin.js";
 
 function toSafeDefaults(workspaceId) {
     return {
@@ -317,6 +319,22 @@ export async function createWorkspaceMember(req, res) {
         // Only an owner may grant the owner role (admins cannot escalate).
         if (role === "owner" && req.workspaceRole !== "owner") {
             return forbidden(res, "Only an owner can grant the owner role.", "INSUFFICIENT_ROLE");
+        }
+
+        // Users per plan (lib/entitlements.js). The Narriv team's own accounts do not count.
+        if (!(await isPlatformAdmin(req.user.id))) {
+            const { limits } = entitlementsFor(await planSettingsOf(scopedWorkspaceId));
+            if (limits.users) {
+                const { data: members } = await supabase.from("workspace_members").select("user_id").eq("workspace_id", scopedWorkspaceId);
+                const ids = (members || []).map((m) => m.user_id);
+                const { data: users } = ids.length ? await supabase.from("users").select("id, email").in("id", ids) : { data: [] };
+                const team = new Set(platformAdminEmails());
+                const teamIds = new Set((users || []).filter((u) => team.has(String(u.email || "").toLowerCase())).map((u) => u.id));
+                const count = ids.filter((id) => !teamIds.has(id)).length;
+                if (count >= limits.users) {
+                    return res.status(403).json({ error: `Your plan includes ${limits.users} users.`, code: "PLAN_USER_LIMIT", limit: limits.users });
+                }
+            }
         }
 
         const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : null;

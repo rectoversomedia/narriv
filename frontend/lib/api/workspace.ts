@@ -598,3 +598,23 @@ export interface CompetitorInsight {
 export function getCompetitorInsight(refresh = false): Promise<{ brand: string | null; competitors: string[]; maxCompetitors: number; insight: CompetitorInsight | null }> {
   return apiClient(`/api/workspace/competitors/insight${refresh ? "?refresh=1" : ""}`);
 }
+
+// ---- Plans: what the selected workspace's plan includes (backend lib/entitlements.js) ----
+export type FeatureKey =
+  | "whatsapp_alerts" | "ai_visibility" | "forecast" | "claim_check" | "ask" | "action_plans" | "competitors" | "network"
+  | "account_check" | "press_release" | "scheduled_reports" | "social_media" | "influencer" | "service_stages" | "white_label"
+  | "escalation" | "integrations";
+export type PaidPlan = "starter" | "pilot" | "intelligence" | "decision" | "command";
+export type Entitlements = {
+  plan: string | null;
+  effectivePlan: PaidPlan;
+  trial: { endsAt: string | null; expired: boolean } | null;
+  features: Record<FeatureKey, boolean>;
+  requiredPlan: Record<FeatureKey, PaidPlan>;
+  limits: { users: number | null; retentionDays: number | null };
+  addons: { social: boolean; influencer: boolean };
+  unrestricted: boolean;
+};
+export const getEntitlements = (): Promise<{ data: Entitlements }> => apiClient("/api/workspaces/entitlements");
+export const requestUpgrade = (input: { feature?: FeatureKey; plan?: PaidPlan; note?: string }): Promise<{ ok: true }> =>
+  apiClient("/api/workspaces/upgrade-request", { method: "POST", body: JSON.stringify(input) });

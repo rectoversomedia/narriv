@@ -21,6 +21,8 @@ import { RejectActionPlanModal } from "./components/reject-action-plan-modal";
 import { PressReleasePanel } from "./components/press-release";
 import { InfluencerCampaignPanel } from "./components/influencer-campaign";
 import { ServiceStages } from "./components/service-stage";
+import { useEntitlements } from "@/lib/plans";
+import { LockedFeature } from "@/components/plan/locked-feature";
 import { readableTone } from "@/lib/readable-tone";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { StatStrip } from "@/components/ui/stamp";
@@ -280,6 +282,7 @@ function FilterDropdown({ isOpen, onClose, filterPriority, setFilterPriority, fi
 
 export default function ActionPlansPage() {
   const t = useTranslations("ActionPlans");
+  const { can } = useEntitlements();
   const trendHelper = (trend: number | null) => (trend == null ? t("metricNoBaseline") : t("metricTrendHelper", { trend: Math.abs(trend) }));
   const tPagination = useTranslations("DashboardStates.pagination");
   const queryClient = useQueryClient();
@@ -607,9 +610,9 @@ export default function ActionPlansPage() {
             {latestPlan?.id ? (() => {
               const approved = ["approved", "in_progress", "blocked", "done"].includes(String(latestPlan.workflowStatus ?? ""));
               return (<>
-                <PressReleasePanel key={`pr-${latestPlan.id}`} planId={latestPlan.id} planApproved={approved} />
-                <InfluencerCampaignPanel key={`ic-${latestPlan.id}`} planId={latestPlan.id} planApproved={approved} />
-                <ServiceStages key={`ss-${latestPlan.id}`} planId={latestPlan.id} planApproved={approved} />
+                {can("press_release") ? <PressReleasePanel key={`pr-${latestPlan.id}`} planId={latestPlan.id} planApproved={approved} /> : <LockedFeature feature="press_release" compact />}
+                {can("influencer") ? <InfluencerCampaignPanel key={`ic-${latestPlan.id}`} planId={latestPlan.id} planApproved={approved} /> : <LockedFeature feature="influencer" compact />}
+                {can("service_stages") ? <ServiceStages key={`ss-${latestPlan.id}`} planId={latestPlan.id} planApproved={approved} /> : <LockedFeature feature="service_stages" compact />}
               </>);
             })() : null}
             </>)}

@@ -7,6 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { SECTION_TABS, STEPPED_SECTIONS, sectionForPath } from "@/lib/navigation";
+import { PAGE_FEATURE, useEntitlements } from "@/lib/plans";
+import { Lock } from "lucide-react";
 import { prefetchRoute } from "@/lib/prefetch-route";
 import { isPageHidden, useWorkspaceUseCase } from "@/lib/use-case";
 
@@ -17,6 +19,7 @@ import { isPageHidden, useWorkspaceUseCase } from "@/lib/use-case";
  * area appears and a trackpad gesture that starts over the bar latches onto it instead of scrolling the page.
  */
 export function SectionTabs() {
+  const { can } = useEntitlements();
   const pathname = usePathname();
   const t = useTranslations("DemoApp");
   const group = sectionForPath(pathname);
@@ -61,6 +64,7 @@ export function SectionTabs() {
                 <span className={cn("mr-2 grid h-5 w-5 place-items-center rounded-full text-[12px] font-black", active ? "bg-white text-[#101334]" : "bg-[#E3E7F1] text-[#5A6478]")}>{i + 1}</span>
               ) : null}
               {t(`nav.${tab.key}`)}
+              {PAGE_FEATURE[tab.href] && !can(PAGE_FEATURE[tab.href]) ? <Lock size={12} aria-label="locked" className="ml-1.5 opacity-60" /> : null}
             </Link>
           );
         })}

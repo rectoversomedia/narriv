@@ -62,7 +62,7 @@ describe('influencer campaign', () => {
   });
 
   it('a workspace without access sees a sample only and cannot pick creators', async () => {
-    db.table('workspaces')[0].settings = {};
+    db.table('workspaces')[0].settings = { plan: 'pilot' };
     const res = await request(app).get('/influencer/creators').set(as(OWNER));
     expect(res.body).toMatchObject({ access: false, total: 3 });
     expect(res.body.data.length).toBeLessThanOrEqual(8);
