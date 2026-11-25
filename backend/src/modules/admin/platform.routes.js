@@ -36,7 +36,7 @@ const usdToIdr = () => { const r = Number(process.env.USD_IDR_RATE); return Numb
 const SOCIAL_PLATFORMS = ["x", "tiktok", "instagram", "facebook", "youtube", "threads"];
 
 // Accounts the team and automated tests made, so the panel can hide them from the client counts (display only).
-const TEST_EMAIL = /(@narriv\.(test|ai)$|@example\.(com|org)$|@resend\.dev$|@qatestcorp\.com$|playwright|audit-test|^qa[.\-_+]|[.\-_+]qa@|tester)/i;
+const TEST_EMAIL = /(^admin@narriv\.digital$|@narriv\.(test|ai)$|@example\.(com|org)$|@resend\.dev$|@qatestcorp\.com$|playwright|audit-test|^qa[.\-_+]|[.\-_+]qa@|tester)/i;
 const TEST_NAME = /\b(test|tester|qa|playwright|audit)\b/i;
 
 router.get("/me", async (req, res, next) => {
