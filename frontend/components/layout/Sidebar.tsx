@@ -12,7 +12,9 @@ import { ROLE_LABEL, WorkspaceSwitcher, useMyWorkspaces } from "@/components/lay
 import { getAlerts, getMonitoringKeywords, getWorkspaceSettings } from "@/lib/api-service";
 import { SECTION_TABS, navGroups, type SectionKey } from "@/lib/navigation";
 import { PAGE_FEATURE, useEntitlements } from "@/lib/plans";
-import { Lock } from "lucide-react";
+import { Lock, ShieldCheck } from "lucide-react";
+import { useQuery as useAdminQuery } from "@tanstack/react-query";
+import { getAdminMe } from "@/lib/api-service";
 import { isPageHidden, useWorkspaceUseCase } from "@/lib/use-case";
 import { prefetchRoute } from "@/lib/prefetch-route";
 import { timeAgo } from "@/lib/intelligence-api";
@@ -35,6 +37,7 @@ const fade = (hidden: boolean) => cn("whitespace-nowrap transition-opacity durat
  */
 export function Sidebar() {
   const { can } = useEntitlements();
+  const isAdmin = useAdminQuery({ queryKey: ["admin", "me"], queryFn: getAdminMe, staleTime: 5 * 60 * 1000 }).data === true;
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const t = useTranslations("DemoApp");
@@ -162,6 +165,17 @@ export function Sidebar() {
           </nav>
 
           <div className="mt-4 shrink-0 space-y-1">
+            {/* The Narriv team's way to the admin panel; the rest of the app works for them like for any client. */}
+            {isAdmin ? (
+              <Link
+                href="/admin"
+                title={collapsed ? "Admin panel" : undefined}
+                className={cn("mb-2 flex items-center gap-3 rounded-[12px] text-[13px] font-bold transition-colors", collapsed ? "justify-center py-3" : "px-3 py-2.5", pathname === "/admin" ? "bg-[#465FFF] text-white" : "bg-[#465FFF]/15 text-[#C7D0FF] hover:bg-[#465FFF]/25")}
+              >
+                <ShieldCheck size={16} className="shrink-0" aria-hidden="true" />
+                <span className={cn("min-w-0", fade(collapsed))}>Admin panel</span>
+              </Link>
+            ) : null}
             {/* Whether Narriv is actually watching right now. */}
             <Link
               href="/workspace/settings#keywords"

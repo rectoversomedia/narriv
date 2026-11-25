@@ -463,8 +463,6 @@ function WorkspaceDanger({ w, onClose }: { w: AdminWorkspace; onClose: () => voi
     meta: { silent: true },
     mutationFn: () => enterAdminWorkspace(w.id),
     onSuccess: () => {
-      // The admin's home sends them back to this panel; this flag lets them stay in the client's workspace.
-      try { sessionStorage.setItem("narriv-admin-browsing", "1"); } catch { /* storage off: the panel link still works */ }
       setSelected(w.id);
       qc.clear();
       router.push("/");
@@ -636,7 +634,6 @@ export default function AdminPage() {
   const toast = useToast();
   const queryClient = useQueryClient();
   const me = useQuery({ queryKey: ["admin", "me"], queryFn: getAdminMe, staleTime: 5 * 60 * 1000 });
-  useEffect(() => { try { sessionStorage.removeItem("narriv-admin-browsing"); } catch { /* ignore */ } }, []);
   const list = useQuery({ queryKey: ["admin", "workspaces"], queryFn: getAdminWorkspaces, enabled: me.data === true, staleTime: 30 * 1000 });
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
