@@ -9,6 +9,7 @@ import {
 } from "@/lib/api-service";
 import { useL } from "@/lib/use-l";
 import { ApprovalDocPanel, fmtWhen } from "./approval-doc";
+import { FulfilmentPanel } from "./fulfilment";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
@@ -34,12 +35,13 @@ function Logo({ o }: { o: PressOutlet }) {
 }
 
 /** Step 3: choose outlets (search, tier, niche, recommended for this issue), then ask Narriv for the price. */
-function MediaPicker({ planId, release, canEdit, canApprove, recommended }: { planId: string; release: PressRelease; canEdit: boolean; canApprove: boolean; recommended: Record<string, { issue: number; brand: number }> }) {
+function MediaPicker({ planId, release, canEdit, canApprove, recommended, ownedFit }: { planId: string; release: PressRelease; canEdit: boolean; canApprove: boolean; recommended: Record<string, { issue: number; brand: number }>; ownedFit: string[] }) {
   const L = useL();
   const toast = useToast();
   const qc = useQueryClient();
   const outletsQ = useQuery({ queryKey: ["media-outlets"], queryFn: getMediaOutlets, staleTime: 3_600_000 });
-  const outlets = useMemo(() => outletsQ.data?.data ?? [], [outletsQ.data]);
+  // Owned local outlets show only when the issue is about their area.
+  const outlets = useMemo(() => (outletsQ.data?.data ?? []).filter((o) => !o.owned || ownedFit.includes(o.id)), [outletsQ.data, ownedFit]);
   const [picked, setPicked] = useState<string[]>(release.media ?? []);
   const [q, setQ] = useState("");
   const [tier, setTier] = useState<number | null>(null);
@@ -62,17 +64,18 @@ function MediaPicker({ planId, release, canEdit, canApprove, recommended }: { pl
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
 
   const toggle = (id: string) => {
-    if (!canEdit || release.quote) return;
+    if (!canEdit || locked) return;
     const next = picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id];
     setPicked(next);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => save.mutate(next), 700);
   };
 
-  const hasRec = Object.keys(recommended).length > 0;
-  const recScore = (id: string) => (recommended[id] ? recommended[id].issue * 100 + recommended[id].brand : -1);
+  const locked = Boolean(release.quote) && release.quote?.status !== "declined";
+  const hasRec = Object.keys(recommended).length > 0 || ownedFit.length > 0;
+  const recScore = (id: string) => (ownedFit.includes(id) ? 1e6 : recommended[id] ? recommended[id].issue * 100 + recommended[id].brand : -1);
   const shown = outlets
-    .filter((o) => !onlyRec || recommended[o.id])
+    .filter((o) => !onlyRec || recommended[o.id] || o.owned)
     .filter((o) => !tier || o.tier === tier)
     .filter((o) => !niche || o.niche === niche)
     .filter((o) => !q.trim() || `${o.name} ${o.domain} ${o.area ?? ""}`.toLowerCase().includes(q.trim().toLowerCase()))
@@ -80,7 +83,6 @@ function MediaPicker({ planId, release, canEdit, canApprove, recommended }: { pl
   const pickedOutlets = picked.map((id) => outlets.find((o) => o.id === id)).filter((o): o is PressOutlet => Boolean(o));
   const perTier = [1, 2, 3, 4].map((t) => pickedOutlets.filter((o) => o.tier === t).length);
   const nicheKeys = Object.keys(NICHES).filter((k) => outlets.some((o) => o.niche === k));
-  const locked = Boolean(release.quote);
 
   return (
     <div className="mt-6 border-t border-[#EEF0F6] pt-6">
@@ -129,6 +131,7 @@ function MediaPicker({ planId, release, canEdit, canApprove, recommended }: { pl
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[14px] font-bold text-[#101334]">{o.name}</span>
                       <span className="block truncate text-[12px] text-[#647099]">{L(NICHES[o.niche]?.[0] ?? o.niche, NICHES[o.niche]?.[1] ?? o.niche)}{o.area ? ` · ${o.area}` : ""}</span>
+                      {o.owned ? <span className="mt-0.5 block truncate text-[11.5px] font-bold text-[#047857]">{L("Our network · guaranteed placement · local to this issue", "Jaringan kami · pasti tayang · lokal sesuai isu")}</span> : null}
                       {rec ? (
                         <span className="mt-0.5 block truncate text-[11.5px] font-bold text-[#A04606]">
                           {rec.issue ? L(`${rec.issue} stories on this issue`, `${rec.issue} berita soal isu ini`) : L(`${rec.brand} stories on your brand in 30 days`, `${rec.brand} berita soal brand Anda (30 hari)`)}
@@ -167,8 +170,8 @@ function MediaPicker({ planId, release, canEdit, canApprove, recommended }: { pl
 
           {locked ? (
             <div className="mt-4 rounded-[12px] bg-[#12A66A]/20 p-3 text-[13px]">
-              <p className="flex items-center gap-1.5 font-black text-[#7BE0B3]"><CheckCircle2 size={15} /> {L("Quote requested", "Penawaran diminta")}</p>
-              <p className="mt-1 text-white/80">{L(`${release.quote!.outlets} outlets, ${fmtWhen(release.quote!.requestedAt)}${release.quote!.byName ? ` by ${release.quote!.byName}` : ""}. We reply within one working day.`, `${release.quote!.outlets} media, ${fmtWhen(release.quote!.requestedAt)}${release.quote!.byName ? ` oleh ${release.quote!.byName}` : ""}. Kami balas dalam 1 hari kerja.`)}</p>
+              <p className="flex items-center gap-1.5 font-black text-[#7BE0B3]"><CheckCircle2 size={15} /> {release.quote?.status === "accepted" ? L("Offer accepted", "Penawaran disetujui") : release.quote?.status === "quoted" ? L("Offer ready below", "Penawaran siap, lihat di bawah") : L("Quote requested", "Penawaran diminta")}</p>
+              <p className="mt-1 text-white/80">{L(`${release.quote!.outlets ?? picked.length} outlets, ${fmtWhen(release.quote!.requestedAt)}.`, `${release.quote!.outlets ?? picked.length} media, ${fmtWhen(release.quote!.requestedAt)}.`)}</p>
             </div>
           ) : canApprove ? (
             <>
@@ -202,8 +205,8 @@ export function PressReleasePanel({ planId, planApproved }: { planId: string; pl
       draft={draftPressRelease}
       edit={editPressRelease}
       review={reviewPressRelease}
-      stage={(r: PressRelease) => (r.quote ? 4 : 2)}
-      editable={(r: PressRelease) => !r.quote}
+      stage={(r: PressRelease) => (r.quote && r.quote.status !== "declined" ? 3 : 2)}
+      editable={(r: PressRelease) => !r.quote || r.quote.status === "declined"}
       copy={{
         title: { en: "Press release", id: "Siaran pers" },
         subtitle: { en: "Every version needs an owner or admin's approval before it goes to media.", id: "Setiap versi wajib disetujui owner atau admin sebelum dikirim ke media." },
@@ -218,7 +221,12 @@ export function PressReleasePanel({ planId, planApproved }: { planId: string; pl
         steps: [{ en: "Draft", id: "Draf" }, { en: "Approval", id: "Persetujuan" }, { en: "Choose media", id: "Pilih media" }, { en: "Quote", id: "Penawaran" }],
       }}
     >
-      {(res, r) => <MediaPicker key={r.version} planId={planId} release={r} canEdit={res.canEdit} canApprove={res.canApprove} recommended={res.recommended ?? {}} />}
+      {(res, r) => (
+        <>
+          <MediaPicker key={`${r.version}-${r.quote?.status ?? ""}`} planId={planId} release={r} canEdit={res.canEdit} canApprove={res.canApprove} recommended={res.recommended ?? {}} ownedFit={res.ownedFit ?? []} />
+          {r.quote ? <FulfilmentPanel kind="press" planId={planId} title={r.title} quote={r.quote} delivery={res.delivery} impact={res.impact} canEdit={res.canEdit} canApprove={res.canApprove} queryKey="press-release" /> : null}
+        </>
+      )}
     </ApprovalDocPanel>
   );
 }

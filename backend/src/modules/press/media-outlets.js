@@ -1,5 +1,5 @@
 /**
- * The media Narriv can place a press release in: 172 outlets by tier and niche. No prices: the price depends on the
+ * The media Narriv can place a press release in: 172 outlets plus the owned local ones by tier and niche. No prices: the price depends on the
  * outlet, the format and the date, so a client asks for a quote after choosing.
  * Tiers: 1 Flagship (very high traffic) · 2 Premium (high) · 3 Regional (medium) · 4 Standard (steady niche and local).
  * logo: file name in frontend/public/media-logos (null when there is none).
@@ -176,7 +176,38 @@ export const MEDIA_OUTLETS = [
     {"id": "indonesia-vox", "name": "Indonesia Vox", "domain": "indonesiavox.com", "niche": "general", "area": null, "tier": 4, "logo": "indonesiavox-com"},
     {"id": "warta-times", "name": "Warta Times", "domain": "wartatimes.com", "niche": "general", "area": null, "tier": 4, "logo": "wartatimes-com"},
     {"id": "suara-time", "name": "Suara Time", "domain": "suaratime.com", "niche": "general", "area": null, "tier": 4, "logo": "suaratime-com"},
-    {"id": "radar-waktu", "name": "Radar Waktu", "domain": "radarwaktu.com", "niche": "general", "area": null, "tier": 4, "logo": "radarwaktu-com"}
+    {"id": "radar-waktu", "name": "Radar Waktu", "domain": "radarwaktu.com", "niche": "general", "area": null, "tier": 4, "logo": "radarwaktu-com"},
+    // Owned by the Narriv team's network: placement is guaranteed. Offered only when the issue is local to their area.
+    {"id": "jakselnews", "name": "Jakselnews", "domain": "jakselnews.com", "niche": "regional", "area": "Jakarta Selatan", "tier": 3, "logo": null, "owned": true, "localTerms": ["jakarta selatan", "jaksel", "kebayoran", "cilandak", "pasar minggu", "tebet", "mampang", "pancoran", "jagakarsa", "pesanggrahan", "setiabudi"]},
+    {"id": "halodepok", "name": "Halodepok", "domain": "halodepok.com", "niche": "regional", "area": "Depok", "tier": 3, "logo": null, "owned": true, "localTerms": ["depok", "margonda", "cimanggis", "sawangan", "cinere", "beji", "tapos", "sukmajaya"]},
 ];
 
 export const MEDIA_BY_ID = new Map(MEDIA_OUTLETS.map((m) => [m.id, m]));
+
+/**
+ * Which outlet published a record. News arrives through Google News links, so the outlet is read from the
+ * publisher's name first, then from the link's host for direct links.
+ */
+const norm = (v) => String(v || "").toLowerCase().replace(/^www\./, "").replace(/[^a-z0-9]/g, "");
+const OUTLET_KEYS = (() => {
+    const keys = new Map();
+    for (const o of MEDIA_OUTLETS) {
+        for (const k of [norm(o.name), norm(o.domain), norm(o.domain.split(".")[0])]) if (k.length >= 4 && !keys.has(k)) keys.set(k, o.id);
+    }
+    return keys;
+})();
+export function outletOfSignal(row) {
+    const byName = OUTLET_KEYS.get(norm(row?.metadata?.publisher));
+    if (byName) return byName;
+    try {
+        const host = new URL(row.url).hostname.replace(/^www\./, "");
+        if (host.endsWith("google.com")) return null;
+        const parts = host.split(".");
+        for (let i = 0; i < parts.length - 1; i++) {
+            const id = OUTLET_KEYS.get(norm(parts.slice(i).join(".")));
+            if (id) return id;
+        }
+    } catch { /* not a URL */ }
+    return null;
+}
+

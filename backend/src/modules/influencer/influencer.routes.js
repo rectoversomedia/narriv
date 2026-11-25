@@ -26,6 +26,7 @@ import { requestLang } from "../../lib/request-context.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
 import { canApprove, canEdit, docView, fail, guard, isDemo, loadPlan, mountApprovalRoutes, notifyTeam, requester, saveDoc } from "../press/approval-doc.js";
+import { deliveryView, impactView, mountFulfilmentRoutes } from "../press/fulfilment.js";
 import { PLATFORMS, TIERS, categoriesForIndustry, creatorById, loadCreators } from "./creators.js";
 
 const router = express.Router();
@@ -199,8 +200,11 @@ router.get("/:planId", async (req, res) => {
     try {
         const ctx = await loadPlan(req);
         if (!ctx) return res.status(404).json({ error: "Action plan not found" });
+        const doc = ctx.strategy?.[KEY] || null;
         return res.json({
-            data: view(ctx.strategy?.[KEY] || null),
+            delivery: await deliveryView("influencer", ctx.plan.workspace_id, doc).catch(() => null),
+            impact: await impactView(ctx.plan.workspace_id, ctx.plan, doc).catch(() => null),
+            data: view(doc),
             canEdit: canEdit(ctx.role),
             canApprove: canApprove(ctx.role),
             access: !isDemo(req) && await workspaceAccess(ctx.plan.workspace_id),
@@ -213,6 +217,7 @@ router.get("/:planId", async (req, res) => {
 });
 
 mountApprovalRoutes(router, { key: KEY, event: "influencer_brief", write: (ctx, opts) => writeBrief(ctx, opts), view });
+mountFulfilmentRoutes(router, { kind: "influencer", view });
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date.");
 const scheduleBody = z.object({
@@ -228,7 +233,7 @@ router.put("/:planId/schedule", validateRequest({ body: scheduleBody }), async (
         if (!ctx) return;
         const current = ctx.strategy[KEY];
         if (current?.status !== "approved") return res.status(409).json({ error: "Approve the brief before planning the schedule." });
-        if (current.quote) return res.status(409).json({ error: "A quote was requested for this plan." });
+        if (current.quote && current.quote.status !== "declined") return res.status(409).json({ error: "A quote was requested for this plan." });
         const waves = req.body.waves.map((w) => ({ ...w, id: w.id || crypto.randomUUID().slice(0, 8) }));
         const ids = new Set(waves.map((w) => w.id));
         // Creators keep their wave when it still exists, and their date when it still fits it.
@@ -254,7 +259,7 @@ router.put("/:planId/creators", validateRequest({ body: creatorsBody }), async (
         if (!ctx) return;
         const current = ctx.strategy[KEY];
         if (current?.status !== "approved" || !current.schedule) return res.status(409).json({ error: "Approve the brief and set the schedule first." });
-        if (current.quote) return res.status(409).json({ error: "A quote was requested for this plan." });
+        if (current.quote && current.quote.status !== "declined") return res.status(409).json({ error: "A quote was requested for this plan." });
         if (!await workspaceAccess(ctx.plan.workspace_id)) return res.status(403).json({ error: "The influencer database is not open for this workspace.", code: "CREATOR_ACCESS" });
         const waves = new Map(current.schedule.waves.map((w) => [w.id, w]));
         const seen = new Set();
@@ -281,6 +286,7 @@ router.post("/:planId/quote", validateRequest({ body: quoteBody }), async (req, 
         if (!ctx) return;
         const current = ctx.strategy[KEY];
         if (current?.status !== "approved" || !current.schedule) return res.status(409).json({ error: "Approve the brief and set the schedule first." });
+        if (current.quote && current.quote.status !== "declined") return res.status(409).json({ error: "A quote was already requested." });
         const v = view(current);
         if (!v.creators.length) return res.status(400).json({ error: "Choose at least one influencer." });
         const who = await requester(ctx, req);
@@ -302,7 +308,7 @@ router.post("/:planId/quote", validateRequest({ body: quoteBody }), async (req, 
         ].filter(Boolean).join("\n");
         const sent = await notifyTeam({ subject: `Permintaan penawaran influencer: ${who.workspace} · ${v.creators.length} influencer`, text, metadata: { planId: ctx.plan.id } });
         if (!sent) return res.status(503).json({ error: "The request could not be sent. Try again in a moment." });
-        const doc = await saveDoc(ctx, KEY, { ...current, quote: { requestedAt: new Date().toISOString(), by: req.user.id, byName: who.name, creators: v.creators.length, note: req.body.note || null } });
+        const doc = await saveDoc(ctx, KEY, { ...current, quote: { status: "requested", requestedAt: new Date().toISOString(), by: req.user.id, byName: who.name, creators: v.creators.length, note: req.body.note || null } });
         await recordAuditLog({ userId: req.user.id, workspaceId: ctx.plan.workspace_id, event: "influencer_quote_requested", metadata: { planId: ctx.plan.id, creators: v.creators.length } }).catch(() => null);
         return res.json({ data: view(doc) });
     } catch (error) {

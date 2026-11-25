@@ -26,6 +26,7 @@ import { calculateCost } from "../../lib/model-pricing.js";
 import { PLATFORM_PRESET, runSpend, socialConfig, totalCapUsd } from "../ingestion/social-schedule.service.js";
 import { COLLECTION_JOB_NAME } from "../ingestion/apify-collection.service.js";
 import { resolveRecordRegion } from "../../lib/indonesia-regions.js";
+import { KINDS, listQuotes, setInvoicePaid, setOffer } from "../press/fulfilment.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -44,6 +45,40 @@ router.get("/me", async (req, res, next) => {
         res.json({ isAdmin: await isPlatformAdmin(req.user?.id) });
     } catch (err) {
         next(err);
+    }
+});
+
+// Quote requests from clients' action plans (press release, influencer campaign): the team answers with a price
+// and marks invoices paid. Everything else (accepting, tracking, impact) happens in the client's workspace.
+router.get("/quotes", requirePlatformAdmin, async (_req, res) => {
+    try {
+        res.json({ data: await listQuotes() });
+    } catch (error) {
+        logStructured("error", "admin_quotes_failed", { error: error?.message || error });
+        res.status(500).json({ error: "Could not load the quotes." });
+    }
+});
+
+const quoteParams = z.object({ planId: z.string().uuid(), kind: z.enum(Object.keys(KINDS)) });
+router.put("/quotes/:planId/:kind", requirePlatformAdmin, validateRequest({ params: quoteParams, body: z.object({ amount: z.number().int().min(0).max(100_000_000_000), notes: z.string().trim().max(1000).optional(), validDays: z.number().int().min(1).max(90).optional().default(14) }) }), async (req, res) => {
+    try {
+        const r = await setOffer({ ...req.params, ...req.body, adminId: req.user.id });
+        if (r.error) return res.status(r.status).json({ error: r.error });
+        res.json({ data: r.quote });
+    } catch (error) {
+        logStructured("error", "admin_quote_offer_failed", { error: error?.message || error });
+        res.status(500).json({ error: "Could not save the offer." });
+    }
+});
+
+router.patch("/quotes/:planId/:kind/invoice", requirePlatformAdmin, validateRequest({ params: quoteParams, body: z.object({ paid: z.boolean() }) }), async (req, res) => {
+    try {
+        const r = await setInvoicePaid({ ...req.params, paid: req.body.paid, adminId: req.user.id });
+        if (r.error) return res.status(r.status).json({ error: r.error });
+        res.json({ data: r.quote });
+    } catch (error) {
+        logStructured("error", "admin_invoice_failed", { error: error?.message || error });
+        res.status(500).json({ error: "Could not update the invoice." });
     }
 });
 

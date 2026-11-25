@@ -20,6 +20,7 @@ import { PlanWorkflowControls } from "./components/plan-workflow-controls";
 import { RejectActionPlanModal } from "./components/reject-action-plan-modal";
 import { PressReleasePanel } from "./components/press-release";
 import { InfluencerCampaignPanel } from "./components/influencer-campaign";
+import { ServiceStages } from "./components/service-stage";
 import { readableTone } from "@/lib/readable-tone";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { StatStrip } from "@/components/ui/stamp";
@@ -608,6 +609,7 @@ export default function ActionPlansPage() {
               return (<>
                 <PressReleasePanel key={`pr-${latestPlan.id}`} planId={latestPlan.id} planApproved={approved} />
                 <InfluencerCampaignPanel key={`ic-${latestPlan.id}`} planId={latestPlan.id} planApproved={approved} />
+                <ServiceStages key={`ss-${latestPlan.id}`} planId={latestPlan.id} planApproved={approved} />
               </>);
             })() : null}
             </>)}

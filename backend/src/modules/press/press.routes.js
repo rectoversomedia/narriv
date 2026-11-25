@@ -23,7 +23,8 @@ import { runAiTask } from "../../lib/ai-gateway.js";
 import { requestLang } from "../../lib/request-context.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
-import { MEDIA_OUTLETS, MEDIA_BY_ID } from "./media-outlets.js";
+import { MEDIA_OUTLETS, MEDIA_BY_ID, outletOfSignal } from "./media-outlets.js";
+import { deliveryView, impactView, mountFulfilmentRoutes } from "./fulfilment.js";
 import { canApprove, canEdit, docView, fail, guard, loadPlan, mountApprovalRoutes, notifyTeam, requester, saveDoc } from "./approval-doc.js";
 
 const router = express.Router();
@@ -92,29 +93,6 @@ async function writeRelease(ctx, { note = null, current = null } = {}) {
  * Outlets that already cover the issue (from the issue's records) and the brand (last 30 days). News arrives through
  * Google News links, so the outlet is read from the publisher's name, then from the link's host for direct links.
  */
-const norm = (v) => String(v || "").toLowerCase().replace(/^www\./, "").replace(/[^a-z0-9]/g, "");
-const OUTLET_KEYS = (() => {
-    const keys = new Map();
-    for (const o of MEDIA_OUTLETS) {
-        for (const k of [norm(o.name), norm(o.domain), norm(o.domain.split(".")[0])]) if (k.length >= 4 && !keys.has(k)) keys.set(k, o.id);
-    }
-    return keys;
-})();
-export function outletOfSignal(row) {
-    const byName = OUTLET_KEYS.get(norm(row?.metadata?.publisher));
-    if (byName) return byName;
-    try {
-        const host = new URL(row.url).hostname.replace(/^www\./, "");
-        if (host.endsWith("google.com")) return null;
-        const parts = host.split(".");
-        for (let i = 0; i < parts.length - 1; i++) {
-            const id = OUTLET_KEYS.get(norm(parts.slice(i).join(".")));
-            if (id) return id;
-        }
-    } catch { /* not a URL */ }
-    return null;
-}
-
 async function recommendations(ctx) {
     const count = (rows) => rows.reduce((m, r) => {
         const id = outletOfSignal(r);
@@ -135,17 +113,35 @@ async function recommendations(ctx) {
     return out;
 }
 
-router.get("/media", (_req, res) => res.json({ data: MEDIA_OUTLETS }));
+/** Owned outlets whose area the issue (or, without an issue, the brand's recent news) talks about. */
+async function ownedFit(ctx) {
+    let rows = [];
+    if (ctx.plan.cluster_id) {
+        const { data: links } = await db.from("narrative_cluster_signals").select("signal_id").eq("cluster_id", ctx.plan.cluster_id).limit(300);
+        const ids = (links || []).map((l) => l.signal_id);
+        if (ids.length) rows = (await db.from("signals").select("title, content").in("id", ids)).data || [];
+    } else {
+        rows = (await db.from("signals").select("title, content").eq("workspace_id", ctx.plan.workspace_id).gte("captured_at", new Date(Date.now() - 30 * 86400000).toISOString()).limit(1000)).data || [];
+    }
+    const text = rows.map((r) => `${r.title || ""} ${String(r.content || "").slice(0, 600)}`).join(" ").toLowerCase();
+    return MEDIA_OUTLETS.filter((o) => o.owned && o.localTerms.some((t) => text.includes(t))).map((o) => o.id);
+}
+
+router.get("/media", (_req, res) => res.json({ data: MEDIA_OUTLETS.map(({ localTerms: _t, ...o }) => o) }));
 
 router.get("/:planId", async (req, res) => {
     try {
         const ctx = await loadPlan(req);
         if (!ctx) return res.status(404).json({ error: "Action plan not found" });
+        const doc = ctx.strategy?.press_release || null;
         return res.json({
-            data: view(ctx.strategy?.press_release || null),
+            data: view(doc),
             canEdit: canEdit(ctx.role),
             canApprove: canApprove(ctx.role),
             recommended: await recommendations(ctx).catch(() => ({})),
+            ownedFit: await ownedFit(ctx).catch(() => []),
+            delivery: await deliveryView("press", ctx.plan.workspace_id, doc).catch(() => null),
+            impact: await impactView(ctx.plan.workspace_id, ctx.plan, doc).catch(() => null),
         });
     } catch (error) {
         logStructured("error", "press_release_read_failed", { error: error?.message || error });
@@ -154,6 +150,7 @@ router.get("/:planId", async (req, res) => {
 });
 
 mountApprovalRoutes(router, { key: KEY, event: "press_release", write: (ctx, opts) => writeRelease(ctx, opts), view });
+mountFulfilmentRoutes(router, { kind: "press", view });
 
 const mediaBody = z.object({ outletIds: z.array(z.string().max(80)).max(MAX_OUTLETS) });
 
@@ -163,6 +160,7 @@ router.put("/:planId/media", validateRequest({ body: mediaBody }), async (req, r
         if (!ctx) return;
         const current = ctx.strategy.press_release;
         if (current?.status !== "approved") return res.status(409).json({ error: "Approve the press release before choosing media." });
+        if (current.quote && current.quote.status !== "declined") return res.status(409).json({ error: "A quote was requested for this selection." });
         const media = [...new Set(req.body.outletIds)].filter((id) => MEDIA_BY_ID.has(id));
         const release = await saveRelease(ctx, { ...current, media });
         return res.json({ data: view(release) });
@@ -179,6 +177,7 @@ router.post("/:planId/quote", validateRequest({ body: quoteBody }), async (req, 
         if (!ctx) return;
         const current = ctx.strategy.press_release;
         if (current?.status !== "approved") return res.status(409).json({ error: "Approve the press release before asking for a quote." });
+        if (current.quote && current.quote.status !== "declined") return res.status(409).json({ error: "A quote was already requested." });
         const outlets = (current.media || []).map((id) => MEDIA_BY_ID.get(id)).filter(Boolean);
         if (!outlets.length) return res.status(400).json({ error: "Choose at least one outlet." });
         const who = await requester(ctx, req);
@@ -197,7 +196,7 @@ router.post("/:planId/quote", validateRequest({ body: quoteBody }), async (req, 
 
         const sent = await notifyTeam({ subject: `Permintaan penawaran rilis: ${who.workspace} · ${outlets.length} media`, text, metadata: { planId: ctx.plan.id } });
         if (!sent) return res.status(503).json({ error: "The request could not be sent. Try again in a moment." });
-        const release = await saveRelease(ctx, { ...current, quote: { requestedAt: at, by: req.user.id, byName: who.name, outlets: outlets.length, note: req.body.note || null } });
+        const release = await saveRelease(ctx, { ...current, quote: { status: "requested", requestedAt: at, by: req.user.id, byName: who.name, outlets: outlets.length, note: req.body.note || null } });
         await recordAuditLog({ userId: req.user.id, workspaceId: ctx.plan.workspace_id, event: "press_release_quote_requested", metadata: { planId: ctx.plan.id, outlets: outlets.length } }).catch(() => null);
         return res.json({ data: view(release) });
     } catch (error) {

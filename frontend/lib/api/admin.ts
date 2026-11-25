@@ -103,3 +103,15 @@ export function backfillAdminRegions(offset: number) {
 export function sendAdminTestEmail(to: string) {
   return apiClient<AdminTestEmailResult>("/api/admin/platform/test-email", { method: "POST", body: JSON.stringify({ to }) });
 }
+
+export type AdminQuote = {
+  planId: string; kind: "press" | "influencer" | "video" | "ads" | "social"; workspaceId: string; workspace: string; planTitle: string; title: string;
+  items: Array<{ id: string; name: string; sub: string; due: string | null }>;
+  schedule: { start: string; end: string } | null;
+  quote: import("./reports").QuoteState;
+};
+export const getAdminQuotes = (): Promise<{ data: AdminQuote[] }> => apiClient("/api/admin/platform/quotes");
+export const sendAdminOffer = (planId: string, kind: string, input: { amount: number; notes?: string; validDays?: number }) =>
+  apiClient(`/api/admin/platform/quotes/${planId}/${kind}`, { method: "PUT", body: JSON.stringify(input) });
+export const setAdminInvoicePaid = (planId: string, kind: string, paid: boolean) =>
+  apiClient(`/api/admin/platform/quotes/${planId}/${kind}/invoice`, { method: "PATCH", body: JSON.stringify({ paid }) });

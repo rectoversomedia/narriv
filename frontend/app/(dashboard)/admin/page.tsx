@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Check, ChevronRight, Loader2, Mail, MapPin, Pause, Play, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
+import { CalendarClock, Check, ChevronRight, Inbox, Loader2, Mail, MapPin, Pause, Play, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { useToast } from "@/components/ui/toast";
+import { getAdminQuotes, sendAdminOffer, setAdminInvoicePaid, type AdminQuote } from "@/lib/api-service";
 import { backfillAdminRegions, getAdminMe, seedAdminDemo, getAdminWorkspaces, sendAdminTestEmail, updateAdminWorkspace, type AdminWorkspace, type AdminWorkspacePatch, type BillingStatus, type WorkspacePlanKey } from "@/lib/api-service";
 import { timeAgo } from "@/lib/intelligence-api";
 import { useL } from "@/lib/use-l";
@@ -346,6 +347,89 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
  * Fills a demo case's workspace now (brand, government, CVE); the nightly refresh keeps them current afterwards.
  * Only the demo workspaces are written.
  */
+const QUOTE_LOOK: Record<string, { en: string; id: string; cls: string }> = {
+  requested: { en: "Needs a price", id: "Perlu harga", cls: "bg-[#FFF4E5] text-[#A04606]" },
+  quoted: { en: "Offer sent", id: "Penawaran terkirim", cls: "bg-[#EEF1FF] text-[#3247D9]" },
+  accepted: { en: "Accepted", id: "Disetujui", cls: "bg-[#E5F6EE] text-[#047857]" },
+  declined: { en: "Declined", id: "Ditolak", cls: "bg-[#FDECEC] text-[#B42318]" },
+};
+
+function QuoteRow({ q }: { q: AdminQuote }) {
+  const L = useL();
+  const toast = useToast();
+  const qc = useQueryClient();
+  const status = q.quote.status ?? "requested";
+  const [open, setOpen] = useState(status === "requested");
+  const [amount, setAmount] = useState(q.quote.offer ? String(q.quote.offer.amount) : "");
+  const [notes, setNotes] = useState(q.quote.offer?.notes ?? "");
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin", "quotes"] });
+  const offer = useMutation({
+    mutationFn: () => sendAdminOffer(q.planId, q.kind, { amount: Number(amount.replace(/\D/g, "")), notes: notes.trim() || undefined }),
+    onSuccess: () => { toast.success(L("Offer sent to the client.", "Penawaran terkirim ke klien.")); refresh(); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : L("Not sent.", "Gagal dikirim.")),
+  });
+  const paid = useMutation({ mutationFn: (v: boolean) => setAdminInvoicePaid(q.planId, q.kind, v), onSuccess: refresh, onError: (e) => toast.error(e instanceof Error ? e.message : L("Not saved.", "Gagal disimpan.")) });
+  const look = QUOTE_LOOK[status];
+  const num = Number(amount.replace(/\D/g, ""));
+  return (
+    <li className="border-t border-[#EEF1F7] first:border-0">
+      <button type="button" onClick={() => setOpen(!open)} className="flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left hover:bg-[#FAFBFE]">
+        <span className="min-w-0 flex-1">
+          <b className="block truncate text-[14px]">{q.workspace} · {({ press: L("Press release", "Siaran pers"), influencer: L("Influencers", "Influencer"), video: L("Short videos", "Video pendek"), ads: L("Paid ads", "Iklan berbayar"), social: L("Social media", "Media sosial") } as Record<string, string>)[q.kind]}</b>
+          <span className="block truncate text-[12px] text-[#5F6B94]">{q.title} · {q.items.length} {q.kind === "press" ? L("outlets", "media") : q.kind === "influencer" ? L("creators", "influencer") : L("deliverables", "keluaran")} · {new Date(q.quote.requestedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
+        </span>
+        {q.quote.offer ? <span className="text-[13px] font-black">Rp{q.quote.offer.amount.toLocaleString("id-ID")}</span> : null}
+        <span className={cn("rounded-full px-2.5 py-1 text-[11.5px] font-bold", look.cls)}>{L(look.en, look.id)}</span>
+        <ChevronRight size={16} className={cn("text-[#8A93B8] transition", open && "rotate-90")} />
+      </button>
+      {open ? (
+        <div className="grid gap-3 px-4 pb-4">
+          <div className="rounded-[12px] bg-[#F5F7FF] p-3">
+            <p className="text-[12px] font-bold text-[#5F6B94]">{q.planTitle}{q.schedule ? ` · ${q.schedule.start} → ${q.schedule.end}` : ""}</p>
+            <ul className="mt-1.5 flex flex-wrap gap-1.5">{q.items.map((i) => <li key={i.id} className="rounded-full bg-white px-2.5 py-1 text-[12px] font-semibold shadow-sm">{i.name}{i.due && q.kind !== "press" ? ` · ${i.due.slice(5)}` : ""}</li>)}</ul>
+            {q.quote.note ? <p className="mt-2 text-[12.5px] text-[#31406B]">{L("Client note:", "Catatan klien:")} {q.quote.note}</p> : null}
+            {q.quote.decisionNote ? <p className="mt-1 text-[12.5px] text-[#B42318]">{L("Decline reason:", "Alasan menolak:")} {q.quote.decisionNote}</p> : null}
+          </div>
+          {status === "requested" || status === "quoted" ? (
+            <form onSubmit={(e) => { e.preventDefault(); offer.mutate(); }} className="grid gap-2 sm:grid-cols-[200px_minmax(0,1fr)_auto]">
+              <input inputMode="numeric" value={amount ? Number(amount.replace(/\D/g, "") || 0).toLocaleString("id-ID") : ""} onChange={(e) => setAmount(e.target.value)} placeholder={L("Price (Rp)", "Harga (Rp)")} aria-label={L("Price", "Harga")} className="h-10 rounded-[10px] bg-white px-3 text-[14px] font-bold shadow-[0_0_0_1px_#DDE3EF] outline-none focus:shadow-[0_0_0_2px_#465FFF]" />
+              <input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={1000} placeholder={L("What is included (formats, timing, reporting)", "Termasuk apa saja (format, waktu tayang, laporan)")} aria-label={L("Notes", "Catatan")} className="h-10 rounded-[10px] bg-white px-3 text-[13px] shadow-[0_0_0_1px_#DDE3EF] outline-none focus:shadow-[0_0_0_2px_#465FFF]" />
+              <button type="submit" disabled={!num || offer.isPending} className="h-10 rounded-[10px] bg-[#465FFF] px-4 text-[13px] font-bold text-white disabled:opacity-50">{status === "quoted" ? L("Update offer", "Perbarui penawaran") : L("Send offer", "Kirim penawaran")}</button>
+            </form>
+          ) : null}
+          {status === "accepted" && q.quote.invoice ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[12px] bg-white p-3 shadow-[0_0_0_1px_#E3E7F3]">
+              <span className="text-[13px]"><b>{q.quote.invoice.number}</b> · Rp{q.quote.invoice.amount.toLocaleString("id-ID")} · {L("due", "jatuh tempo")} {new Date(q.quote.invoice.dueAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
+              <Toggle on={q.quote.invoice.status === "paid"} onChange={(v) => paid.mutate(v)} label={L("Paid", "Lunas")} disabled={paid.isPending} />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+/** Quote requests from clients' action plans: price them here; the client accepts in their workspace. */
+function QuotesCard() {
+  const L = useL();
+  const q = useQuery({ queryKey: ["admin", "quotes"], queryFn: getAdminQuotes, staleTime: 30_000 });
+  const rows = q.data?.data ?? [];
+  const waiting = rows.filter((r) => (r.quote.status ?? "requested") === "requested").length;
+  const unpaid = rows.filter((r) => r.quote.invoice?.status === "unpaid").length;
+  return (
+    <section className="overflow-hidden rounded-[22px] bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)]">
+      <div className="flex items-center gap-3 p-4 sm:p-5">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#EEF1FF] text-[#465FFF]"><Inbox size={18} aria-hidden="true" /></span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-black">{L("Quote requests", "Permintaan penawaran")}</p>
+          <p className="text-[12px] font-medium text-[#5F6B94]">{L(`${waiting} need a price · ${unpaid} unpaid invoices. The client accepts the offer in their action plan.`, `${waiting} perlu harga · ${unpaid} invoice belum dibayar. Klien menyetujui penawaran di rencana aksinya.`)}</p>
+        </div>
+      </div>
+      {q.isPending ? <div className="px-5 pb-5"><Skeleton className="h-16 w-full" /></div> : rows.length ? <ul className="border-t border-[#EEF1F7]">{rows.map((r) => <QuoteRow key={`${r.planId}-${r.kind}`} q={r} />)}</ul> : <p className="border-t border-[#EEF1F7] px-5 py-4 text-[13px] text-[#8A93B8]">{L("No quote requests yet.", "Belum ada permintaan penawaran.")}</p>}
+    </section>
+  );
+}
+
 function DemoSeedCard() {
   const L = useL();
   const toast = useToast();
@@ -589,6 +673,7 @@ export default function AdminPage() {
         {t ? <p className="relative mt-3 text-[12px] font-medium text-white/60">{L(`AI ${usd(t.aiCostMonth)} · social media ${usd(t.socialSpendMonth)} of ${usd(list.data?.socialCapUsd ?? 0)} · ${t.socialOn} ${(t.socialOn) === 1 ? "client" : "clients"} with social on · rate Rp${RATE.toLocaleString("id-ID")}/USD`, `AI ${usd(t.aiCostMonth)} · media sosial ${usd(t.socialSpendMonth)} dari ${usd(list.data?.socialCapUsd ?? 0)} · ${t.socialOn} klien dengan media sosial aktif · kurs Rp${RATE.toLocaleString("id-ID")}/USD`)}</p> : null}
       </section>
 
+      <QuotesCard />
       <TestEmailCard />
       <RegionBackfillCard />
       <DemoSeedCard />

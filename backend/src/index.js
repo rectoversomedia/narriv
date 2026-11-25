@@ -41,6 +41,7 @@ import platformAdminRoutes from "./modules/admin/platform.routes.js";
 import competitorsRoutes from "./modules/competitors/competitors.routes.js";
 import pressRoutes from "./modules/press/press.routes.js";
 import influencerRoutes from "./modules/influencer/influencer.routes.js";
+import { createServiceStageRouter } from "./modules/press/service-stages.js";
 import migrateRoutes from "./modules/migrate/migrate.routes.js";
 import pipelineRoutes from "./modules/pipeline/pipeline.routes.js";
 import keywordsRoutes from "./modules/keywords/keywords.routes.js";
@@ -220,6 +221,8 @@ app.use("/workspace/keywords", rateLimit(RATE_LIMITS.api_default), keywordsRoute
 app.use("/workspace/competitors", rateLimit(RATE_LIMITS.api_default), competitorsRoutes);
 app.use("/press", rateLimit(RATE_LIMITS.api_default), pressRoutes);
 app.use("/influencer", rateLimit(RATE_LIMITS.api_default), influencerRoutes);
+// Further action-plan stages: short videos, paid ads, social media management (approval, details, quote, delivery).
+for (const kind of ["video", "ads", "social"]) app.use(`/stage/${kind}`, rateLimit(RATE_LIMITS.api_default), createServiceStageRouter(kind));
 app.use("/onboarding", onboardingRoutes);
 app.use("/workspace/cases", casesRoutes);
 app.use("/workspace/integrations", integrationsRoutes);

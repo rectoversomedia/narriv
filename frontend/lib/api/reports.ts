@@ -647,7 +647,7 @@ export function splitNarrative(id: string, input: { signalIds: string[]; title: 
 }
 
 // ---- Press release step of an action plan ----
-export type PressOutlet = { id: string; name: string; domain: string; niche: string; area: string | null; tier: 1 | 2 | 3 | 4; logo: string | null };
+export type PressOutlet = { id: string; name: string; domain: string; niche: string; area: string | null; tier: 1 | 2 | 3 | 4; logo: string | null; owned?: boolean };
 /** A document of an action plan that needs an owner/admin's approval (press release, influencer brief). */
 export type ApprovalDoc = {
   title: string;
@@ -664,9 +664,9 @@ export type ApprovalDoc = {
 export type PressRelease = ApprovalDoc & {
   media?: string[];
   picked: PressOutlet[];
-  quote?: { requestedAt: string; byName: string | null; outlets: number; note: string | null } | null;
+  quote?: QuoteState | null;
 };
-export type PressReleaseResponse = { data: PressRelease | null; canEdit: boolean; canApprove: boolean; recommended: Record<string, { issue: number; brand: number }> };
+export type PressReleaseResponse = { data: PressRelease | null; canEdit: boolean; canApprove: boolean; recommended: Record<string, { issue: number; brand: number }>; ownedFit?: string[]; delivery?: DeliveryState | null; impact?: ImpactState | null };
 
 export const getMediaOutlets = (): Promise<{ data: PressOutlet[] }> => apiClient(`/api/press/media`);
 export const getPressRelease = (planId: string): Promise<PressReleaseResponse> => apiClient(`/api/press/${planId}`);
@@ -697,9 +697,9 @@ export type CampaignItem = { id: string; wave: string; date: string; format: Cam
 export type InfluencerCampaign = ApprovalDoc & {
   schedule: { start: string; end: string; waves: CampaignWave[] } | null;
   creators: CampaignItem[];
-  quote?: { requestedAt: string; byName: string | null; creators: number; note: string | null } | null;
+  quote?: QuoteState | null;
 };
-export type InfluencerCampaignResponse = { data: InfluencerCampaign | null; canEdit: boolean; canApprove: boolean; access: boolean; formats: CampaignFormat[] };
+export type InfluencerCampaignResponse = { data: InfluencerCampaign | null; canEdit: boolean; canApprove: boolean; access: boolean; formats: CampaignFormat[]; delivery?: DeliveryState | null; impact?: ImpactState | null };
 export type CreatorFilters = { q?: string; platform?: string; category?: string; city?: string; tier?: string; minFollowers?: number; maxFollowers?: number; minEr?: number; rec?: boolean; page?: number };
 
 export const getCreators = (f: CreatorFilters = {}): Promise<CreatorList> => {
@@ -720,3 +720,40 @@ export const saveCampaignCreators = (planId: string, items: Array<{ id: string; 
   apiClient(`/api/influencer/${planId}/creators`, { method: "PUT", body: JSON.stringify({ items }) });
 export const requestInfluencerQuote = (planId: string, note: string): Promise<{ data: InfluencerCampaign }> =>
   apiClient(`/api/influencer/${planId}/quote`, { method: "POST", body: JSON.stringify({ note }) });
+
+// ---- After a quote request: offer, acceptance, invoice, delivery tracking, impact ----
+export type QuoteStatus = "requested" | "quoted" | "accepted" | "declined";
+export type QuoteState = {
+  status?: QuoteStatus; requestedAt: string; byName: string | null; note: string | null; outlets?: number; creators?: number;
+  quotedAt?: string; offer?: { amount: number; notes: string | null; validUntil: string };
+  decidedAt?: string; decidedByName?: string | null; decisionNote?: string | null; acceptedAt?: string;
+  invoice?: { number: string; issuedAt: string; dueAt: string; amount: number; status: "unpaid" | "paid"; paidAt?: string | null };
+};
+export type DeliveryItem = { id: string; name: string; sub: string; due: string | null; status: "published" | "late" | "scheduled" | "cancelled"; url?: string | null; title?: string | null; publishedAt?: string | null; source?: "auto" | "manual"; note?: string | null };
+export type DeliveryState = { items: DeliveryItem[]; published: number; late: number; scheduled: number; cancelled: number };
+export type ImpactState = {
+  scope: "issue" | "brand"; since: string; days: number;
+  before: { perDay: number; negative: number | null; total: number }; after: { perDay: number; negative: number | null; total: number };
+  aiVisibility: { before: number | null; after: number | null };
+};
+export type FulfilmentKind = "press" | "influencer" | ServiceKind;
+export type ServiceKind = "video" | "ads" | "social";
+const stageBase = (kind: FulfilmentKind) => (kind === "press" || kind === "influencer" ? `/api/${kind}` : `/api/stage/${kind}`);
+export const decideQuote = (kind: FulfilmentKind, planId: string, decision: "accept" | "decline", note?: string) =>
+  apiClient(`${stageBase(kind)}/${planId}/quote/decision`, { method: "POST", body: JSON.stringify({ decision, note }) });
+export const setDelivery = (kind: FulfilmentKind, planId: string, itemId: string, input: { status: "published" | "cancelled" | "scheduled"; url?: string; note?: string }) =>
+  apiClient(`${stageBase(kind)}/${planId}/delivery/${encodeURIComponent(itemId)}`, { method: "PUT", body: JSON.stringify(input) });
+
+// ---- Service stages: short videos, paid ads, social media management ----
+export type VideoDetails = { count: number; duration: "15" | "30" | "60"; aspect: "9:16" | "1:1" | "16:9"; due: string; note?: string };
+export type AdsDetails = { platforms: Array<"Meta" | "TikTok" | "Google" | "YouTube">; objective: "awareness" | "traffic" | "leads"; cities: string[]; start: string; end: string; budget: number; note?: string };
+export type SocialDetails = { platforms: Array<"Instagram" | "TikTok" | "X" | "Facebook" | "LinkedIn" | "YouTube">; start: string; end: string; perWeek: number; note?: string };
+export type ServiceDetails = VideoDetails | AdsDetails | SocialDetails;
+export type ServiceDoc = ApprovalDoc & { details: ServiceDetails | null; deliverables: Array<{ id: string; name: string; sub: string; due: string | null }>; quote?: QuoteState | null };
+export type ServiceStageResponse = { data: ServiceDoc | null; canEdit: boolean; canApprove: boolean; delivery?: DeliveryState | null; impact?: ImpactState | null };
+export const getServiceStage = (kind: ServiceKind, planId: string): Promise<ServiceStageResponse> => apiClient(`/api/stage/${kind}/${planId}`);
+export const draftServiceDoc = (kind: ServiceKind, planId: string) => apiClient(`/api/stage/${kind}/${planId}/draft`, { method: "POST", body: "{}" });
+export const editServiceDoc = (kind: ServiceKind, planId: string, input: { title: string; body: string }) => apiClient(`/api/stage/${kind}/${planId}`, { method: "PUT", body: JSON.stringify(input) });
+export const reviewServiceDoc = (kind: ServiceKind, planId: string, input: { decision: "approve" } | { decision: "revise"; note: string }) => apiClient(`/api/stage/${kind}/${planId}/review`, { method: "POST", body: JSON.stringify(input) });
+export const saveServiceDetails = (kind: ServiceKind, planId: string, details: ServiceDetails) => apiClient(`/api/stage/${kind}/${planId}/details`, { method: "PUT", body: JSON.stringify(details) });
+export const requestServiceQuote = (kind: ServiceKind, planId: string, note: string) => apiClient(`/api/stage/${kind}/${planId}/quote`, { method: "POST", body: JSON.stringify({ note }) });

@@ -12,6 +12,7 @@ import { useL } from "@/lib/use-l";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { ApprovalDocPanel, fmtWhen } from "./approval-doc";
+import { FulfilmentPanel } from "./fulfilment";
 
 const QK = "influencer-campaign";
 const FORMAT_LABEL: Record<CampaignFormat, string> = { reels: "Reels", feed: "Feed", story: "Story", tiktok: "TikTok video", youtube: "YouTube video", live: "Live" };
@@ -56,7 +57,7 @@ function ScheduleEditor({ planId, doc, canEdit, onSaved }: { planId: string; doc
   const [start, setStart] = useState(initial.start);
   const [end, setEnd] = useState(initial.end);
   const [waves, setWaves] = useState<CampaignWave[]>(initial.waves);
-  const locked = !canEdit || Boolean(doc.quote);
+  const locked = !canEdit || (Boolean(doc.quote) && doc.quote?.status !== "declined");
   const save = useMutation({
     meta: { silent: true },
     mutationFn: () => saveCampaignSchedule(planId, { start, end, waves }),
@@ -129,7 +130,7 @@ function CreatorPlanner({ planId, res, doc }: { planId: string; res: InfluencerC
   const toast = useToast();
   const qc = useQueryClient();
   const schedule = doc.schedule!;
-  const locked = !res.canEdit || Boolean(doc.quote);
+  const locked = !res.canEdit || (Boolean(doc.quote) && doc.quote?.status !== "declined");
   const [items, setItems] = useState<Item[]>(doc.creators);
   const [targetWave, setTargetWave] = useState(schedule.waves[0]?.id ?? "");
   const [f, setF] = useState<CreatorFilters & { range?: string }>({ rec: true, page: 1 });
@@ -333,10 +334,10 @@ function CreatorPlanner({ planId, res, doc }: { planId: string; res: InfluencerC
           <div className="mt-3 grid gap-1">
             {schedule.waves.map((w) => <p key={w.id} className="flex justify-between text-[12.5px]"><span className="text-white/75">{w.name}</span><b>{items.filter((i) => i.wave === w.id).length}</b></p>)}
           </div>
-          {doc.quote ? (
+          {doc.quote && doc.quote.status !== "declined" ? (
             <div className="mt-4 rounded-[12px] bg-[#12A66A]/20 p-3 text-[13px]">
-              <p className="flex items-center gap-1.5 font-black text-[#7BE0B3]"><CheckCircle2 size={15} /> {L("Quote requested", "Penawaran diminta")}</p>
-              <p className="mt-1 text-white/80">{L(`${doc.quote.creators} creators, ${fmtWhen(doc.quote.requestedAt)}. We reply within one working day.`, `${doc.quote.creators} influencer, ${fmtWhen(doc.quote.requestedAt)}. Kami balas dalam 1 hari kerja.`)}</p>
+              <p className="flex items-center gap-1.5 font-black text-[#7BE0B3]"><CheckCircle2 size={15} /> {doc.quote.status === "accepted" ? L("Offer accepted", "Penawaran disetujui") : doc.quote.status === "quoted" ? L("Offer ready below", "Penawaran siap, lihat di bawah") : L("Quote requested", "Penawaran diminta")}</p>
+              <p className="mt-1 text-white/80">{L(`${doc.quote.creators ?? items.length} creators, ${fmtWhen(doc.quote.requestedAt)}.`, `${doc.quote.creators ?? items.length} influencer, ${fmtWhen(doc.quote.requestedAt)}.`)}</p>
             </div>
           ) : res.canApprove ? (
             <>
@@ -396,7 +397,7 @@ function CreatorPlanner({ planId, res, doc }: { planId: string; res: InfluencerC
 export function InfluencerCampaignPanel({ planId, planApproved }: { planId: string; planApproved: boolean }) {
   const qc = useQueryClient();
   const refresh = () => qc.invalidateQueries({ queryKey: [QK, planId] });
-  const stage = useMemo(() => (r: InfluencerCampaign) => (r.quote ? 5 : r.schedule ? 3 : 2), []);
+  const stage = useMemo(() => (r: InfluencerCampaign) => (r.quote && r.quote.status !== "declined" ? 4 : r.schedule ? 3 : 2), []);
   return (
     <ApprovalDocPanel
       id="influencer-campaign"
@@ -409,7 +410,7 @@ export function InfluencerCampaignPanel({ planId, planApproved }: { planId: stri
       edit={editInfluencerBrief}
       review={reviewInfluencerBrief}
       stage={stage}
-      editable={(r: InfluencerCampaign) => !r.quote}
+      editable={(r: InfluencerCampaign) => !r.quote || r.quote.status === "declined"}
       copy={{
         title: { en: "Influencer campaign", id: "Kampanye influencer" },
         subtitle: { en: "The brief needs an owner or admin's approval before influencers are chosen.", id: "Brief wajib disetujui owner atau admin sebelum memilih influencer." },
@@ -427,7 +428,8 @@ export function InfluencerCampaignPanel({ planId, planApproved }: { planId: stri
       {(res: InfluencerCampaignResponse, r: InfluencerCampaign) => (
         <>
           <ScheduleEditor key={`s-${r.version}-${r.schedule ? JSON.stringify(r.schedule) : ""}`} planId={planId} doc={r} canEdit={res.canEdit} onSaved={refresh} />
-          {r.schedule ? <CreatorPlanner key={`c-${r.version}-${JSON.stringify(r.schedule)}`} planId={planId} res={res} doc={r} /> : null}
+          {r.schedule ? <CreatorPlanner key={`c-${r.version}-${JSON.stringify(r.schedule)}-${r.quote?.status ?? ""}`} planId={planId} res={res} doc={r} /> : null}
+          {r.quote ? <FulfilmentPanel kind="influencer" planId={planId} title={r.title} quote={r.quote} delivery={res.delivery} impact={res.impact} canEdit={res.canEdit} canApprove={res.canApprove} queryKey={QK} /> : null}
         </>
       )}
     </ApprovalDocPanel>
