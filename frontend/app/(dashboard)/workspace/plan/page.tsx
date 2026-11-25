@@ -58,6 +58,12 @@ export default function PlanPage() {
             <div key={k} className="rounded-[14px] bg-white/10 px-4 py-3"><dt className="text-[12px] font-bold text-white/60">{k}</dt><dd className="mt-0.5 text-[18px] font-black">{v}</dd></div>
           ))}
         </dl>
+        {ent.limits.retentionDays && !ent.unrestricted && ent.plan ? (
+          <p className="mt-4 text-[12.5px] text-white/65">{L(
+            `Mentions older than ${ent.limits.retentionDays} days are removed 30 days after they pass the window. Issues, alerts, reports and plans are kept. Upgrading within that time keeps your history.`,
+            `Percakapan yang lebih lama dari ${ent.limits.retentionDays} hari dihapus otomatis 30 hari setelah lewat masa simpan. Isu, peringatan, laporan, dan rencana tetap tersimpan. Naik paket sebelum itu membuat riwayat Anda tetap utuh.`,
+          )}</p>
+        ) : null}
       </section>
 
       {ent.usage ? (

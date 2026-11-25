@@ -150,6 +150,13 @@ const runDaily = async (req, res) => {
             results.notificationRetries = { retried };
         } catch (e) { results.notificationRetries = { error: e.message }; }
 
+        // 2c. Data kept per plan: mentions past the plan's window (plus a grace period) are removed (lib/retention.js).
+        try {
+            const { runRetention } = await import("../../lib/retention.js");
+            const r = await runRetention();
+            results.retention = { workspaces: r.workspaces, removed: r.removed };
+        } catch (e) { results.retention = { error: e.message }; }
+
         // 3. Cleanup expired exports
         try {
             const { cleanupExpiredReportExports } = await import("../reports/report-export-storage.service.js");
