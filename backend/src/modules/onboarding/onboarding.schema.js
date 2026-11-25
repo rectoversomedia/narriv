@@ -4,6 +4,8 @@ export const onboardingWorkspaceBodySchema = z.object({
     brandName: z.string().trim().min(1, "brandName is required.").max(120, "brandName is too long."),
     industry: z.string().trim().min(1, "industry is required.").max(120, "industry is too long.").optional(),
     timezone: z.string().trim().min(1, "timezone is required.").max(80, "timezone is too long.").optional().default("Asia/Jakarta"),
+    // What the client wants from Narriv, in their words (the main goal, or the need behind an "Other" use).
+    purpose: z.string().trim().max(600, "purpose is too long.").optional(),
 });
 
 export const onboardingSourcesBodySchema = z.object({

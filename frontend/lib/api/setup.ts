@@ -111,7 +111,7 @@ export interface OnboardingWorkspaceResponse {
   notificationSettings: { emailEnabled: boolean; whatsappEnabled: boolean; escalationNotifications: boolean; reminderNotifications: boolean } | null;
 }
 
-export async function createOnboardingWorkspace(input: { brandName: string; industry?: string; timezone?: string }): Promise<OnboardingWorkspaceResponse | null> {
+export async function createOnboardingWorkspace(input: { brandName: string; industry?: string; timezone?: string; purpose?: string }): Promise<OnboardingWorkspaceResponse | null> {
   try {
     return await apiClient<OnboardingWorkspaceResponse>("/api/onboarding/workspace", {
       method: "POST",

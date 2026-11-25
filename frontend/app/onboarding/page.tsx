@@ -10,7 +10,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { ArrowRight, BarChart3, Bell, Check, ChevronDown, Headphones, Landmark, Lightbulb, Mail, Megaphone, Shield, ShieldAlert, Users, X, type LucideIcon } from "lucide-react";
+import { ArrowRight, BarChart3, Bell, Check, ChevronDown, Headphones, Landmark, Lightbulb, Mail, Megaphone, MoreHorizontal, Shield, ShieldAlert, Users, X, type LucideIcon } from "lucide-react";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { useToast } from "@/components/ui/toast";
 import { launchDashboard, signalDashboardReady } from "@/lib/launch";
@@ -42,6 +42,11 @@ type ProfileData = {
   industry: string;
   mainGoal: string;
   goals: string[];
+  /** "Other" was picked as the use: the workspace runs as a brand workspace, with the need in the client's words. */
+  other: boolean;
+  otherNeed: string;
+  /** The industry typed in when "Other" is picked from the list. */
+  industryOther: string;
 };
 
 // Only what the backend acts on (workspace notification settings); in-app notifications are always on.
@@ -169,6 +174,9 @@ export default function OnboardingPage() {
       industry: "",
       mainGoal: "",
       goals: ["brand"],
+      other: false,
+      otherNeed: "",
+      industryOther: "",
     },
     keywords: [],
     sources: [],
@@ -249,7 +257,9 @@ export default function OnboardingPage() {
         if (!data.profile.name.trim()) return pickL("Please enter your full name.", "Isi nama lengkap Anda.");
         if (!data.profile.role) return pickL("Please select your role.", "Pilih jabatan Anda.");
         if (!data.profile.company.trim()) return pickL("Please enter your company or brand name.", "Isi nama perusahaan atau brand.");
+        if (data.profile.other && data.profile.otherNeed.trim().length < 5) return pickL("Tell us what you need Narriv for.", "Ceritakan kebutuhan Anda untuk Narriv.");
         if (!data.profile.industry) return pickL("Please select your industry.", "Pilih industri.");
+        if (data.profile.industry === "Other" && !data.profile.industryOther.trim()) return pickL("Please type your industry.", "Tulis industri Anda.");
         return null;
       }
       if (s === 2) {
@@ -289,16 +299,21 @@ export default function OnboardingPage() {
     setStep(prevStep as Step);
   }, [step]);
 
+  // The industry and purpose as sent: a typed industry replaces "Other"; the need behind "Other" leads the purpose.
+  const industryOut = data.profile.industry === "Other" ? data.profile.industryOther.trim() || "Other" : data.profile.industry;
+  const purposeOut = [data.profile.other && data.profile.otherNeed.trim() ? `${pickL("Need", "Kebutuhan")}: ${data.profile.otherNeed.trim()}` : "", data.profile.mainGoal.trim()].filter(Boolean).join("\n") || undefined;
+
   const handleSkip = useCallback(async () => {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
       const brandName = data.profile.company.trim() || "My Workspace";
-      const industry = data.profile.industry || "General";
+      const industry = industryOut || "General";
       const workspace = await createOnboardingWorkspace({
         brandName,
         industry,
         timezone: "Asia/Jakarta",
+        purpose: purposeOut,
       });
       if (!workspace?.id) throw new Error(pickL("Failed to configure workspace.", "Workspace gagal disiapkan."));
       if (data.profile.useCase !== "brand") await setWorkspaceProfile({ workspaceId: workspace.id, useCase: data.profile.useCase }).catch(() => null);
@@ -315,7 +330,7 @@ export default function OnboardingPage() {
       toast.error(msg);
       setIsSubmitting(false);
     }
-  }, [data.profile, toast]);
+  }, [data.profile, industryOut, purposeOut, toast]);
 
   const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
@@ -333,8 +348,9 @@ export default function OnboardingPage() {
     try {
       const workspace = await createOnboardingWorkspace({
         brandName: data.profile.company,
-        industry: data.profile.industry,
+        industry: industryOut,
         timezone: "Asia/Jakarta",
+        purpose: purposeOut,
       });
       if (!workspace?.id) throw new Error(pickL("Failed to create workspace.", "Workspace gagal dibuat."));
       // What the workspace is for, before the first collection: a PCVE workspace classifies records and hides accounts.
@@ -371,7 +387,7 @@ export default function OnboardingPage() {
       setProcessingProgress(0);
       toast.error(msg);
     }
-  }, [data, toast]);
+  }, [data, industryOut, purposeOut, toast]);
 
   useEffect(() => {
     if (step === "processing" && !isSubmitting) {
@@ -410,10 +426,11 @@ export default function OnboardingPage() {
           </a>
         </header>
 
-        <main className="relative z-10 mx-auto max-w-[860px] px-4 pb-10 sm:px-6 lg:px-10">
+        <main className="relative z-10 mx-auto max-w-[1240px] px-4 pb-10 sm:px-6 lg:px-10">
           <OnboardingProgress current={current} />
 
-          <div key={step} className="onb-step-in mt-6 lg:mt-2">
+          <div className="mt-6 grid items-start gap-6 lg:mt-2 2xl:grid-cols-[minmax(0,1fr)_300px]">
+          <div key={step} className="onb-step-in min-w-0">
             {step === "processing" ? (
               <ProcessingStep
                 progress={processingProgress}
@@ -474,12 +491,67 @@ export default function OnboardingPage() {
             )}
           </div>
 
+          {step !== "processing" ? <SetupSummary data={data} step={step as number} /> : null}
+          </div>
+
           <p className="mt-6 text-center text-[13px] font-medium text-[#7A84A6] lg:hidden">
             {pickL("Your data is encrypted and private to your workspace.", "Data Anda terenkripsi dan hanya untuk workspace Anda.")}
           </p>
         </main>
       </div>
     </div>
+  );
+}
+
+// ─── Side panel: the workspace taking shape ──────────────────────────────────
+
+const STEP_TIPS: Record<number, [string, string]> = {
+  1: ["The brand name and industry shape the keywords, the AI's reading and the competitor checks.", "Nama brand dan industri menentukan kata kunci, cara AI membaca, dan perbandingan kompetitor."],
+  2: ["Three to five keywords work best: the brand, its products, and the issues you already worry about.", "Tiga sampai lima kata kunci paling pas: brand, produk, dan isu yang sudah Anda khawatirkan."],
+  3: ["News and YouTube are on for everyone. Social platforms can be added later.", "Berita dan YouTube aktif untuk semua. Media sosial bisa ditambah nanti."],
+  4: ["High-risk alerts reach you within minutes. Everything else waits for the daily brief.", "Peringatan berisiko tinggi sampai dalam hitungan menit. Sisanya masuk ringkasan harian."],
+  5: ["Narriv starts collecting the moment you finish. The first issues show up within the hour.", "Narriv mulai mengumpulkan data begitu Anda selesai. Isu pertama muncul dalam satu jam."],
+};
+
+function SetupSummary({ data, step }: { data: OnboardingData; step: number }) {
+  const p = data.profile;
+  const uc = USE_CASES.find((u) => u.id === p.useCase) ?? USE_CASES[0];
+  const industry = p.industry === "Other" ? p.industryOther : p.industry ? (INDUSTRY_ID[p.industry] ? pickL(p.industry, INDUSTRY_ID[p.industry]) : p.industry) : "";
+  const rows: Array<[string, string, boolean]> = [
+    [pickL("Use", "Kegunaan"), p.other ? (p.otherNeed || pickL("Other", "Lainnya")) : pickL(uc.title[0], uc.title[1]), true],
+    [pickL(uc.org[0], uc.org[1]), p.company, Boolean(p.company.trim())],
+    [pickL("Industry", "Industri"), industry, Boolean(industry)],
+    [pickL("Keywords", "Kata kunci"), data.keywords.length ? data.keywords.slice(0, 4).join(", ") + (data.keywords.length > 4 ? ` +${data.keywords.length - 4}` : "") : "", data.keywords.length > 0],
+    [pickL("Sources", "Sumber"), data.sources.length ? pickL(`${data.sources.length} selected`, `${data.sources.length} dipilih`) : "", data.sources.length > 0],
+    [pickL("Alerts", "Peringatan"), [data.notifications.emailEnabled ? "Email" : "", data.notifications.whatsappEnabled ? "WhatsApp" : ""].filter(Boolean).join(" + ") || "In-app", step > 4],
+  ];
+  const done = rows.filter((r) => r[2]).length;
+  return (
+    <aside className="hidden space-y-4 2xl:sticky 2xl:top-6 2xl:block">
+      <div className="overflow-hidden rounded-[24px] border-[1.5px] border-[#101334] bg-[#101334] text-white shadow-[0_4px_0_#465FFF]">
+        <div className="px-5 pb-4 pt-5">
+          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#A5B4FF]">{pickL("Your workspace", "Workspace Anda")}</p>
+          <p className="mt-1.5 truncate text-[20px] font-black">{p.company.trim() || pickL("Not named yet", "Belum diberi nama")}</p>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-[#465FFF] to-[#C084FC] transition-all" style={{ width: `${Math.round((done / rows.length) * 100)}%` }} /></div>
+          <p className="mt-1.5 text-[12px] font-semibold text-white/60">{pickL(`${done} of ${rows.length} set`, `${done} dari ${rows.length} terisi`)}</p>
+        </div>
+        <ul className="divide-y divide-white/10 border-t border-white/10">
+          {rows.map(([label, value, ok]) => (
+            <li key={label} className="flex items-start gap-3 px-5 py-3">
+              <span className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ${ok ? "bg-[#12A66A] text-white" : "bg-white/10 text-white/40"}`}>{ok ? <Check size={12} strokeWidth={3} /> : null}</span>
+              <span className="min-w-0">
+                <span className="block text-[11.5px] font-bold text-white/55">{label}</span>
+                <span className={`block truncate text-[13.5px] font-semibold ${ok ? "text-white" : "text-white/35"}`}>{ok ? value : pickL("Not set yet", "Belum diisi")}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="rounded-[20px] bg-white/80 p-5 shadow-[0_0_0_1px_#E3E7F3] backdrop-blur">
+        <p className="flex items-center gap-2 text-[13px] font-black text-[#111536]"><Lightbulb size={15} className="text-[#F59E0B]" /> {pickL("Tip", "Tips")}</p>
+        <p className="mt-1.5 text-[13px] font-medium leading-relaxed text-[#5F6B94]">{pickL(STEP_TIPS[step]?.[0] ?? "", STEP_TIPS[step]?.[1] ?? "")}</p>
+      </div>
+    </aside>
   );
 }
 
@@ -518,20 +590,31 @@ function ProfileStep({
       {/* What Narriv is for */}
       <div className="space-y-3">
         <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("What will you use Narriv for?", "Narriv mau dipakai untuk apa?")}</h2>
-        <div className="grid gap-3 sm:grid-cols-3" role="radiogroup">
+        <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4" role="radiogroup">
           {USE_CASES.map((u) => {
-            const on = data.useCase === u.id;
+            const on = !data.other && data.useCase === u.id;
             const Icon = u.icon;
             return (
-              <button key={u.id} type="button" role="radio" aria-checked={on} onClick={() => onChange({ useCase: u.id })} className={`relative rounded-2xl border-2 p-4 text-left transition-all ${on ? "border-[#465FFF] bg-[#F3F5FF] shadow-[0_3px_0_#465FFF]" : "border-[#E4E8F2] bg-white hover:border-[#C9D0E3]"}`}>
+              <button key={u.id} type="button" role="radio" aria-checked={on} onClick={() => onChange({ useCase: u.id, other: false })} className={`relative flex flex-col items-center rounded-2xl border-2 px-4 py-5 text-center transition-all ${on ? "border-[#465FFF] bg-[#F3F5FF] shadow-[0_3px_0_#465FFF]" : "border-[#E4E8F2] bg-white hover:border-[#C9D0E3]"}`}>
                 {on ? <span className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full bg-[#465FFF] text-white"><Check size={12} strokeWidth={3} /></span> : null}
-                <span className={`flex size-10 items-center justify-center rounded-xl ${on ? "bg-[#465FFF] text-white" : "bg-[#F1F4FA] text-[#3E4975]"}`}><Icon size={20} /></span>
-                <p className="mt-3 text-[15px] font-bold text-[#111536]">{pickL(u.title[0], u.title[1])}</p>
+                <span className={`flex size-11 items-center justify-center rounded-xl ${on ? "bg-[#465FFF] text-white" : "bg-[#F1F4FA] text-[#3E4975]"}`}><Icon size={20} /></span>
+                <p className="mt-3 text-[15px] font-bold leading-snug text-[#111536]">{pickL(u.title[0], u.title[1])}</p>
                 <p className="mt-1 text-xs font-medium leading-relaxed text-[#5F6B94]">{pickL(u.desc[0], u.desc[1])}</p>
               </button>
             );
           })}
+          <button type="button" role="radio" aria-checked={data.other} onClick={() => onChange({ useCase: "brand", other: true })} className={`relative flex flex-col items-center rounded-2xl border-2 px-4 py-5 text-center transition-all ${data.other ? "border-[#465FFF] bg-[#F3F5FF] shadow-[0_3px_0_#465FFF]" : "border-dashed border-[#D5DBEA] bg-white hover:border-[#C9D0E3]"}`}>
+            {data.other ? <span className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full bg-[#465FFF] text-white"><Check size={12} strokeWidth={3} /></span> : null}
+            <span className={`flex size-11 items-center justify-center rounded-xl ${data.other ? "bg-[#465FFF] text-white" : "bg-[#F1F4FA] text-[#3E4975]"}`}><MoreHorizontal size={20} /></span>
+            <p className="mt-3 text-[15px] font-bold leading-snug text-[#111536]">{pickL("Other", "Lainnya")}</p>
+            <p className="mt-1 text-xs font-medium leading-relaxed text-[#5F6B94]">{pickL("Something else: tell us what you need and we set it up with you.", "Kebutuhan lain: ceritakan, kami bantu menyiapkannya.")}</p>
+          </button>
         </div>
+        {data.other ? (
+          <FormField label={pickL("What do you need Narriv for?", "Narriv mau dipakai untuk apa?")} required htmlFor="onb-other">
+            <input id="onb-other" type="text" value={data.otherNeed} maxLength={200} autoFocus onChange={(e) => onChange({ otherNeed: e.target.value })} placeholder={pickL("e.g. Monitoring a political campaign, an NGO program, an event", "mis. Memantau kampanye politik, program LSM, sebuah acara")} className="form-input" />
+          </FormField>
+        ) : null}
       </div>
 
       <div className="border-t border-[#F0F2FA]" />
@@ -591,10 +674,15 @@ function ProfileStep({
               placeholder={pickL("Select your industry", "Pilih industri")}
             >
               {INDUSTRIES.map((ind) => (
-                <option key={ind} value={ind}>{INDUSTRY_ID[ind] ? pickL(ind, INDUSTRY_ID[ind]) : ind}</option>
+                <option key={ind} value={ind}>{ind === "Other" ? pickL("Other", "Lainnya") : INDUSTRY_ID[ind] ? pickL(ind, INDUSTRY_ID[ind]) : ind}</option>
               ))}
             </Select>
           </FormField>
+          {data.industry === "Other" ? (
+            <FormField label={pickL("Your industry", "Industri Anda")} required htmlFor="onb-industry-other">
+              <input id="onb-industry-other" type="text" value={data.industryOther} maxLength={80} autoFocus onChange={(e) => onChange({ industryOther: e.target.value })} placeholder={pickL("e.g. Coffee chain, NGO, sports club", "mis. Kedai kopi, LSM, klub olahraga")} className="form-input" />
+            </FormField>
+          ) : null}
         </div>
 
         <FormField label={t("mainGoal")} htmlFor="onb-goal">

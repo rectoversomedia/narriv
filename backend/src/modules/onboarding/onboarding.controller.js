@@ -18,7 +18,7 @@ async function verifyWorkspaceAccess(userId, workspaceId) {
 
 export async function createOnboardingWorkspace(req, res) {
     try {
-        const { brandName, industry, timezone } = req.body;
+        const { brandName, industry, timezone, purpose } = req.body;
 
         // Reuse existing workspace if the user already has one (e.g. created during signup)
         const existingWorkspaceId = await resolveWorkspaceIdForUser(req.user.id);
@@ -64,6 +64,12 @@ export async function createOnboardingWorkspace(req, res) {
                 return internalError(res);
             }
             workspace = newWs;
+        }
+
+        // The client's own words on what they want from Narriv: kept for the team and for later AI context.
+        if (purpose) {
+            const { data: cur } = await baseSupabaseAdmin.from("workspaces").select("settings").eq("id", workspace.id).maybeSingle();
+            await baseSupabaseAdmin.from("workspaces").update({ settings: { ...(cur?.settings || {}), purpose } }).eq("id", workspace.id);
         }
 
         // Upsert workspace settings
