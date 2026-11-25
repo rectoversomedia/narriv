@@ -20,13 +20,14 @@ import { intlLocale } from "@/store/useUiStore";
 
 const PLANS: Array<{ key: WorkspacePlanKey; en: string; id: string }> = [
   { key: "trial", en: "Trial", id: "Uji coba" },
+  { key: "starter", en: "Starter", id: "Starter" },
   { key: "pilot", en: "Pilot", id: "Pilot" },
   { key: "intelligence", en: "Intelligence", id: "Intelligence" },
   { key: "decision", en: "Decision", id: "Decision" },
   { key: "command", en: "Command", id: "Command" },
 ];
 const SOCIAL = ["instagram", "tiktok", "x", "facebook"] as const;
-const PLAN_KEYWORDS: Record<WorkspacePlanKey, number> = { trial: 3, pilot: 3, intelligence: 10, decision: 25, command: 50 };
+const PLAN_KEYWORDS: Record<WorkspacePlanKey, number> = { trial: 3, starter: 2, pilot: 3, intelligence: 10, decision: 25, command: 50 };
 const BILLING: Array<{ key: BillingStatus; en: string; id: string }> = [
   { key: "none", en: "Not set", id: "Belum diatur" },
   { key: "paid", en: "Paid", id: "Lunas" },

@@ -1,6 +1,6 @@
 /**
  * A workspace's plan and trial, kept in workspaces.settings (set by the Narriv team in the admin panel):
- *   settings.plan          "trial" | "pilot" | "intelligence" | "decision" | "command"
+ *   settings.plan          "trial" | "starter" | "pilot" | "intelligence" | "decision" | "command"
  *   settings.trialEndsAt   ISO time the trial ends (trial only)
  *
  * New workspaces start a 14-day trial. When it runs out, scheduled monitoring (news, YouTube, social) stops for
@@ -9,7 +9,7 @@
  */
 
 export const TRIAL_DAYS = 14;
-export const PLAN_KEYS = ["trial", "pilot", "intelligence", "decision", "command"];
+export const PLAN_KEYS = ["trial", "starter", "pilot", "intelligence", "decision", "command"];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Settings to merge into a new workspace: a fresh trial. */
@@ -34,7 +34,7 @@ export function planStatus(settings, now = Date.now()) {
 }
 
 /** Keywords checked every hour per plan. A workspace without a plan keeps the original 3. */
-export const HOURLY_KEYWORDS = { trial: 3, pilot: 3, intelligence: 10, decision: 25, command: 50 };
+export const HOURLY_KEYWORDS = { trial: 3, starter: 2, pilot: 3, intelligence: 10, decision: 25, command: 50 };
 export const MAX_HOURLY_KEYWORDS = 50;
 
 /** The hourly keyword limit for a workspace: the team's override (settings.keywordLimit), else its plan's. */

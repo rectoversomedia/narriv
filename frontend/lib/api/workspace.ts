@@ -228,7 +228,7 @@ export interface WorkspaceSettingsResponse {
 
 export type WorkspaceUseCase = "brand" | "gov" | "cve";
 
-export type WorkspacePlanKey = "trial" | "pilot" | "intelligence" | "decision" | "command";
+export type WorkspacePlanKey = "trial" | "starter" | "pilot" | "intelligence" | "decision" | "command";
 export interface PlanStatus {
   plan: WorkspacePlanKey | null;
   trialEndsAt: string | null;

@@ -35,7 +35,7 @@ const PLAN_LIMITS = {
     plan: WorkspacePlan.INTELLIGENCE,
     name: "INTELLIGENCE",
     tagline: "Understand what matters",
-    priceIdr: 25000000,
+    priceIdr: 17500000,
     maxMembers: 10,
     maxTopics: 50,
     maxSignalsPerMonth: 100000,
@@ -57,7 +57,7 @@ const PLAN_LIMITS = {
     plan: WorkspacePlan.DECISION,
     name: "DECISION",
     tagline: "Turn intelligence into action",
-    priceIdr: 50000000,
+    priceIdr: 35000000,
     maxMembers: 50,
     maxTopics: 200,
     maxSignalsPerMonth: 500000,
@@ -84,7 +84,7 @@ const PLAN_LIMITS = {
     plan: WorkspacePlan.COMMAND,
     name: "COMMAND",
     tagline: "Operationalize intelligence",
-    priceIdr: 100000000,
+    priceIdr: 75000000,
     maxMembers: -1, // Unlimited
     maxTopics: -1, // Unlimited
     maxSignalsPerMonth: -1, // Unlimited

@@ -9,12 +9,16 @@ import { cn } from "@/lib/utils";
 import { SITE_URL, faqJsonLd, jsonLd } from "@/lib/seo";
 import { useSiteHref } from "@/lib/site-lang";
 
-// Plans are agreed with the Narriv team; the app does not gate features by plan. Every line on this page is a
-// feature that works today. Keywords checked every hour per brand follow the plan (backend lib/workspace-plan.js
-// HOURLY_KEYWORDS: 3 / 10 / 25 / 50).
+// Every line on this page is a feature that works today. Keywords checked every hour per brand follow the plan
+// (backend lib/workspace-plan.js HOURLY_KEYWORDS: 2 / 3 / 10 / 25 / 50). Prices are shown for the self-serve plans
+// (Starter, Pilot) and as a starting point for Intelligence; Decision and Command are quoted by the team.
+// Prices are written in full (Rp2.500.000), never shortened to "jt" or "rb".
 
-type PlanId = "pilot" | "intelligence" | "decision" | "command";
+type PlanId = "starter" | "pilot" | "intelligence" | "decision" | "command";
 type Copy = [string, string];
+
+/** Rp2.500.000: the full amount with Indonesian thousands separators. */
+const rupiah = (n: number) => `Rp${n.toLocaleString("id-ID")}`;
 
 const PLANS: Array<{
   id: PlanId;
@@ -22,20 +26,38 @@ const PLANS: Array<{
   tagline: Copy;
   audience: Copy;
   popular?: boolean;
+  /** Monthly price; `from` shows it as a starting price; none means "talk to us". */
+  price?: { monthly: number; from?: boolean };
   limits: { brands: Copy; users: Copy; retention: Copy };
   adds: Copy[];
 }> = [
   {
-    id: "pilot",
-    name: "Pilot",
-    tagline: ["Validate the Value.", "Buktikan Nilainya."],
-    audience: ["Pilot Projects and Proofs of Concept", "Proyek Percontohan dan Uji Konsep"],
+    id: "starter",
+    name: "Starter",
+    tagline: ["Start Listening.", "Mulai Mendengar."],
+    audience: ["Small Businesses and New Brands", "UMKM dan Brand yang Baru Mulai"],
+    price: { monthly: 2_500_000 },
     limits: { brands: ["1", "1"], users: ["1", "1"], retention: ["30 Days", "30 Hari"] },
     adds: [
-      ["News and YouTube, Monitored Hourly", "Berita dan YouTube, Dipantau Tiap Jam"],
-      ["Alerts With Owner and Deadline", "Peringatan dengan Penanggung Jawab dan Tenggat"],
-      ["Daily Briefing and Ask narriv", "Briefing Harian dan Ask narriv"],
-      ["Reports in PDF, Excel and Email", "Laporan PDF, Excel, dan Email"],
+      ["News, YouTube and Telegram, Hourly", "Berita, YouTube, dan Telegram, Tiap Jam"],
+      ["AI Sentiment and Issue Detection", "Sentimen dan Isu Dideteksi AI"],
+      ["Daily Briefing and Weekly PDF Report", "Briefing Harian dan Laporan Mingguan PDF"],
+      ["Email Alerts", "Peringatan Email"],
+    ],
+  },
+  {
+    id: "pilot",
+    name: "Pilot",
+    tagline: ["Know Before It Grows.", "Tahu Sebelum Membesar."],
+    audience: ["Communications Teams", "Tim Komunikasi"],
+    price: { monthly: 5_000_000 },
+    limits: { brands: ["1", "1"], users: ["3", "3"], retention: ["90 Days", "90 Hari"] },
+    adds: [
+      ["Everything in Starter", "Seluruh Fitur Starter"],
+      ["WhatsApp Alerts", "Peringatan WhatsApp"],
+      ["AI Visibility: ChatGPT and Claude", "Visibilitas AI: ChatGPT dan Claude"],
+      ["Issue Forecast, Claim Check, Ask narriv", "Prediksi Isu, Cek Klaim, Ask narriv"],
+      ["Response Plans Drafted by AI", "Rencana Respons Disusun AI"],
     ],
   },
   {
@@ -44,12 +66,14 @@ const PLANS: Array<{
     popular: true,
     tagline: ["Understand What Matters.", "Pahami Hal yang Penting."],
     audience: ["Corporate Communications, Brand and Reputation Teams", "Tim Komunikasi Korporat, Brand, dan Reputasi"],
+    price: { monthly: 17_500_000, from: true },
     limits: { brands: ["1", "1"], users: ["10", "10"], retention: ["12 Months", "12 Bulan"] },
     adds: [
       ["Everything in Pilot", "Seluruh Fitur Pilot"],
-      ["AI Visibility Across Leading Assistants", "Visibilitas di Asisten AI Utama"],
+      ["Social Media: 3 Platforms", "Media Sosial: 3 Platform"],
+      ["Competitor Check and Account Network", "Cek Kompetitor dan Jaringan Akun"],
+      ["Press Release and Media Selection", "Siaran Pers dan Pilih Media"],
       ["Scheduled Board Reports", "Laporan Terjadwal untuk Direksi"],
-      ["Cases and Response Plans", "Kasus dan Rencana Respons"],
     ],
   },
   {
@@ -60,9 +84,10 @@ const PLANS: Array<{
     limits: { brands: ["3", "3"], users: ["50", "50"], retention: ["12 Months", "12 Bulan"] },
     adds: [
       ["Everything in Intelligence", "Seluruh Fitur Intelligence"],
-      ["Instagram, TikTok, X and Facebook", "Instagram, TikTok, X, dan Facebook"],
+      ["Social Media: 4 Platforms", "Media Sosial: 4 Platform"],
+      ["Influencer Database and Campaigns", "Database dan Kampanye Influencer"],
+      ["Agency Label on Reports", "Label Agensi di Laporan"],
       ["Slack, Microsoft Teams and Webhooks", "Slack, Microsoft Teams, dan Webhook"],
-      ["Escalation Matrix", "Matriks Eskalasi"],
     ],
   },
   {
@@ -73,6 +98,7 @@ const PLANS: Array<{
     limits: { brands: ["As Needed", "Sesuai Kebutuhan"], users: ["Unlimited", "Tanpa Batas"], retention: ["Custom", "Kustom"] },
     adds: [
       ["Everything in Decision", "Seluruh Fitur Decision"],
+      ["Social Media: 6 Platforms", "Media Sosial: 6 Platform"],
       ["Dedicated Success Manager", "Success Manager Khusus"],
       ["Quarterly Strategy Review", "Tinjauan Strategi Tiap Kuartal"],
       ["Service Level Agreement (SLA)", "Perjanjian Tingkat Layanan (SLA)"],
@@ -80,34 +106,45 @@ const PLANS: Array<{
   },
 ];
 
-const ORDER: PlanId[] = ["pilot", "intelligence", "decision", "command"];
+const ORDER: PlanId[] = ["starter", "pilot", "intelligence", "decision", "command"];
 const from = (id: PlanId) => ORDER.slice(ORDER.indexOf(id));
+
+/** Add-ons with a public price (the rest is quoted by the team). */
+const ADDONS: Array<{ name: Copy; price: number; unit: Copy; desc: Copy; for: Copy }> = [
+  { name: ["Social Media Lite", "Media Sosial Lite"], price: 1_500_000, unit: ["/month", "/bulan"], desc: ["Two platforms of your choice for brands that are busy on one or two networks.", "Dua platform pilihan, untuk brand yang ramai di satu atau dua platform saja."], for: ["Starter and Pilot", "Starter dan Pilot"] },
+  { name: ["Extra Social Media Quota", "Tambah Kuota Media Sosial"], price: 1_500_000, unit: ["/100 collections", "/100 pengambilan"], desc: ["During a crisis Narriv collects every hour. Valid until the end of the month.", "Saat krisis Narriv mengambil data tiap jam. Berlaku sampai akhir bulan berjalan."], for: ["All plans", "Semua paket"] },
+  { name: ["Influencer Database", "Database Influencer"], price: 2_500_000, unit: ["/month", "/bulan"], desc: ["8,500+ Instagram, TikTok and YouTube creators, filtered by city, category, tier and engagement.", "8.500+ kreator Instagram, TikTok, dan YouTube dengan filter kota, kategori, tier, dan engagement."], for: ["Pilot and Intelligence", "Pilot dan Intelligence"] },
+  { name: ["Extra Keyword", "Kata Kunci Tambahan"], price: 500_000, unit: ["/keyword/month", "/kata kunci/bulan"], desc: ["A product, person or campaign checked every hour beyond your plan.", "Produk, tokoh, atau kampanye yang dicek tiap jam di luar kuota paket."], for: ["All plans", "Semua paket"] },
+];
 
 const COMPARE: Array<{ group: Copy; rows: Array<{ label: Copy; plans: PlanId[] | Record<PlanId, Copy> }> }> = [
   {
     group: ["Capacity", "Kapasitas"],
     rows: [
-      { label: ["Brands Monitored", "Brand yang Dipantau"], plans: { pilot: ["1", "1"], intelligence: ["1", "1"], decision: ["3", "3"], command: ["As Needed", "Sesuai Kebutuhan"] } },
-      { label: ["Keywords Checked Every Hour, per Brand", "Kata Kunci Dipantau Tiap Jam, per Brand"], plans: { pilot: ["3", "3"], intelligence: ["10", "10"], decision: ["25", "25"], command: ["50", "50"] } },
-      { label: ["Users", "Pengguna"], plans: { pilot: ["1", "1"], intelligence: ["10", "10"], decision: ["50", "50"], command: ["Unlimited", "Tanpa Batas"] } },
-      { label: ["Data Retention", "Masa Simpan Data"], plans: { pilot: ["30 Days", "30 Hari"], intelligence: ["12 Months", "12 Bulan"], decision: ["12 Months", "12 Bulan"], command: ["Custom", "Kustom"] } },
+      { label: ["Brands Monitored", "Brand yang Dipantau"], plans: { starter: ["1", "1"], pilot: ["1", "1"], intelligence: ["1", "1"], decision: ["3", "3"], command: ["As Needed", "Sesuai Kebutuhan"] } },
+      { label: ["Keywords Checked Every Hour, per Brand", "Kata Kunci Dipantau Tiap Jam, per Brand"], plans: { starter: ["2", "2"], pilot: ["3", "3"], intelligence: ["10", "10"], decision: ["25", "25"], command: ["50", "50"] } },
+      { label: ["Users", "Pengguna"], plans: { starter: ["1", "1"], pilot: ["3", "3"], intelligence: ["10", "10"], decision: ["50", "50"], command: ["Unlimited", "Tanpa Batas"] } },
+      { label: ["Data Retention", "Masa Simpan Data"], plans: { starter: ["30 Days", "30 Hari"], pilot: ["90 Days", "90 Hari"], intelligence: ["12 Months", "12 Bulan"], decision: ["12 Months", "12 Bulan"], command: ["Custom", "Kustom"] } },
     ],
   },
   {
     group: ["Monitoring", "Pemantauan"],
     rows: [
-      { label: ["Online News and YouTube, Hourly", "Berita Online dan YouTube, Tiap Jam"], plans: from("pilot") },
-      { label: ["Automatic Sentiment and Issue Detection", "Deteksi Sentimen dan Isu Otomatis"], plans: from("pilot") },
-      { label: ["Instagram, TikTok, X, Facebook", "Instagram, TikTok, X, Facebook"], plans: from("decision") },
-      { label: ["AI Visibility", "Visibilitas di AI"], plans: from("intelligence") },
+      { label: ["Online News, YouTube and Telegram, Hourly", "Berita Online, YouTube, dan Telegram, Tiap Jam"], plans: from("starter") },
+      { label: ["Automatic Sentiment and Issue Detection", "Deteksi Sentimen dan Isu Otomatis"], plans: from("starter") },
+      { label: ["Instagram, TikTok, X, Facebook", "Instagram, TikTok, X, Facebook"], plans: { starter: ["Add-on", "Add-on"], pilot: ["Add-on", "Add-on"], intelligence: ["3 platforms", "3 platform"], decision: ["4 platforms", "4 platform"], command: ["6 platforms", "6 platform"] } },
+      { label: ["AI Visibility (ChatGPT and Claude)", "Visibilitas AI (ChatGPT dan Claude)"], plans: from("pilot") },
+      { label: ["Competitor Check and Account Network", "Cek Kompetitor dan Jaringan Akun"], plans: from("intelligence") },
     ],
   },
   {
     group: ["Action", "Tindakan"],
     rows: [
-      { label: ["Alerts With Owner and Deadline", "Peringatan dengan Penanggung Jawab dan Tenggat"], plans: from("pilot") },
-      { label: ["Email Notifications", "Notifikasi Email"], plans: from("pilot") },
-      { label: ["Cases and Response Plans", "Kasus dan Rencana Respons"], plans: from("intelligence") },
+      { label: ["Email Alerts", "Peringatan Email"], plans: from("starter") },
+      { label: ["WhatsApp Alerts", "Peringatan WhatsApp"], plans: from("pilot") },
+      { label: ["Response Plans Drafted by AI, Approved by You", "Rencana Respons dari AI, Disetujui Tim Anda"], plans: from("pilot") },
+      { label: ["Press Release and Media Selection", "Siaran Pers dan Pilih Media"], plans: from("intelligence") },
+      { label: ["Influencer Database and Campaigns", "Database dan Kampanye Influencer"], plans: { starter: ["—", "—"], pilot: ["Add-on", "Add-on"], intelligence: ["Add-on", "Add-on"], decision: ["Included", "Termasuk"], command: ["Included", "Termasuk"] } },
       { label: ["Escalation Matrix", "Matriks Eskalasi"], plans: from("decision") },
       { label: ["Slack, Teams and Webhooks", "Slack, Teams, dan Webhook"], plans: from("decision") },
     ],
@@ -115,9 +152,10 @@ const COMPARE: Array<{ group: Copy; rows: Array<{ label: Copy; plans: PlanId[] |
   {
     group: ["Reports", "Laporan"],
     rows: [
-      { label: ["Daily Briefing and Ask narriv", "Briefing Harian dan Ask narriv"], plans: from("pilot") },
-      { label: ["Export to PDF, Excel and Email", "Ekspor ke PDF, Excel, dan Email"], plans: from("pilot") },
-      { label: ["Scheduled Reports", "Laporan Terjadwal"], plans: from("intelligence") },
+      { label: ["Daily Briefing and PDF Reports", "Briefing Harian dan Laporan PDF"], plans: from("starter") },
+      { label: ["Ask narriv", "Ask narriv"], plans: from("pilot") },
+      { label: ["Scheduled Board Reports", "Laporan Terjadwal untuk Direksi"], plans: from("intelligence") },
+      { label: ["Agency Label on Reports", "Label Agensi di Laporan"], plans: from("decision") },
     ],
   },
   {
@@ -135,12 +173,12 @@ export default function PricingPage() {
   const href = useSiteHref();
 
   const faqs: Array<[Copy, Copy]> = [
-    [["Is There a Free Trial?", "Apakah Tersedia Uji Coba Gratis?"], ["Yes. Sign up and start right away: 14 days on your own brand with three keywords checked every hour across online news and YouTube, plus every feature of the Pilot plan. No card is needed. The live demo needs no sign-up at all.", "Ya. Daftar dan langsung mulai: 14 hari untuk brand Anda sendiri, dengan tiga kata kunci dipantau tiap jam di berita online dan YouTube, plus seluruh fitur paket Pilot. Tidak perlu kartu kredit. Demo langsung bahkan tidak perlu mendaftar."]],
+    [["Is There a Free Trial?", "Apakah Tersedia Uji Coba Gratis?"], ["Yes. Sign up and start right away: 14 days on your own brand with three keywords checked every hour across online news and YouTube, plus every feature of the Pilot plan except social media. No card is needed. The live demo needs no sign-up at all.", "Ya. Daftar dan langsung mulai: 14 hari untuk brand Anda sendiri, dengan tiga kata kunci dipantau tiap jam di berita online dan YouTube, plus seluruh fitur paket Pilot kecuali media sosial. Tidak perlu kartu kredit. Demo langsung bahkan tidak perlu mendaftar."]],
     [["What Happens After the Trial?", "Apa yang Terjadi Setelah Uji Coba?"], ["Hourly monitoring pauses until your plan is active. Nothing is deleted: your keywords, alerts and reports stay, and monitoring resumes as soon as the plan starts.", "Pemantauan tiap jam berhenti sementara sampai paket Anda aktif. Tidak ada yang dihapus: kata kunci, peringatan, dan laporan tetap tersimpan, dan pemantauan langsung berjalan lagi begitu paket dimulai."]],
-    [["How Does Billing Work?", "Bagaimana Sistem Pembayarannya?"], ["Pricing is agreed with our team based on your needs. Payment is by bank transfer against an invoice, monthly or annually.", "Harga disepakati bersama tim kami sesuai kebutuhan Anda. Pembayaran melalui transfer bank berdasarkan invoice, bulanan atau tahunan."]],
-    [["Can We Change Plans Later?", "Apakah Paket Dapat Diubah?"], ["Yes. Contact the Narriv team and we will update your workspace plan.", "Ya. Hubungi tim Narriv dan kami akan menyesuaikan paket workspace Anda."]],
+    [["How Does Billing Work?", "Bagaimana Sistem Pembayarannya?"], ["Prices are per month per brand, before VAT. Starter and Pilot are billed monthly; Intelligence and Decision run for at least three months; Command is an annual contract. Payment is by bank transfer against an invoice, due 14 days after it is issued. Paying a year in advance saves 15%.", "Harga per bulan per brand, belum termasuk PPN. Starter dan Pilot ditagih bulanan, Intelligence dan Decision minimal 3 bulan, Command kontrak tahunan. Pembayaran melalui transfer bank berdasarkan invoice, jatuh tempo 14 hari setelah terbit. Bayar setahun di muka hemat 15%."]],
+    [["Can We Change Plans Later?", "Apakah Paket Dapat Diubah?"], ["Yes. Upgrades apply right away, with the difference charged pro rata. Downgrades apply from the next billing period.", "Ya. Naik paket berlaku saat itu juga dengan selisih dihitung prorata. Turun paket berlaku di awal periode tagihan berikutnya."]],
     [["What Counts as a Brand?", "Apa yang Dihitung sebagai Brand?"], ["One workspace: a brand, product or client with its own keywords, alerts and reports.", "Satu workspace: satu brand, produk, atau klien dengan kata kunci, peringatan, dan laporan tersendiri."]],
-    [["Why Is Social Media Not in Every Plan?", "Mengapa Media Sosial Tidak Tersedia di Semua Paket?"], ["Collecting data from Instagram, TikTok, X and Facebook carries a direct cost per run, so it is included from the Decision plan and activated by the Narriv team.", "Pengambilan data dari Instagram, TikTok, X, dan Facebook memiliki biaya langsung setiap kali dijalankan, sehingga tersedia mulai paket Decision dan diaktifkan oleh tim Narriv."]],
+    [["Why Is Social Media Not in Every Plan?", "Mengapa Media Sosial Tidak Tersedia di Semua Paket?"], ["Collecting data from Instagram, TikTok, X and Facebook carries a direct cost per run. It is included from the Intelligence plan with a monthly quota, and available for Starter and Pilot as the Social Media Lite add-on. When the quota runs out, news, YouTube and Telegram keep running and more quota can be added at any time.", "Pengambilan data dari Instagram, TikTok, X, dan Facebook memiliki biaya langsung setiap kali dijalankan. Media sosial termasuk mulai paket Intelligence dengan kuota bulanan, dan tersedia untuk Starter dan Pilot lewat add-on Media Sosial Lite. Bila kuota habis, berita, YouTube, dan Telegram tetap berjalan, dan kuota bisa ditambah kapan saja."]],
   ];
 
   // Plans and answers as structured data in the page's language, for search results and AI answers.
@@ -157,6 +195,7 @@ export default function PricingPage() {
         name: `Narriv ${plan.name}`,
         description: `${P(plan.tagline)} ${P(plan.audience)}.`,
         url: SITE_URL + href("/pricing"),
+        ...(plan.price ? { price: plan.price.monthly, priceCurrency: "IDR" } : {}),
       })),
     },
     faqJsonLd(faqs.map(([q, a]) => ({ q: P(q), a: P(a) }))),
@@ -179,9 +218,9 @@ export default function PricingPage() {
       </section>
 
       {/* Plans */}
-      <section className="relative mx-auto -mt-16 max-w-6xl px-4 sm:px-6">
+      <section className="relative mx-auto -mt-16 max-w-7xl px-4 sm:px-6">
         {/* Each card's parts (heading, price, limits, features, button) sit on shared rows, so they line up across cards. */}
-        <div className="grid gap-x-4 gap-y-8 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-x-4 gap-y-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
@@ -204,8 +243,18 @@ export default function PricingPage() {
               </div>
 
               <div className="text-center">
-                <p className="text-[24px] font-black leading-none tracking-[-0.02em]">{L("Let's talk", "Diskusikan")}</p>
-                <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{L("Pricing tailored to your needs", "Harga disesuaikan kebutuhan Anda")}</p>
+                {plan.price ? (
+                  <>
+                    {plan.price.from ? <p className={cn("text-[12px] font-bold uppercase tracking-[0.06em]", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{L("Starting at", "Mulai dari")}</p> : null}
+                    <p className="whitespace-nowrap text-[23px] font-black leading-none tracking-[-0.02em]">{rupiah(plan.price.monthly)}</p>
+                    <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{L("per month, before VAT", "per bulan, belum PPN")}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[23px] font-black leading-none tracking-[-0.02em]">{L("Let's talk", "Hubungi Kami")}</p>
+                    <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{L("Priced to your scope", "Harga sesuai cakupan Anda")}</p>
+                  </>
+                )}
               </div>
 
               <dl className={cn("space-y-2 self-start rounded-2xl px-4 py-3.5", plan.popular ? "bg-white/[0.08]" : "bg-[#F6F7FC]")}>
@@ -223,7 +272,7 @@ export default function PricingPage() {
 
               <ul className="space-y-2.5">
                 {plan.adds.map((f, i) => (
-                  <li key={f[0]} className={cn("flex items-start gap-2.5 text-[14px] font-medium", plan.popular ? "text-white/85" : "text-[#31406B]", i === 0 && plan.id !== "pilot" && "font-bold")}>
+                  <li key={f[0]} className={cn("flex items-start gap-2.5 text-[14px] font-medium", plan.popular ? "text-white/85" : "text-[#31406B]", i === 0 && plan.id !== "starter" && "font-bold")}>
                     <Check size={16} strokeWidth={3} aria-hidden="true" className={cn("mt-0.5 shrink-0", plan.popular ? "text-[#86EFAC]" : "text-[#12A66A]")} />
                     {P(f)}
                   </li>
@@ -231,13 +280,13 @@ export default function PricingPage() {
               </ul>
 
               <Link
-                href={plan.id === "command" ? href("/help#contact") : `/signup?plan=${plan.id}`}
+                href={plan.price ? `/signup?plan=${plan.id}` : href("/help#contact")}
                 className={cn(
-                  "flex h-12 items-center justify-center gap-2 self-end rounded-xl text-[15px] font-bold transition",
+                  "flex h-12 items-center justify-center gap-2 self-end rounded-xl px-2 text-center text-[14px] font-bold leading-tight transition",
                   plan.popular ? "bg-[#465FFF] text-white hover:bg-[#3B52F5]" : "bg-[#101334] text-white hover:bg-[#1B2155]",
                 )}
               >
-                {plan.id === "command" ? L("Contact Sales", "Hubungi Tim Kami") : L("Start a 14-Day Trial", "Mulai Uji Coba 14 Hari")}
+                {plan.price ? L("Start a 14-Day Trial", "Mulai Uji Coba 14 Hari") : L("Contact Sales", "Hubungi Tim Kami")}
                 <ArrowRight size={16} aria-hidden="true" />
               </Link>
             </div>
@@ -252,7 +301,7 @@ export default function PricingPage() {
         </div>
         <div className="mt-10 overflow-hidden rounded-[22px] bg-white border-[1.5px] border-[#101334] shadow-[0_5px_0_#101334]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left">
+            <table className="w-full min-w-[820px] text-left">
               <thead>
                 <tr className="bg-[#070A1F] text-white">
                   <th className="px-5 py-4 text-[13px] font-bold">{L("Feature", "Fitur")}</th>
@@ -263,7 +312,7 @@ export default function PricingPage() {
                 {COMPARE.map((g) => (
                   <Fragment key={g.group[0]}>
                     <tr className="bg-[#F5F7FF]">
-                      <td colSpan={5} className="px-5 py-2.5 text-[12px] font-black uppercase tracking-[0.08em] text-[#465FFF]">{P(g.group)}</td>
+                      <td colSpan={6} className="px-5 py-2.5 text-[12px] font-black uppercase tracking-[0.08em] text-[#465FFF]">{P(g.group)}</td>
                     </tr>
                     {g.rows.map((row) => (
                       <tr key={row.label[0]} className="even:bg-[#FAFBFF]">
@@ -289,6 +338,25 @@ export default function PricingPage() {
             </table>
           </div>
         </div>
+      </section>
+
+      {/* Add-ons */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("Add What", "Tambahkan Sesuai")} <span className={cn("mk-brush", SERIF)}>{L("You Need.", "Kebutuhan.")}</span></h2>
+          <p className="mt-3 text-[15px] font-medium text-[#5F6B94]">{L("Monthly add-ons follow your plan's billing period. Prices before VAT.", "Add-on bulanan mengikuti periode tagihan paket. Harga belum termasuk PPN.")}</p>
+        </div>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {ADDONS.map((a) => (
+            <div key={a.name[0]} className="flex flex-col rounded-[22px] border-[1.5px] border-[#101334] bg-white p-5 shadow-[0_5px_0_#101334]">
+              <h3 className="text-[16px] font-black">{P(a.name)}</h3>
+              <p className="mt-2 text-[20px] font-black tracking-[-0.02em] text-[#3247D9]">{rupiah(a.price)}<span className="text-[12.5px] font-semibold text-[#5F6B94]"> {P(a.unit)}</span></p>
+              <p className="mt-2 flex-1 text-[13.5px] font-medium leading-relaxed text-[#5F6B94]">{P(a.desc)}</p>
+              <span className="mt-3 self-start rounded-full bg-[#F4F6FD] px-3 py-1 text-[12px] font-bold text-[#101334]">{P(a.for)}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-6 text-center text-[14px] font-medium text-[#5F6B94]">{L("Press releases, influencer campaigns, short videos, paid ads and social media management are quoted inside your response plan: you only pay for what you approve.", "Siaran pers, kampanye influencer, video pendek, iklan berbayar, dan kelola media sosial ditawarkan langsung di rencana respons Anda: Anda hanya membayar yang Anda setujui.")}</p>
       </section>
 
       {/* Questions */}
