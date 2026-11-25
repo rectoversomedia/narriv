@@ -228,7 +228,13 @@ export default function DashboardPage() {
   const router = useRouter();
   // The Narriv team's admin account lands on the admin panel: its own workspace is only a shell.
   const adminQ = useQuery({ queryKey: ["admin", "me"], queryFn: getAdminMe, enabled: !isDemoSession, staleTime: 5 * 60 * 1000 });
-  useEffect(() => { if (adminQ.data === true) router.replace("/admin"); }, [adminQ.data, router]);
+  useEffect(() => {
+    if (adminQ.data !== true) return;
+    // Opening a client's workspace from the admin panel keeps the admin there.
+    let browsing = false;
+    try { browsing = sessionStorage.getItem("narriv-admin-browsing") === "1"; } catch { /* ignore */ }
+    if (!browsing) router.replace("/admin");
+  }, [adminQ.data, router]);
 
   // A workspace that has not finished onboarding goes there first.
   // Also gives the brand name shown in the focus strip (demo sessions read the demo workspace's settings).

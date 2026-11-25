@@ -37,7 +37,7 @@ const usdToIdr = () => { const r = Number(process.env.USD_IDR_RATE); return Numb
 const SOCIAL_PLATFORMS = ["x", "tiktok", "instagram", "facebook", "youtube", "threads"];
 
 // Accounts the team and automated tests made, so the panel can hide them from the client counts (display only).
-const TEST_EMAIL = /(^admin@narriv\.digital$|@narriv\.(test|ai)$|@example\.(com|org)$|@resend\.dev$|@qatestcorp\.com$|playwright|audit-test|^qa[.\-_+]|[.\-_+]qa@|tester)/i;
+const TEST_EMAIL = /(@narriv\.(test|ai)$|@example\.(com|org)$|@resend\.dev$|@qatestcorp\.com$|playwright|audit-test|^qa[.\-_+]|[.\-_+]qa@|tester)/i;
 const TEST_NAME = /\b(test|tester|qa|playwright|audit)\b/i;
 
 router.get("/me", async (req, res, next) => {
@@ -136,7 +136,8 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
                 name: w.name,
                 createdAt: w.created_at,
                 isDemo: isDemoWorkspace(w.id),
-                isTest: TEST_EMAIL.test(ownerUser?.email || "") || TEST_NAME.test(w.name || ""),
+                // settings.internal marks the team's own workspaces (the admin account's shell), counted apart from clients.
+                isTest: settings.internal === true || TEST_EMAIL.test(ownerUser?.email || "") || TEST_NAME.test(w.name || ""),
                 owner: ownerUser ? { name: ownerUser.name, email: ownerUser.email } : null,
                 ...planStatus(settings, now),
                 monitoringPaused: settings.monitoringPaused === true,
@@ -191,6 +192,58 @@ const patchBody = z.object({
         crisisMode: z.boolean().optional(),
     }).optional(),
 }).refine((b) => Object.keys(b).length > 0, { message: "Nothing to change." });
+
+// Open any client workspace from the admin panel: the Narriv admin joins it as an admin member (recorded in the audit
+// log), so every page of that workspace works for them exactly as it does for the client.
+router.post("/workspaces/:id/enter", requirePlatformAdmin, validateRequest({ params: z.object({ id: z.string().uuid() }) }), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { data: ws } = await db.from("workspaces").select("id, name").eq("id", id).maybeSingle();
+        if (!ws) return res.status(404).json({ error: "Workspace not found." });
+        const { data: m } = await db.from("workspace_members").select("id, role").eq("workspace_id", id).eq("user_id", req.user.id).maybeSingle();
+        if (!m) {
+            const { error } = await db.from("workspace_members").insert({ workspace_id: id, user_id: req.user.id, role: "admin", created_at: new Date().toISOString() });
+            if (error) throw error;
+            await recordAuditLog({ userId: req.user.id, workspaceId: id, event: "platform_admin_entered_workspace", metadata: { name: ws.name } });
+        }
+        res.json({ id, name: ws.name, role: m?.role || "admin" });
+    } catch (error) {
+        logStructured("error", "admin_enter_workspace_failed", { error: error?.message || error });
+        res.status(500).json({ error: "Could not open the workspace." });
+    }
+});
+
+/**
+ * Delete a workspace and everything in it. The admin types the workspace's exact name to confirm. Most tables cascade
+ * from workspaces; tables added later without a cascade are cleared one by one as the database names them.
+ */
+router.delete("/workspaces/:id", requirePlatformAdmin, validateRequest({ params: z.object({ id: z.string().uuid() }), body: z.object({ confirmName: z.string().trim().min(1).max(200) }) }), async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (isDemoWorkspace(id)) return res.status(400).json({ error: "The demo workspace cannot be deleted.", code: "DEMO_WORKSPACE" });
+        const { data: ws } = await db.from("workspaces").select("id, name").eq("id", id).maybeSingle();
+        if (!ws) return res.status(404).json({ error: "Workspace not found." });
+        if (ws.name.trim() !== req.body.confirmName) return res.status(400).json({ error: "Type the workspace name exactly to confirm.", code: "CONFIRM_MISMATCH" });
+        // Recorded before the rows go, under the admin's own workspace-less entry.
+        await recordAuditLog({ userId: req.user.id, workspaceId: null, event: "platform_admin_workspace_deleted", metadata: { workspaceId: id, name: ws.name } });
+        const cleared = [];
+        for (let attempt = 0; attempt < 40; attempt++) {
+            const { error } = await db.from("workspaces").delete().eq("id", id);
+            if (!error) return res.json({ deleted: true, id, name: ws.name, cleared });
+            // e.g. update or delete on table "workspaces" violates foreign key constraint "x" on table "token_usage"
+            const table = /on table "([a-z_]+)"/i.exec(error.details || error.message || "")?.[1] || /on table "([a-z_]+)"/i.exec(error.message || "")?.[1];
+            const blocker = table && table !== "workspaces" ? table : null;
+            if (!blocker || cleared.includes(blocker)) throw error;
+            const { error: clearErr } = await db.from(blocker).delete().eq("workspace_id", id);
+            if (clearErr) throw clearErr;
+            cleared.push(blocker);
+        }
+        throw new Error("Too many dependent tables");
+    } catch (error) {
+        logStructured("error", "admin_workspace_delete_failed", { error: error?.message || error });
+        res.status(500).json({ error: "The workspace could not be deleted completely. Try again." });
+    }
+});
 
 router.patch("/workspaces/:id", requirePlatformAdmin, validateRequest({ params: z.object({ id: z.string().uuid() }), body: patchBody }), async (req, res) => {
     try {

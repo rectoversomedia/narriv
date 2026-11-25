@@ -115,3 +115,10 @@ export const sendAdminOffer = (planId: string, kind: string, input: { amount: nu
   apiClient(`/api/admin/platform/quotes/${planId}/${kind}`, { method: "PUT", body: JSON.stringify(input) });
 export const setAdminInvoicePaid = (planId: string, kind: string, paid: boolean) =>
   apiClient(`/api/admin/platform/quotes/${planId}/${kind}/invoice`, { method: "PATCH", body: JSON.stringify({ paid }) });
+
+/** Open a client workspace as the Narriv admin (joins it as an admin member). */
+export const enterAdminWorkspace = (id: string): Promise<{ id: string; name: string; role: string }> =>
+  apiClient(`/api/admin/platform/workspaces/${id}/enter`, { method: "POST", body: "{}" });
+/** Delete a workspace and all its data; the exact name confirms it. */
+export const deleteAdminWorkspace = (id: string, confirmName: string): Promise<{ deleted: boolean }> =>
+  apiClient(`/api/admin/platform/workspaces/${id}`, { method: "DELETE", body: JSON.stringify({ confirmName }) });

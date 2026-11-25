@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Check, ChevronRight, Inbox, Loader2, Mail, MapPin, Pause, Play, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
+import { CalendarClock, Check, ChevronRight, ExternalLink, Inbox, Trash2, Loader2, Mail, MapPin, Pause, Play, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { useToast } from "@/components/ui/toast";
-import { getAdminQuotes, sendAdminOffer, setAdminInvoicePaid, type AdminQuote } from "@/lib/api-service";
+import { deleteAdminWorkspace, enterAdminWorkspace, getAdminQuotes, sendAdminOffer, setAdminInvoicePaid, type AdminQuote } from "@/lib/api-service";
+import { useWorkspaceStore } from "@/store/useWorkspaceStore";
+import { useRouter } from "next/navigation";
 import { backfillAdminRegions, getAdminMe, seedAdminDemo, getAdminWorkspaces, sendAdminTestEmail, updateAdminWorkspace, type AdminWorkspace, type AdminWorkspacePatch, type BillingStatus, type WorkspacePlanKey } from "@/lib/api-service";
 import { timeAgo } from "@/lib/intelligence-api";
 import { useL } from "@/lib/use-l";
@@ -323,6 +325,8 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
               </div>
             </div>
           </section>
+
+          <WorkspaceDanger w={w} onClose={onClose} />
         </div>
 
         <div className="flex items-center justify-end gap-2 bg-white px-5 py-4 shadow-[0_-1px_0_#EEF1F6]">
@@ -428,6 +432,61 @@ function QuotesCard() {
       </div>
       {q.isPending ? <div className="px-5 pb-5"><Skeleton className="h-16 w-full" /></div> : rows.length ? <ul className="border-t border-[#EEF1F7]">{rows.map((r) => <QuoteRow key={`${r.planId}-${r.kind}`} q={r} />)}</ul> : <p className="border-t border-[#EEF1F7] px-5 py-4 text-[13px] text-[#8A93B8]">{L("No quote requests yet.", "Belum ada permintaan penawaran.")}</p>}
     </section>
+  );
+}
+
+/** Open the workspace as the Narriv admin, or delete it (the exact name confirms). */
+function WorkspaceDanger({ w, onClose }: { w: AdminWorkspace; onClose: () => void }) {
+  const L = useL();
+  const toast = useToast();
+  const qc = useQueryClient();
+  const router = useRouter();
+  const setSelected = useWorkspaceStore((s) => s.setSelectedWorkspaceId);
+  const [confirm, setConfirm] = useState("");
+  const [asking, setAsking] = useState(false);
+  const enter = useMutation({
+    meta: { silent: true },
+    mutationFn: () => enterAdminWorkspace(w.id),
+    onSuccess: () => {
+      // The admin's home sends them back to this panel; this flag lets them stay in the client's workspace.
+      try { sessionStorage.setItem("narriv-admin-browsing", "1"); } catch { /* storage off: the panel link still works */ }
+      setSelected(w.id);
+      qc.clear();
+      router.push("/");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : L("Could not open it.", "Gagal dibuka.")),
+  });
+  const del = useMutation({
+    meta: { silent: true },
+    mutationFn: () => deleteAdminWorkspace(w.id, confirm.trim()),
+    onSuccess: () => { toast.success(L(`${w.name} deleted.`, `${w.name} dihapus.`)); qc.invalidateQueries({ queryKey: ["admin"] }); onClose(); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : L("Not deleted.", "Gagal dihapus.")),
+  });
+  return (
+    <>
+      <button type="button" onClick={() => enter.mutate()} disabled={enter.isPending || w.isDemo} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#101334] px-4 py-3.5 text-[14px] font-bold text-white disabled:opacity-50">
+        {enter.isPending ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <ExternalLink size={16} aria-hidden="true" />}
+        {L("Open this workspace", "Buka workspace ini")}
+      </button>
+      <section className="rounded-2xl border border-[#F3C4C4] bg-[#FFF7F7] p-4" aria-labelledby="del-h">
+        <h3 id="del-h" className="flex items-center gap-2 text-[13px] font-black text-[#B42318]"><Trash2 size={15} aria-hidden="true" /> {L("Delete workspace", "Hapus workspace")}</h3>
+        <p className="mt-1 text-[12px] font-medium leading-relaxed text-[#7A2E2E]">{L("Deletes the workspace and all of its data (mentions, issues, alerts, reports, plans). This cannot be undone.", "Menghapus workspace beserta seluruh datanya (percakapan, isu, peringatan, laporan, rencana). Tidak bisa dibatalkan.")}</p>
+        {w.isDemo ? <p className="mt-2 text-[12px] font-bold text-[#7A2E2E]">{L("The demo workspace cannot be deleted.", "Workspace demo tidak bisa dihapus.")}</p> : asking ? (
+          <div className="mt-3 grid gap-2">
+            <label className="text-[12px] font-bold text-[#7A2E2E]" htmlFor={`del-${w.id}`}>{L(`Type "${w.name}" to confirm`, `Ketik "${w.name}" untuk konfirmasi`)}</label>
+            <input id={`del-${w.id}`} value={confirm} onChange={(e) => setConfirm(e.target.value)} autoFocus className="h-10 rounded-[10px] bg-white px-3 text-[14px] font-semibold shadow-[0_0_0_1px_#F3C4C4] outline-none focus:shadow-[0_0_0_2px_#E5484D]" />
+            <div className="flex gap-2">
+              <button type="button" onClick={() => del.mutate()} disabled={confirm.trim() !== w.name.trim() || del.isPending} className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#B42318] px-4 text-[13px] font-bold text-white disabled:opacity-40">
+                {del.isPending ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Trash2 size={14} aria-hidden="true" />}{L("Delete permanently", "Hapus permanen")}
+              </button>
+              <button type="button" onClick={() => { setAsking(false); setConfirm(""); }} className="h-10 px-3 text-[13px] font-bold text-[#5F6B94]">{L("Cancel", "Batal")}</button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setAsking(true)} className="mt-3 h-10 rounded-[10px] border border-[#E5484D] px-4 text-[13px] font-bold text-[#B42318] hover:bg-white">{L("Delete this workspace", "Hapus workspace ini")}</button>
+        )}
+      </section>
+    </>
   );
 }
 
@@ -562,6 +621,7 @@ export default function AdminPage() {
   const toast = useToast();
   const queryClient = useQueryClient();
   const me = useQuery({ queryKey: ["admin", "me"], queryFn: getAdminMe, staleTime: 5 * 60 * 1000 });
+  useEffect(() => { try { sessionStorage.removeItem("narriv-admin-browsing"); } catch { /* ignore */ } }, []);
   const list = useQuery({ queryKey: ["admin", "workspaces"], queryFn: getAdminWorkspaces, enabled: me.data === true, staleTime: 30 * 1000 });
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
