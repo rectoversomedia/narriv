@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useState } from "react";
-import { ArrowRight, Check, ChevronDown, FileText, Minus } from "lucide-react";
+import { ArrowRight, Building2, Check, ChevronDown, Crown, FileText, Minus, Rocket, Sprout, Zap, type LucideIcon } from "lucide-react";
 import { GRID, INK, PAPER, RULE, SERIF, SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
@@ -105,6 +105,15 @@ const PLANS: Array<{
     ],
   },
 ];
+
+/** Each plan's own mark: an icon and a colour, so the five read apart at a glance. */
+const MARK: Record<PlanId, { icon: LucideIcon; color: string; soft: string }> = {
+  starter: { icon: Sprout, color: "#12A66A", soft: "#E5F6EE" },
+  pilot: { icon: Rocket, color: "#F59E0B", soft: "#FFF4E5" },
+  intelligence: { icon: Zap, color: "#465FFF", soft: "#EEF1FF" },
+  decision: { icon: Building2, color: "#8B5CFF", soft: "#F1ECFF" },
+  command: { icon: Crown, color: "#E85BB8", soft: "#FDEBF6" },
+};
 
 const ORDER: PlanId[] = ["starter", "pilot", "intelligence", "decision", "command"];
 const from = (id: PlanId) => ORDER.slice(ORDER.indexOf(id));
@@ -218,9 +227,9 @@ export default function PricingPage() {
       </section>
 
       {/* Plans */}
-      <section className="relative mx-auto -mt-16 max-w-7xl px-4 sm:px-6">
+      <section className="relative mx-auto -mt-16 max-w-[1560px] px-4 sm:px-6 lg:px-10">
         {/* Each card's parts (heading, price, limits, features, button) sit on shared rows, so they line up across cards. */}
-        <div className="grid gap-x-4 gap-y-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-x-5 gap-y-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
@@ -236,7 +245,21 @@ export default function PricingPage() {
               ) : null}
 
               <div className="text-center">
-                <p className={cn("font-mono text-[10.5px] font-bold uppercase tracking-[0.1em]", plan.popular ? "text-[#A5B4FF]" : "text-[#5F6B94]")}>{L("Plan", "Paket")} 0{PLANS.indexOf(plan) + 1}</p>
+                {(() => {
+                  const m = MARK[plan.id];
+                  const Icon = m.icon;
+                  return (
+                    <div className="flex flex-col items-center gap-2">
+                      <span className={cn("grid size-12 place-items-center rounded-[14px] border-[1.5px]", plan.popular ? "border-white/25 shadow-[0_3px_0_rgba(255,255,255,0.18)]" : "border-[#101334] shadow-[0_3px_0_#101334]")} style={{ background: plan.popular ? m.color : m.soft, color: plan.popular ? "#fff" : m.color }}>
+                        <Icon size={22} strokeWidth={2.4} aria-hidden="true" />
+                      </span>
+                      <span className={cn("inline-flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.08em]", plan.popular ? "bg-white/10 text-white/80" : "bg-[#F4F6FD] text-[#5F6B94]")}>
+                        <span className="grid size-5 place-items-center rounded-full text-[11px] text-white" style={{ background: m.color }}>{PLANS.indexOf(plan) + 1}</span>
+                        {L("Plan", "Paket")}
+                      </span>
+                    </div>
+                  );
+                })()}
                 <h2 className="mt-1 text-[22px] font-black tracking-[-0.02em]">{plan.name}</h2>
                 <p className={cn("mt-1 text-[14px] font-semibold", plan.popular ? "text-[#A5B4FF]" : "text-[#465FFF]")}>{P(plan.tagline)}</p>
                 <p className={cn("mt-1 text-[13px] font-medium", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{P(plan.audience)}</p>
@@ -295,7 +318,7 @@ export default function PricingPage() {
       </section>
 
       {/* Comparison */}
-      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+      <section className="mx-auto max-w-[1560px] px-4 py-20 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("What", "Isi")} <span className={cn("mk-brush", SERIF)}>{L("Each Plan Includes.", "Setiap Paket.")}</span></h2>
         </div>
@@ -341,7 +364,7 @@ export default function PricingPage() {
       </section>
 
       {/* Add-ons */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+      <section className="mx-auto max-w-[1560px] px-4 pb-20 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("Add What", "Tambahkan Sesuai")} <span className={cn("mk-brush", SERIF)}>{L("You Need.", "Kebutuhan.")}</span></h2>
           <p className="mt-3 text-[15px] font-medium text-[#5F6B94]">{L("Monthly add-ons follow your plan's billing period. Prices before VAT.", "Add-on bulanan mengikuti periode tagihan paket. Harga belum termasuk PPN.")}</p>
@@ -360,7 +383,7 @@ export default function PricingPage() {
       </section>
 
       {/* Questions */}
-      <section className="mx-auto grid max-w-6xl gap-10 px-4 pb-20 sm:px-6 lg:grid-cols-[0.8fr_1.4fr] lg:gap-20">
+      <section className="mx-auto grid max-w-[1560px] gap-10 px-4 pb-20 sm:px-6 lg:grid-cols-[0.8fr_1.4fr] lg:gap-20 lg:px-10">
         <div>
           <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("Plans", "Seputar Paket")} <span className={cn("mk-brush", SERIF)}>{L("and Billing.", "dan Pembayaran.")}</span></h2>
         </div>
@@ -379,7 +402,7 @@ export default function PricingPage() {
 
       {/* Closing call to action */}
       <section className="px-4 pb-20 sm:px-6">
-        <div className={cn("relative mx-auto max-w-6xl overflow-hidden rounded-[32px] px-6 py-16 text-center text-white", INK)}>
+        <div className={cn("relative mx-auto max-w-[1480px] overflow-hidden rounded-[32px] px-6 py-16 text-center text-white", INK)}>
           <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
           <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 h-[320px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.45),transparent)]" />
           <h2 className="relative text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[44px]">{L("Not Sure", "Belum Yakin")} <span className={cn("mk-brush", SERIF)}>{L("Which Plan Fits?", "Paket Mana yang Sesuai?")}</span></h2>
