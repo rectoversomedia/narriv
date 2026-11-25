@@ -92,6 +92,70 @@ export function generateExternalId(url, guid, title) {
  * Fetch and parse an arbitrary RSS / Atom XML feed URL
  */
 export async function fetchRssFeed(url, options = {}) {
+  if (isGoogleNews(url)) return fetchGoogleNewsPolitely(url, options);
+  return fetchRssFeedOnce(url, options);
+}
+
+/**
+ * Google News answers "429 Too Many Requests" when it is asked too often from one server. Every Google News request
+ * (ingestion, Cek Kompetitor, Cek Klaim) goes through here:
+ *   - one request at a time, at least GOOGLE_NEWS_GAP_MS apart (the gap widens for a while after a 429);
+ *   - a 429 or 503 is retried twice, after Retry-After or 8 s then 20 s;
+ *   - the same address within 10 minutes is answered from memory.
+ */
+// Tests run without the gap or the memory, so each test sees its own fake feed at once.
+const testing = () => process.env.NODE_ENV === "test";
+const googleNewsGap = () => Number(process.env.GOOGLE_NEWS_GAP_MS ?? (testing() ? 0 : 1500));
+const GOOGLE_NEWS_CACHE_MS = 10 * 60 * 1000;
+const googleNewsCache = new Map(); // url → { at, items }
+let googleNewsQueue = Promise.resolve();
+let googleNewsLastAt = 0;
+let googleNewsSlowUntil = 0;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const isGoogleNews = (url) => /^https:\/\/news\.google\.com\//.test(String(url));
+
+export function resetGoogleNewsPacing() {
+  googleNewsCache.clear();
+  googleNewsQueue = Promise.resolve();
+  googleNewsLastAt = 0;
+  googleNewsSlowUntil = 0;
+}
+
+async function fetchGoogleNewsPolitely(url, options = {}, deps = {}) {
+  const useCache = deps.cache ?? !testing();
+  const hit = useCache ? googleNewsCache.get(url) : null;
+  if (hit && Date.now() - hit.at < GOOGLE_NEWS_CACHE_MS) return hit.items;
+  const once = deps.fetchOnce || fetchRssFeedOnce;
+  const wait = deps.sleep || sleep;
+  const turn = googleNewsQueue.then(async () => {
+    const delays = deps.delays || (testing() ? [0, 0] : [8000, 20000]);
+    for (let attempt = 0; ; attempt++) {
+      const gap = (deps.gapMs ?? googleNewsGap()) * (Date.now() < googleNewsSlowUntil ? 4 : 1);
+      const since = Date.now() - googleNewsLastAt;
+      if (since < gap) await wait(gap - since);
+      googleNewsLastAt = Date.now();
+      try {
+        const items = await once(url, options);
+        if (useCache) googleNewsCache.set(url, { at: Date.now(), items });
+        if (googleNewsCache.size > 500) googleNewsCache.delete(googleNewsCache.keys().next().value);
+        return items;
+      } catch (err) {
+        const status = err?.status;
+        if (![429, 503].includes(status) || attempt >= delays.length) throw err;
+        googleNewsSlowUntil = Date.now() + 10 * 60 * 1000;
+        const after = Number(err?.retryAfter) > 0 ? Math.min(Number(err.retryAfter) * 1000, 60000) : delays[attempt];
+        logStructured("warn", "google_news_rate_limited_retry", { status, attempt: attempt + 1, waitMs: after });
+        await wait(after);
+      }
+    }
+  });
+  // The next request waits for this one, whatever its outcome.
+  googleNewsQueue = turn.catch(() => null);
+  return turn;
+}
+export { fetchGoogleNewsPolitely as _fetchGoogleNewsPolitely };
+
+async function fetchRssFeedOnce(url, options = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs || REQUEST_TIMEOUT_MS);
 
@@ -107,7 +171,7 @@ export async function fetchRssFeed(url, options = {}) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status} ${response.statusText} fetching RSS: ${url}`);
+      throw Object.assign(new Error(`HTTP ${response.status} ${response.statusText} fetching RSS: ${url}`), { status: response.status, retryAfter: response.headers?.get?.("retry-after") || null });
     }
 
     const xmlText = await response.text();
