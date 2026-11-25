@@ -253,10 +253,6 @@ export default function PricingPage() {
                       <span className={cn("grid size-12 place-items-center rounded-[14px] border-[1.5px]", plan.popular ? "border-white/25 shadow-[0_3px_0_rgba(255,255,255,0.18)]" : "border-[#101334] shadow-[0_3px_0_#101334]")} style={{ background: plan.popular ? m.color : m.soft, color: plan.popular ? "#fff" : m.color }}>
                         <Icon size={22} strokeWidth={2.4} aria-hidden="true" />
                       </span>
-                      <span className={cn("inline-flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.08em]", plan.popular ? "bg-white/10 text-white/80" : "bg-[#F4F6FD] text-[#5F6B94]")}>
-                        <span className="grid size-5 place-items-center rounded-full text-[11px] text-white" style={{ background: m.color }}>{PLANS.indexOf(plan) + 1}</span>
-                        {L("Plan", "Paket")}
-                      </span>
                     </div>
                   );
                 })()}
