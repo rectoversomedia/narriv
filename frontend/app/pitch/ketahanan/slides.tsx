@@ -1,5 +1,5 @@
 // /pitch/ketahanan: Narriv for information resilience (hoaxes, propaganda, violent extremism). Every number comes from
-// the fictional "Simpul Damai" demo workspace (backend demo-scenarios.js), and every link opens it.
+// the fictional "Kementerian Bahaya" demo workspace (backend demo-scenarios.js), and every link opens it.
 import { ExternalLink, Eye, Gavel, Radar, Scale, Send, ShieldCheck, UserCheck, Users } from "lucide-react";
 import { AMBER, BLUE, Brush, Card, Dark, INK, INKED, Light, MONO, MUTED, NEG, POS, Ribbon, Stamp, Head } from "../kit";
 
@@ -10,7 +10,7 @@ const appLink = (path: string) => `https://app.narriv.digital/demo?case=cve${pat
 function Source({ en, dark = false }: { en: boolean; dark?: boolean }) {
   return (
     <p style={{ position: "absolute", left: 96, bottom: 26, margin: 0, fontFamily: MONO, fontSize: 18, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: dark ? "rgba(255,255,255,.45)" : "#8B93B0" }}>
-      {tr(en)("Data contoh · Simpul Damai (fiktif) · 30 hari terakhir", "Sample data · Simpul Damai (fictional) · last 30 days")}
+      {tr(en)("Data contoh · Kementerian Bahaya (fiktif) · 30 hari terakhir", "Sample data · Kementerian Bahaya (fictional) · last 30 days")}
     </p>
   );
 }
@@ -260,7 +260,7 @@ export function KClosing({ en }: P) {
     <Dark glow="top">
       <div className="ph" style={{ position: "absolute", left: 160, right: 160, top: 300, textAlign: "center" }}>
         <h2 style={{ margin: 0, fontSize: 100, lineHeight: 1.04, fontWeight: 800, letterSpacing: "-0.045em" }}>{t(<>Coba sendiri <Brush>di demo.</Brush></>, <>Try it <Brush>in the demo.</Brush></>)}</h2>
-        <p style={{ margin: "34px auto 0", maxWidth: 1200, fontSize: 32, lineHeight: 1.45, color: "rgba(255,255,255,.7)" }}>{t("Workspace Simpul Damai berisi data contoh lengkap: kategori, ideologi, eskalasi, akurasi, dan prediksi.", "The Simpul Damai workspace holds full sample data: categories, ideology, escalation, accuracy and forecasts.")}</p>
+        <p style={{ margin: "34px auto 0", maxWidth: 1200, fontSize: 32, lineHeight: 1.45, color: "rgba(255,255,255,.7)" }}>{t("Workspace Kementerian Bahaya berisi data contoh lengkap: kategori, ideologi, eskalasi, akurasi, dan prediksi.", "The Kementerian Bahaya workspace holds full sample data: categories, ideology, escalation, accuracy and forecasts.")}</p>
       </div>
       <a href={appLink("/")} target="_blank" rel="noreferrer" className="pc pitch-link" style={{ position: "absolute", left: 480, right: 480, top: 720, display: "flex", alignItems: "center", justifyContent: "center", gap: 14, padding: "28px 32px", borderRadius: 26, background: "#fff", color: INK, textDecoration: "none", fontSize: 34, fontWeight: 800, ...INKED }}>
         {t("Buka demo Ketahanan Informasi", "Open the Information Resilience demo")} <ExternalLink size={30} aria-hidden />

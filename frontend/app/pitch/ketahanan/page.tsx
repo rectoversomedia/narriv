@@ -1,5 +1,5 @@
 // /pitch/ketahanan: the Ketahanan Informasi deck (hoaxes, propaganda and violent extremism) on the fictional
-// "Simpul Damai" demo workspace. Links open that workspace. Same presenter as /pitch. Not indexed.
+// "Kementerian Bahaya" demo workspace. Links open that workspace. Same presenter as /pitch. Not indexed.
 import type { Metadata } from "next";
 import Deck from "../deck";
 import { ketahananDeck } from "./slides";

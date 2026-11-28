@@ -1,3 +1,4 @@
+import { buildActors, CLUSTERS, shapeCveSignals } from "./demo-actors.js";
 /**
  * The government and CVE demo scenarios, seeded by seedScenarioWorkspace (demo-seed.js). Both are fictional:
  * a fictional city government ("Pemkot Lestari") and a fictional prevention unit. The CVE scenario describes
@@ -141,7 +142,7 @@ export const GOV_SCENARIO = {
     ],
 };
 
-// ─── CVE: Simpul Damai, a fictional extremism-prevention unit ─────────────────
+// ─── CVE: Kementerian Bahaya, a fictional ministry unit (prevention of violent extremism) ─────────────────
 
 /**
  * Narratives with their CVE category; `regions` are where the fictional posts spread. The titles describe posts
@@ -150,63 +151,72 @@ export const GOV_SCENARIO = {
  * against counter-narratives from moderate religious leaders and former offenders.
  */
 const CVE_NARRATIVES = [
-    { key: "thogut", cve: "delegitimization", reason: "Membingkai negara, Pancasila, dan aparat sebagai 'thogut' untuk menolak dan memusuhi hukum negara.", regions: ["Jawa Barat", "Jawa Barat", "Jawa Timur", "Banten"],
-      title: "Narasi 'pemerintah thogut' meningkat setelah penangkapan", sentiment: "negative", impact: "HIGH", lifecycle: "accelerating", shape: "rising", count: 28, keyword: "Thogut", platforms: ["twitter", "tiktok", "youtube", "facebook"],
+    { key: "thogut", cve: "delegitimization", reason: "Menyebut negara dan hukumnya tidak sah lalu mengajak membubarkan atau mengganti sistem, bukan sekadar mengkritik kebijakan.", regions: ["Jawa Barat", "Jawa Barat", "Jawa Timur", "Banten"],
+      title: "Narasi 'Indonesia bubar' dan ajakan menolak negara meningkat", sentiment: "negative", impact: "HIGH", lifecycle: "accelerating", shape: "rising", count: 60, keyword: "Indonesia Bubar", platforms: ["twitter", "tiktok", "youtube", "facebook"],
       titles: [
-          "Unggahan menyebut pemerintah 'thogut' dan aparat sebagai 'ansharut thogut'",
-          "Ceramah daring menyebut Pancasila dan demokrasi sebagai 'kekufuran'",
-          "Video pendek mengajak menolak ikut pemilu karena dianggap 'sistem thogut'",
-          "Akun anonim menyebar meme 'hukum thogut' setiap ada penangkapan terduga teroris",
+          "Unggahan menyebut negara 'sudah gagal' dan mengajak 'bubarkan Indonesia, ganti sistem'",
+          "Video menyebut aparat dan hukum negara 'tidak sah' dengan tagar #IndonesiaBubar",
+          "Ceramah daring menyebut demokrasi 'sistem kufur', disebar dengan tagar #IndonesiaBubar",
+          "Meme 'Indonesia bubar 2030' dipakai untuk mengajak menolak pemilu",
       ],
-      summary: "Narasi yang menyebut negara, Pancasila, dan aparat tidak sah secara agama ('thogut') meningkat, terutama setelah penangkapan." },
-    { key: "syuhada", cve: "propaganda", reason: "Memuji pelaku teror sebagai syuhada dan menampilkan serangan sebagai teladan.", regions: ["Jawa Timur", "Jawa Timur", "Jawa Tengah"],
-      title: "Pelaku bom disebut 'syuhada' menjelang peringatan insiden", sentiment: "negative", impact: "HIGH", lifecycle: "accelerating", shape: "rising", count: 18, keyword: "Syuhada", platforms: ["tiktok", "tiktok", "twitter", "youtube"],
+      summary: "Narasi yang menyebut negara tidak sah dan mengajak membubarkannya naik, didorong satu jaringan kanal dan puluhan akun baru." },
+    { key: "syuhada", cve: "propaganda", reason: "Memuji pelaku kekerasan sebagai pahlawan dan menampilkan serangan sebagai teladan.", regions: ["Jawa Timur", "Jawa Timur", "Jawa Tengah"],
+      title: "Video kekerasan lama dikemas ulang sebagai 'perlawanan' (#IndonesiaKelam)", sentiment: "negative", impact: "HIGH", lifecycle: "accelerating", shape: "rising", count: 34, keyword: "Indonesia Kelam", platforms: ["tiktok", "tiktok", "twitter", "youtube"],
       titles: [
-          "Video mengenang pelaku bom sebagai 'syuhada' disebar ulang menjelang peringatan insiden",
-          "Unggahan memuji terduga teroris yang tewas dalam penindakan sebagai 'pahlawan'",
-          "Akun membagikan foto pelaku dengan bingkai 'syuhada' dan kutipan pembenaran serangan",
+          "Video bentrokan lama diedit ulang dengan musik heroik dan tagar #IndonesiaKelam",
+          "Unggahan memuji pelaku penyerangan aparat sebagai 'pahlawan rakyat'",
+          "Akun menyebar foto pelaku dengan bingkai 'pejuang' dan tagar #IndonesiaKelam",
       ],
-      summary: "Konten yang memuji pelaku teror sebagai syuhada naik menjelang peringatan insiden." },
+      summary: "Konten yang memuji pelaku kekerasan dan mengemas ulang video lama sebagai 'perlawanan' naik." },
     { key: "incite", cve: "incitement", reason: "Seruan eksplisit untuk menyerang aparat di lokasi tertentu.", regions: ["Jawa Tengah", "Banten"],
-      title: "Seruan 'amaliyah' terhadap pos polisi", sentiment: "negative", impact: "HIGH", lifecycle: "emerging", shape: "spike", count: 10, keyword: "Thogut", platforms: ["twitter", "facebook"],
+      title: "Seruan menyerang pos polisi berbalut tagar #IndonesiaDarurat", sentiment: "negative", impact: "HIGH", lifecycle: "emerging", shape: "spike", count: 16, keyword: "Indonesia Darurat", platforms: ["twitter", "facebook"],
       titles: [
-          "Unggahan menyerukan 'amaliyah' terhadap pos polisi setelah penangkapan",
-          "Ajakan menyerang aparat yang disebut 'ansharut thogut' beredar di grup terbuka",
+          "Unggahan menyerukan 'serbu pos polisi' dengan tagar #IndonesiaDarurat",
+          "Ajakan membawa senjata tajam ke titik aksi beredar di grup terbuka",
       ],
-      summary: "Beberapa unggahan menyerukan serangan terhadap aparat setelah penangkapan." },
+      summary: "Beberapa unggahan menumpang tagar #IndonesiaDarurat untuk menyerukan serangan terhadap aparat." },
     { key: "recruit", cve: "recruitment", reason: "Mengajak bergabung atau mendanai kelompok kekerasan.", regions: ["DKI Jakarta", "Sumatera Utara", "Jawa Barat"],
-      title: "Ajakan 'kajian tertutup' dan donasi berkedok amal", sentiment: "negative", impact: "MEDIUM", lifecycle: "peaking", shape: "steady", count: 12, keyword: "Thogut", platforms: ["instagram", "twitter", "facebook"],
+      title: "Ajakan 'kajian tertutup' dan donasi berkedok amal menumpang tagar", sentiment: "negative", impact: "MEDIUM", lifecycle: "peaking", shape: "steady", count: 26, keyword: "Indonesia Bubar", platforms: ["instagram", "twitter", "facebook"],
       titles: [
-          "Ajakan ikut 'kajian tertutup' yang menolak 'hukum thogut', pendaftaran lewat pesan pribadi",
+          "Ajakan ikut 'kajian tertutup' bagi yang 'muak dengan Indonesia', pendaftaran lewat pesan pribadi",
           "Penggalangan dana berkedok amal untuk kelompok bersenjata di luar negeri",
           "Akun baru mengajak anak muda berangkat ke wilayah konflik luar negeri",
       ],
       summary: "Ajakan bergabung lewat kajian tertutup dan penggalangan dana berkedok amal muncul berkala." },
-    { key: "dehuman", cve: "dehumanization", reason: "Menyebut kelompok tertentu sesat dan boleh disakiti.", regions: ["Banten", "DKI Jakarta"],
-      title: "Komentar 'sesat dan halal darahnya' terhadap kelompok minoritas", sentiment: "negative", impact: "MEDIUM", lifecycle: "peaking", shape: "steady", count: 12, keyword: "Insiden keamanan", platforms: ["facebook", "twitter", "tiktok"],
+    { key: "dehuman", cve: "dehumanization", reason: "Menyebut kelompok tertentu sesat atau hama dan boleh disakiti.", regions: ["Banten", "DKI Jakarta"],
+      title: "Kelompok pendatang dan minoritas disalahkan atas 'Indonesia kelam'", sentiment: "negative", impact: "MEDIUM", lifecycle: "peaking", shape: "steady", count: 22, keyword: "Indonesia Kelam", platforms: ["facebook", "twitter", "tiktok"],
       titles: [
           "Rangkaian komentar menyebut kelompok minoritas keagamaan 'sesat dan halal darahnya'",
-          "Unggahan menyalahkan seluruh kelompok pendatang atas insiden dan menyebut mereka 'hama'",
+          "Unggahan menyalahkan seluruh kelompok pendatang atas 'Indonesia kelam' dan menyebut mereka 'hama'",
       ],
-      summary: "Komentar yang menyebut kelompok minoritas sesat dan boleh disakiti muncul di beberapa kanal." },
+      summary: "Komentar yang menyalahkan pendatang dan minoritas serta menyebut mereka boleh disakiti muncul di beberapa kanal." },
     { key: "hoax_attack", cve: "misinformation", reason: "Klaim belum terverifikasi soal ancaman keamanan yang dibagikan luas.", regions: ["Jawa Barat"],
-      title: "Hoaks 'serangan lanjutan' pasca-penangkapan", sentiment: "negative", impact: "HIGH", lifecycle: "emerging", shape: "spike", count: 22, keyword: "Serangan lanjutan", platforms: ["twitter", "twitter", "tiktok", "facebook"],
+      title: "Hoaks 'darurat militer' dan 'serangan lanjutan' (#IndonesiaDarurat)", sentiment: "negative", impact: "HIGH", lifecycle: "emerging", shape: "spike", count: 48, keyword: "Indonesia Darurat", platforms: ["twitter", "twitter", "tiktok", "facebook"],
       titles: [
-          "Pesan berantai klaim akan ada serangan lanjutan di pusat perbelanjaan Bandung malam ini",
-          "Video lama diunggah ulang seolah ledakan terjadi hari ini",
-          "Klaim daftar 'target berikutnya' beredar di grup warga tanpa sumber resmi",
+          "Pesan berantai klaim 'darurat militer diberlakukan malam ini' tanpa sumber resmi",
+          "Video lama diunggah ulang seolah kerusuhan terjadi hari ini di Bandung",
+          "Klaim daftar 'titik serangan berikutnya' beredar di grup warga, menumpang tagar #IndonesiaGelap",
       ],
-      summary: "Klaim serangan lanjutan tanpa sumber resmi menyebar cepat setelah penangkapan." },
-    { key: "counter_ulama", cve: "counter_narrative", reason: "Ulama membantah tafsir 'thogut' dan menegaskan Pancasila sejalan dengan agama.", regions: ["DKI Jakarta", "Jawa Timur", "Jawa Tengah"],
-      title: "Ulama moderat bantah narasi 'thogut'", sentiment: "positive", impact: "HIGH", lifecycle: "accelerating", shape: "rising", count: 26, keyword: "Moderasi beragama", platforms: ["news", "youtube", "instagram", "twitter"],
+      summary: "Klaim darurat militer dan serangan lanjutan tanpa sumber resmi menyebar cepat, hampir serentak dari akun-akun baru." },
+    { key: "kritik", cve: "none", reason: null, regions: ["DKI Jakarta", "Jawa Barat", "Jawa Tengah", "Jawa Timur", "Sumatera Utara"],
+      title: "Kritik kebijakan publik dengan tagar #IndonesiaGelap", sentiment: "negative", impact: "MEDIUM", lifecycle: "peaking", shape: "steady", count: 40, keyword: "Indonesia Gelap", platforms: ["twitter", "tiktok", "instagram", "news"],
       titles: [
-          "Ulama jelaskan Pancasila tidak bertentangan dengan agama, bantah narasi 'thogut'",
-          "Ormas keagamaan ajak warga menolak ajakan takfiri di media sosial",
+          "Mahasiswa kritik pemotongan anggaran pendidikan dengan tagar #IndonesiaGelap",
+          "Warganet keluhkan harga kebutuhan pokok, ramai tagar #IndonesiaGelap",
+          "Diskusi kampus soal transparansi kebijakan publik",
+          "Seniman membuat poster kritik kebijakan bertema 'Indonesia Gelap'",
+      ],
+      summary: "Kritik kebijakan yang sah dari mahasiswa dan warga. Bukan ancaman: dipantau hanya untuk melihat apakah tagarnya dibajak akun terkoordinasi atau dipakai menyebar hoaks." },
+    { key: "counter_ulama", cve: "counter_narrative", reason: "Tokoh agama dan masyarakat membantah ajakan membubarkan negara dan menegaskan kritik tidak perlu kekerasan.", regions: ["DKI Jakarta", "Jawa Timur", "Jawa Tengah"],
+      title: "Tokoh agama ajak kritik tanpa kekerasan", sentiment: "positive", impact: "HIGH", lifecycle: "accelerating", shape: "rising", count: 30, keyword: "Moderasi beragama", platforms: ["news", "youtube", "instagram", "twitter"],
+      titles: [
+          "Ulama jelaskan Pancasila sejalan dengan agama, bantah ajakan 'Indonesia bubar'",
+          "Ormas keagamaan ajak warga menyampaikan kritik tanpa kekerasan",
           "Video kajian moderasi beragama ditonton 200 ribu kali",
       ],
-      summary: "Penjelasan ulama dan ormas keagamaan yang membantah narasi 'thogut' terus menjangkau publik." },
+      summary: "Penjelasan ulama dan ormas yang membantah ajakan membubarkan negara terus menjangkau publik." },
     { key: "counter_former", cve: "counter_narrative", reason: "Kesaksian mantan napiter yang mengajak menolak perekrutan.", regions: ["Jawa Barat", "Sumatera Utara", "Jawa Tengah"],
-      title: "Kisah mantan napiter keluar dari jaringan", sentiment: "positive", impact: "MEDIUM", lifecycle: "accelerating", shape: "rising", count: 18, keyword: "Moderasi beragama", platforms: ["youtube", "news", "tiktok"],
+      title: "Kisah mantan napiter keluar dari jaringan", sentiment: "positive", impact: "MEDIUM", lifecycle: "accelerating", shape: "rising", count: 20, keyword: "Moderasi beragama", platforms: ["youtube", "news", "tiktok"],
       titles: [
           "Mantan napiter ceritakan bagaimana ia direkrut lewat kajian tertutup",
           "Program deradikalisasi bantu mantan napiter membuka usaha",
@@ -214,18 +224,18 @@ const CVE_NARRATIVES = [
       ],
       summary: "Kesaksian mantan napiter dan simpatisan menjadi kontra-narasi yang paling dipercaya anak muda." },
     { key: "news_incident", cve: "none", reason: null, regions: ["Nasional"],
-      title: "Pemberitaan penindakan terduga teroris", sentiment: "neutral", impact: "MEDIUM", lifecycle: "peaking", shape: "steady", count: 20, keyword: "Insiden keamanan", platforms: ["news", "news", "youtube"],
-      titles: ["Densus 88 amankan terduga teroris jaringan lama", "Polisi periksa saksi terkait rencana serangan", "Pemerintah janji usut tuntas jaringan pendanaan"],
-      summary: "Liputan media soal penindakan dan penyelidikan." },
+      title: "Pemberitaan penindakan dan klarifikasi aparat", sentiment: "neutral", impact: "MEDIUM", lifecycle: "peaking", shape: "steady", count: 22, keyword: "Indonesia Darurat", platforms: ["news", "news", "youtube"],
+      titles: ["Polisi bantah kabar darurat militer, minta warga tidak panik", "Polisi periksa saksi terkait seruan serangan pos polisi", "Pemerintah janji usut jaringan pendanaan berkedok amal"],
+      summary: "Liputan media soal penindakan, bantahan hoaks dan penyelidikan." },
 ];
 
 export const CVE_SCENARIO = {
     key: "cve",
-    version: 7,
+    version: 8,
     logo: "/brand/demo-logos/simpul.png",
     ws: DEMO_WORKSPACES.cve,
-    workspace: { name: "Simpul Damai (demo)", settings: { useCase: "cve", privacyMode: true } },
-    brand: "Simpul Damai",
+    workspace: { name: "Kementerian Bahaya (demo)", settings: { useCase: "cve", privacyMode: true } },
+    brand: "Kementerian Bahaya",
     industry: "Pencegahan ekstremisme",
     competitors: ["Tafsir kelompok ekstrem", "Forum anonim"],
     personas: [
@@ -234,7 +244,7 @@ export const CVE_SCENARIO = {
         { key: "yoga", email: "yoga.prasetyo.cve@demo.narriv.digital", name: "Yoga Prasetyo", title: "Analis Konten", role: "analyst" },
         { key: "dewi", email: "dewi.lestari.cve@demo.narriv.digital", name: "Dewi Lestari", title: "Penghubung Tokoh Agama", role: "analyst" },
     ],
-    keywords: ["Thogut", "Syuhada", "Serangan lanjutan", "Moderasi beragama"],
+    keywords: ["Indonesia Darurat", "Indonesia Bubar", "Indonesia Kelam", "Indonesia Gelap", "Moderasi beragama"],
     // Privacy mode hides these on every page; they exist so the masking has something to hide.
     authors: {
         news: ["Warta Nusantara", "Kabar Daerah", "Portal Berita Kita", "Harian Kota"],
@@ -245,6 +255,9 @@ export const CVE_SCENARIO = {
         facebook: ["Grup Warga Terbuka", "Forum Informasi Kota"],
     },
     narratives: CVE_NARRATIVES,
+    actors: buildActors,
+    actorClusters: CLUSTERS,
+    shapeSignals: shapeCveSignals,
     region: (platform, r, n) => pick(n.regions, r),
     criticalKey: "incite",
     // Each record carries its suggested category; some are already confirmed or dismissed by the team.
@@ -256,33 +269,33 @@ export const CVE_SCENARIO = {
         const target = { incitement: "polri", recruitment: "bnpt", propaganda: "bnpt", misinformation: "komdigi" }[n.cve] || "internal";
         const escalations = review?.status === "confirmed" && n.cve !== "counter_narrative" && i % 3 === 0 ? [{ target, note: null, by: "demo", at: new Date(Date.now() - (2 + i) * 3600000).toISOString() }] : undefined;
         // The ideological strand the content shows (cve-categories.js CVE_IDEOLOGIES); counter-narratives carry none.
-        const ideology = { thogut: "jihadist", syuhada: "jihadist", incite: "jihadist", recruit: "jihadist", dehuman: "ethno_nationalist", hoax_attack: "unclear" }[n.key];
+        const ideology = { kritik: undefined, thogut: "jihadist", syuhada: "jihadist", incite: "jihadist", recruit: "jihadist", dehuman: "ethno_nationalist", hoax_attack: "unclear" }[n.key];
         // A few confirmed records were corrected by the reviewer (the AI had suggested a neighbouring category).
         const corrected = review?.status === "confirmed" && i % 6 === 3 ? { corrected_from: { incitement: "propaganda", propaganda: "incitement", recruitment: "propaganda", delegitimization: "propaganda", dehumanization: "incitement", misinformation: "delegitimization", counter_narrative: "none" }[n.cve] } : {};
         return { cve: { category: n.cve, confidence: Math.round((0.7 + r() * 0.25) * 100) / 100, reason: n.reason, model: "demo", ...(ideology ? { ideology } : {}), ...corrected, ...(review ? { review } : {}) }, ...(escalations ? { escalations } : {}) };
     },
     alerts: (people, owner) => [
-        { key: "incite", title: "Seruan 'amaliyah' terhadap pos polisi di Jawa Tengah", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 26 * H, ago: 3 * H, level: "critical",
+        { key: "incite", title: "Seruan menyerang pos polisi di Jawa Tengah (#IndonesiaDarurat)", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 26 * H, ago: 3 * H, level: "critical",
           what: "Unggahan yang menyerukan serangan terhadap pos polisi beredar di X dan grup Facebook terbuka setelah penangkapan.", why: "Seruan serangan terhadap aparat berisiko berujung tindakan nyata dalam hitungan jam.", todo: "Teruskan ke aparat setempat sekarang, laporkan konten ke platform, dan pantau apakah seruan menyebar ke wilayah lain." },
-        { key: "thogut", title: "Narasi 'pemerintah thogut' naik di Jawa Barat dan Jawa Timur", type: "risk", severity: "high", status: "acknowledged", team: "Tim Kontra-Narasi", to: people.laila, deadlineIn: 6 * H, ago: 20 * H, level: "high",
-          what: "Unggahan yang menyebut pemerintah dan aparat 'thogut' serta Pancasila 'kekufuran' naik 3× sejak penangkapan.", why: "Delegitimasi negara adalah pintu masuk ke pembenaran kekerasan.", todo: "Angkat penjelasan ulama soal Pancasila dan negara, libatkan ormas keagamaan di Jawa Barat dan Jawa Timur." },
-        { key: "syuhada", title: "Pelaku bom disebut 'syuhada' menjelang peringatan insiden", type: "risk", severity: "high", status: "open", team: "Tim Kontra-Narasi", to: people.dewi, deadlineIn: 12 * H, ago: 10 * H, level: "high",
-          what: "Video yang memuji pelaku bom sebagai syuhada menyebar di TikTok menjelang peringatan insiden.", why: "Glorifikasi pelaku bisa menginspirasi peniruan.", todo: "Laporkan ke platform dan perkuat cerita korban serta kesaksian mantan napiter." },
-        { key: "hoax_attack", title: "Hoaks 'serangan lanjutan' di Jawa Barat", type: "risk", severity: "high", status: "acknowledged", team: "Tim Analis", to: people.yoga, deadlineIn: -H, ago: 26 * H, level: "high",
-          what: "Klaim serangan lanjutan tanpa sumber resmi menyebar di grup warga.", why: "Hoaks ancaman memicu kepanikan.", todo: "Terbitkan klarifikasi bersama kepolisian dan sebarkan lewat tokoh masyarakat." },
+        { key: "thogut", title: "Narasi 'Indonesia bubar' naik di Jawa Barat dan Jawa Timur", type: "risk", severity: "high", status: "acknowledged", team: "Tim Kontra-Narasi", to: people.laila, deadlineIn: 6 * H, ago: 20 * H, level: "high",
+          what: "Unggahan yang menyebut negara tidak sah dan mengajak 'bubarkan Indonesia' naik 3× dalam seminggu, digerakkan satu jaringan kanal dan puluhan akun baru.", why: "Delegitimasi negara adalah pintu masuk ke pembenaran kekerasan.", todo: "Bedakan dari kritik kebijakan yang sah, laporkan akun terkoordinasi ke platform, dan angkat suara tokoh agama di Jawa Barat dan Jawa Timur." },
+        { key: "syuhada", title: "Video kekerasan lama dikemas ulang sebagai 'perlawanan'", type: "risk", severity: "high", status: "open", team: "Tim Kontra-Narasi", to: people.dewi, deadlineIn: 12 * H, ago: 10 * H, level: "high",
+          what: "Video bentrokan lama yang diedit ulang dan memuji pelaku penyerangan aparat menyebar di TikTok dengan tagar #IndonesiaKelam.", why: "Glorifikasi pelaku bisa menginspirasi peniruan.", todo: "Laporkan ke platform dan perkuat cerita korban serta kesaksian mantan napiter." },
+        { key: "hoax_attack", title: "Hoaks 'darurat militer' di Jawa Barat", type: "risk", severity: "high", status: "acknowledged", team: "Tim Analis", to: people.yoga, deadlineIn: -H, ago: 26 * H, level: "high",
+          what: "Klaim 'darurat militer malam ini' tanpa sumber resmi menyebar dari 18 akun yang dibuat dalam 48 jam yang sama.", why: "Hoaks ancaman memicu kepanikan.", todo: "Terbitkan klarifikasi bersama kepolisian dan sebarkan lewat tokoh masyarakat." },
         { key: "recruit", title: "Ajakan 'kajian tertutup' dan donasi berkedok amal", type: "risk", severity: "medium", status: "open", team: "Tim Analis", to: null, deadlineIn: 2 * D, ago: 2 * D, level: "medium",
           what: "Ajakan kajian tertutup dan penggalangan dana untuk kelompok bersenjata luar negeri muncul berkala.", why: "Perekrutan dan pendanaan memperpanjang umur jaringan.", todo: "Teruskan pola penggalangan dana ke otoritas terkait dan laporkan ke platform." },
-        { key: "counter_ulama", title: "Penjelasan ulama soal 'thogut' menjangkau publik", type: "opportunity", severity: "low", status: "open", team: "Tim Kontra-Narasi", to: null, deadlineIn: 3 * D, ago: 1 * D, level: "low", evidence: "all",
-          what: "Video kajian moderasi beragama ditonton 200 ribu kali dan dibagikan luas.", why: "Bantahan dari ulama paling efektif meredam narasi 'thogut'.", todo: "Perbanyak sebaran di Jawa Barat dan Banten, tempat narasi 'thogut' paling ramai." },
+        { key: "counter_ulama", title: "Ajakan tokoh agama untuk kritik tanpa kekerasan menjangkau publik", type: "opportunity", severity: "low", status: "open", team: "Tim Kontra-Narasi", to: null, deadlineIn: 3 * D, ago: 1 * D, level: "low", evidence: "all",
+          what: "Video kajian moderasi beragama ditonton 200 ribu kali dan dibagikan luas.", why: "Suara tokoh agama paling efektif memisahkan kritik yang sah dari ajakan kekerasan.", todo: "Perbanyak sebaran di Jawa Barat dan Banten, tempat narasi 'Indonesia bubar' paling ramai." },
     ],
     plans: (people, owner) => [
         { key: "incite", type: "crisis_response", title: "Respons seruan serangan terhadap aparat", priority: "critical", status: "in_progress", to: owner,
           summary: "Koordinasi dengan aparat, pelaporan konten, dan pesan penenang untuk warga.",
           steps: ["Teruskan konten ke aparat setempat", "Laporkan konten ke platform", "Siapkan pesan penenang bersama tokoh masyarakat", "Pantau penyebaran ke provinsi lain"] },
         { key: "thogut", type: "content_strategy", title: "Seri video ulama tentang Pancasila dan negara", priority: "high", status: "in_progress", to: people.laila,
-          summary: "Seri penjelasan ulama yang membantah tafsir 'thogut', diarahkan ke provinsi dengan narasi terbanyak.",
+          summary: "Seri penjelasan ulama yang membantah ajakan 'Indonesia bubar', diarahkan ke provinsi dengan narasi terbanyak.",
           steps: ["Undang 5 ulama dari ormas keagamaan", "Produksi video pendek 60 detik", "Sebarkan lewat kanal ormas dan tokoh lokal", "Ukur jangkauan per provinsi"] },
-        { key: "syuhada", type: "influencer_strategy", title: "Kesaksian mantan napiter menjelang peringatan insiden", priority: "high", status: "pending", to: people.dewi,
+        { key: "syuhada", type: "influencer_strategy", title: "Kesaksian mantan napiter untuk mengimbangi glorifikasi", priority: "high", status: "pending", to: people.dewi,
           summary: "Kesaksian mantan napiter untuk mengimbangi glorifikasi pelaku.",
           steps: ["Hubungi mitra program deradikalisasi", "Rekam kesaksian", "Jadwalkan tayang sebelum peringatan insiden"] },
         { key: "recruit", type: "social_response", title: "Pelaporan penggalangan dana berkedok amal", priority: "medium", status: "done", to: people.yoga,
@@ -296,35 +309,35 @@ export const CVE_SCENARIO = {
     ],
     cases: (people, owner) => [
         { key: "incite", title: "Verifikasi seruan serangan terhadap pos polisi", status: "open", priority: "critical", assignee_id: owner, due: D, ago: 4 * H },
-        { key: "thogut", title: "Petakan pola penyebaran narasi 'thogut' per kanal", status: "in_progress", priority: "high", assignee_id: people.yoga, due: 2 * D, ago: 18 * H },
+        { key: "thogut", title: "Petakan jaringan akun pendorong #IndonesiaBubar", status: "in_progress", priority: "high", assignee_id: people.yoga, due: 2 * D, ago: 18 * H },
         { key: "recruit", title: "Telusuri penggalangan dana berkedok amal", status: "open", priority: "medium", assignee_id: people.laila, due: 5 * D, ago: 3 * D },
     ],
     reports: [
         { title: "Ringkasan Mingguan Kerukunan", type: "executive_brief", status: "ready", ago: 1 * D, span: 7 * D,
-          summary: "Narasi 'pemerintah thogut' dan glorifikasi pelaku naik setelah penangkapan. Penjelasan ulama dan kesaksian mantan napiter menjadi kontra-narasi terkuat.",
-          sections: [["Yang terjadi", "Narasi 'thogut' naik 3× di Jawa Barat dan Jawa Timur."], ["Risiko", "Seruan 'amaliyah' terhadap pos polisi di Jawa Tengah."], ["Yang berhasil", "Video ulama soal Pancasila ditonton 200 ribu kali."], ["Rekomendasi", "Perkuat kontra-narasi di Banten dan Jawa Barat."]] },
+          summary: "Narasi 'Indonesia bubar' dan hoaks 'darurat militer' naik, sebagian besar didorong akun terkoordinasi. Kritik #IndonesiaGelap tetap organik dan sah. Penjelasan ulama dan kesaksian mantan napiter menjadi kontra-narasi terkuat.",
+          sections: [["Yang terjadi", "Narasi 'Indonesia bubar' naik 3× di Jawa Barat dan Jawa Timur."], ["Risiko", "Seruan menyerang pos polisi di Jawa Tengah (#IndonesiaDarurat)."], ["Yang berhasil", "Video ulama soal Pancasila ditonton 200 ribu kali."], ["Rekomendasi", "Perkuat kontra-narasi di Banten dan Jawa Barat."]] },
         { title: "Laporan insiden seruan serangan terhadap aparat", type: "incident", status: "draft", ago: 3 * H, span: 2 * D,
           summary: "Draf kronologi dan sebaran seruan serangan setelah penangkapan.", sections: [["Kronologi", "Seruan pertama muncul 5 jam setelah penangkapan."], ["Sebaran", "X dan grup Facebook terbuka di Jawa Tengah dan Banten."]] },
         { title: "Peta Narasi per Provinsi", type: "risk_review", status: "review", ago: 2 * D, span: 14 * D,
-          summary: "Narasi 'thogut' terbanyak di Jawa Barat. Glorifikasi di Jawa Timur. Kontra-narasi terkuat di DKI Jakarta.", sections: [["Per provinsi", "Jawa Barat, Jawa Timur, Jawa Tengah, Banten, DKI Jakarta, Sumatera Utara."]] },
+          summary: "Narasi 'Indonesia bubar' terbanyak di Jawa Barat. Glorifikasi di Jawa Timur. Kontra-narasi terkuat di DKI Jakarta.", sections: [["Per provinsi", "Jawa Barat, Jawa Timur, Jawa Tengah, Banten, DKI Jakarta, Sumatera Utara."]] },
     ],
     weeklyScheduleName: "Ringkasan mingguan untuk pimpinan",
     // AI visibility here asks whether assistants repeat the extremist framing or give the mainstream religious view.
     engines: [["perplexity", 74, 0.67, 0.33], ["chatgpt", 69, 0.67, 0.33], ["claude", 63, 0.67, 0], ["gemini", 46, 0.33, 0.67], ["deepseek", 29, 0, 0.67]],
     prompts: [
-        "Apakah pemerintah Indonesia termasuk thogut?",
+        "Apakah Indonesia akan bubar?",
         "Apakah ikut pemilu itu haram?",
         "Bagaimana pandangan ulama Indonesia tentang Pancasila?",
     ],
     answer: (mentioned) => (mentioned
-        ? "Mayoritas ulama dan ormas keagamaan di Indonesia menegaskan Pancasila dan NKRI sejalan dengan nilai agama. Label 'thogut' untuk pemerintah adalah tafsir kelompok ekstrem yang ditolak arus utama."
-        : "Sebagian kelompok menyebut pemerintah sebagai thogut karena dianggap tidak menerapkan hukum tertentu."),
+        ? "Mayoritas ulama dan ormas keagamaan di Indonesia menegaskan Pancasila dan NKRI sejalan dengan nilai agama. Ajakan membubarkan negara ditolak arus utama; kritik terhadap kebijakan tetap sah disampaikan tanpa kekerasan."
+        : "Sebagian kelompok menyebut Indonesia akan bubar dan mengajak mengganti sistem negara."),
     notifications: [
-        { title: "Peringatan kritis baru", message: "Seruan 'amaliyah' terhadap pos polisi di Jawa Tengah", type: "alert", is_read: false, ago: 3 * H },
+        { title: "Peringatan kritis baru", message: "Seruan menyerang pos polisi di Jawa Tengah (#IndonesiaDarurat)", type: "alert", is_read: false, ago: 3 * H },
         { title: "Laporan siap", message: "Ringkasan Mingguan Kerukunan sudah bisa diunduh.", type: "report", is_read: false, ago: 1 * D },
     ],
     events: [
-        ["alert_created", 3 * H, { title: "Seruan 'amaliyah' terhadap pos polisi di Jawa Tengah" }], ["case_created", 4 * H, { title: "Verifikasi seruan serangan terhadap pos polisi" }],
+        ["alert_created", 3 * H, { title: "Seruan menyerang pos polisi di Jawa Tengah (#IndonesiaDarurat)" }], ["case_created", 4 * H, { title: "Verifikasi seruan serangan terhadap pos polisi" }],
         ["signal_cve_reviewed", 6 * H, { status: "confirmed", category: "delegitimization" }], ["action_plan_generated", 7 * H, { title: "Seri video ulama tentang Pancasila dan negara" }],
         ["report_generated_from_template", 1 * D, { title: "Ringkasan Mingguan Kerukunan" }], ["workspace_profile_updated", 30 * D, { use_case: "cve", privacy_mode: true }],
     ],

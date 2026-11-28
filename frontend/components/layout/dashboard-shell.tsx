@@ -87,7 +87,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-[#465FFF]/30">
       <Sidebar />
       <DemoBlockedNotice />
-      <div className={`flex min-h-screen flex-col transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[240px]"}`}>
+      <div className={`print:!pl-0 flex min-h-screen flex-col transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[240px]"}`}>
         <Topbar />
         {/* A soft colour wash behind every page: white cards read as cards, and pages are not flat grey. */}
         <main className="nv-paper relative flex-1 px-4 pb-32 pt-6 sm:px-6 lg:px-6 lg:pb-10 2xl:px-8">

@@ -24,6 +24,7 @@ export const PAGE_FEATURE: Record<string, FeatureKey> = {
   "/ask": "ask",
   "/competitors": "competitors",
   "/network": "network",
+  "/investigasi": "network",
   "/recon": "account_check",
   "/action-plans": "action_plans",
   "/workspace/white-label": "white_label",

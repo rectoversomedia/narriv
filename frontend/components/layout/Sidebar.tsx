@@ -79,7 +79,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className={cn("sidebar-gradient fixed inset-y-0 left-0 z-30 hidden flex-col overflow-hidden text-white transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:flex", collapsed ? "w-[72px]" : "w-[240px]")}>
+      <aside className={cn("print:!hidden sidebar-gradient fixed inset-y-0 left-0 z-30 hidden flex-col overflow-hidden text-white transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:flex", collapsed ? "w-[72px]" : "w-[240px]")}>
         {/* Same height and divider as the top bar, so the logo sits on the same line as the search box. */}
         <div className="relative flex h-[88px] shrink-0 items-center border-b border-white/10 px-4">
           <Link href="/" aria-label="Narriv" className="relative block h-12 w-full">

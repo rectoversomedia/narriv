@@ -65,6 +65,7 @@ const navLinks = [
   { href: "/competitors", title: { en: "Competitors", id: "Cek kompetitor" }, subtitle: { en: "Analyst tools", id: "Alat Analis" } },
   { href: "/glossary", title: { en: "Glossary", id: "Glosarium" }, subtitle: { en: "Reports", id: "Laporan" } },
   { href: "/visibility", title: { en: "AI answers", id: "Jawaban AI" }, subtitle: { en: "Issues", id: "Isu" } },
+  { href: "/investigasi", title: { en: "Investigation", id: "Investigasi" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/network", title: { en: "Conversation network", id: "Jaringan percakapan" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/workspace/settings", title: { en: "Settings", id: "Pengaturan" }, subtitle: { en: "Keywords, team, notifications", id: "Kata kunci, tim, notifikasi" } },
   { href: "/workspace/sources", title: { en: "Data sources", id: "Sumber data" }, subtitle: { en: "Settings", id: "Pengaturan" } },
@@ -376,7 +377,7 @@ export function Topbar() {
   };
 
   return (
-    <header className="sticky top-0 z-[100] grid h-[88px] grid-cols-[1fr_auto_1fr] items-center border-b border-border bg-background/60 px-5 backdrop-blur-xl sm:px-8 lg:flex lg:justify-between lg:px-10 xl:px-12">
+    <header className="print:!hidden sticky top-0 z-[100] grid h-[88px] grid-cols-[1fr_auto_1fr] items-center border-b border-border bg-background/60 px-5 backdrop-blur-xl sm:px-8 lg:flex lg:justify-between lg:px-10 xl:px-12">
       {/* Phones: search on the left, the brand centred, alerts and account on the right. */}
       <button
         type="button"

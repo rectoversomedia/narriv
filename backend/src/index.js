@@ -18,6 +18,7 @@ import escalationMatrixRoutes from "./modules/alerts/escalation-matrix.routes.js
 import narrativesRoutes from "./modules/narratives/narratives.routes.js";
 import geoRoutes from "./modules/geo/geo.routes.js";
 import networkRoutes from "./modules/network/network.routes.js";
+import investigationRoutes from "./modules/actors/actors.routes.js";
 import qualityRoutes from "./modules/quality/quality.routes.js";
 import toolsRoutes from "./modules/tools/tools.routes.js";
 import reportsRoutes from "./modules/reports/reports.routes.js";
@@ -220,6 +221,7 @@ app.use("/alerts", alertsRoutes);
 app.use("/narratives", narrativesRoutes);
 app.use("/visibility", requireFeature("ai_visibility"), geoRoutes);
 app.use("/network", rateLimit({ ...RATE_LIMITS.api_default, prefix: "network" }), requireFeature("network"), networkRoutes);
+app.use("/investigations", rateLimit({ ...RATE_LIMITS.api_default, prefix: "investigations" }), requireFeature("network"), investigationRoutes);
 app.use("/quality", rateLimit({ ...RATE_LIMITS.api_default, prefix: "quality" }), qualityRoutes);
 app.use("/tools", rateLimit({ ...RATE_LIMITS.api_default, prefix: "tools" }), toolsRoutes);
 // Report reads use the default API limit; export, download and email routes

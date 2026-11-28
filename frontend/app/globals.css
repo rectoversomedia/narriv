@@ -540,3 +540,10 @@ html.dark { --map-land: #262C55; --map-land-hover: #2E3563; --map-edge: #3A4278;
 html.dark .nv-map-bg { background: #0E1226; }
 html.dark { --narriv-ink: #E9E9F2; }
 html.dark { --score-1: #E9E9F2; --score-1-text: #101334; }
+
+/* Printable documents (e.g. the agency report): only the .print-area is printed, without the app around it. */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+}

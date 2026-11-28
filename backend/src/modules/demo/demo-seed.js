@@ -496,7 +496,11 @@ export async function seedScenarioWorkspace(def, { now = new Date(), db = defaul
             owners.push(n.key);
         }
     }
+    // Accounts behind the records (PCVE demo): origin, amplifiers, coordinated bursts, organic spread.
+    const actors = def.actors ? def.actors(t0) : null;
+    if (actors && def.shapeSignals) def.shapeSignals(signalRows, owners, { t0, sourceOf, actors });
     const signals = await chunkedInsert(db, "signals", signalRows, "id, sentiment, captured_at, platform");
+    if (actors) await chunkedInsert(db, "raw_documents", [{ workspace_id: ws, external_id: `actors:demo-${def.key}`, title: "Accounts", url: null, author: null, content: null, published_at: at(H), created_at: at(H), metadata: { demo: true, actors, clusters: def.actorClusters || [] } }]);
     const byNarrative = {};
     signals.forEach((s, i) => { (byNarrative[owners[i]] ||= []).push(s); });
 
